@@ -49,23 +49,23 @@ export default function HistoryPage() {
             <AccordionItem value={match.id} key={match.id} className="border rounded-lg overflow-hidden">
                <Card>
                   <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
-                    <div className="flex justify-center items-center w-full">
-                       <div className='flex-1 text-right font-semibold text-sm md:text-base'>
-                          {match.timeA}
-                      </div>
-                      <div className="flex items-center justify-center gap-3 md:gap-4 mx-4">
-                          <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
-                          <div className="flex flex-col items-center text-center">
-                              <span className="text-lg md:text-xl font-bold">{`${match.placarA} - ${match.placarB}`}</span>
-                              <span className="text-xs text-muted-foreground">
-                                  {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
-                              </span>
+                    <div className="flex flex-col items-center w-full">
+                       <div className="flex items-center w-full">
+                           <div className='flex-1 text-right font-semibold text-sm md:text-base'>
+                              {match.timeA}
                           </div>
-                          <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
-                      </div>
-                      <div className='flex-1 text-left font-semibold text-sm md:text-base'>
-                         {match.timeB}
-                      </div>
+                          <div className="flex items-center justify-center gap-3 md:gap-4 mx-4">
+                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
+                              <span className="text-lg md:text-xl font-bold">{`${match.placarA} - ${match.placarB}`}</span>
+                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
+                          </div>
+                          <div className='flex-1 text-left font-semibold text-sm md:text-base'>
+                             {match.timeB}
+                          </div>
+                       </div>
+                       <span className="text-xs text-muted-foreground mt-1">
+                          {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
+                      </span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
