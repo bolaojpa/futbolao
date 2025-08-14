@@ -76,6 +76,17 @@ export const mockPredictions = [
       { apelido: 'Lucas', palpite: '1-0', pontos: 0 },
     ],
   },
+  // Added prediction for live match
+  {
+    userId: 'user_1',
+    matchId: 'match_6',
+    palpiteUsuario: { placarA: 2, placarB: 1 },
+    pontos: 0, // No points for live match
+    outrosPalpites: [
+      { apelido: 'Fernanda', palpite: '1-0', pontos: 0 },
+      { apelido: 'Lucas', palpite: '3-0', pontos: 0 },
+    ],
+  },
 ];
 
 export const mockNotifications = [

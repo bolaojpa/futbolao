@@ -14,7 +14,7 @@ import {
 import { mockUser, mockMatches, mockPredictions } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, Radio, History, Zap } from 'lucide-react';
+import { Users, Calendar, History, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -54,43 +54,75 @@ export default function DashboardPage() {
         </div>
 
         {liveMatches.length > 0 && (
-           <section>
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                        <Zap className="w-6 h-6 text-accent animate-pulse" />
-                        Acontecendo Agora
-                    </h2>
-                </div>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {liveMatches.map((match) => (
-                    <Card key={match.id} className="flex flex-col h-full overflow-hidden shadow-lg border-accent/50">
-                        <CardHeader className='pb-4'>
-                             <div className="flex justify-between items-start">
-                                 <CardDescription className="text-xs">{match.campeonato}</CardDescription>
-                                 <Badge variant={getStatusVariant(match.status)} className={cn(match.status === 'Ao Vivo' && 'animate-pulse')}>
-                                     {match.status}
-                                 </Badge>
-                             </div>
-                        </CardHeader>
-                        <CardContent className="flex-grow flex flex-col items-center justify-center p-4">
-                             <div className="flex items-center justify-center w-full">
+          <section>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                    <Zap className="w-6 h-6 text-accent animate-pulse" />
+                    Acontecendo Agora
+                </h2>
+            </div>
+            <Accordion type="single" collapsible className="w-full space-y-4">
+              {liveMatches.map((match) => {
+                const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
+                // Se não houver palpite do usuário para o jogo ao vivo, não renderiza nada
+                if (!prediction) return null;
+
+                return (
+                  <AccordionItem value={match.id} key={match.id} className="border-0 rounded-lg overflow-hidden">
+                    <Card className='border-accent/50'>
+                      <AccordionTrigger className="p-4 hover:no-underline">
+                        <div className="flex flex-col items-center justify-center w-full">
+                           <div className="flex items-center justify-center w-full">
                                <div className='flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
                                    {match.timeA}
                                </div>
                                <div className="flex items-center justify-center gap-3 md:gap-4">
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                    <span className="text-lg md:text-xl font-bold">{`${match.placarA}-${match.placarB}`}</span>
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                </div>
                                <div className='flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                    {match.timeB}
                                </div>
                            </div>
-                        </CardContent>
+                           <Badge variant={getStatusVariant(match.status)} className={cn('mt-2', match.status === 'Ao Vivo' && 'animate-pulse')}>
+                             {match.status}
+                           </Badge>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="p-4 border-t bg-muted/30">
+                           <div className="flex justify-between items-center w-full">
+                               <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
+                               <span className="w-1/3 text-center font-mono font-semibold text-base">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                               <div className="w-1/3 text-right">
+                                   {/* Não mostra pontos para jogos ao vivo */}
+                               </div>
+                           </div>
+                        </div>
+                        <div className="bg-background/80 border-t">
+                          <div className="text-center py-2">
+                              <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
+                          </div>
+                          <ul className="text-sm">
+                              {prediction.outrosPalpites.map((p, i) => (
+                                  <li key={i} className="flex justify-between items-center p-4 border-t bg-muted/20">
+                                      <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
+                                      <span className="w-1/3 text-center font-mono font-semibold text-base">{p.palpite.replace(/\s/g, '')}</span>
+                                      <div className="w-1/3 text-right">
+                                           {/* Não mostra pontos para jogos ao vivo */}
+                                      </div>
+                                  </li>
+                              ))}
+                          </ul>
+                        </div>
+                      </AccordionContent>
                     </Card>
-                  ))}
-                </div>
-           </section>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </section>
         )}
 
         <section>
@@ -165,9 +197,9 @@ export default function DashboardPage() {
                                    {match.timeA}
                                </div>
                                <div className="flex items-center justify-center gap-3 md:gap-4">
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                    <span className="text-lg md:text-xl font-bold">{`${match.placarA}-${match.placarB}`}</span>
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                </div>
                                <div className='flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                    {match.timeB}
