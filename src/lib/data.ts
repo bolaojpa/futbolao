@@ -38,7 +38,7 @@ export const mockMatches = {
     MOCK_MATCH_RECENT_3,
   ],
   upcoming: [
-    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', data: '2024-08-09T21:00:00Z', status: 'Ao Vivo' },
+    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: '2024-08-09T21:00:00Z', status: 'Ao Vivo' },
     { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: '2024-08-10T19:00:00Z', status: 'Agendado' },
     { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: '2024-08-11T20:00:00Z', status: 'Agendado' },
     { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: '2024-08-12T23:00:00Z', status: 'Agendado' },

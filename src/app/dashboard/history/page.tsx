@@ -55,9 +55,9 @@ export default function HistoryPage() {
                               {match.timeA}
                           </div>
                           <div className="flex items-center justify-center gap-3 md:gap-4">
-                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={32} height={32} className="rounded-full border" data-ai-hint="team logo" />
+                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
                               <span className="text-lg md:text-xl font-bold">{`${match.placarA}-${match.placarB}`}</span>
-                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={32} height={32} className="rounded-full border" data-ai-hint="team logo" />
+                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
                           </div>
                           <div className='flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                              {match.timeB}
@@ -69,7 +69,7 @@ export default function HistoryPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                     <div className={cn("p-4", getPredictionStatusClass(prediction.pontos))}>
+                     <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos))}>
                         <div className="flex justify-between items-center w-full">
                            <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
                            <span className="w-1/3 text-center font-mono font-semibold text-base">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
@@ -80,13 +80,13 @@ export default function HistoryPage() {
                            </div>
                        </div>
                     </div>
-                     <div className="bg-background/80">
+                     <div className="bg-background/80 border-t">
                          <div className="text-center py-2">
                              <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                          </div>
                          <ul className="text-sm">
                             {prediction.outrosPalpites.map((p, i) => (
-                                <li key={i} className={cn("flex justify-between items-center p-4", getPredictionStatusClass(p.pontos))}>
+                                <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos))}>
                                     <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
                                     <span className="w-1/3 text-center font-mono font-semibold text-base">{p.palpite.replace(/\s/g, '')}</span>
                                     <div className="w-1/3 text-right">
