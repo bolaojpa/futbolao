@@ -17,25 +17,10 @@ export function PredictionForm() {
     const { toast } = useToast();
     const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
-    const [lockedMatches, setLockedMatches] = useState<Record<string, boolean>>({});
-    
+    const [isClient, setIsClient] = useState(false);
+
     useEffect(() => {
-        const checkLockedMatches = () => {
-            const now = new Date();
-            const locked: Record<string, boolean> = {};
-            mockMatches.upcoming.forEach(match => {
-                const matchDate = parseISO(match.data);
-                if (differenceInHours(matchDate, now) < 2) {
-                    locked[match.id] = true;
-                }
-            });
-            setLockedMatches(locked);
-        };
-
-        checkLockedMatches();
-        const interval = setInterval(checkLockedMatches, 60000); // Verifica a cada minuto
-
-        return () => clearInterval(interval);
+        setIsClient(true);
     }, []);
 
     const handlePredictionSubmit = (matchId: string) => {
@@ -77,11 +62,15 @@ export function PredictionForm() {
         setLoadingAi(prev => ({ ...prev, [matchId]: false }));
     };
 
+    const isMatchLocked = (matchDate: Date) => {
+        return differenceInHours(matchDate, new Date()) < 2;
+    }
+
     return (
         <div className="space-y-6">
             {mockMatches.upcoming.map((match) => {
                 const matchDate = parseISO(match.data);
-                const isLocked = lockedMatches[match.id] || false;
+                const isLocked = isClient ? isMatchLocked(matchDate) : false;
 
                 return (
                     <Card key={match.id} className={isLocked ? 'opacity-70' : ''}>
@@ -91,7 +80,7 @@ export function PredictionForm() {
                                 {isLocked && <Badge variant="destructive"><Lock className="w-3 h-3 mr-1" /> Encerrado</Badge>}
                             </CardTitle>
                             <CardDescription>
-                                {format(matchDate, "eeee, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                                {isClient ? format(matchDate, "eeee, dd 'de' MMMM 'às' HH:mm", { locale: ptBR }) : 'Carregando data...'}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
