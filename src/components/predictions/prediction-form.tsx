@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { mockMatches, otherUsersPredictionsForAI } from '@/lib/data';
-import { differenceInHours, format } from 'date-fns';
+import { differenceInHours, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Lock, BrainCircuit, Loader2, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +24,7 @@ export function PredictionForm() {
             const now = new Date();
             const locked: Record<string, boolean> = {};
             mockMatches.upcoming.forEach(match => {
-                const matchDate = new Date(match.data);
+                const matchDate = parseISO(match.data);
                 if (differenceInHours(matchDate, now) < 2) {
                     locked[match.id] = true;
                 }
@@ -80,7 +80,7 @@ export function PredictionForm() {
     return (
         <div className="space-y-6">
             {mockMatches.upcoming.map((match) => {
-                const matchDate = new Date(match.data);
+                const matchDate = parseISO(match.data);
                 const isLocked = lockedMatches[match.id] || false;
 
                 return (
