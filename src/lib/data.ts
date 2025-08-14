@@ -26,28 +26,17 @@ export const mockChampionships = [
   { id: 'champ_2', nome: 'Copa Libertadores 2024', dataInicio: '2024-02-06', dataFim: '2024-11-30' },
 ];
 
-// Helper para criar datas futuras consistentes
-const createFutureDate = (days: number, hours: number = 0) => {
-    const date = new Date();
-    date.setDate(date.getDate() + days);
-    date.setHours(date.getHours() + hours);
-    date.setMinutes(0);
-    date.setSeconds(0);
-    date.setMilliseconds(0);
-    return date.toISOString();
-}
-
 export const mockMatches = {
   recent: [
-    { id: 'match_1', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5 },
-    { id: 'match_2', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0 },
-    { id: 'match_3', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 10 },
+    { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5 },
+    { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0 },
+    { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 10 },
   ],
   upcoming: [
-    // Usando datas estáticas para evitar hydration error
-    { id: 'match_4', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: '2024-08-10T19:00:00Z', status: 'Agendado' },
-    { id: 'match_5', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: '2024-08-11T16:00:00Z', status: 'Agendado' },
-    { id: 'match_6', timeA: 'Santos', timeB: 'Fluminense', data: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString(), status: 'Agendado' }, // Partida que irá bloquear em breve
+    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', data: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), status: 'Ao Vivo' },
+    { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), status: 'Agendado' },
+    { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), status: 'Agendado' },
+    { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), status: 'Agendado' },
   ],
 };
 
@@ -86,11 +75,3 @@ export const mockNotifications = [
     { id: 'notif_2', title: 'Você subiu no ranking!', message: 'Parabéns! Você agora está na 3ª posição.', read: false },
     { id: 'notif_3', title: 'Pontos atualizados', message: 'Você ganhou 10 pontos no jogo Grêmio x Internacional.', read: true },
 ]
-
-export const otherUsersPredictionsForAI = [
-  { userId: 'user_2', prediction: 'Atlético-MG vence por 2 a 1.' },
-  { userId: 'user_3', prediction: 'Empate em 1 a 1.' },
-  { userId: 'user_4', prediction: 'Acho que o Atlético-MG ganha de 1 a 0.' },
-  { userId: 'user_5', prediction: '2 a 0 para o Galo.' },
-  { userId: 'user_6', prediction: 'Cruzeiro surpreende e vence por 1 a 0.' },
-];

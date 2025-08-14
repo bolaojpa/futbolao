@@ -7,9 +7,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockMatches, mockPredictions } from '@/lib/data';
@@ -18,6 +15,8 @@ import { ptBR } from 'date-fns/locale';
 import { Users } from 'lucide-react';
 
 export default function HistoryPage() {
+  const finishedMatches = [...mockMatches.recent].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+
   return (
     <div className="container mx-auto space-y-8">
        <div>
@@ -30,9 +29,10 @@ export default function HistoryPage() {
       <Card>
         <CardContent className="p-4 md:p-6">
           <Accordion type="single" collapsible className="w-full">
-            {mockPredictions.map((prediction) => {
-              const match = mockMatches.recent.find(m => m.id === prediction.matchId);
-              if (!match) return null;
+            {finishedMatches.map((match) => {
+              const prediction = mockPredictions.find(p => p.matchId === match.id);
+              // Se não houver palpite para uma partida finalizada, não a exibimos no histórico do usuário
+              if (!prediction) return null;
 
               return (
                 <AccordionItem value={match.id} key={match.id}>

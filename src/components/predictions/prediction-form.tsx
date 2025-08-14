@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { mockMatches, otherUsersPredictionsForAI } from '@/lib/data';
+import { mockMatches } from '@/lib/data';
 import { differenceInHours, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Lock, BrainCircuit, Loader2, Wand2 } from 'lucide-react';
@@ -34,7 +34,16 @@ export function PredictionForm() {
     const handleAiSuggestion = async (matchId: string) => {
         setLoadingAi(prev => ({ ...prev, [matchId]: true }));
         
-        if (otherUsersPredictionsForAI.length < 5) {
+        // Mocking at least 5 predictions for demonstration
+        const mockPredictionsForAI = [
+            { userId: 'user_2', prediction: 'Time A vence por 2 a 1.' },
+            { userId: 'user_3', prediction: 'Empate em 1 a 1.' },
+            { userId: 'user_4', prediction: 'Acho que o Time A ganha de 1 a 0.' },
+            { userId: 'user_5', prediction: '2 a 0 para o Time A.' },
+            { userId: 'user_6', prediction: 'Time B surpreende e vence por 1 a 0.' },
+        ];
+        
+        if (mockPredictionsForAI.length < 5) {
              toast({
                 title: "Dados Insuficientes",
                 description: "Ainda não há palpites suficientes para gerar uma sugestão da IA.",
@@ -46,7 +55,7 @@ export function PredictionForm() {
 
         const res = await getAiSuggestion({
             matchId: matchId,
-            predictionData: otherUsersPredictionsForAI,
+            predictionData: mockPredictionsForAI,
         });
 
         if (res.error || !res.suggestion) {
@@ -63,14 +72,17 @@ export function PredictionForm() {
     };
 
     const isMatchLocked = (matchDate: Date) => {
+        if (!isClient) return true; // Default to locked on server
         return differenceInHours(matchDate, new Date()) < 2;
     }
 
+    const upcomingMatches = mockMatches.upcoming.filter(match => match.status !== 'Finalizado' && match.status !== 'Cancelado');
+
     return (
         <div className="space-y-6">
-            {mockMatches.upcoming.map((match) => {
+            {upcomingMatches.map((match) => {
                 const matchDate = parseISO(match.data);
-                const isLocked = isClient ? isMatchLocked(matchDate) : false;
+                const isLocked = isMatchLocked(matchDate);
 
                 return (
                     <Card key={match.id} className={isLocked ? 'opacity-70' : ''}>
