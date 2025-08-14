@@ -41,14 +41,14 @@ export default function HistoryPage() {
         </div>
 
       <Card>
-        <CardContent className="p-4 md:p-6">
+        <CardContent className="p-0">
           <Accordion type="single" collapsible className="w-full">
             {finishedMatches.map((match) => {
               const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
               if (!prediction) return null;
 
               return (
-                <AccordionItem value={match.id} key={match.id} className='rounded-lg mb-2 overflow-hidden border border-border/50'>
+                <AccordionItem value={match.id} key={match.id} className='mb-2 overflow-hidden border'>
                   <AccordionTrigger className={cn("p-4 hover:no-underline rounded-t-lg items-center", getPredictionStatusClass(prediction.pontos))}>
                     <div className="flex justify-between items-center w-full">
                        <div className='flex-1 text-right font-semibold text-sm md:text-base'>
@@ -69,7 +69,7 @@ export default function HistoryPage() {
                       </div>
                     </div>
                   </AccordionTrigger>
-                  <AccordionContent className='p-0'>
+                  <AccordionContent>
                      <div className={cn("flex justify-between items-center p-2", getPredictionStatusClass(prediction.pontos))}>
                         <h4 className="font-bold w-1/3 text-left">Seu Palpite:</h4>
                         <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
@@ -79,13 +79,13 @@ export default function HistoryPage() {
                             </Badge>
                         </div>
                     </div>
-                     <div className="bg-background/5 border-t">
+                     <div className="bg-background border-t">
                          <div className="text-center py-2">
                              <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                          </div>
                          <ul className="text-sm">
                             {prediction.outrosPalpites.map((p, i) => (
-                                <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
+                                <li key={i} className={cn("flex justify-between items-center p-2 mx-1 rounded-md", getPredictionStatusClass(p.pontos))}>
                                     <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
                                     <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{p.palpite}</span>
                                     <div className="w-1/3 text-right">
