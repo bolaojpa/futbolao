@@ -143,7 +143,7 @@ export default function DashboardPage() {
                                 <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
                                     <div className="flex justify-between items-center">
                                        <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
-                                        <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
+                                       <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                                        <div className="w-1/3 text-right">
                                            <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
                                                {prediction.pontos} pts
