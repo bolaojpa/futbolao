@@ -46,30 +46,30 @@ export default function HistoryPage() {
           if (!prediction) return null;
 
           return (
-            <AccordionItem value={match.id} key={match.id} className="border rounded-lg overflow-hidden">
+            <AccordionItem value={match.id} key={match.id} className="border-0 rounded-lg overflow-hidden">
                <Card>
                   <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
                     <div className="flex flex-col items-center justify-center w-full">
-                       <div className="flex items-center w-full">
-                           <div className='flex-1 text-right font-semibold text-sm md:text-base'>
+                       <div className="flex items-center justify-center w-full">
+                           <div className='flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
                               {match.timeA}
                           </div>
-                          <div className="flex items-center justify-center gap-3 md:gap-4 mx-4">
-                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
+                          <div className="flex items-center justify-center gap-3 md:gap-4">
+                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={32} height={32} className="rounded-full border" data-ai-hint="team logo" />
                               <span className="text-lg md:text-xl font-bold">{`${match.placarA}-${match.placarB}`}</span>
-                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
+                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={32} height={32} className="rounded-full border" data-ai-hint="team logo" />
                           </div>
-                          <div className='flex-1 text-left font-semibold text-sm md:text-base'>
+                          <div className='flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                              {match.timeB}
                           </div>
                        </div>
-                       <span className="text-xs text-muted-foreground mt-1">
+                       <span className="text-xs text-muted-foreground mt-2">
                           {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
                       </span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                     <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
+                     <div className={cn("p-4", getPredictionStatusClass(prediction.pontos))}>
                         <div className="flex justify-between items-center w-full">
                            <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
                            <span className="w-1/3 text-center font-mono font-semibold text-base">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
@@ -86,9 +86,9 @@ export default function HistoryPage() {
                          </div>
                          <ul className="text-sm">
                             {prediction.outrosPalpites.map((p, i) => (
-                                <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
+                                <li key={i} className={cn("flex justify-between items-center p-4", getPredictionStatusClass(p.pontos))}>
                                     <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
-                                    <span className="flex-1 text-center font-mono font-semibold text-base">{p.palpite.replace(/\s/g, '')}</span>
+                                    <span className="w-1/3 text-center font-mono font-semibold text-base">{p.palpite.replace(/\s/g, '')}</span>
                                     <div className="w-1/3 text-right">
                                         <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
                                             {p.pontos} pts
