@@ -117,9 +117,9 @@ export default function DashboardPage() {
 
                   return (
                     <AccordionItem value={match.id} key={match.id} className="border-0">
-                      <Card className="overflow-hidden">
-                       <AccordionTrigger className={cn("p-0 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
-                        <div className="flex justify-center items-center w-full p-4">
+                      <Card className="overflow-hidden rounded-lg border">
+                       <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
+                        <div className="flex justify-center items-center w-full">
                           <div className='flex-1 text-right font-semibold text-sm md:text-base'>
                               {match.timeA}
                           </div>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                         <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
                            <div className="flex justify-between items-center w-full">
                                <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
-                               <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
+                               <span className="w-1/3 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                                <div className="w-1/3 text-right">
                                    <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
                                        {prediction.pontos} pts
