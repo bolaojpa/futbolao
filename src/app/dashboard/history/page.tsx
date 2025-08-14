@@ -40,17 +40,16 @@ export default function HistoryPage() {
             </p>
         </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Accordion type="single" collapsible className="w-full">
-            {finishedMatches.map((match) => {
-              const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
-              if (!prediction) return null;
+      <Accordion type="single" collapsible className="w-full space-y-4">
+        {finishedMatches.map((match) => {
+          const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
+          if (!prediction) return null;
 
-              return (
-                <AccordionItem value={match.id} key={match.id} className='mb-2 overflow-hidden border'>
-                  <AccordionTrigger className={cn("p-4 hover:no-underline rounded-t-lg", getPredictionStatusClass(prediction.pontos))}>
-                    <div className="flex justify-center items-center w-full">
+          return (
+            <AccordionItem value={match.id} key={match.id} className="border-0">
+               <Card className='overflow-hidden'>
+                  <AccordionTrigger className={cn("p-0 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
+                    <div className="flex justify-center items-center w-full p-4">
                        <div className='flex-1 text-right font-semibold text-sm md:text-base'>
                           {match.timeA}
                       </div>
@@ -71,7 +70,7 @@ export default function HistoryPage() {
                   </AccordionTrigger>
                   <AccordionContent>
                      <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center w-full">
                            <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
                            <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                            <div className="w-1/3 text-right">
@@ -81,7 +80,7 @@ export default function HistoryPage() {
                            </div>
                        </div>
                     </div>
-                     <div className="bg-background border-t">
+                     <div className="bg-background/80">
                          <div className="text-center py-2">
                              <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                          </div>
@@ -100,12 +99,11 @@ export default function HistoryPage() {
                         </ul>
                     </div>
                   </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-        </CardContent>
-      </Card>
+                </Card>
+            </AccordionItem>
+          );
+        })}
+      </Accordion>
     </div>
   );
 }

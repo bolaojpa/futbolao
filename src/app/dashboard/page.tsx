@@ -110,72 +110,70 @@ export default function DashboardPage() {
                   <Link href="/dashboard/history">Ver histórico completo &rarr;</Link>
               </Button>
           </div>
-          <Card>
-              <CardContent className="p-0">
-                  <Accordion type="single" collapsible className="w-full">
-                      {mockMatches.recent.slice(0, 3).map((match) => {
-                          const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
-                          if (!prediction) return null;
+          <Accordion type="single" collapsible className="w-full space-y-4">
+              {mockMatches.recent.slice(0, 3).map((match) => {
+                  const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
+                  if (!prediction) return null;
 
-                          return (
-                            <AccordionItem value={match.id} key={match.id} className='mb-2 overflow-hidden border'>
-                               <AccordionTrigger className={cn("p-4 hover:no-underline rounded-t-lg", getPredictionStatusClass(prediction.pontos))}>
-                                <div className="flex justify-center items-center w-full">
-                                  <div className='flex-1 text-right font-semibold text-sm md:text-base'>
-                                      {match.timeA}
-                                  </div>
-                                  <div className="flex items-center justify-center gap-3 md:gap-4 mx-4">
-                                      <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
-                                      <div className="flex flex-col items-center text-center">
-                                          <span className="text-lg md:text-xl font-bold">{`${match.placarA} - ${match.placarB}`}</span>
-                                          <span className="text-xs text-muted-foreground">
-                                              {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
-                                          </span>
+                  return (
+                    <AccordionItem value={match.id} key={match.id} className="border-0">
+                      <Card className="overflow-hidden">
+                       <AccordionTrigger className={cn("p-0 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
+                        <div className="flex justify-center items-center w-full p-4">
+                          <div className='flex-1 text-right font-semibold text-sm md:text-base'>
+                              {match.timeA}
+                          </div>
+                          <div className="flex items-center justify-center gap-3 md:gap-4 mx-4">
+                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
+                              <div className="flex flex-col items-center text-center">
+                                  <span className="text-lg md:text-xl font-bold">{`${match.placarA} - ${match.placarB}`}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                      {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
+                                  </span>
+                              </div>
+                              <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
+                          </div>
+                          <div className='flex-1 text-left font-semibold text-sm md:text-base'>
+                              {match.timeB}
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
+                           <div className="flex justify-between items-center w-full">
+                               <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
+                               <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
+                               <div className="w-1/3 text-right">
+                                   <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
+                                       {prediction.pontos} pts
+                                   </Badge>
+                               </div>
+                           </div>
+                        </div>
+                        <div className="bg-background/80">
+                          <div className="text-center py-2">
+                              <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
+                          </div>
+                          <ul className="text-sm">
+                              {prediction.outrosPalpites.map((p, i) => (
+                                  <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
+                                      <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
+                                      <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{p.palpite}</span>
+                                      <div className="w-1/3 text-right">
+                                          <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
+                                              {p.pontos} pts
+                                          </Badge>
                                       </div>
-                                      <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
-                                  </div>
-                                  <div className='flex-1 text-left font-semibold text-sm md:text-base'>
-                                      {match.timeB}
-                                  </div>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
-                                    <div className="flex justify-between items-center">
-                                       <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
-                                       <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
-                                       <div className="w-1/3 text-right">
-                                           <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
-                                               {prediction.pontos} pts
-                                           </Badge>
-                                       </div>
-                                   </div>
-                                </div>
-                                <div className="bg-background border-t">
-                                  <div className="text-center py-2">
-                                      <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
-                                  </div>
-                                  <ul className="text-sm">
-                                      {prediction.outrosPalpites.map((p, i) => (
-                                          <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
-                                              <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
-                                              <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{p.palpite}</span>
-                                              <div className="w-1/3 text-right">
-                                                  <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
-                                                      {p.pontos} pts
-                                                  </Badge>
-                                              </div>
-                                          </li>
-                                      ))}
-                                  </ul>
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          );
-                      })}
-                  </Accordion>
-              </CardContent>
-          </Card>
+                                  </li>
+                              ))}
+                          </ul>
+                        </div>
+                      </AccordionContent>
+                      </Card>
+                    </AccordionItem>
+                  );
+              })}
+          </Accordion>
         </section>
 
       </div>
