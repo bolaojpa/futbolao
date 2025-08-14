@@ -25,10 +25,15 @@ export function AppSidebar() {
 
   const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/leaderboard', label: 'Ranking', icon: Trophy },
     { href: '/dashboard/predictions', label: 'Palpites', icon: CalendarCheck },
+    { href: '/dashboard/leaderboard', label: 'Ranking', icon: Trophy },
     { href: '/dashboard/history', label: 'Histórico', icon: History },
   ];
+  
+  const bottomMenuItems = [
+      { href: '/dashboard/profile', label: 'Meu Perfil', icon: User },
+      { href: '#', label: 'Configurações', icon: Settings },
+  ]
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r border-sidebar-border">
@@ -70,17 +75,26 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-2">
          <SidebarMenu>
+            {bottomMenuItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                    <Link href={item.href}>
+                        <SidebarMenuButton
+                            isActive={pathname === item.href}
+                            tooltip={{ children: item.label, side: 'right' }}
+                        >
+                            <item.icon />
+                            <span>{item.label}</span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+            ))}
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip={{ children: "Configurações", side: 'right' }}>
-                    <Settings />
-                    <span>Configurações</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton tooltip={{ children: "Sair", side: 'right' }}>
-                    <LogOut />
-                    <span>Sair</span>
-                </SidebarMenuButton>
+                <Link href="/login">
+                    <SidebarMenuButton tooltip={{ children: "Sair", side: 'right' }}>
+                        <LogOut />
+                        <span>Sair</span>
+                    </SidebarMenuButton>
+                </Link>
             </SidebarMenuItem>
          </SidebarMenu>
       </SidebarFooter>
