@@ -141,8 +141,8 @@ export default function DashboardPage() {
                               </AccordionTrigger>
                               <AccordionContent className='p-0'>
                                 <div className={cn("p-4 space-y-4", getPredictionStatusClass(prediction.pontos))}>
-                                    <div className="bg-background/30 rounded-md p-4">
-                                        <h4 className="font-semibold mb-2 text-center">Seu Palpite</h4>
+                                    <div className="bg-background/30 rounded-md p-4 text-center">
+                                        <h4 className="font-semibold mb-2">Seu Palpite</h4>
                                         <div className="flex items-center justify-center gap-4">
                                             <span className="text-2xl font-bold">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                                             <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
@@ -152,10 +152,10 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                                  <div className="bg-background/5 border-t">
-                                     <div className="px-4 pt-4">
-                                         <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
+                                     <div className="text-center py-2">
+                                         <h4 className="font-semibold flex items-center justify-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
                                      </div>
-                                     <ul className="space-y-2 text-sm p-4">
+                                     <ul className="space-y-2 text-sm px-4 pb-4">
                                          {prediction.outrosPalpites.map((p, i) => (
                                              <li key={i} className={cn("flex justify-between items-center p-2 rounded-md", getPredictionStatusClass(p.pontos))}>
                                                  <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
