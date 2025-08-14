@@ -116,8 +116,8 @@ export default function DashboardPage() {
                   if (!prediction) return null;
 
                   return (
-                    <AccordionItem value={match.id} key={match.id} className="border-0">
-                      <Card className="overflow-hidden rounded-lg border">
+                    <AccordionItem value={match.id} key={match.id} className="border rounded-lg overflow-hidden">
+                      <Card>
                        <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
                         <div className="flex justify-center items-center w-full">
                           <div className='flex-1 text-right font-semibold text-sm md:text-base'>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                         <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
                            <div className="flex justify-between items-center w-full">
                                <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
-                               <span className="w-1/3 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
+                               <span className="w-1/3 text-center font-mono font-semibold text-base">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                                <div className="w-1/3 text-right">
                                    <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
                                        {prediction.pontos} pts
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                               {prediction.outrosPalpites.map((p, i) => (
                                   <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
                                       <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
-                                      <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{p.palpite}</span>
+                                      <span className="flex-1 text-center font-mono font-semibold text-base">{p.palpite}</span>
                                       <div className="w-1/3 text-right">
                                           <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
                                               {p.pontos} pts
