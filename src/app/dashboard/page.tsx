@@ -140,16 +140,16 @@ export default function DashboardPage() {
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className='p-0'>
-                                <div className={cn("bg-background/30 rounded-b-md flex items-center p-2", getPredictionStatusClass(prediction.pontos))}>
+                                <div className={cn("flex justify-between items-center p-2", getPredictionStatusClass(prediction.pontos))}>
                                     <h4 className="font-semibold w-1/3 text-left">Seu Palpite</h4>
-                                    <div className="flex-1 text-center font-mono text-base">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</div>
+                                    <span className="flex-1 text-center font-mono text-base">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                                       <div className="w-1/3 text-right">
                                         <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
                                             {prediction.pontos} pts
                                         </Badge>
                                     </div>
                                 </div>
-                                 <div className="bg-background/5 border-t">
+                                 <div className="bg-background/5">
                                      <div className="text-center py-3">
                                          <h4 className="font-semibold flex items-center justify-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
                                      </div>
