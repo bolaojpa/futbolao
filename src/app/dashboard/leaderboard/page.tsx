@@ -30,12 +30,12 @@ export default function LeaderboardPage() {
     return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
 
-  const getMedal = (rank: number) => {
-    if (rank === 1) return <Medal className="w-6 h-6 text-yellow-500" />;
-    if (rank === 2) return <Award className="w-6 h-6 text-slate-400" />;
-    if (rank === 3) return <Award className="w-6 h-6 text-amber-700" />;
-    if (rank === sortedUsers.length) return <Flashlight className="w-6 h-6 text-gray-400" />;
-    return <span className="text-sm font-medium">{rank}º</span>;
+  const getMedalIcon = (rank: number) => {
+    if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500" />;
+    if (rank === 2) return <Award className="w-5 h-5 text-slate-400" />;
+    if (rank === 3) return <Award className="w-5 h-5 text-amber-700" />;
+    if (rank === sortedUsers.length) return <Flashlight className="w-5 h-5 text-gray-400" />;
+    return null;
   };
   
   const shareText = encodeURIComponent(`Confira o ranking do FutBolão Pro! Estou em ${sortedUsers.findIndex(u => u.id === mockUser.id) + 1}º lugar!`);
@@ -102,22 +102,26 @@ export default function LeaderboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedUsers.map((user, index) => (
-                <TableRow key={user.id} className={cn(user.id === mockUser.id && "bg-blue-100/50 dark:bg-blue-900/20")}>
-                  <TableCell className="font-medium w-16">{getMedal(index + 1)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-9 h-9">
-                        <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
-                        <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{user.apelido}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
-                   <TableCell className="hidden md:table-cell text-right">{user.exatos}</TableCell>
-                </TableRow>
-              ))}
+              {sortedUsers.map((user, index) => {
+                const rank = index + 1;
+                return (
+                    <TableRow key={user.id} className={cn(user.id === mockUser.id && "bg-blue-100/50 dark:bg-blue-900/20")}>
+                      <TableCell className="font-medium w-16 text-center">{rank}º</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-9 h-9">
+                            <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                            <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{user.apelido}</span>
+                          {getMedalIcon(rank)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
+                       <TableCell className="hidden md:table-cell text-right">{user.exatos}</TableCell>
+                    </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
