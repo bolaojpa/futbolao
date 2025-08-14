@@ -28,41 +28,44 @@ export const mockChampionships = [
 
 export const mockMatches = {
   recent: [
-    { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5 },
-    { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0 },
-    { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 10 },
+    { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado' },
+    { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado' },
+    { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado' },
   ],
   upcoming: [
-    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', data: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), status: 'Ao Vivo' },
-    { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), status: 'Agendado' },
-    { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), status: 'Agendado' },
-    { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), status: 'Agendado' },
+    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', data: '2024-08-09T21:00:00Z', status: 'Ao Vivo' },
+    { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: '2024-08-10T19:00:00Z', status: 'Agendado' },
+    { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: '2024-08-11T20:00:00Z', status: 'Agendado' },
+    { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: '2024-08-12T23:00:00Z', status: 'Agendado' },
   ],
 };
 
 export const mockPredictions = [
   {
+    userId: 'user_1',
     matchId: 'match_1',
     palpiteUsuario: { placarA: 2, placarB: 1 },
-    pontos: 5,
+    pontos: 5, // Acertou o vencedor, mas não o placar (situação)
     outrosPalpites: [
       { apelido: 'Fernanda', palpite: '1-1' },
       { apelido: 'Lucas', palpite: '2-2' },
     ],
   },
   {
+    userId: 'user_1',
     matchId: 'match_2',
     palpiteUsuario: { placarA: 2, placarB: 0 },
-    pontos: 0,
+    pontos: 0, // Errou tudo
     outrosPalpites: [
       { apelido: 'Fernanda', palpite: '1-1' },
       { apelido: 'Lucas', palpite: '0-0' },
     ],
   },
   {
+    userId: 'user_1',
     matchId: 'match_3',
     palpiteUsuario: { placarA: 0, placarB: 1 },
-    pontos: 10,
+    pontos: 10, // Acertou em cheio
     outrosPalpites: [
       { apelido: 'Fernanda', palpite: '1-2' },
       { apelido: 'Lucas', palpite: '1-0' },
