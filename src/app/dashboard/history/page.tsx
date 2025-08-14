@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/accordion';
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
