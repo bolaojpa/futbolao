@@ -38,6 +38,12 @@ export default function DashboardPage() {
     if (pontos === 5) return 'bg-blue-100/80 dark:bg-blue-900/40 border-blue-500/50';   // Acerto de situação
     return 'bg-red-100/80 dark:bg-red-900/40 border-red-500/50';       // Erro
   }
+  
+  const getPointsBadgeVariant = (pontos: number): "default" | "secondary" | "destructive" => {
+    if (pontos === 10) return 'default';
+    if (pontos === 5) return 'secondary';
+    return 'destructive';
+  }
 
   return (
     <TooltipProvider>
@@ -128,31 +134,45 @@ export default function DashboardPage() {
                                       </div>
                                       <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
                                   </div>
-                                  <div className='flex-1 text-left'>
+                                  <div className='flex-1 text-left flex items-center gap-4'>
                                       <span className="font-semibold text-sm md:text-base">{match.timeB}</span>
+                                       <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn(prediction.pontos === 10 && 'bg-green-600 text-white')}>
+                                          {prediction.pontos} pts
+                                      </Badge>
                                   </div>
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent>
-                                  <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-b-md mx-4 mb-4">
+                                  <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-b-md mx-4 mb-4 space-y-4">
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           <div>
                                               <h4 className="font-semibold mb-2 text-center">Seu Palpite</h4>
                                               <div className={cn("flex items-center justify-center p-2 rounded-md", getPredictionStatusClass(prediction.pontos))}>
                                                   <span className="text-2xl font-bold">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
-                                                   <Badge variant={prediction.pontos > 0 ? (prediction.pontos >= 10 ? 'default' : 'secondary') : 'destructive'} className={cn('ml-4', prediction.pontos >= 10 ? 'bg-green-600 text-white' : '')}>
+                                                   <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('ml-4', prediction.pontos === 10 && 'bg-green-600 text-white')}>
                                                       {prediction.pontos} pts
                                                   </Badge>
                                               </div>
                                           </div>
                                           <div>
-                                              <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
-                                              <ul className="space-y-1 text-sm text-muted-foreground list-disc list-inside">
-                                                  {prediction.outrosPalpites.map((p, i) => (
-                                                      <li key={i}><strong>{p.apelido}:</strong> {p.palpite}</li>
-                                                  ))}
-                                              </ul>
+                                              <h4 className="font-semibold mb-2 text-center">Resultado Final</h4>
+                                              <div className="flex items-center justify-center p-2 rounded-md bg-background/50">
+                                                  <span className="text-2xl font-bold">{match.placarA} - {match.placarB}</span>
+                                              </div>
                                           </div>
+                                      </div>
+                                       <div>
+                                          <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
+                                          <ul className="space-y-2 text-sm">
+                                              {prediction.outrosPalpites.map((p, i) => (
+                                                  <li key={i} className={cn("flex justify-between items-center p-2 rounded-md", getPredictionStatusClass(p.pontos))}>
+                                                      <span><strong>{p.apelido}:</strong> {p.palpite}</span>
+                                                      <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn(p.pontos === 10 && 'bg-green-600 text-white')}>
+                                                          {p.pontos} pts
+                                                      </Badge>
+                                                  </li>
+                                              ))}
+                                          </ul>
                                       </div>
                                   </div>
                               </AccordionContent>

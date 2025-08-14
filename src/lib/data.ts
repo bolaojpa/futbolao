@@ -18,7 +18,8 @@ export const mockUsers = [
   { id: 'user_4', apelido: 'Juliana', pontos: 102, exatos: 7, tempoMedio: 3600, dataCadastro: '2023-03-01' },
   { id: 'user_5', apelido: 'Rafa', pontos: 99, exatos: 6, tempoMedio: 1200, dataCadastro: '2023-04-05' },
   { id: 'user_6', apelido: 'Beto', pontos: 95, exatos: 5, tempoMedio: 4800, dataCadastro: '2023-02-11' },
-  { id: 'user_7', apelido: 'Gabi', pontos: 118, exatos: 8, tempoMedio: 2100, dataCadastro: '2023-05-10' },
+  { id: 'user_7', apelido: 'Gabi', pontos: 118, exatos: 8, tempoMedio: 2100, dataCadastro: '2023-5-10' },
+  { id: 'user_8', apelido: 'Lanterna', pontos: 23, exatos: 1, tempoMedio: 9999, dataCadastro: '2023-06-01' },
 ];
 
 export const mockChampionships = [
@@ -26,11 +27,15 @@ export const mockChampionships = [
   { id: 'champ_2', nome: 'Copa Libertadores 2024', dataInicio: '2024-02-06', dataFim: '2024-11-30' },
 ];
 
+const MOCK_MATCH_RECENT_1 = { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5 };
+const MOCK_MATCH_RECENT_2 = { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0 };
+const MOCK_MATCH_RECENT_3 = { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 10 };
+
 export const mockMatches = {
   recent: [
-    { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado' },
-    { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado' },
-    { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado' },
+    MOCK_MATCH_RECENT_1,
+    MOCK_MATCH_RECENT_2,
+    MOCK_MATCH_RECENT_3,
   ],
   upcoming: [
     { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', data: '2024-08-09T21:00:00Z', status: 'Ao Vivo' },
@@ -45,30 +50,30 @@ export const mockPredictions = [
     userId: 'user_1',
     matchId: 'match_1',
     palpiteUsuario: { placarA: 2, placarB: 1 },
-    pontos: 5, // Acertou o vencedor, mas não o placar (situação)
+    pontos: 5,
     outrosPalpites: [
-      { apelido: 'Fernanda', palpite: '1-1' },
-      { apelido: 'Lucas', palpite: '2-2' },
+      { apelido: 'Fernanda', palpite: '1-1', pontos: 0 },
+      { apelido: 'Lucas', palpite: '2-2', pontos: 10 },
     ],
   },
   {
     userId: 'user_1',
     matchId: 'match_2',
     palpiteUsuario: { placarA: 2, placarB: 0 },
-    pontos: 0, // Errou tudo
+    pontos: 0,
     outrosPalpites: [
-      { apelido: 'Fernanda', palpite: '1-1' },
-      { apelido: 'Lucas', palpite: '0-0' },
+      { apelido: 'Fernanda', palpite: '1-1', pontos: 10 },
+      { apelido: 'Lucas', palpite: '0-0', pontos: 5 },
     ],
   },
   {
     userId: 'user_1',
     matchId: 'match_3',
     palpiteUsuario: { placarA: 0, placarB: 1 },
-    pontos: 10, // Acertou em cheio
+    pontos: 10,
     outrosPalpites: [
-      { apelido: 'Fernanda', palpite: '1-2' },
-      { apelido: 'Lucas', palpite: '1-0' },
+      { apelido: 'Fernanda', palpite: '1-2', pontos: 5 },
+      { apelido: 'Lucas', palpite: '1-0', pontos: 0 },
     ],
   },
 ];
