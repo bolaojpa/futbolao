@@ -26,6 +26,17 @@ export const mockChampionships = [
   { id: 'champ_2', nome: 'Copa Libertadores 2024', dataInicio: '2024-02-06', dataFim: '2024-11-30' },
 ];
 
+// Helper para criar datas futuras consistentes
+const createFutureDate = (days: number, hours: number = 0) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    date.setHours(date.getHours() + hours);
+    date.setMinutes(0);
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    return date.toISOString();
+}
+
 export const mockMatches = {
   recent: [
     { id: 'match_1', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5 },
@@ -33,9 +44,10 @@ export const mockMatches = {
     { id: 'match_3', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 10 },
   ],
   upcoming: [
-    { id: 'match_4', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), status: 'Agendado' },
-    { id: 'match_5', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(), status: 'Agendado' },
-    { id: 'match_6', timeA: 'Santos', timeB: 'Fluminense', data: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(), status: 'Agendado' }, // Less than 2 hours
+    // Usando datas estáticas para evitar hydration error
+    { id: 'match_4', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: '2024-08-10T19:00:00Z', status: 'Agendado' },
+    { id: 'match_5', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: '2024-08-11T16:00:00Z', status: 'Agendado' },
+    { id: 'match_6', timeA: 'Santos', timeB: 'Fluminense', data: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString(), status: 'Agendado' }, // Partida que irá bloquear em breve
   ],
 };
 

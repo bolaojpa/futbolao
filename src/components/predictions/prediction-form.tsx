@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,26 @@ export function PredictionForm() {
     const { toast } = useToast();
     const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
+    const [lockedMatches, setLockedMatches] = useState<Record<string, boolean>>({});
+    
+    useEffect(() => {
+        const checkLockedMatches = () => {
+            const now = new Date();
+            const locked: Record<string, boolean> = {};
+            mockMatches.upcoming.forEach(match => {
+                const matchDate = new Date(match.data);
+                if (differenceInHours(matchDate, now) < 2) {
+                    locked[match.id] = true;
+                }
+            });
+            setLockedMatches(locked);
+        };
+
+        checkLockedMatches();
+        const interval = setInterval(checkLockedMatches, 60000); // Verifica a cada minuto
+
+        return () => clearInterval(interval);
+    }, []);
 
     const handlePredictionSubmit = (matchId: string) => {
         toast({
@@ -61,7 +81,7 @@ export function PredictionForm() {
         <div className="space-y-6">
             {mockMatches.upcoming.map((match) => {
                 const matchDate = new Date(match.data);
-                const isLocked = differenceInHours(matchDate, new Date()) < 2;
+                const isLocked = lockedMatches[match.id] || false;
 
                 return (
                     <Card key={match.id} className={isLocked ? 'opacity-70' : ''}>
