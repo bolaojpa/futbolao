@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -12,7 +15,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { mockUser, mockMatches, mockPredictions } from '@/lib/data';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, Calendar, History, Zap } from 'lucide-react';
 import Link from 'next/link';
@@ -20,12 +23,20 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import React, { useEffect, useState } from 'react';
 
 export default function DashboardPage() {
   const { apelido } = mockUser;
   
   const liveMatches = mockMatches.upcoming.filter(match => match.status === 'Ao Vivo');
   const upcomingMatches = mockMatches.upcoming.filter(match => match.status !== 'Ao Vivo').sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+  
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
     if (status === 'Ao Vivo') return 'destructive';
@@ -44,6 +55,22 @@ export default function DashboardPage() {
     if (pontos === 5) return 'secondary';
     return 'destructive';
   }
+  
+  const formatUpcomingMatchDate = (matchDateString: string) => {
+    if (!isClient) {
+      return 'Carregando...'; // Don't render date on server
+    }
+    const matchDate = parseISO(matchDateString);
+    const now = new Date();
+
+    if (isToday(matchDate)) {
+      if (differenceInHours(matchDate, now) < 2 && differenceInHours(matchDate, now) >= 0) {
+        return `Em Breve às ${format(matchDate, "HH:mm", { locale: ptBR })}`;
+      }
+      return `Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`;
+    }
+    return format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR });
+  };
 
   return (
     <TooltipProvider>
@@ -77,9 +104,9 @@ export default function DashboardPage() {
                                    {match.timeA}
                                </div>
                                <div className="flex items-center justify-center gap-3 md:gap-4">
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                    <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                </div>
                                <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                    {match.timeB}
@@ -163,7 +190,7 @@ export default function DashboardPage() {
                   <CardContent className="text-center bg-muted/50 py-2">
                      <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
                         <Calendar className="w-3 h-3"/>
-                        {format(parseISO(match.data), "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}
+                        {formatUpcomingMatchDate(match.data)}
                       </p>
                   </CardContent>
                 </Card>
@@ -197,9 +224,9 @@ export default function DashboardPage() {
                                    {match.timeA}
                                </div>
                                <div className="flex items-center justify-center gap-3 md:gap-4">
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                    <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                </div>
                                <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                    {match.timeB}
