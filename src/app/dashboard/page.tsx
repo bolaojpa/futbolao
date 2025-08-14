@@ -118,8 +118,8 @@ export default function DashboardPage() {
                           if (!prediction) return null;
 
                           return (
-                            <AccordionItem value={match.id} key={match.id} className='rounded-lg mb-2 overflow-hidden border'>
-                              <AccordionTrigger className={cn("p-4 hover:no-underline rounded-t-lg", getPredictionStatusClass(prediction.pontos))}>
+                            <AccordionItem value={match.id} key={match.id} className='rounded-lg mb-2 overflow-hidden border border-border/50'>
+                               <AccordionTrigger className={cn("p-4 hover:no-underline rounded-t-lg", getPredictionStatusClass(prediction.pontos))}>
                                 <div className="flex justify-between items-center w-full">
                                   <div className='flex-1 text-right font-semibold text-sm md:text-base'>
                                       {match.timeA}
@@ -140,33 +140,35 @@ export default function DashboardPage() {
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent className='p-0'>
-                                <div className={cn("flex justify-between items-center p-2", getPredictionStatusClass(prediction.pontos))}>
-                                    <h4 className="font-semibold w-1/3 text-left">Seu Palpite</h4>
-                                    <span className="flex-1 text-center font-mono text-base">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
+                                <div className={cn("px-2 py-1", getPredictionStatusClass(prediction.pontos))}>
+                                  <div className="flex justify-between items-center">
+                                      <h4 className="font-semibold w-1/3 text-left">Seu Palpite</h4>
+                                      <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                                       <div className="w-1/3 text-right">
                                         <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
                                             {prediction.pontos} pts
                                         </Badge>
-                                    </div>
+                                      </div>
+                                  </div>
                                 </div>
-                                 <div className="bg-background/5">
-                                     <div className="text-center py-3">
-                                         <h4 className="font-semibold flex items-center justify-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
-                                     </div>
-                                     <ul className="text-sm">
-                                         {prediction.outrosPalpites.map((p, i) => (
-                                             <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
-                                                 <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
-                                                 <span className="flex-1 text-center font-mono text-base">{p.palpite}</span>
-                                                  <div className="w-1/3 text-right">
-                                                      <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
-                                                          {p.pontos} pts
-                                                      </Badge>
-                                                  </div>
-                                             </li>
-                                         ))}
-                                     </ul>
-                                 </div>
+                                <div className="bg-background/5">
+                                  <div className="text-center py-2">
+                                      <h4 className="font-semibold flex items-center justify-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
+                                  </div>
+                                  <ul className="text-sm">
+                                      {prediction.outrosPalpites.map((p, i) => (
+                                          <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
+                                              <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
+                                              <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{p.palpite}</span>
+                                              <div className="w-1/3 text-right">
+                                                  <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
+                                                      {p.pontos} pts
+                                                  </Badge>
+                                              </div>
+                                          </li>
+                                      ))}
+                                  </ul>
+                                </div>
                               </AccordionContent>
                             </AccordionItem>
                           );
