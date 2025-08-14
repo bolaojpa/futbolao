@@ -62,7 +62,9 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full bg-primary hover:bg-primary/90">Entrar</Button>
+          <Button asChild className="w-full bg-primary hover:bg-primary/90">
+            <Link href="/dashboard">Entrar</Link>
+          </Button>
           <div className="text-center text-sm">
             Não tem uma conta?{' '}
             <Link href="/signup" className="font-semibold text-primary hover:underline">

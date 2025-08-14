@@ -70,7 +70,9 @@ export default function SignupPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">Criar Conta</Button>
+            <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Link href="/dashboard">Criar Conta</Link>
+            </Button>
           <div className="text-center text-sm">
             Já tem uma conta?{' '}
             <Link href="/login" className="font-semibold text-primary hover:underline">
