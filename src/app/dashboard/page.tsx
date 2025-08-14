@@ -119,8 +119,8 @@ export default function DashboardPage() {
 
                           return (
                             <AccordionItem value={match.id} key={match.id} className='mb-2 overflow-hidden border'>
-                               <AccordionTrigger className={cn("p-4 hover:no-underline rounded-t-lg items-center", getPredictionStatusClass(prediction.pontos))}>
-                                <div className="flex justify-between items-center w-full">
+                               <AccordionTrigger className={cn("p-4 hover:no-underline rounded-t-lg", getPredictionStatusClass(prediction.pontos))}>
+                                <div className="flex justify-center items-center w-full">
                                   <div className='flex-1 text-right font-semibold text-sm md:text-base'>
                                       {match.timeA}
                                   </div>
@@ -140,14 +140,16 @@ export default function DashboardPage() {
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent>
-                                <div className={cn("flex justify-between items-center p-2", getPredictionStatusClass(prediction.pontos))}>
-                                    <h4 className="font-bold w-1/3 text-left">Seu Palpite:</h4>
-                                    <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
-                                    <div className="w-1/3 text-right">
-                                      <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
-                                          {prediction.pontos} pts
-                                      </Badge>
-                                    </div>
+                                <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
+                                    <div className="flex justify-between items-center">
+                                       <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
+                                        <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
+                                       <div className="w-1/3 text-right">
+                                           <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
+                                               {prediction.pontos} pts
+                                           </Badge>
+                                       </div>
+                                   </div>
                                 </div>
                                 <div className="bg-background border-t">
                                   <div className="text-center py-2">
@@ -155,7 +157,7 @@ export default function DashboardPage() {
                                   </div>
                                   <ul className="text-sm">
                                       {prediction.outrosPalpites.map((p, i) => (
-                                          <li key={i} className={cn("flex justify-between items-center p-2 mx-1 rounded-md", getPredictionStatusClass(p.pontos))}>
+                                          <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
                                               <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
                                               <span className="flex-1 text-center font-mono font-semibold text-base tracking-widest">{p.palpite}</span>
                                               <div className="w-1/3 text-right">
