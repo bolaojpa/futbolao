@@ -82,7 +82,7 @@ export default function HistoryPage() {
                         </div>
                     </div>
                      <div className="bg-background/5 border-t">
-                         <div className="text-center py-1">
+                         <div className="text-center py-2">
                              <h4 className="font-semibold flex items-center justify-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
                          </div>
                          <ul className="text-sm">
