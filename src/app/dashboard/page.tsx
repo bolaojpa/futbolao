@@ -15,7 +15,7 @@ import {
 import { mockUser, mockMatches, mockPredictions } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, Radio, History, Flag } from 'lucide-react';
+import { Users, Calendar, Radio, History } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -112,31 +112,33 @@ export default function DashboardPage() {
                           if (!prediction) return null;
 
                           return (
-                              <AccordionItem value={match.id} key={match.id} className={cn('border-b-0 rounded-lg mb-2 border', getPredictionStatusClass(prediction.pontos))}>
+                            <AccordionItem value={match.id} key={match.id} className={cn('border-b-0 rounded-lg mb-2 border', getPredictionStatusClass(prediction.pontos))}>
                               <AccordionTrigger className="p-4 hover:no-underline rounded-lg">
                                 <div className="flex justify-between items-center w-full">
-                                    <div className='flex items-center gap-3 md:gap-4'>
-                                        <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
-                                        <span className="font-semibold text-sm md:text-base">{match.timeA}</span>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-lg md:text-xl font-bold">{`${match.placarA} - ${match.placarB}`}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
-                                        </span>
-                                    </div>
-                                    <div className='flex items-center gap-3 md:gap-4'>
-                                        <span className="font-semibold text-sm md:text-base">{match.timeB}</span>
-                                        <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
-                                    </div>
+                                  <div className='flex-1 text-right'>
+                                      <span className="font-semibold text-sm md:text-base">{match.timeA}</span>
+                                  </div>
+                                  <div className="flex items-center justify-center gap-3 md:gap-4 mx-4">
+                                      <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
+                                      <div className="flex flex-col items-center text-center">
+                                          <span className="text-lg md:text-xl font-bold">{`${match.placarA} - ${match.placarB}`}</span>
+                                          <span className="text-xs text-muted-foreground">
+                                              {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
+                                          </span>
+                                      </div>
+                                      <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
+                                  </div>
+                                  <div className='flex-1 text-left'>
+                                      <span className="font-semibold text-sm md:text-base">{match.timeB}</span>
+                                  </div>
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent>
                                   <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-b-md mx-4 mb-4">
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           <div>
-                                              <h4 className="font-semibold mb-2">Seu Palpite</h4>
-                                              <div className="flex items-center justify-center p-2 rounded-md bg-background">
+                                              <h4 className="font-semibold mb-2 text-center">Seu Palpite</h4>
+                                              <div className={cn("flex items-center justify-center p-2 rounded-md", getPredictionStatusClass(prediction.pontos))}>
                                                   <span className="text-2xl font-bold">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                                                    <Badge variant={prediction.pontos > 0 ? (prediction.pontos >= 10 ? 'default' : 'secondary') : 'destructive'} className={cn('ml-4', prediction.pontos >= 10 ? 'bg-green-600 text-white' : '')}>
                                                       {prediction.pontos} pts
@@ -154,7 +156,7 @@ export default function DashboardPage() {
                                       </div>
                                   </div>
                               </AccordionContent>
-                              </AccordionItem>
+                            </AccordionItem>
                           );
                       })}
                   </Accordion>
