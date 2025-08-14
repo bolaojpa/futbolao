@@ -20,9 +20,9 @@ export default function HistoryPage() {
   const finishedMatches = [...mockMatches.recent].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
 
   const getPredictionStatusClass = (pontos: number) => {
-    if (pontos === 10) return 'bg-green-100/80 dark:bg-green-900/40 border-green-500/50'; // Acerto exato
-    if (pontos === 5) return 'bg-blue-100/80 dark:bg-blue-900/40 border-blue-500/50';   // Acerto de situação
-    return 'bg-red-100/80 dark:bg-red-900/40 border-red-500/50';       // Erro
+    if (pontos === 10) return 'bg-green-100/80 dark:bg-green-900/40'; // Acerto exato
+    if (pontos === 5) return 'bg-blue-100/80 dark:bg-blue-900/40';   // Acerto de situação
+    return 'bg-red-100/80 dark:bg-red-900/40';       // Erro
   }
   
   const getPointsBadgeVariant = (pontos: number): "default" | "secondary" | "destructive" => {
@@ -48,11 +48,11 @@ export default function HistoryPage() {
               if (!prediction) return null;
 
               return (
-                <AccordionItem value={match.id} key={match.id} className={cn('border-b-0 rounded-lg mb-2 border', getPredictionStatusClass(prediction.pontos))}>
-                  <AccordionTrigger className="p-4 hover:no-underline rounded-lg">
+                <AccordionItem value={match.id} key={match.id} className={cn('border-b-0 rounded-lg mb-2', getPredictionStatusClass(prediction.pontos))}>
+                  <AccordionTrigger className="p-4 hover:no-underline rounded-lg [&>svg]:ml-auto">
                     <div className="flex justify-between items-center w-full">
-                       <div className='flex-1 text-right'>
-                          <span className="font-semibold text-sm md:text-base">{match.timeA}</span>
+                       <div className='flex-1 text-right font-semibold text-sm md:text-base'>
+                          {match.timeA}
                       </div>
                       <div className="flex items-center justify-center gap-3 md:gap-4 mx-4">
                           <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeA}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
@@ -64,34 +64,24 @@ export default function HistoryPage() {
                           </div>
                           <Image src="https://placehold.co/64x64.png" alt={`Bandeira ${match.timeB}`} width={24} height={24} className="rounded-full border" data-ai-hint="team logo" />
                       </div>
-                      <div className='flex-1 text-left flex items-center gap-4'>
-                          <span className="font-semibold text-sm md:text-base">{match.timeB}</span>
-                          <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn(prediction.pontos === 10 && 'bg-green-600 text-white')}>
-                            {prediction.pontos} pts
-                          </Badge>
+                      <div className='flex-1 text-left font-semibold text-sm md:text-base'>
+                         {match.timeB}
                       </div>
                     </div>
+                     <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('ml-4', prediction.pontos === 10 && 'bg-green-600 text-white')}>
+                        {prediction.pontos} pts
+                    </Badge>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-b-md mx-4 mb-4 space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="md:col-span-1">
-                                <h4 className="font-semibold mb-2 text-center">Seu Palpite</h4>
-                                <div className={cn("flex items-center justify-center p-2 rounded-md", getPredictionStatusClass(prediction.pontos))}>
-                                    <span className="text-2xl font-bold">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
-                                     <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('ml-4', prediction.pontos === 10 && 'bg-green-600 text-white')}>
-                                        {prediction.pontos} pts
-                                    </Badge>
-                                </div>
-                            </div>
-                             <div className="md:col-span-1">
-                                <h4 className="font-semibold mb-2 text-center">Resultado Final</h4>
-                                <div className="flex items-center justify-center p-2 rounded-md bg-background/50">
-                                    <span className="text-2xl font-bold">{match.placarA} - {match.placarB}</span>
-                                </div>
+                    <div className="px-4 pb-4 space-y-4">
+                        <div className="p-4 bg-background/30 rounded-md">
+                            <h4 className="font-semibold mb-2 text-center">Seu Palpite</h4>
+                            <div className="flex items-center justify-center">
+                                <span className="text-2xl font-bold">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
                             </div>
                         </div>
-                        <div>
+
+                        <div className="p-4 bg-background/30 rounded-md">
                              <h4 className="font-semibold mb-2 flex items-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
                              <ul className="space-y-2 text-sm">
                                 {prediction.outrosPalpites.map((p, i) => (
