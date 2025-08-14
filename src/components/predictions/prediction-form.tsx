@@ -11,6 +11,7 @@ import { Lock, BrainCircuit, Loader2, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 export function PredictionForm() {
     const { toast } = useToast();
