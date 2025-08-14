@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mockUsers, mockUser } from '@/lib/data';
-import { Medal, Award } from 'lucide-react';
+import { Medal, Award, Torch } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ export default function LeaderboardPage() {
     if (rank === 1) return <Medal className="w-6 h-6 text-yellow-500" />;
     if (rank === 2) return <Award className="w-6 h-6 text-slate-400" />;
     if (rank === 3) return <Award className="w-6 h-6 text-amber-700" />;
+    if (rank === sortedUsers.length) return <Torch className="w-6 h-6 text-orange-500" />;
     return <span className="text-sm font-medium">{rank}º</span>;
   };
   
