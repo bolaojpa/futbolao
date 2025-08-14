@@ -85,9 +85,9 @@ export default function HistoryPage() {
                          <div className="text-center py-1">
                              <h4 className="font-semibold flex items-center justify-center gap-2"><Users className="w-4 h-4" /> Outros Palpites</h4>
                          </div>
-                         <ul className="space-y-1 text-sm px-1 pb-1">
+                         <ul className="text-sm">
                             {prediction.outrosPalpites.map((p, i) => (
-                                <li key={i} className={cn("flex justify-between items-center p-2 rounded-md", getPredictionStatusClass(p.pontos))}>
+                                <li key={i} className={cn("flex justify-between items-center p-2", getPredictionStatusClass(p.pontos))}>
                                     <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
                                     <span className="flex-1 text-center font-mono text-base">{p.palpite}</span>
                                     <div className="w-1/3 text-right">
