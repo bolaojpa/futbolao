@@ -48,7 +48,7 @@ export default function HistoryPage() {
               if (!prediction) return null;
 
               return (
-                <AccordionItem value={match.id} key={match.id} className='border-b-0 mb-2 overflow-hidden rounded-lg'>
+                <AccordionItem value={match.id} key={match.id} className='border rounded-lg mb-2 overflow-hidden'>
                   <AccordionTrigger className={cn("p-4 hover:no-underline rounded-t-lg", getPredictionStatusClass(prediction.pontos))}>
                     <div className="flex justify-between items-center w-full">
                        <div className='flex-1 text-right font-semibold text-sm md:text-base'>
@@ -68,16 +68,16 @@ export default function HistoryPage() {
                          {match.timeB}
                       </div>
                     </div>
-                     <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('ml-4', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
-                        {prediction.pontos} pts
-                    </Badge>
                   </AccordionTrigger>
                   <AccordionContent className='p-0'>
                     <div className={cn("p-4 space-y-4", getPredictionStatusClass(prediction.pontos))}>
                         <div className="bg-background/30 rounded-md p-4">
                             <h4 className="font-semibold mb-2 text-center">Seu Palpite</h4>
-                            <div className="flex items-center justify-center">
+                            <div className="flex items-center justify-center gap-4">
                                 <span className="text-2xl font-bold">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</span>
+                                <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
+                                    {prediction.pontos} pts
+                                </Badge>
                             </div>
                         </div>
                     </div>
@@ -87,8 +87,9 @@ export default function HistoryPage() {
                              <ul className="space-y-2 text-sm">
                                 {prediction.outrosPalpites.map((p, i) => (
                                     <li key={i} className={cn("flex justify-between items-center p-2 rounded-md", getPredictionStatusClass(p.pontos))}>
-                                        <span><strong>{p.apelido}:</strong> {p.palpite}</span>
-                                        <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn(p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
+                                        <span className="font-bold">{p.apelido}:</span>
+                                        <span className="flex-1 text-center font-mono text-base">{p.palpite}</span>
+                                        <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
                                             {p.pontos} pts
                                         </Badge>
                                     </li>
