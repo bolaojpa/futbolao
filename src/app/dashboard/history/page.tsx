@@ -70,7 +70,7 @@ export default function HistoryPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className='p-0'>
-                    <div className={cn("p-2", getPredictionStatusClass(prediction.pontos))}>
+                    <div className={cn("px-2 py-1", getPredictionStatusClass(prediction.pontos))}>
                         <div className="bg-background/30 rounded-md p-2 flex items-center">
                             <h4 className="font-semibold w-1/3 text-left">Seu Palpite</h4>
                             <div className="flex-1 text-center font-mono text-base">{prediction.palpiteUsuario.placarA} - {prediction.palpiteUsuario.placarB}</div>
