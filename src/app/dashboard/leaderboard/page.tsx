@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mockUsers, mockUser } from '@/lib/data';
-import { Medal, Award, Star } from 'lucide-react';
+import { Medal, Award } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ export default function LeaderboardPage() {
   const getMedal = (rank: number) => {
     if (rank === 1) return <Medal className="w-6 h-6 text-yellow-500" />;
     if (rank === 2) return <Award className="w-6 h-6 text-slate-400" />;
-    if (rank === 3) return <Star className="w-6 h-6 text-amber-700" />;
+    if (rank === 3) return <Award className="w-6 h-6 text-amber-700" />;
     return <span className="text-sm font-medium">{rank}º</span>;
   };
   
@@ -82,7 +82,7 @@ export default function LeaderboardPage() {
                     <div className="flex justify-center text-3xl">
                         {index === 0 && <Medal className="w-10 h-10 text-yellow-500" />}
                         {index === 1 && <Award className="w-10 h-10 text-slate-400" />}
-                        {index === 2 && <Star className="w-10 h-10 text-amber-700" />}
+                        {index === 2 && <Award className="w-10 h-10 text-amber-700" />}
                     </div>
                 </CardContent>
             </Card>
