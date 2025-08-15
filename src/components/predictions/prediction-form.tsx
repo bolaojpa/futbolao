@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { mockMatches, mockPredictions, mockUser } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, Minus, Plus } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -20,19 +20,21 @@ const NumberInput = ({ value, onChange }: { value: number; onChange: (value: num
     const decrement = () => onChange(Math.max(0, value - 1));
 
     return (
-        <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={decrement}>
-                <Minus className="h-4 w-4" />
-            </Button>
+        <div className="relative w-20">
             <Input
                 type="text"
                 readOnly
                 value={value}
-                className="w-12 h-10 text-center text-lg font-bold bg-muted border-0"
+                className="w-full h-12 text-center text-2xl font-bold bg-muted border-0 pr-6"
             />
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={increment}>
-                <Plus className="h-4 w-4" />
-            </Button>
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center h-full">
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={increment}>
+                    <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={decrement}>
+                    <ChevronDown className="h-4 w-4" />
+                </Button>
+            </div>
         </div>
     );
 };
