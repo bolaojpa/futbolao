@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -6,6 +7,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -14,10 +16,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { mockUser, mockMatches, mockPredictions } from '@/lib/data';
+import { mockUser, mockMatches, mockPredictions, mockUsers } from '@/lib/data';
 import { format, parseISO, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, History, Zap, AlarmClock } from 'lucide-react';
+import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -25,6 +27,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import React, { useEffect, useState } from 'react';
 import { Countdown } from '@/components/shared/countdown';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function DashboardPage() {
   const { apelido } = mockUser;
@@ -37,6 +40,14 @@ export default function DashboardPage() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const sortedUsers = [...mockUsers].sort((a, b) => {
+    if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+    if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+    if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - b.tempoMedio;
+    return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
+  });
+  const leader = sortedUsers[0];
 
 
   const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
@@ -98,6 +109,32 @@ export default function DashboardPage() {
           <p className="text-muted-foreground">Boa sorte nos seus próximos palpites.</p>
         </div>
 
+        <section>
+             <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
+                 <CardHeader className="flex flex-row items-center gap-4">
+                     <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
+                        <Avatar className="w-full h-full border-4 border-background">
+                            <AvatarImage src={`https://placehold.co/100x100.png?text=${leader.apelido.charAt(0)}`} alt={leader.apelido} />
+                            <AvatarFallback>{leader.apelido.substring(0,2)}</AvatarFallback>
+                        </Avatar>
+                    </div>
+                    <div className="flex-1">
+                        <CardDescription className="flex items-center gap-2"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
+                        <CardTitle className="text-2xl font-headline text-primary">{leader.apelido}</CardTitle>
+                        <p className="font-bold text-lg">{leader.pontos} pts</p>
+                    </div>
+                    <Button asChild variant="ghost" size="sm">
+                        <Link href="/dashboard/leaderboard">
+                            Ver Ranking
+                        </Link>
+                    </Button>
+                 </CardHeader>
+                 <div className="absolute -bottom-4 -right-4">
+                    <Medal className="w-24 h-24 text-yellow-500/20" strokeWidth={1} />
+                 </div>
+            </Card>
+        </section>
+
         {liveMatches.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
@@ -118,15 +155,15 @@ export default function DashboardPage() {
                         <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
                           <div className="flex flex-col items-center justify-center w-full">
                              <div className="flex items-center justify-center w-full">
-                                 <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
+                                 <div className='hidden md:block flex-shrink-0 text-right font-semibold text-sm md:text-base pr-2'>
                                     {match.timeA}
                                 </div>
                                 <div className="flex items-center justify-center gap-3 md:gap-4">
-                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                     <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                 </div>
-                                <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
+                                <div className='hidden md:block flex-shrink-0 text-left font-semibold text-sm md:text-base pl-2'>
                                    {match.timeB}
                                 </div>
                              </div>
@@ -249,15 +286,15 @@ export default function DashboardPage() {
                          <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
                           <div className="flex flex-col items-center justify-center w-full">
                              <div className="flex items-center justify-center w-full">
-                                 <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
+                                 <div className='hidden md:block flex-shrink-0 text-right font-semibold text-sm md:text-base pr-2'>
                                     {match.timeA}
                                 </div>
                                 <div className="flex items-center justify-center gap-3 md:gap-4">
-                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                     <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                 </div>
-                                <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
+                                <div className='hidden md:block flex-shrink-0 text-left font-semibold text-sm md:text-base pl-2'>
                                    {match.timeB}
                                 </div>
                              </div>
