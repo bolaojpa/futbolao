@@ -5,15 +5,17 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { mockMatches, mockPredictions, mockUser } from '@/lib/data';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInHours, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { Countdown } from '@/components/shared/countdown';
 
 const NumberInput = ({ value, onChange }: { value: number; onChange: (value: number) => void; }) => {
     const increment = () => onChange(value + 1);
@@ -54,7 +56,7 @@ export function PredictionForm() {
         const initialScores: Record<string, { placarA: number; placarB: number }> = {};
 
         mockPredictions.forEach(p => {
-            if (p.userId === mockUser.id) {
+            if (p.userId === mockUser.id && mockMatches.upcoming.some(m => m.id === p.matchId)) {
                  initialUpdates[p.matchId] = new Date(); 
                  initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
             }
@@ -74,7 +76,7 @@ export function PredictionForm() {
     };
 
     const handlePredictionSubmit = (matchId: string) => {
-        const isEditing = mockPredictions.some(p => p.matchId === matchId && p.userId === mockUser.id);
+        const isEditing = !!lastUpdated[matchId];
         
         toast({
             title: `Palpite ${isEditing ? 'Alterado' : 'Enviado'}!`,
@@ -126,6 +128,39 @@ export function PredictionForm() {
     
     const openMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado');
 
+    const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
+        if (!isClient) {
+          return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>Carregando...</div>;
+        }
+        const matchDate = parseISO(matchDateString);
+        const now = new Date();
+        const hoursDiff = differenceInHours(matchDate, now);
+    
+        if (hoursDiff < 1) {
+          return (
+             <div className="text-xs font-semibold text-accent flex items-center justify-center gap-2">
+               <AlarmClock className="w-4 h-4"/>
+               <Countdown targetDate={matchDateString} />
+            </div>
+          )
+        }
+    
+        if (hoursDiff < 2) {
+          return (
+            <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+              <AlarmClock className="w-3 h-3"/>
+              {`Em breve às ${format(matchDate, "HH:mm", { locale: ptBR })}`}
+            </div>
+          );
+        }
+        
+        if (isToday(matchDate)) {
+          return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
+        }
+    
+        return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
+      };
+
     if (!isClient) {
         return <div className="space-y-6">
             {[1, 2, 3].map(i => (
@@ -134,7 +169,7 @@ export function PredictionForm() {
                         <CardTitle>Carregando Partidas...</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+                        <div className="h-24 bg-muted rounded-md animate-pulse"></div>
                     </CardContent>
                 </Card>
             ))}
@@ -156,12 +191,12 @@ export function PredictionForm() {
         <TooltipProvider>
             <div className="space-y-6">
                 {openMatches.map((match) => {
-                    const matchDate = parseISO(match.data);
                     const isEditing = !!lastUpdated[match.id];
                     const currentScore = scores[match.id] || { placarA: 0, placarB: 0 };
+                    const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
 
                     return (
-                        <Card key={match.id}>
+                        <Card key={match.id} className={cn(needsAttention && "border-accent animate-pulse")}>
                              <CardHeader className='items-center text-center'>
                                 <CardTitle className="w-full">
                                     <div className="flex justify-center items-center gap-4 text-xl md:text-2xl">
@@ -187,7 +222,7 @@ export function PredictionForm() {
                                     </div>
                                 </CardTitle>
                                 <CardDescription>
-                                    {format(matchDate, "eeee, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                                    {match.campeonato}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -206,32 +241,37 @@ export function PredictionForm() {
                                     </Alert>
                                 )}
                             </CardContent>
-                             <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                                <div>
-                                    {lastUpdated[match.id] && (
-                                        <p className="text-xs text-muted-foreground">
-                                            {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
-                                        </p>
-                                    )}
+                             <CardFooter className="flex-col gap-4">
+                                <div className='w-full bg-muted/50 py-2 rounded-md'>
+                                    <UpcomingMatchDate matchDateString={match.data} />
                                 </div>
-                                <div className="flex gap-2">
-                                    <Button 
-                                        variant="outline" 
-                                        onClick={() => handleAiSuggestion(match.id)} 
-                                        disabled={loadingAi[match.id]}
-                                        className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                    >
-                                        {loadingAi[match.id] ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <BrainCircuit className="mr-2 h-4 w-4" />
+                                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
+                                    <div>
+                                        {lastUpdated[match.id] && (
+                                            <p className="text-xs text-muted-foreground">
+                                                {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                            </p>
                                         )}
-                                        Consultar IA
-                                    </Button>
-                                    <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                                        <Save className="mr-2 h-4 w-4" />
-                                        {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
-                                    </Button>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={() => handleAiSuggestion(match.id)} 
+                                            disabled={loadingAi[match.id]}
+                                            className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                        >
+                                            {loadingAi[match.id] ? (
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <BrainCircuit className="mr-2 h-4 w-4" />
+                                            )}
+                                            Consultar IA
+                                        </Button>
+                                        <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                                            <Save className="mr-2 h-4 w-4" />
+                                            {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardFooter>
                         </Card>
