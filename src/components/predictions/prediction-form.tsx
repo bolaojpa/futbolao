@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { mockMatches } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Lock, BrainCircuit, Loader2, Wand2 } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export function PredictionForm() {
     const { toast } = useToast();
@@ -108,18 +109,24 @@ export function PredictionForm() {
 
                 return (
                     <Card key={match.id}>
-                        <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
-                                <span>{match.timeA} vs {match.timeB}</span>
-                            </CardTitle>
+                        <CardHeader className='items-center text-center'>
+                           <CardTitle className="w-full">
+                                <div className="flex justify-center items-center gap-4 text-xl md:text-2xl">
+                                    <span className="font-bold text-right flex-1">{match.timeA}</span>
+                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                    <span className="text-muted-foreground font-normal">-</span>
+                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                    <span className="font-bold text-left flex-1">{match.timeB}</span>
+                                </div>
+                           </CardTitle>
                             <CardDescription>
                                 {format(matchDate, "eeee, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center justify-center gap-4">
                                 <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                                <span className="text-muted-foreground">x</span>
+                                <span className="font-bold text-muted-foreground">x</span>
                                 <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                             </div>
                             {aiSuggestions[match.id] && (
