@@ -17,23 +17,30 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
 
-const NumberInput = ({ value, onChange }: { value: number; onChange: (value: number) => void; }) => {
-    const increment = () => onChange(value + 1);
-    const decrement = () => onChange(Math.max(0, value - 1));
+const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
+    const handleIncrement = () => {
+        const currentValue = value ?? -1;
+        onChange(currentValue + 1);
+    };
+    const handleDecrement = () => {
+        const currentValue = value ?? 1;
+        onChange(Math.max(0, currentValue - 1));
+    };
 
     return (
         <div className="relative w-20">
             <Input
                 type="text"
                 readOnly
-                value={value}
+                value={value === null ? '' : value}
+                placeholder="_"
                 className="w-full h-12 text-center text-2xl font-bold bg-muted border-0 pr-6"
             />
             <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center h-full">
-                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={increment}>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleIncrement}>
                     <ChevronUp className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={decrement}>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleDecrement}>
                     <ChevronDown className="h-4 w-4" />
                 </Button>
             </div>
@@ -47,13 +54,13 @@ export function PredictionForm() {
     const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
-    const [scores, setScores] = useState<Record<string, { placarA: number; placarB: number }>>({});
+    const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
         const initialUpdates: Record<string, Date | null> = {};
-        const initialScores: Record<string, { placarA: number; placarB: number }> = {};
+        const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
 
         mockPredictions.forEach(p => {
             if (p.userId === mockUser.id && mockMatches.upcoming.some(m => m.id === p.matchId)) {
@@ -69,7 +76,7 @@ export function PredictionForm() {
         setScores(prev => ({
             ...prev,
             [matchId]: {
-                ...(prev[matchId] || { placarA: 0, placarB: 0 }),
+                ...(prev[matchId] || { placarA: null, placarB: null }),
                 [team]: value,
             },
         }));
@@ -192,7 +199,7 @@ export function PredictionForm() {
             <div className="space-y-6">
                 {openMatches.map((match) => {
                     const isEditing = !!lastUpdated[match.id];
-                    const currentScore = scores[match.id] || { placarA: 0, placarB: 0 };
+                    const currentScore = scores[match.id] || { placarA: null, placarB: null };
                     const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
 
                     return (
