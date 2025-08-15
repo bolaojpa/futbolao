@@ -27,6 +27,7 @@ export default function LeaderboardPage() {
   const sortedUsers = [...mockUsers].sort((a, b) => {
     if (a.pontos !== b.pontos) return b.pontos - a.pontos;
     if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+    if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
     if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - a.tempoMedio;
     return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
