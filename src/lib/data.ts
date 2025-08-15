@@ -12,7 +12,7 @@ export const mockUser = {
 };
 
 export const mockUsers = [
-  { id: 'user_1', apelido: 'Carlinhos', pontos: 125, exatos: 10, tempoMedio: 1800, dataCadastro: '2023-01-15' },
+  { id: 'user_1', apelido: 'Carlinhos', pontos: 125, exatos: 10, tempoMedio: 1800, dataCadastro: '2023-01-15', isNewLeader: false },
   { id: 'user_2', apelido: 'Fernanda', pontos: 118, exatos: 8, tempoMedio: 2200, dataCadastro: '2023-02-20' },
   { id: 'user_3', apelido: 'Lucas', pontos: 115, exatos: 9, tempoMedio: 1500, dataCadastro: '2023-01-10' },
   { id: 'user_4', apelido: 'Juliana', pontos: 102, exatos: 7, tempoMedio: 3600, dataCadastro: '2023-03-01' },

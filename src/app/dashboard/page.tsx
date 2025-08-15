@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -47,6 +48,21 @@ export default function DashboardPage() {
     return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
   const leader = sortedUsers[0];
+  const secondPlace = sortedUsers[1];
+
+  const getLeaderMessage = () => {
+    if (leader.isNewLeader) {
+      return "Temos um novo líder!";
+    }
+    const pointsDifference = leader.pontos - secondPlace.pontos;
+    if (pointsDifference > 10) {
+      return "Líder isolado!";
+    }
+    if (pointsDifference <= 3) {
+      return "Disputa acirrada pela ponta!";
+    }
+    return "O alvo de todos!";
+  };
 
 
   const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
@@ -120,7 +136,7 @@ export default function DashboardPage() {
                     <div className="flex-1">
                         <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
                         <CardTitle className="text-xl font-headline text-primary">{leader.apelido}</CardTitle>
-                        <p className="font-bold text-base">{leader.pontos} pts</p>
+                        <p className="font-bold text-base">{leader.pontos} pts - <span className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</span></p>
                     </div>
                     <Button asChild variant="ghost" size="sm">
                         <Link href="/dashboard/leaderboard">
