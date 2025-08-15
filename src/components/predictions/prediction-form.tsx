@@ -5,10 +5,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { mockMatches } from '@/lib/data';
+import { mockMatches, mockPredictions, mockUser } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2 } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -19,24 +19,37 @@ export function PredictionForm() {
     const { toast } = useToast();
     const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
+    const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
+        // Initialize last updated state for existing predictions
+        const initialUpdates: Record<string, Date | null> = {};
+        mockPredictions.forEach(p => {
+             // Mocking a last updated date for existing predictions for demonstration
+            if (p.userId === mockUser.id) {
+                 initialUpdates[p.matchId] = new Date(); 
+            }
+        });
+        setLastUpdated(initialUpdates);
     }, []);
 
     const handlePredictionSubmit = (matchId: string) => {
+        const isEditing = mockPredictions.some(p => p.matchId === matchId && p.userId === mockUser.id);
+        
         toast({
-            title: "Palpite Enviado!",
-            description: "Seu palpite foi registrado com sucesso. Boa sorte!",
+            title: `Palpite ${isEditing ? 'Alterado' : 'Enviado'}!`,
+            description: `Seu palpite foi ${isEditing ? 'atualizado' : 'registrado'} com sucesso. Boa sorte!`,
             variant: "default",
         });
+
+        setLastUpdated(prev => ({ ...prev, [matchId]: new Date() }));
     };
 
     const handleAiSuggestion = async (matchId: string) => {
         setLoadingAi(prev => ({ ...prev, [matchId]: true }));
         
-        // Mocking at least 5 predictions for demonstration
         const mockPredictionsForAI = [
             { userId: 'user_2', prediction: 'Time A vence por 2 a 1.' },
             { userId: 'user_3', prediction: 'Empate em 1 a 1.' },
@@ -76,7 +89,6 @@ export function PredictionForm() {
     const openMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado');
 
     if (!isClient) {
-        // You can return a loading state or skeletons here
         return <div className="space-y-6">
             {[1, 2, 3].map(i => (
                 <Card key={i}>
@@ -107,6 +119,8 @@ export function PredictionForm() {
             <div className="space-y-6">
                 {openMatches.map((match) => {
                     const matchDate = parseISO(match.data);
+                    const userPrediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
+                    const isEditing = !!userPrediction;
 
                     return (
                         <Card key={match.id}>
@@ -140,9 +154,9 @@ export function PredictionForm() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center justify-center gap-4">
-                                    <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                                    <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" defaultValue={isEditing ? userPrediction.palpiteUsuario.placarA : ''} />
                                     <span className="font-bold text-muted-foreground">x</span>
-                                    <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                                    <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" defaultValue={isEditing ? userPrediction.palpiteUsuario.placarB : ''} />
                                 </div>
                                 {aiSuggestions[match.id] && (
                                     <Alert className="mt-4 bg-primary/10 border-primary/20">
@@ -154,23 +168,33 @@ export function PredictionForm() {
                                     </Alert>
                                 )}
                             </CardContent>
-                            <CardFooter className="flex justify-end gap-2">
-                                <Button 
-                                    variant="outline" 
-                                    onClick={() => handleAiSuggestion(match.id)} 
-                                    disabled={loadingAi[match.id]}
-                                    className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                >
-                                    {loadingAi[match.id] ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <BrainCircuit className="mr-2 h-4 w-4" />
+                             <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <div>
+                                    {lastUpdated[match.id] && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                        </p>
                                     )}
-                                    Consultar IA
-                                </Button>
-                                <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                                    Salvar Palpite
-                                </Button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={() => handleAiSuggestion(match.id)} 
+                                        disabled={loadingAi[match.id]}
+                                        className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                    >
+                                        {loadingAi[match.id] ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <BrainCircuit className="mr-2 h-4 w-4" />
+                                        )}
+                                        Consultar IA
+                                    </Button>
+                                    <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                                        <Save className="mr-2 h-4 w-4" />
+                                        {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
+                                    </Button>
+                                </div>
                             </CardFooter>
                         </Card>
                     );
