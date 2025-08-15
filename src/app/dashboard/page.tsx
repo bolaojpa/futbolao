@@ -19,7 +19,7 @@ import {
 import { mockUser, mockMatches, mockPredictions, mockUsers } from '@/lib/data';
 import { format, parseISO, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle } from 'lucide-react';
+import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import React, { useEffect, useState } from 'react';
 import { Countdown } from '@/components/shared/countdown';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 
 export default function DashboardPage() {
   const { apelido } = mockUser;
@@ -242,8 +243,8 @@ export default function DashboardPage() {
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {upcomingMatches.map((match) => {
-              const userHasPredicted = mockPredictions.some(p => p.matchId === match.id && p.userId === mockUser.id);
-              const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !userHasPredicted;
+              const userPrediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
+              const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !userPrediction;
               
               return (
                 <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
@@ -258,7 +259,7 @@ export default function DashboardPage() {
                     )}
                     <CardHeader className='pb-2'>
                         <div className="flex justify-between items-start">
-                          <CardDescription className="text-xs">{match.campeonato}</CardDescription>
+                          <p className="text-xs text-muted-foreground">{match.campeonato}</p>
                            <Badge variant={getStatusVariant(match.status)}>
                               {match.status}
                            </Badge>
@@ -268,16 +269,28 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-around w-full text-center">
                           <div className='flex flex-col items-center gap-2 w-1/3'>
                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                             <p className="font-semibold text-sm truncate block w-full">{match.timeA}</p>
+                             <p className="font-semibold text-sm truncate block w-full md:block">{match.timeA}</p>
                           </div>
                           <span className="text-2xl font-bold text-muted-foreground mx-4">vs</span>
                            <div className='flex flex-col items-center gap-2 w-1/3'>
                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                             <p className="font-semibold text-sm truncate block w-full">{match.timeB}</p>
+                             <p className="font-semibold text-sm truncate block w-full md:block">{match.timeB}</p>
                           </div>
                       </div>
                     </CardContent>
-                    <CardContent className="text-center bg-muted/50 py-2">
+                    
+                    {userPrediction && (
+                        <CardContent className="py-2">
+                            <Separator className="mb-2" />
+                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                <Goal className="w-4 h-4 text-primary" />
+                                <span className="font-semibold">Seu Palpite:</span>
+                                <span className="font-bold text-foreground">{`${userPrediction.palpiteUsuario.placarA} - ${userPrediction.palpiteUsuario.placarB}`}</span>
+                            </div>
+                        </CardContent>
+                    )}
+
+                    <CardContent className="text-center bg-muted/50 py-2 mt-auto">
                        <UpcomingMatchDate matchDateString={match.data} />
                     </CardContent>
                   </Card>
