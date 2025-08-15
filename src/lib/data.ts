@@ -12,14 +12,14 @@ export const mockUser = {
 };
 
 export const mockUsers = [
-  { id: 'user_1', apelido: 'Carlinhos', pontos: 125, exatos: 10, tempoMedio: 1800, dataCadastro: '2023-01-15', isNewLeader: false },
-  { id: 'user_2', apelido: 'Fernanda', pontos: 118, exatos: 8, tempoMedio: 2200, dataCadastro: '2023-02-20' },
-  { id: 'user_3', apelido: 'Lucas', pontos: 115, exatos: 9, tempoMedio: 1500, dataCadastro: '2023-01-10' },
-  { id: 'user_4', apelido: 'Juliana', pontos: 102, exatos: 7, tempoMedio: 3600, dataCadastro: '2023-03-01' },
-  { id: 'user_5', apelido: 'Rafa', pontos: 99, exatos: 6, tempoMedio: 1200, dataCadastro: '2023-04-05' },
-  { id: 'user_6', apelido: 'Beto', pontos: 95, exatos: 5, tempoMedio: 4800, dataCadastro: '2023-02-11' },
-  { id: 'user_7', apelido: 'Gabi', pontos: 118, exatos: 8, tempoMedio: 2100, dataCadastro: '2023-5-10' },
-  { id: 'user_8', apelido: 'Lanterna', pontos: 23, exatos: 1, tempoMedio: 9999, dataCadastro: '2023-06-01' },
+  { id: 'user_1', apelido: 'Carlinhos', pontos: 125, exatos: 10, tempoMedio: 1800, dataCadastro: '2023-01-15', isNewLeader: false, posicaoVariacao: 'stable' },
+  { id: 'user_2', apelido: 'Fernanda', pontos: 118, exatos: 8, tempoMedio: 2200, dataCadastro: '2023-02-20', posicaoVariacao: 'up' },
+  { id: 'user_3', apelido: 'Lucas', pontos: 115, exatos: 9, tempoMedio: 1500, dataCadastro: '2023-01-10', posicaoVariacao: 'down' },
+  { id: 'user_4', apelido: 'Juliana', pontos: 102, exatos: 7, tempoMedio: 3600, dataCadastro: '2023-03-01', posicaoVariacao: 'up' },
+  { id: 'user_5', apelido: 'Rafa', pontos: 99, exatos: 6, tempoMedio: 1200, dataCadastro: '2023-04-05', posicaoVariacao: 'stable' },
+  { id: 'user_6', apelido: 'Beto', pontos: 95, exatos: 5, tempoMedio: 4800, dataCadastro: '2023-02-11', posicaoVariacao: 'down' },
+  { id: 'user_7', apelido: 'Gabi', pontos: 118, exatos: 8, tempoMedio: 2100, dataCadastro: '2023-5-10', posicaoVariacao: 'up' },
+  { id: 'user_8', apelido: 'Lanterna', pontos: 23, exatos: 1, tempoMedio: 9999, dataCadastro: '2023-06-01', posicaoVariacao: 'stable' },
 ];
 
 export const mockChampionships = [
