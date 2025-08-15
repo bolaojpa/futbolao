@@ -249,7 +249,7 @@ export function PredictionForm() {
                                 )}
                             </CardContent>
                              <CardFooter className="flex-col gap-4">
-                                <div className='w-full bg-muted/50 py-2 rounded-md'>
+                                <div className='w-full py-2 rounded-md'>
                                     <UpcomingMatchDate matchDateString={match.data} />
                                 </div>
                                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
