@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { mockMatches } from '@/lib/data';
-import { differenceInHours, format, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Lock, BrainCircuit, Loader2, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -70,17 +70,9 @@ export function PredictionForm() {
 
         setLoadingAi(prev => ({ ...prev, [matchId]: false }));
     };
-
-    const isMatchLocked = (matchDate: Date) => {
-        if (!isClient) return true; // Default to locked on server
-        return differenceInHours(matchDate, new Date()) < 2;
-    }
-
+    
     // Filter to show only matches that are still open for predictions
-    const openMatches = mockMatches.upcoming.filter(match => {
-        const matchDate = parseISO(match.data);
-        return !isMatchLocked(matchDate) && match.status !== 'Finalizado' && match.status !== 'Cancelado' && match.status !== 'Ao Vivo';
-    });
+    const openMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado');
 
     if (!isClient) {
         // You can return a loading state or skeletons here
@@ -113,7 +105,6 @@ export function PredictionForm() {
         <div className="space-y-6">
             {openMatches.map((match) => {
                 const matchDate = parseISO(match.data);
-                const isLocked = isMatchLocked(matchDate); // Should always be false here due to filter, but good for safety
 
                 return (
                     <Card key={match.id}>
