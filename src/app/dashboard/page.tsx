@@ -137,7 +137,7 @@ export default function DashboardPage() {
                         <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
                         <div className="flex items-baseline gap-2">
                             <CardTitle className="text-xl font-headline text-primary">{leader.apelido}</CardTitle>
-                            <p className="text-xl font-headline text-primary">- {leader.pontos} pts</p>
+                            <p className="text-xl font-headline">{leader.pontos} pts</p>
                         </div>
                         <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
                     </div>
