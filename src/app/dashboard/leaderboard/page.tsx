@@ -36,7 +36,16 @@ export default function LeaderboardPage() {
     if (a.pontos !== b.pontos) return b.pontos - a.pontos;
     if (a.exatos !== b.exatos) return b.exatos - a.exatos;
     if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-    // Further tie-breakers can be added here based on sortType state
+    
+    // Apply further tie-breaking based on filter
+    if (sortType === 'time') {
+        if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - b.tempoMedio;
+    }
+    if (sortType === 'date') {
+        return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
+    }
+
+    // Default final tie-breaker
     return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
 
