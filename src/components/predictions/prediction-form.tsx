@@ -33,7 +33,6 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
                 type="text"
                 readOnly
                 value={value === null ? '' : value}
-                placeholder="_"
                 className="w-full h-12 text-center text-2xl font-bold bg-muted border-0 pr-6"
             />
             <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center h-full">
@@ -216,11 +215,8 @@ export function PredictionForm() {
                                     </TooltipContent>
                                 </Tooltip>
                             )}
-                             <CardHeader className='pb-4 pt-4 text-center'>
+                            <CardHeader className='pb-4 pt-4 text-center'>
                                 <CardTitle className="text-base font-semibold">{match.campeonato}</CardTitle>
-                                <div className="text-sm text-muted-foreground">
-                                     <UpcomingMatchDate matchDateString={match.data} />
-                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center justify-around w-full gap-2">
@@ -266,9 +262,10 @@ export function PredictionForm() {
                             </CardContent>
                              <CardFooter className="flex-col gap-4">
                                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
-                                    <div>
+                                    <div className='text-center'>
+                                        <UpcomingMatchDate matchDateString={match.data} />
                                         {lastUpdated[match.id] && (
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="text-xs text-muted-foreground mt-1">
                                                 {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
                                             </p>
                                         )}
