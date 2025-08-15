@@ -94,11 +94,17 @@ export default {
             boxShadow: '0 0 0 8px hsl(var(--primary) / 0.5), 0 0 0 16px hsl(var(--primary) / 0.25)',
           },
         },
+        'flash-pulse': {
+          '50%': {
+            opacity: '0.5'
+          }
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'leader-pulse': 'leader-pulse 2s infinite',
+        'flash-pulse': 'flash-pulse 1s ease-in-out infinite',
       },
     },
   },

@@ -65,7 +65,7 @@ export default function LeaderboardPage() {
     if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500" />;
     if (rank === 2) return <Award className="w-5 h-5 text-slate-400" />;
     if (rank === 3) return <Award className="w-5 h-5 text-amber-700" />;
-    if (rank === sortedTableUsers.length) return <Flashlight className="w-5 h-5 text-yellow-400 animate-pulse" />;
+    if (rank === sortedTableUsers.length) return <Flashlight className="w-5 h-5 text-yellow-400 animate-flash-pulse" />;
     return null;
   };
   
