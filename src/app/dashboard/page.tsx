@@ -111,16 +111,16 @@ export default function DashboardPage() {
         <section>
              <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
                  <CardHeader className="flex flex-row items-center gap-4 p-4">
-                     <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
-                        <Avatar className="w-full h-full border-4 border-background">
+                     <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
+                        <Avatar className="w-full h-full border-2 border-background">
                             <AvatarImage src={`https://placehold.co/100x100.png?text=${leader.apelido.charAt(0)}`} alt={leader.apelido} />
                             <AvatarFallback>{leader.apelido.substring(0,2)}</AvatarFallback>
                         </Avatar>
                     </div>
                     <div className="flex-1">
-                        <CardDescription className="flex items-center gap-2"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
-                        <CardTitle className="text-2xl font-headline text-primary">{leader.apelido}</CardTitle>
-                        <p className="font-bold text-lg">{leader.pontos} pts</p>
+                        <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
+                        <CardTitle className="text-xl font-headline text-primary">{leader.apelido}</CardTitle>
+                        <p className="font-bold text-base">{leader.pontos} pts</p>
                     </div>
                     <Button asChild variant="ghost" size="sm">
                         <Link href="/dashboard/leaderboard">
@@ -128,8 +128,8 @@ export default function DashboardPage() {
                         </Link>
                     </Button>
                  </CardHeader>
-                 <div className="absolute -bottom-4 -right-4">
-                    <Medal className="w-24 h-24 text-yellow-500/20" strokeWidth={1} />
+                 <div className="absolute -bottom-2 -right-2">
+                    <Medal className="w-16 h-16 text-yellow-500/20" strokeWidth={1} />
                  </div>
             </Card>
         </section>
@@ -344,5 +344,3 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
-
-    
