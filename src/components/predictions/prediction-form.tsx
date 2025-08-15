@@ -7,33 +7,69 @@ import { Button } from '@/components/ui/button';
 import { mockMatches, mockPredictions, mockUser } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, Minus, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+
+const NumberInput = ({ value, onChange }: { value: number; onChange: (value: number) => void; }) => {
+    const increment = () => onChange(value + 1);
+    const decrement = () => onChange(Math.max(0, value - 1));
+
+    return (
+        <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={decrement}>
+                <Minus className="h-4 w-4" />
+            </Button>
+            <Input
+                type="text"
+                readOnly
+                value={value}
+                className="w-12 h-10 text-center text-lg font-bold bg-muted border-0"
+            />
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={increment}>
+                <Plus className="h-4 w-4" />
+            </Button>
+        </div>
+    );
+};
+
 
 export function PredictionForm() {
     const { toast } = useToast();
     const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
+    const [scores, setScores] = useState<Record<string, { placarA: number; placarB: number }>>({});
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
-        // Initialize last updated state for existing predictions
         const initialUpdates: Record<string, Date | null> = {};
+        const initialScores: Record<string, { placarA: number; placarB: number }> = {};
+
         mockPredictions.forEach(p => {
-             // Mocking a last updated date for existing predictions for demonstration
             if (p.userId === mockUser.id) {
                  initialUpdates[p.matchId] = new Date(); 
+                 initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
             }
         });
         setLastUpdated(initialUpdates);
+        setScores(initialScores);
     }, []);
+
+    const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: number) => {
+        setScores(prev => ({
+            ...prev,
+            [matchId]: {
+                ...(prev[matchId] || { placarA: 0, placarB: 0 }),
+                [team]: value,
+            },
+        }));
+    };
 
     const handlePredictionSubmit = (matchId: string) => {
         const isEditing = mockPredictions.some(p => p.matchId === matchId && p.userId === mockUser.id);
@@ -114,15 +150,13 @@ export function PredictionForm() {
         )
     }
 
-    const scoreOptions = Array.from({ length: 16 }, (_, i) => i);
-
     return (
         <TooltipProvider>
             <div className="space-y-6">
                 {openMatches.map((match) => {
                     const matchDate = parseISO(match.data);
-                    const userPrediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
-                    const isEditing = !!userPrediction;
+                    const isEditing = !!lastUpdated[match.id];
+                    const currentScore = scores[match.id] || { placarA: 0, placarB: 0 };
 
                     return (
                         <Card key={match.id}>
@@ -156,27 +190,9 @@ export function PredictionForm() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center justify-center gap-4">
-                                     <Select defaultValue={isEditing ? userPrediction.palpiteUsuario.placarA.toString() : undefined}>
-                                        <SelectTrigger className="w-24">
-                                            <SelectValue placeholder="Placar" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {scoreOptions.map(score => (
-                                                <SelectItem key={score} value={score.toString()}>{score}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
                                     <span className="font-bold text-muted-foreground">x</span>
-                                    <Select defaultValue={isEditing ? userPrediction.palpiteUsuario.placarB.toString() : undefined}>
-                                        <SelectTrigger className="w-24">
-                                            <SelectValue placeholder="Placar" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {scoreOptions.map(score => (
-                                                <SelectItem key={score} value={score.toString()}>{score}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
                                 </div>
                                 {aiSuggestions[match.id] && (
                                     <Alert className="mt-4 bg-primary/10 border-primary/20">
