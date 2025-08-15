@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockMatches, mockPredictions, mockUser, mockChampionships } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
@@ -39,32 +39,33 @@ export default function HistoryPage() {
 
   return (
     <div className="container mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold font-headline">Histórico de Palpites</h1>
-        <p className="text-muted-foreground">
-          Reveja seus palpites passados e suas pontuações.
-        </p>
-      </div>
-
-      <div className="flex justify-end">
-        <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
-            <SelectTrigger className="w-full md:w-[280px]">
-                <SelectValue placeholder="Filtrar por campeonato" />
-            </SelectTrigger>
-            <SelectContent>
-                {mockChampionships.map(champ => (
-                    <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold font-headline">Histórico de Palpites</h1>
+          <p className="text-muted-foreground">
+            Reveja seus palpites passados e suas pontuações.
+          </p>
+        </div>
+         <div className="w-full md:w-auto">
+            <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                <SelectTrigger className="w-full md:w-[280px]">
+                    <SelectValue placeholder="Filtrar por campeonato" />
+                </SelectTrigger>
+                <SelectContent>
+                    {mockChampionships.map(champ => (
+                        <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
       </div>
 
       <div className="w-full space-y-4">
         {finishedMatches.length > 0 ? finishedMatches.map((match) => {
           const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
-          if (!prediction) return null;
+          if (!prediction || !match.maxPontos) return null;
 
-          const maxPointsForMatch = match.maxPontos || 10;
+          const maxPointsForMatch = match.maxPontos;
 
           return (
             <Accordion type="single" collapsible className="w-full" key={match.id}>
