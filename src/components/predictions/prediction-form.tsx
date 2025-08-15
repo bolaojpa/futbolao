@@ -211,7 +211,7 @@ export function PredictionForm() {
                                             <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
                                         </div>
                                     </TooltipTrigger>
-                                    <TooltipContent>
+                                    <TooltipContent side="right">
                                         <p>Palpite necessário! Esta partida começa em breve.</p>
                                     </TooltipContent>
                                 </Tooltip>
