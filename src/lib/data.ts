@@ -31,6 +31,13 @@ const MOCK_MATCH_RECENT_1 = { id: 'match_1', campeonato: 'Brasileirão Série A 
 const MOCK_MATCH_RECENT_2 = { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0 };
 const MOCK_MATCH_RECENT_3 = { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 10 };
 
+// Helper para criar uma data futura para os mocks
+const futureDate = (hours: number) => {
+    const date = new Date();
+    date.setHours(date.getHours() + hours);
+    return date.toISOString();
+}
+
 export const mockMatches = {
   recent: [
     MOCK_MATCH_RECENT_1,
@@ -38,10 +45,10 @@ export const mockMatches = {
     MOCK_MATCH_RECENT_3,
   ],
   upcoming: [
-    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: '2024-08-09T21:00:00Z', status: 'Ao Vivo' },
-    { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: '2024-08-10T19:00:00Z', status: 'Agendado' },
-    { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: '2024-08-11T20:00:00Z', status: 'Agendado' },
-    { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: '2024-08-12T23:00:00Z', status: 'Agendado' },
+    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo' },
+    { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: futureDate(1.5), status: 'Agendado' }, // Partida para contagem regressiva
+    { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3), status: 'Agendado' },
+    { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24), status: 'Agendado' },
   ],
 };
 
@@ -87,6 +94,14 @@ export const mockPredictions = [
       { apelido: 'Lucas', palpite: '3-0', pontos: 0 },
     ],
   },
+  // Prediction for an upcoming match (Vasco vs Botafogo)
+  {
+    userId: 'user_1',
+    matchId: 'match_5',
+    palpiteUsuario: { placarA: 1, placarB: 1 },
+    pontos: 0,
+    outrosPalpites: [],
+  }
 ];
 
 export const mockNotifications = [

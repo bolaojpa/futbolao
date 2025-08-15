@@ -17,13 +17,14 @@ import {
 import { mockUser, mockMatches, mockPredictions } from '@/lib/data';
 import { format, parseISO, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, History, Zap } from 'lucide-react';
+import { Users, Calendar, History, Zap, AlarmClock } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import React, { useEffect, useState } from 'react';
+import { Countdown } from '@/components/shared/countdown';
 
 export default function DashboardPage() {
   const { apelido } = mockUser;
@@ -56,20 +57,28 @@ export default function DashboardPage() {
     return 'destructive';
   }
   
-  const formatUpcomingMatchDate = (matchDateString: string) => {
+  const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
     if (!isClient) {
-      return 'Carregando...'; // Don't render date on server
+      return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>Carregando...</div>;
     }
     const matchDate = parseISO(matchDateString);
     const now = new Date();
+    const hoursDiff = differenceInHours(matchDate, now);
 
-    if (isToday(matchDate)) {
-      if (differenceInHours(matchDate, now) < 2 && differenceInHours(matchDate, now) >= 0) {
-        return `Em Breve às ${format(matchDate, "HH:mm", { locale: ptBR })}`;
-      }
-      return `Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`;
+    if (hoursDiff >= 0 && hoursDiff < 2) {
+      return (
+         <div className="text-xs font-semibold text-accent flex items-center justify-center gap-2">
+           <AlarmClock className="w-4 h-4"/>
+           <Countdown targetDate={matchDateString} />
+        </div>
+      )
     }
-    return format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR });
+    
+    if (isToday(matchDate)) {
+      return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
+    }
+
+    return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
   };
 
   return (
@@ -95,27 +104,25 @@ export default function DashboardPage() {
                 if (!prediction) return null;
 
                 return (
-                  <AccordionItem value={match.id} key={match.id} className="border-0 rounded-lg overflow-hidden">
+                  <AccordionItem value={match.id} key={match.id} className="border-0">
                     <Card className='border-accent/50'>
                       <AccordionTrigger className="p-4 hover:no-underline">
-                        <div className="flex flex-col items-center justify-center w-full">
-                           <div className="flex items-center justify-center w-full">
-                               <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
-                                   {match.timeA}
-                               </div>
-                               <div className="flex items-center justify-center gap-3 md:gap-4">
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                   <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                               </div>
-                               <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
-                                   {match.timeB}
-                               </div>
-                           </div>
-                           <Badge variant={getStatusVariant(match.status)} className={cn('mt-2', match.status === 'Ao Vivo' && 'animate-pulse')}>
-                             {match.status}
-                           </Badge>
+                        <div className="flex-1 flex justify-center items-center">
+                          <div className="w-full md:w-1/3 text-right font-semibold text-sm md:text-base pr-2 hidden md:block">
+                              {match.timeA}
+                          </div>
+                          <div className="flex items-center justify-center gap-3 md:gap-4">
+                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                              <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
+                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                          </div>
+                          <div className="w-full md:w-1/3 text-left font-semibold text-sm md:text-base pl-2 hidden md:block">
+                              {match.timeB}
+                          </div>
                         </div>
+                        <Badge variant={getStatusVariant(match.status)} className={cn('absolute bottom-2 left-1/2 -translate-x-1/2', match.status === 'Ao Vivo' && 'animate-pulse')}>
+                          {match.status}
+                        </Badge>
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="p-4 border-t bg-muted/30">
@@ -163,39 +170,44 @@ export default function DashboardPage() {
               </Button>
           </div>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {upcomingMatches.slice(0, 3).map((match) => (
-              <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
-                <Card className="flex flex-col h-full overflow-hidden">
-                  <CardHeader className='pb-2'>
-                      <div className="flex justify-between items-start">
-                        <CardDescription className="text-xs">{match.campeonato}</CardDescription>
-                         <Badge variant={getStatusVariant(match.status)} className={cn(match.status === 'Ao Vivo' && 'animate-pulse')}>
-                            {match.status}
-                         </Badge>
+            {upcomingMatches.map((match) => {
+              const userHasPredicted = mockPredictions.some(p => p.matchId === match.id && p.userId === mockUser.id);
+              const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !userHasPredicted;
+              
+              return (
+                <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
+                  <Card className={cn(
+                      "flex flex-col h-full overflow-hidden",
+                      needsAttention && "border-accent animate-pulse"
+                  )}>
+                    <CardHeader className='pb-2'>
+                        <div className="flex justify-between items-start">
+                          <CardDescription className="text-xs">{match.campeonato}</CardDescription>
+                           <Badge variant={getStatusVariant(match.status)}>
+                              {match.status}
+                           </Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow flex items-center justify-center p-4">
+                      <div className="flex items-center justify-around w-full text-center">
+                          <div className='flex flex-col items-center gap-2'>
+                             <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                             <p className="font-semibold text-sm">{match.timeA}</p>
+                          </div>
+                          <span className="text-2xl font-bold text-muted-foreground">vs</span>
+                           <div className='flex flex-col items-center gap-2'>
+                             <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                             <p className="font-semibold text-sm">{match.timeB}</p>
+                          </div>
                       </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow flex items-center justify-center p-4">
-                    <div className="flex items-center justify-around w-full text-center">
-                        <div className='flex flex-col items-center gap-2'>
-                           <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                           <p className="font-semibold text-sm">{match.timeA}</p>
-                        </div>
-                        <span className="text-2xl font-bold text-muted-foreground">vs</span>
-                         <div className='flex flex-col items-center gap-2'>
-                           <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                           <p className="font-semibold text-sm">{match.timeB}</p>
-                        </div>
-                    </div>
-                  </CardContent>
-                  <CardContent className="text-center bg-muted/50 py-2">
-                     <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-                        <Calendar className="w-3 h-3"/>
-                        {formatUpcomingMatchDate(match.data)}
-                      </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                    </CardContent>
+                    <CardContent className="text-center bg-muted/50 py-2">
+                       <UpcomingMatchDate matchDateString={match.data} />
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         </section>
 
@@ -215,27 +227,25 @@ export default function DashboardPage() {
                   if (!prediction) return null;
 
                   return (
-                    <AccordionItem value={match.id} key={match.id} className="border-0 rounded-lg overflow-hidden">
+                    <AccordionItem value={match.id} key={match.id} className="border-0">
                       <Card>
-                       <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
-                        <div className="flex flex-col items-center justify-center w-full">
-                           <div className="flex items-center justify-center w-full">
-                               <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
-                                   {match.timeA}
-                               </div>
-                               <div className="flex items-center justify-center gap-3 md:gap-4">
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                   <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                   <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                               </div>
-                               <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
-                                   {match.timeB}
-                               </div>
-                           </div>
-                            <span className="text-xs text-muted-foreground mt-2">
-                               {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
-                           </span>
+                       <AccordionTrigger className={cn("p-4 hover:no-underline relative", getPredictionStatusClass(prediction.pontos))}>
+                        <div className="flex-1 flex justify-center items-center">
+                          <div className="w-full md:w-1/3 text-right font-semibold text-sm md:text-base pr-2 hidden md:block">
+                              {match.timeA}
+                          </div>
+                          <div className="flex items-center justify-center gap-3 md:gap-4">
+                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                              <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
+                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                          </div>
+                          <div className="w-full md:w-1/3 text-left font-semibold text-sm md:text-base pl-2 hidden md:block">
+                              {match.timeB}
+                          </div>
                         </div>
+                        <span className="text-xs text-muted-foreground absolute bottom-2 left-1/2 -translate-x-1/2">
+                            {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
+                        </span>
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos))}>
@@ -274,7 +284,6 @@ export default function DashboardPage() {
               })}
           </Accordion>
         </section>
-
       </div>
     </TooltipProvider>
   );
