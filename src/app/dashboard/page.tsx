@@ -252,16 +252,9 @@ export default function DashboardPage() {
                       needsAttention && "border-accent animate-pulse"
                   )}>
                     {needsAttention && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="absolute top-2 left-2 z-10">
-                                    <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                                <p>Palpite necessário! Esta partida começa em breve.</p>
-                            </TooltipContent>
-                        </Tooltip>
+                        <div className="absolute top-2 left-2 z-10">
+                            <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                        </div>
                     )}
                     <CardHeader className='pb-2'>
                         <div className="flex justify-between items-start">
@@ -273,14 +266,14 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent className="flex-grow flex items-center justify-center p-4">
                       <div className="flex items-center justify-around w-full text-center">
-                          <div className='flex flex-col items-center gap-2'>
+                          <div className='flex flex-col items-center gap-2 w-1/3'>
                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                             <p className="font-semibold text-sm">{match.timeA}</p>
+                             <p className="font-semibold text-sm truncate block w-full">{match.timeA}</p>
                           </div>
-                          <span className="text-2xl font-bold text-muted-foreground">vs</span>
-                           <div className='flex flex-col items-center gap-2'>
+                          <span className="text-2xl font-bold text-muted-foreground mx-4">vs</span>
+                           <div className='flex flex-col items-center gap-2 w-1/3'>
                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                             <p className="font-semibold text-sm">{match.timeB}</p>
+                             <p className="font-semibold text-sm truncate block w-full">{match.timeB}</p>
                           </div>
                       </div>
                     </CardContent>
