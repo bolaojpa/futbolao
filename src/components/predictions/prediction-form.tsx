@@ -218,9 +218,9 @@ export function PredictionForm() {
                             )}
                              <CardHeader className='pb-4 pt-4 text-center'>
                                 <CardTitle className="text-base font-semibold">{match.campeonato}</CardTitle>
-                                <CardDescription>
+                                <div className="text-sm text-muted-foreground">
                                      <UpcomingMatchDate matchDateString={match.data} />
-                                </CardDescription>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center justify-around w-full gap-2">
