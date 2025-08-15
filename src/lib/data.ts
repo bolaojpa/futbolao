@@ -83,15 +83,16 @@ export const mockPredictions = [
       { apelido: 'Lucas', palpite: '1-0', pontos: 0 },
     ],
   },
-  // Added prediction for live match
+  // Prediction for live match with simulated points
   {
     userId: 'user_1',
     matchId: 'match_6',
     palpiteUsuario: { placarA: 2, placarB: 1 },
-    pontos: 0, // No points for live match
+    pontos: 5, // Pontos simulados para o usuário principal (acertou o vencedor)
     outrosPalpites: [
-      { apelido: 'Fernanda', palpite: '1-0', pontos: 0 },
-      { apelido: 'Lucas', palpite: '3-0', pontos: 0 },
+      { apelido: 'Fernanda', palpite: '1-0', pontos: 10 }, // Acertou o placar exato
+      { apelido: 'Lucas', palpite: '3-0', pontos: 5 },  // Acertou o vencedor
+      { apelido: 'Juliana', palpite: '1-1', pontos: 0 }, // Errou
     ],
   },
   // Prediction for an upcoming match (Vasco vs Botafogo)
