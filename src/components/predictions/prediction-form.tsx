@@ -76,30 +76,60 @@ export function PredictionForm() {
         return differenceInHours(matchDate, new Date()) < 2;
     }
 
-    const upcomingMatches = mockMatches.upcoming.filter(match => match.status !== 'Finalizado' && match.status !== 'Cancelado');
+    // Filter to show only matches that are still open for predictions
+    const openMatches = mockMatches.upcoming.filter(match => {
+        const matchDate = parseISO(match.data);
+        return !isMatchLocked(matchDate) && match.status !== 'Finalizado' && match.status !== 'Cancelado' && match.status !== 'Ao Vivo';
+    });
+
+    if (!isClient) {
+        // You can return a loading state or skeletons here
+        return <div className="space-y-6">
+            {[1, 2, 3].map(i => (
+                <Card key={i}>
+                    <CardHeader>
+                        <CardTitle>Carregando Partidas...</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    }
+
+    if (openMatches.length === 0) {
+        return (
+             <Alert>
+                <AlertTitle>Nenhuma partida aberta!</AlertTitle>
+                <AlertDescription>
+                    Não há partidas abertas para palpites no momento. Volte mais tarde!
+                </AlertDescription>
+            </Alert>
+        )
+    }
 
     return (
         <div className="space-y-6">
-            {upcomingMatches.map((match) => {
+            {openMatches.map((match) => {
                 const matchDate = parseISO(match.data);
-                const isLocked = isMatchLocked(matchDate);
+                const isLocked = isMatchLocked(matchDate); // Should always be false here due to filter, but good for safety
 
                 return (
-                    <Card key={match.id} className={isLocked ? 'opacity-70' : ''}>
+                    <Card key={match.id}>
                         <CardHeader>
                             <CardTitle className="flex justify-between items-center">
                                 <span>{match.timeA} vs {match.timeB}</span>
-                                {isLocked && <Badge variant="destructive"><Lock className="w-3 h-3 mr-1" /> Encerrado</Badge>}
                             </CardTitle>
                             <CardDescription>
-                                {isClient ? format(matchDate, "eeee, dd 'de' MMMM 'às' HH:mm", { locale: ptBR }) : 'Carregando data...'}
+                                {format(matchDate, "eeee, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center gap-4">
-                                <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" disabled={isLocked} />
+                                <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                                 <span className="text-muted-foreground">x</span>
-                                <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" disabled={isLocked} />
+                                <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                             </div>
                             {aiSuggestions[match.id] && (
                                 <Alert className="mt-4 bg-primary/10 border-primary/20">
@@ -115,7 +145,7 @@ export function PredictionForm() {
                              <Button 
                                 variant="outline" 
                                 onClick={() => handleAiSuggestion(match.id)} 
-                                disabled={isLocked || loadingAi[match.id]}
+                                disabled={loadingAi[match.id]}
                                 className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
                              >
                                 {loadingAi[match.id] ? (
@@ -125,7 +155,7 @@ export function PredictionForm() {
                                 )}
                                 Consultar IA
                             </Button>
-                            <Button onClick={() => handlePredictionSubmit(match.id)} disabled={isLocked} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                            <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
                                 Salvar Palpite
                             </Button>
                         </CardFooter>
