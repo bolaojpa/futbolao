@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -111,7 +110,7 @@ export default function DashboardPage() {
 
         <section>
              <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
-                 <CardHeader className="flex flex-row items-center gap-4">
+                 <CardHeader className="flex flex-row items-center gap-4 p-4">
                      <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
                         <Avatar className="w-full h-full border-4 border-background">
                             <AvatarImage src={`https://placehold.co/100x100.png?text=${leader.apelido.charAt(0)}`} alt={leader.apelido} />
@@ -155,7 +154,7 @@ export default function DashboardPage() {
                         <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
                           <div className="flex flex-col items-center justify-center w-full">
                              <div className="flex items-center justify-center w-full">
-                                 <div className='hidden md:block flex-shrink-0 text-right font-semibold text-sm md:text-base pr-2'>
+                                 <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
                                     {match.timeA}
                                 </div>
                                 <div className="flex items-center justify-center gap-3 md:gap-4">
@@ -163,7 +162,7 @@ export default function DashboardPage() {
                                     <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
                                     <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                 </div>
-                                <div className='hidden md:block flex-shrink-0 text-left font-semibold text-sm md:text-base pl-2'>
+                                <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                    {match.timeB}
                                 </div>
                              </div>
@@ -286,7 +285,7 @@ export default function DashboardPage() {
                          <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
                           <div className="flex flex-col items-center justify-center w-full">
                              <div className="flex items-center justify-center w-full">
-                                 <div className='hidden md:block flex-shrink-0 text-right font-semibold text-sm md:text-base pr-2'>
+                                 <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
                                     {match.timeA}
                                 </div>
                                 <div className="flex items-center justify-center gap-3 md:gap-4">
@@ -294,7 +293,7 @@ export default function DashboardPage() {
                                     <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
                                     <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                 </div>
-                                <div className='hidden md:block flex-shrink-0 text-left font-semibold text-sm md:text-base pl-2'>
+                                <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                    {match.timeB}
                                 </div>
                              </div>
@@ -345,3 +344,5 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
+
+    
