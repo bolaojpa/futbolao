@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
+type Match = typeof mockMatches.upcoming[0];
+
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
         const currentValue = value ?? -1;
@@ -50,8 +52,7 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
 
 export function PredictionForm() {
     const { toast } = useToast();
-    const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [aiModalState, setAiModalState] = useState<{ open: boolean; suggestion: string | null; match: Match | null }>({ open: false, suggestion: null, match: null });
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
@@ -94,8 +95,8 @@ export function PredictionForm() {
         setLastUpdated(prev => ({ ...prev, [matchId]: new Date() }));
     };
 
-    const handleAiSuggestion = async (matchId: string) => {
-        setLoadingAi(prev => ({ ...prev, [matchId]: true }));
+    const handleAiSuggestion = async (match: Match) => {
+        setLoadingAi(prev => ({ ...prev, [match.id]: true }));
         
         const mockPredictionsForAI = [
             { userId: 'user_2', prediction: 'Time A vence por 2 a 1.' },
@@ -111,12 +112,12 @@ export function PredictionForm() {
                 description: "Ainda não há palpites suficientes para gerar uma sugestão da IA.",
                 variant: "destructive",
             });
-            setLoadingAi(prev => ({ ...prev, [matchId]: false }));
+            setLoadingAi(prev => ({ ...prev, [match.id]: false }));
             return;
         }
 
         const res = await getAiSuggestion({
-            matchId: matchId,
+            matchId: match.id,
             predictionData: mockPredictionsForAI,
         });
 
@@ -127,11 +128,10 @@ export function PredictionForm() {
                 variant: "destructive",
             });
         } else {
-            setAiSuggestion(res.suggestion);
-            setIsModalOpen(true);
+            setAiModalState({ open: true, suggestion: res.suggestion, match: match });
         }
 
-        setLoadingAi(prev => ({ ...prev, [matchId]: false }));
+        setLoadingAi(prev => ({ ...prev, [match.id]: false }));
     };
     
     const openMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado');
@@ -216,7 +216,7 @@ export function PredictionForm() {
                                     </TooltipContent>
                                 </Tooltip>
                             )}
-                            <CardHeader className='pb-2 pt-4 text-center'>
+                             <CardHeader className='pb-2 pt-4 text-center'>
                                 <CardTitle className="text-base font-semibold">{match.campeonato}</CardTitle>
                                 <div className="text-xs text-muted-foreground">
                                     <UpcomingMatchDate matchDateString={match.data} />
@@ -255,34 +255,32 @@ export function PredictionForm() {
                                      </div>
                                 </div>
                             </CardContent>
-                             <CardFooter className="flex-col gap-2 p-4">
-                                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
-                                    <div className='text-center h-4'>
-                                        {lastUpdated[match.id] && (
-                                            <p className="text-xs text-muted-foreground">
-                                                {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
-                                            </p>
+                             <CardFooter className="flex flex-col gap-2 p-4">
+                                <div className='text-center h-4 mb-2'>
+                                    {lastUpdated[match.id] && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={() => handleAiSuggestion(match)} 
+                                        disabled={loadingAi[match.id]}
+                                        className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                    >
+                                        {loadingAi[match.id] ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <BrainCircuit className="mr-2 h-4 w-4" />
                                         )}
-                                    </div>
-                                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                        <Button 
-                                            variant="outline" 
-                                            onClick={() => handleAiSuggestion(match.id)} 
-                                            disabled={loadingAi[match.id]}
-                                            className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                        >
-                                            {loadingAi[match.id] ? (
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <BrainCircuit className="mr-2 h-4 w-4" />
-                                            )}
-                                            Consultar IA
-                                        </Button>
-                                        <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
-                                            <Save className="mr-2 h-4 w-4" />
-                                            {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
-                                        </Button>
-                                    </div>
+                                        Consultar IA
+                                    </Button>
+                                    <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
+                                    </Button>
                                 </div>
                             </CardFooter>
                         </Card>
@@ -290,19 +288,22 @@ export function PredictionForm() {
                 })}
             </div>
 
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <Dialog open={aiModalState.open} onOpenChange={(isOpen) => setAiModalState(prev => ({...prev, open: isOpen}))}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                              <Wand2 className="h-5 w-5 text-primary" />
                              Sugestão da IA
                         </DialogTitle>
-                        <DialogDescription>
-                            Com base na tendência de outros jogadores, esta é a sugestão para sua aposta. Use com sabedoria!
-                        </DialogDescription>
+                         {aiModalState.match && (
+                            <DialogDescription>
+                                Confronto: <strong>{aiModalState.match.timeA} vs {aiModalState.match.timeB}</strong>
+                            </DialogDescription>
+                        )}
                     </DialogHeader>
                     <div className="py-4 font-semibold text-center text-lg">
-                        {aiSuggestion}
+                        <p className="text-sm text-muted-foreground mb-2">Com base na tendência de outros jogadores, esta é a sugestão para sua aposta. Use com sabedoria!</p>
+                        <p className="text-primary">{aiModalState.suggestion}</p>
                     </div>
                 </DialogContent>
             </Dialog>
@@ -310,5 +311,3 @@ export function PredictionForm() {
         </TooltipProvider>
     );
 }
-
-    
