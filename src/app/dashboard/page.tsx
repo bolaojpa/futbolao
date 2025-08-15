@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
   const sortedUsers = [...mockUsers].sort((a, b) => {
     if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-    if (a.exatos !== b.exatos) return b.exatos - b.exatos;
+    if (a.exatos !== b.exatos) return b.exatos - a.exatos;
     if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - b.tempoMedio;
     return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
@@ -77,9 +77,9 @@ export default function DashboardPage() {
     return 'bg-red-100/80 dark:bg-red-900/40';       // Erro
   }
   
-  const getPointsBadgeVariant = (pontos: number): "success" | "secondary" | "destructive" => {
+  const getPointsBadgeVariant = (pontos: number): "success" | "default" | "destructive" => {
     if (pontos === 10) return 'success';
-    if (pontos > 0) return 'secondary';
+    if (pontos > 0) return 'default';
     return 'destructive';
   }
   
@@ -267,12 +267,12 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-around w-full text-center">
                           <div className='flex flex-col items-center gap-2 w-1/3'>
                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                             <p className="font-semibold text-sm truncate hidden w-full md:block">{match.timeA}</p>
+                             <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
                           </div>
                           <span className="text-2xl font-bold text-muted-foreground mx-4">vs</span>
                            <div className='flex flex-col items-center gap-2 w-1/3'>
                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                             <p className="font-semibold text-sm truncate hidden w-full md:block">{match.timeB}</p>
+                             <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
                           </div>
                       </div>
                     </CardContent>

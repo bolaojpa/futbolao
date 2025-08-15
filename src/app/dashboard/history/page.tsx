@@ -25,9 +25,9 @@ export default function HistoryPage() {
     return 'bg-red-100/80 dark:bg-red-900/40';       // Erro
   }
   
-  const getPointsBadgeVariant = (pontos: number): "success" | "secondary" | "destructive" => {
+  const getPointsBadgeVariant = (pontos: number): "success" | "default" | "destructive" => {
     if (pontos === 10) return 'success';
-    if (pontos > 0) return 'secondary';
+    if (pontos > 0) return 'default';
     return 'destructive';
   }
 
