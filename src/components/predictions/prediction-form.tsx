@@ -4,10 +4,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { mockMatches, mockPredictions, mockUser } from '@/lib/data';
+import { mockMatches, mockUser, mockPredictions } from '@/lib/data';
 import { format, parseISO, differenceInHours, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -63,7 +63,7 @@ export function PredictionForm() {
         const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
 
         mockPredictions.forEach(p => {
-            if (p.userId === mockUser.id && mockMatches.upcoming.some(m => m.id === p.matchId)) {
+            if (p.userId === mockUser.id && mockMatches.upcoming.some(m => m.id === p.matchId && m.status === 'Agendado')) {
                  initialUpdates[p.matchId] = new Date(); 
                  initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
             }
@@ -203,7 +203,19 @@ export function PredictionForm() {
                     const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
 
                     return (
-                        <Card key={match.id} className={cn(needsAttention && "border-accent animate-pulse")}>
+                        <Card key={match.id} className={cn("relative overflow-hidden", needsAttention && "border-accent animate-pulse")}>
+                            {needsAttention && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="absolute top-2 left-2 z-10">
+                                            <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Palpite necessário! Esta partida começa em breve.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
                              <CardHeader className='items-center text-center'>
                                 <CardTitle className="w-full">
                                     <div className="flex justify-center items-center gap-4 text-xl md:text-2xl">
@@ -274,7 +286,7 @@ export function PredictionForm() {
                                             )}
                                             Consultar IA
                                         </Button>
-                                        <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                                        <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
                                             <Save className="mr-2 h-4 w-4" />
                                             {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
                                         </Button>
