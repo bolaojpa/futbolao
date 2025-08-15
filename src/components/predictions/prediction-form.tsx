@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { mockMatches, mockPredictions, mockUser } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
@@ -14,6 +13,7 @@ import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function PredictionForm() {
     const { toast } = useToast();
@@ -114,6 +114,8 @@ export function PredictionForm() {
         )
     }
 
+    const scoreOptions = Array.from({ length: 16 }, (_, i) => i);
+
     return (
         <TooltipProvider>
             <div className="space-y-6">
@@ -124,8 +126,8 @@ export function PredictionForm() {
 
                     return (
                         <Card key={match.id}>
-                            <CardHeader className='items-center text-center'>
-                            <CardTitle className="w-full">
+                             <CardHeader className='items-center text-center'>
+                                <CardTitle className="w-full">
                                     <div className="flex justify-center items-center gap-4 text-xl md:text-2xl">
                                         <span className="font-bold text-right flex-1 hidden md:block">{match.timeA}</span>
                                         <Tooltip>
@@ -147,16 +149,34 @@ export function PredictionForm() {
                                         </Tooltip>
                                         <span className="font-bold text-left flex-1 hidden md:block">{match.timeB}</span>
                                     </div>
-                            </CardTitle>
+                                </CardTitle>
                                 <CardDescription>
                                     {format(matchDate, "eeee, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center justify-center gap-4">
-                                    <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" defaultValue={isEditing ? userPrediction.palpiteUsuario.placarA : ''} />
+                                     <Select defaultValue={isEditing ? userPrediction.palpiteUsuario.placarA.toString() : undefined}>
+                                        <SelectTrigger className="w-24">
+                                            <SelectValue placeholder="Placar" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {scoreOptions.map(score => (
+                                                <SelectItem key={score} value={score.toString()}>{score}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <span className="font-bold text-muted-foreground">x</span>
-                                    <Input type="number" min="0" placeholder="0" className="text-center w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" defaultValue={isEditing ? userPrediction.palpiteUsuario.placarB : ''} />
+                                    <Select defaultValue={isEditing ? userPrediction.palpiteUsuario.placarB.toString() : undefined}>
+                                        <SelectTrigger className="w-24">
+                                            <SelectValue placeholder="Placar" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {scoreOptions.map(score => (
+                                                <SelectItem key={score} value={score.toString()}>{score}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 {aiSuggestions[match.id] && (
                                     <Alert className="mt-4 bg-primary/10 border-primary/20">
