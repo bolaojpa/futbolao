@@ -22,7 +22,6 @@ import { ptBR } from 'date-fns/locale';
 import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import React, { useEffect, useState } from 'react';
@@ -44,7 +43,7 @@ export default function DashboardPage() {
 
   const sortedUsers = [...mockUsers].sort((a, b) => {
     if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-    if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+    if (a.exatos !== b.exatos) return b.exatos - b.exatos;
     if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - b.tempoMedio;
     return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
@@ -78,8 +77,8 @@ export default function DashboardPage() {
     return 'bg-red-100/80 dark:bg-red-900/40';       // Erro
   }
   
-  const getPointsBadgeVariant = (pontos: number): "default" | "secondary" | "destructive" => {
-    if (pontos === 10) return 'default';
+  const getPointsBadgeVariant = (pontos: number): "success" | "secondary" | "destructive" => {
+    if (pontos === 10) return 'success';
     if (pontos > 0) return 'secondary';
     return 'destructive';
   }
@@ -118,7 +117,6 @@ export default function DashboardPage() {
   };
 
   return (
-    <TooltipProvider>
       <div className="container mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold font-headline">Bem-vindo, {apelido}!</h1>
@@ -197,7 +195,7 @@ export default function DashboardPage() {
                                  <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
                                  <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                  <div className="w-1/3 text-right">
-                                     <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos > 0 && 'bg-blue-600 text-white' )}>
+                                     <Badge variant={getPointsBadgeVariant(prediction.pontos)} className='whitespace-nowrap'>
                                          {prediction.pontos} pts
                                      </Badge>
                                  </div>
@@ -213,7 +211,7 @@ export default function DashboardPage() {
                                         <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
                                         <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                                         <div className="w-1/3 text-right">
-                                             <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos > 0 && 'bg-blue-600 text-white')}>
+                                             <Badge variant={getPointsBadgeVariant(p.pontos)} className='whitespace-nowrap'>
                                                  {p.pontos} pts
                                              </Badge>
                                         </div>
@@ -269,12 +267,12 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-around w-full text-center">
                           <div className='flex flex-col items-center gap-2 w-1/3'>
                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                             <p className="font-semibold text-sm truncate block w-full md:block">{match.timeA}</p>
+                             <p className="font-semibold text-sm truncate hidden w-full md:block">{match.timeA}</p>
                           </div>
                           <span className="text-2xl font-bold text-muted-foreground mx-4">vs</span>
                            <div className='flex flex-col items-center gap-2 w-1/3'>
                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                             <p className="font-semibold text-sm truncate block w-full md:block">{match.timeB}</p>
+                             <p className="font-semibold text-sm truncate hidden w-full md:block">{match.timeB}</p>
                           </div>
                       </div>
                     </CardContent>
@@ -345,7 +343,7 @@ export default function DashboardPage() {
                                  <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
                                  <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                  <div className="w-1/3 text-right">
-                                     <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos > 0 && 'bg-blue-600 text-white' )}>
+                                     <Badge variant={getPointsBadgeVariant(prediction.pontos)} className='whitespace-nowrap'>
                                          {prediction.pontos} pts
                                      </Badge>
                                  </div>
@@ -361,7 +359,7 @@ export default function DashboardPage() {
                                         <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
                                         <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                                         <div className="w-1/3 text-right">
-                                            <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos > 0 && 'bg-blue-600 text-white')}>
+                                            <Badge variant={getPointsBadgeVariant(p.pontos)} className='whitespace-nowrap'>
                                                 {p.pontos} pts
                                             </Badge>
                                         </div>
@@ -378,6 +376,5 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
-    </TooltipProvider>
   );
 }

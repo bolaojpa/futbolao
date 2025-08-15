@@ -29,6 +29,12 @@ export default function ProfilePage() {
   ];
   const fallbackInitials = apelido.substring(0, 2).toUpperCase();
 
+  const getPointsBadgeVariant = (pontos: number): "success" | "secondary" | "destructive" => {
+    if (pontos === 10) return 'success';
+    if (pontos > 0) return 'secondary';
+    return 'destructive';
+  }
+
   return (
     <div className="container mx-auto space-y-8">
       <div className="flex flex-col md:flex-row items-center gap-6">
@@ -83,8 +89,8 @@ export default function ProfilePage() {
                     <TableCell className="font-medium">{`${match.timeA} x ${match.timeB}`}</TableCell>
                     <TableCell className="text-center font-mono">{`${match.placarA} - ${match.placarB}`}</TableCell>
                     <TableCell className="text-right">
-                        <Badge variant={match.pontosObtidos > 0 ? (match.pontosObtidos >= 10 ? 'default' : 'secondary') : 'destructive'} className={match.pontosObtidos >= 10 ? 'bg-green-600 text-white' : ''}>
-                        {match.pontosObtidos} pts
+                        <Badge variant={getPointsBadgeVariant(match.pontosObtidos)}>
+                            {match.pontosObtidos} pts
                         </Badge>
                     </TableCell>
                     </TableRow>

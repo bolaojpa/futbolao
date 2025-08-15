@@ -25,8 +25,8 @@ export default function HistoryPage() {
     return 'bg-red-100/80 dark:bg-red-900/40';       // Erro
   }
   
-  const getPointsBadgeVariant = (pontos: number): "default" | "secondary" | "destructive" => {
-    if (pontos === 10) return 'default';
+  const getPointsBadgeVariant = (pontos: number): "success" | "secondary" | "destructive" => {
+    if (pontos === 10) return 'success';
     if (pontos > 0) return 'secondary';
     return 'destructive';
   }
@@ -75,7 +75,7 @@ export default function HistoryPage() {
                              <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
                              <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                              <div className="w-1/3 text-right">
-                                 <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos > 0 && 'bg-blue-600 text-white' )}>
+                                 <Badge variant={getPointsBadgeVariant(prediction.pontos)} className='whitespace-nowrap'>
                                      {prediction.pontos} pts
                                  </Badge>
                              </div>
@@ -91,7 +91,7 @@ export default function HistoryPage() {
                                       <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
                                       <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                                       <div className="w-1/3 text-right">
-                                          <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos > 0 && 'bg-blue-600 text-white')}>
+                                          <Badge variant={getPointsBadgeVariant(p.pontos)} className='whitespace-nowrap'>
                                               {p.pontos} pts
                                           </Badge>
                                       </div>
