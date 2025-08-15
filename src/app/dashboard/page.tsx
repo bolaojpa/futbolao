@@ -65,13 +65,22 @@ export default function DashboardPage() {
     const now = new Date();
     const hoursDiff = differenceInHours(matchDate, now);
 
-    if (hoursDiff >= 0 && hoursDiff < 2) {
+    if (hoursDiff < 1) {
       return (
          <div className="text-xs font-semibold text-accent flex items-center justify-center gap-2">
            <AlarmClock className="w-4 h-4"/>
            <Countdown targetDate={matchDateString} />
         </div>
       )
+    }
+
+    if (hoursDiff < 2) {
+      return (
+        <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+          <AlarmClock className="w-3 h-3"/>
+          {`Em breve às ${format(matchDate, "HH:mm", { locale: ptBR })}`}
+        </div>
+      );
     }
     
     if (isToday(matchDate)) {
@@ -104,31 +113,33 @@ export default function DashboardPage() {
                 if (!prediction) return null;
 
                 return (
-                  <AccordionItem value={match.id} key={match.id} className="border-0">
+                  <AccordionItem value={match.id} key={match.id} className="border-0 rounded-lg overflow-hidden">
                     <Card className='border-accent/50'>
                       <AccordionTrigger className="p-4 hover:no-underline">
-                        <div className="flex-1 flex justify-center items-center">
-                          <div className="w-full md:w-1/3 text-right font-semibold text-sm md:text-base pr-2 hidden md:block">
-                              {match.timeA}
-                          </div>
-                          <div className="flex items-center justify-center gap-3 md:gap-4">
-                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                              <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                          </div>
-                          <div className="w-full md:w-1/3 text-left font-semibold text-sm md:text-base pl-2 hidden md:block">
-                              {match.timeB}
-                          </div>
+                        <div className="flex flex-col items-center justify-center w-full">
+                           <div className="flex items-center justify-center w-full">
+                               <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
+                                  {match.timeA}
+                              </div>
+                              <div className="flex items-center justify-center gap-3 md:gap-4">
+                                  <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                  <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
+                                  <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                              </div>
+                              <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
+                                 {match.timeB}
+                              </div>
+                           </div>
+                           <Badge variant={getStatusVariant(match.status)} className={cn('mt-2', match.status === 'Ao Vivo' && 'animate-pulse')}>
+                              {match.status}
+                            </Badge>
                         </div>
-                        <Badge variant={getStatusVariant(match.status)} className={cn('absolute bottom-2 left-1/2 -translate-x-1/2', match.status === 'Ao Vivo' && 'animate-pulse')}>
-                          {match.status}
-                        </Badge>
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="p-4 border-t bg-muted/30">
                            <div className="flex justify-between items-center w-full">
                                <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
-                               <span className="w-1/3 text-center font-mono font-semibold text-base">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                               <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                <div className="w-1/3 text-right">
                                    {/* Não mostra pontos para jogos ao vivo */}
                                </div>
@@ -142,7 +153,7 @@ export default function DashboardPage() {
                               {prediction.outrosPalpites.map((p, i) => (
                                   <li key={i} className="flex justify-between items-center p-4 border-t bg-muted/20">
                                       <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
-                                      <span className="w-1/3 text-center font-mono font-semibold text-base">{p.palpite.replace(/\s/g, '')}</span>
+                                      <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                                       <div className="w-1/3 text-right">
                                            {/* Não mostra pontos para jogos ao vivo */}
                                       </div>
@@ -227,31 +238,33 @@ export default function DashboardPage() {
                   if (!prediction) return null;
 
                   return (
-                    <AccordionItem value={match.id} key={match.id} className="border-0">
+                    <AccordionItem value={match.id} key={match.id} className="border-0 rounded-lg overflow-hidden">
                       <Card>
-                       <AccordionTrigger className={cn("p-4 hover:no-underline relative", getPredictionStatusClass(prediction.pontos))}>
-                        <div className="flex-1 flex justify-center items-center">
-                          <div className="w-full md:w-1/3 text-right font-semibold text-sm md:text-base pr-2 hidden md:block">
-                              {match.timeA}
-                          </div>
-                          <div className="flex items-center justify-center gap-3 md:gap-4">
-                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                              <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                              <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                          </div>
-                          <div className="w-full md:w-1/3 text-left font-semibold text-sm md:text-base pl-2 hidden md:block">
-                              {match.timeB}
-                          </div>
+                       <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
+                        <div className="flex flex-col items-center justify-center w-full">
+                           <div className="flex items-center justify-center w-full">
+                               <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
+                                  {match.timeA}
+                              </div>
+                              <div className="flex items-center justify-center gap-3 md:gap-4">
+                                  <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                  <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
+                                  <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                              </div>
+                              <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
+                                 {match.timeB}
+                              </div>
+                           </div>
+                           <span className="text-xs text-muted-foreground mt-2">
+                              {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground absolute bottom-2 left-1/2 -translate-x-1/2">
-                            {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
-                        </span>
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos))}>
                            <div className="flex justify-between items-center w-full">
                                <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
-                               <span className="w-1/3 text-center font-mono font-semibold text-base">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                               <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                <div className="w-1/3 text-right">
                                    <Badge variant={getPointsBadgeVariant(prediction.pontos)} className={cn('whitespace-nowrap', prediction.pontos === 10 && 'bg-green-600 text-white', prediction.pontos === 5 && 'bg-blue-600 text-white' )}>
                                        {prediction.pontos} pts
@@ -267,7 +280,7 @@ export default function DashboardPage() {
                               {prediction.outrosPalpites.map((p, i) => (
                                   <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos))}>
                                       <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
-                                      <span className="w-1/3 text-center font-mono font-semibold text-base">{p.palpite.replace(/\s/g, '')}</span>
+                                      <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                                       <div className="w-1/3 text-right">
                                           <Badge variant={getPointsBadgeVariant(p.pontos)} className={cn('whitespace-nowrap', p.pontos === 10 && 'bg-green-600 text-white', p.pontos === 5 && 'bg-blue-600 text-white')}>
                                               {p.pontos} pts
