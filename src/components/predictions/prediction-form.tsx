@@ -224,9 +224,9 @@ export function PredictionForm() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center justify-around w-full gap-2">
-                                     <div className='flex-1 flex flex-col md:flex-row items-center justify-end gap-2 text-center'>
-                                         <span className="font-bold text-lg hidden md:block text-right">{match.timeA}</span>
-                                         <Tooltip>
+                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                        <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                        <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
                                             </TooltipTrigger>
@@ -242,7 +242,7 @@ export function PredictionForm() {
                                         <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
                                     </div>
                                     
-                                     <div className='flex-1 flex flex-col md:flex-row items-center justify-start gap-2 text-center'>
+                                     <div className='flex-1 flex flex-row items-center justify-start gap-3'>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
@@ -251,7 +251,7 @@ export function PredictionForm() {
                                                 <p>{match.timeB}</p>
                                             </TooltipContent>
                                         </Tooltip>
-                                        <span className="font-bold text-lg hidden md:block text-left">{match.timeB}</span>
+                                        <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                      </div>
                                 </div>
                                 {aiSuggestions[match.id] && (
@@ -301,5 +301,3 @@ export function PredictionForm() {
         </TooltipProvider>
     );
 }
-
-    
