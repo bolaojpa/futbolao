@@ -135,8 +135,11 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1">
                         <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
-                        <CardTitle className="text-xl font-headline text-primary">{leader.apelido}</CardTitle>
-                        <p className="font-bold text-base">{leader.pontos} pts - <span className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</span></p>
+                        <div className="flex items-baseline gap-2">
+                            <CardTitle className="text-xl font-headline text-primary">{leader.apelido}</CardTitle>
+                            <p className="font-bold text-base text-primary">{leader.pontos} pts</p>
+                        </div>
+                        <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
                     </div>
                     <Button asChild variant="ghost" size="sm">
                         <Link href="/dashboard/leaderboard">
