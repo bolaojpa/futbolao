@@ -19,7 +19,7 @@ import {
 import { mockUser, mockMatches, mockPredictions, mockUsers } from '@/lib/data';
 import { format, parseISO, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy } from 'lucide-react';
+import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -248,9 +248,21 @@ export default function DashboardPage() {
               return (
                 <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
                   <Card className={cn(
-                      "flex flex-col h-full overflow-hidden",
+                      "relative flex flex-col h-full overflow-hidden",
                       needsAttention && "border-accent animate-pulse"
                   )}>
+                    {needsAttention && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="absolute top-2 left-2 z-10">
+                                    <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                                <p>Palpite necessário! Esta partida começa em breve.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
                     <CardHeader className='pb-2'>
                         <div className="flex justify-between items-start">
                           <CardDescription className="text-xs">{match.campeonato}</CardDescription>
