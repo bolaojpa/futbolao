@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { mockUsers, mockUser } from '@/lib/data';
+import { mockUsers, mockUser, mockChampionships } from '@/lib/data';
 import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,7 @@ type SortType = 'default' | 'exact' | 'situation';
 
 export default function LeaderboardPage() {
   const [sortType, setSortType] = useState<SortType>('default');
+  const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
   
   // Lista para o pódio (sempre com ordenação padrão)
   const sortedTop3Users = [...mockUsers].sort((a, b) => {
@@ -98,9 +99,23 @@ export default function LeaderboardPage() {
     <TooltipProvider>
       <div className="container mx-auto space-y-8 relative">
         <Confetti />
-        <div>
-            <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
-            <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
+                <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
+            </div>
+            <div className="w-full md:w-auto">
+                <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                    <SelectTrigger className="w-full md:w-[280px]">
+                        <SelectValue placeholder="Filtrar por campeonato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {mockChampionships.map(champ => (
+                            <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
