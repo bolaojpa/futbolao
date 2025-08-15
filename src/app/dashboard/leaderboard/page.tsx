@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -21,14 +24,19 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Share2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function LeaderboardPage() {
+  const [users, setUsers] = useState([...mockUsers]);
+  const [sortType, setSortType] = useState('default');
+
   // Tie-breaking logic as described
-  const sortedUsers = [...mockUsers].sort((a, b) => {
+  const sortedUsers = [...users].sort((a, b) => {
     if (a.pontos !== b.pontos) return b.pontos - a.pontos;
     if (a.exatos !== b.exatos) return b.exatos - a.exatos;
     if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-    if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - a.tempoMedio;
+    // Further tie-breakers can be added here based on sortType state
     return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
 
@@ -69,13 +77,23 @@ export default function LeaderboardPage() {
     <TooltipProvider>
       <div className="container mx-auto space-y-8 relative">
         <Confetti />
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
               <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
               <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
           </div>
-          <div className="flex gap-2">
-              <Button variant="outline">
+          <div className="flex gap-2 w-full md:w-auto">
+              <Select value={sortType} onValueChange={setSortType}>
+                  <SelectTrigger className="w-full md:w-[180px]">
+                      <SelectValue placeholder="Critério de desempate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="default">Padrão</SelectItem>
+                      <SelectItem value="time">Menor tempo médio</SelectItem>
+                      <SelectItem value="date">Data de cadastro</SelectItem>
+                  </SelectContent>
+              </Select>
+              <Button variant="outline" className="w-full md:w-auto">
                   <Share2 className="mr-2 h-4 w-4" />
                   Compartilhar
               </Button>
@@ -126,6 +144,7 @@ export default function LeaderboardPage() {
                   <TableHead>Jogador</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
                   <TableHead className="hidden md:table-cell text-right">Palpites Exatos</TableHead>
+                  <TableHead className="hidden md:table-cell text-right">Acertos</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -159,6 +178,7 @@ export default function LeaderboardPage() {
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
                         <TableCell className="hidden md:table-cell text-right">{user.exatos}</TableCell>
+                        <TableCell className="hidden md:table-cell text-right">{user.situacoes}</TableCell>
                       </TableRow>
                   )
                 })}
