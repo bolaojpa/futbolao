@@ -23,13 +23,13 @@ export const mockUsers = [
 ];
 
 export const mockChampionships = [
-  { id: 'champ_1', nome: 'Brasileirão Série A 2024', dataInicio: '2024-04-13', dataFim: '2024-12-08' },
-  { id: 'champ_2', nome: 'Copa Libertadores 2024', dataInicio: '2024-02-06', dataFim: '2024-11-30' },
+  { id: 'champ_1', nome: 'Brasileirão Série A 2024', dataInicio: '2024-04-13', dataFim: '2024-12-08', pontuacao: { exato: 10, situacao: 5 } },
+  { id: 'champ_2', nome: 'Copa Libertadores 2024', dataInicio: '2024-02-06', dataFim: '2024-11-30', pontuacao: { exato: 15, situacao: 7 } },
 ];
 
-const MOCK_MATCH_RECENT_1 = { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5 };
-const MOCK_MATCH_RECENT_2 = { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0 };
-const MOCK_MATCH_RECENT_3 = { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 10 };
+const MOCK_MATCH_RECENT_1 = { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
+const MOCK_MATCH_RECENT_2 = { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0, maxPontos: 10 };
+const MOCK_MATCH_RECENT_3 = { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 15, maxPontos: 15 };
 
 // Helper para criar uma data futura para os mocks
 const futureDate = (hours: number) => {
@@ -45,10 +45,10 @@ export const mockMatches = {
     MOCK_MATCH_RECENT_3,
   ],
   upcoming: [
-    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo' },
-    { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: futureDate(1.5), status: 'Agendado' }, // Partida para contagem regressiva
-    { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3), status: 'Agendado' },
-    { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24), status: 'Agendado' },
+    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo', maxPontos: 15 },
+    { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: futureDate(1.5), status: 'Agendado', maxPontos: 10 }, // Partida para contagem regressiva
+    { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3), status: 'Agendado', maxPontos: 10 },
+    { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24), status: 'Agendado', maxPontos: 10 },
   ],
 };
 
@@ -77,9 +77,9 @@ export const mockPredictions = [
     userId: 'user_1',
     matchId: 'match_3',
     palpiteUsuario: { placarA: 0, placarB: 1 },
-    pontos: 10,
+    pontos: 15,
     outrosPalpites: [
-      { apelido: 'Fernanda', palpite: '1-2', pontos: 5 },
+      { apelido: 'Fernanda', palpite: '1-2', pontos: 7 },
       { apelido: 'Lucas', palpite: '1-0', pontos: 0 },
     ],
   },
@@ -88,10 +88,10 @@ export const mockPredictions = [
     userId: 'user_1',
     matchId: 'match_6',
     palpiteUsuario: { placarA: 2, placarB: 1 },
-    pontos: 5, // Pontos simulados para o usuário principal (acertou o vencedor)
+    pontos: 7, // Pontos simulados para o usuário principal (acertou o vencedor)
     outrosPalpites: [
-      { apelido: 'Fernanda', palpite: '1-0', pontos: 10 }, // Acertou o placar exato
-      { apelido: 'Lucas', palpite: '3-0', pontos: 5 },  // Acertou o vencedor
+      { apelido: 'Fernanda', palpite: '1-0', pontos: 15 }, // Acertou o placar exato
+      { apelido: 'Lucas', palpite: '3-0', pontos: 7 },  // Acertou o vencedor
       { apelido: 'Juliana', palpite: '1-1', pontos: 0 }, // Errou
     ],
   },

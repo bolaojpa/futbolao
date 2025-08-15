@@ -29,8 +29,8 @@ export default function ProfilePage() {
   ];
   const fallbackInitials = apelido.substring(0, 2).toUpperCase();
 
-  const getPointsBadgeVariant = (pontos: number): "success" | "default" | "destructive" => {
-    if (pontos === 10) return 'success';
+  const getPointsBadgeVariant = (pontos: number, maxPontos: number): "success" | "default" | "destructive" => {
+    if (pontos === maxPontos && maxPontos > 0) return 'success';
     if (pontos > 0) return 'default';
     return 'destructive';
   }
@@ -89,7 +89,7 @@ export default function ProfilePage() {
                     <TableCell className="font-medium">{`${match.timeA} x ${match.timeB}`}</TableCell>
                     <TableCell className="text-center font-mono">{`${match.placarA} - ${match.placarB}`}</TableCell>
                     <TableCell className="text-right">
-                        <Badge variant={getPointsBadgeVariant(match.pontosObtidos)}>
+                        <Badge variant={getPointsBadgeVariant(match.pontosObtidos, match.maxPontos || 10)}>
                             {match.pontosObtidos} pts
                         </Badge>
                     </TableCell>

@@ -19,14 +19,14 @@ import { cn } from '@/lib/utils';
 export default function HistoryPage() {
   const finishedMatches = [...mockMatches.recent].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
 
-  const getPredictionStatusClass = (pontos: number) => {
-    if (pontos === 10) return 'bg-green-100/80 dark:bg-green-900/40'; // Acerto exato
+  const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
+    if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40'; // Acerto exato
     if (pontos > 0) return 'bg-blue-100/80 dark:bg-blue-900/40';   // Acerto de situação
     return 'bg-red-100/80 dark:bg-red-900/40';       // Erro
   }
   
-  const getPointsBadgeVariant = (pontos: number): "success" | "default" | "destructive" => {
-    if (pontos === 10) return 'success';
+  const getPointsBadgeVariant = (pontos: number, maxPontos: number): "success" | "default" | "destructive" => {
+    if (pontos === maxPontos && maxPontos > 0) return 'success';
     if (pontos > 0) return 'default';
     return 'destructive';
   }
@@ -44,12 +44,14 @@ export default function HistoryPage() {
         {finishedMatches.map((match) => {
           const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
           if (!prediction) return null;
+          
+          const maxPointsForMatch = match.maxPontos || 10; // Fallback para 10 se não definido
 
           return (
             <Accordion type="single" collapsible className="w-full" key={match.id}>
               <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
                  <Card>
-                    <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos))}>
+                    <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos, maxPointsForMatch))}>
                       <div className="flex flex-col items-center justify-center w-full">
                          <div className="flex items-center justify-center w-full">
                              <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
@@ -70,12 +72,12 @@ export default function HistoryPage() {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                       <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos))}>
+                       <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos, maxPointsForMatch))}>
                           <div className="flex justify-between items-center w-full">
                              <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
                              <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                              <div className="w-1/3 text-right">
-                                 <Badge variant={getPointsBadgeVariant(prediction.pontos)} className='whitespace-nowrap'>
+                                 <Badge variant={getPointsBadgeVariant(prediction.pontos, maxPointsForMatch)} className='whitespace-nowrap'>
                                      {prediction.pontos} pts
                                  </Badge>
                              </div>
@@ -87,11 +89,11 @@ export default function HistoryPage() {
                            </div>
                            <ul className="text-sm">
                               {prediction.outrosPalpites.map((p, i) => (
-                                  <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos))}>
+                                  <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
                                       <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
                                       <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                                       <div className="w-1/3 text-right">
-                                          <Badge variant={getPointsBadgeVariant(p.pontos)} className='whitespace-nowrap'>
+                                          <Badge variant={getPointsBadgeVariant(p.pontos, maxPointsForMatch)} className='whitespace-nowrap'>
                                               {p.pontos} pts
                                           </Badge>
                                       </div>
