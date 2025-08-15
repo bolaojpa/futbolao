@@ -31,8 +31,17 @@ type SortType = 'default' | 'exact' | 'situation';
 
 export default function LeaderboardPage() {
   const [sortType, setSortType] = useState<SortType>('default');
+  
+  // Lista para o pódio (sempre com ordenação padrão)
+  const sortedTop3Users = [...mockUsers].sort((a, b) => {
+      if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+      if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+      if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+      return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
+  });
 
-  const sortedUsers = [...mockUsers].sort((a, b) => {
+  // Lista para a tabela (ordenada pelo filtro)
+  const sortedTableUsers = [...mockUsers].sort((a, b) => {
       switch (sortType) {
         case 'exact':
             if (a.exatos !== b.exatos) return b.exatos - a.exatos;
@@ -55,7 +64,7 @@ export default function LeaderboardPage() {
     if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500" />;
     if (rank === 2) return <Award className="w-5 h-5 text-slate-400" />;
     if (rank === 3) return <Award className="w-5 h-5 text-amber-700" />;
-    if (rank === sortedUsers.length) return <Flashlight className="w-5 h-5 text-gray-400" />;
+    if (rank === sortedTableUsers.length) return <Flashlight className="w-5 h-5 text-gray-400" />;
     return null;
   };
   
@@ -82,37 +91,19 @@ export default function LeaderboardPage() {
     }
   };
 
-  const shareText = encodeURIComponent(`Confira o ranking do FutBolão Pro! Estou em ${sortedUsers.findIndex(u => u.id === mockUser.id) + 1}º lugar!`);
+  const shareText = encodeURIComponent(`Confira o ranking do FutBolão Pro! Estou em ${sortedTop3Users.findIndex(u => u.id === mockUser.id) + 1}º lugar!`);
 
   return (
     <TooltipProvider>
       <div className="container mx-auto space-y-8 relative">
         <Confetti />
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-              <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
-              <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
-          </div>
-          <div className="flex gap-2 w-full md:w-auto">
-              <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
-                  <SelectTrigger className="w-full md:w-[220px]">
-                      <SelectValue placeholder="Critério de Ordenação" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="default">Ordenar por Pontos (Padrão)</SelectItem>
-                      <SelectItem value="exact">Ordenar por Acertos (Placar Exato)</SelectItem>
-                      <SelectItem value="situation">Ordenar por Acertos (Situação)</SelectItem>
-                  </SelectContent>
-              </Select>
-              <Button variant="outline" className="w-full md:w-auto">
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Compartilhar
-              </Button>
-          </div>
+        <div>
+            <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
+            <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-          {sortedUsers.slice(0, 3).map((user, index) => (
+          {sortedTop3Users.slice(0, 3).map((user, index) => (
               <Card key={user.id} className={cn(
                   "relative overflow-hidden",
                   index === 1 && "md:order-1", // 2nd place
@@ -144,6 +135,27 @@ export default function LeaderboardPage() {
               </Card>
           ))}
         </div>
+        
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h3 className="text-xl font-bold font-headline">Classificação Geral</h3>
+            <div className="flex gap-2 w-full md:w-auto">
+                <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
+                    <SelectTrigger className="w-full md:w-[240px]">
+                        <SelectValue placeholder="Critério de Ordenação" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="default">Ordenar por Pontos (Padrão)</SelectItem>
+                        <SelectItem value="exact">Ordenar por Acertos (Placar Exato)</SelectItem>
+                        <SelectItem value="situation">Ordenar por Acertos (Situação)</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Button variant="outline" className="w-full md:w-auto">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Compartilhar
+                </Button>
+            </div>
+        </div>
+
 
         <Card>
           <CardContent className="p-0">
@@ -154,12 +166,12 @@ export default function LeaderboardPage() {
                   <TableHead className='w-16 text-center'>Var.</TableHead>
                   <TableHead>Jogador</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">Placares Exatos</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">Acertos de Situação</TableHead>
+                  <TableHead className="text-right">Placares Exatos</TableHead>
+                  <TableHead className="text-right">Acertos de Situação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedUsers.map((user, index) => {
+                {sortedTableUsers.map((user, index) => {
                   const rank = index + 1;
                   const variation = getPositionVariation(user.posicaoVariacao as 'up' | 'down' | 'stable');
                   return (
@@ -188,8 +200,8 @@ export default function LeaderboardPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
-                        <TableCell className="hidden md:table-cell text-right">{user.exatos}</TableCell>
-                        <TableCell className="hidden md:table-cell text-right">{user.situacoes}</TableCell>
+                        <TableCell className="text-right">{user.exatos}</TableCell>
+                        <TableCell className="text-right">{user.situacoes}</TableCell>
                       </TableRow>
                   )
                 })}
