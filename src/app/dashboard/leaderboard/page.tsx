@@ -27,26 +27,28 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+type SortType = 'default' | 'exact' | 'situation';
+
 export default function LeaderboardPage() {
-  const [users, setUsers] = useState([...mockUsers]);
-  const [sortType, setSortType] = useState('default');
+  const [sortType, setSortType] = useState<SortType>('default');
 
-  // Tie-breaking logic as described
-  const sortedUsers = [...users].sort((a, b) => {
-    if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-    if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-    if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-    
-    // Apply further tie-breaking based on filter
-    if (sortType === 'time') {
-        if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - b.tempoMedio;
-    }
-    if (sortType === 'date') {
-        return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
-    }
-
-    // Default final tie-breaker
-    return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
+  const sortedUsers = [...mockUsers].sort((a, b) => {
+      switch (sortType) {
+        case 'exact':
+            if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+            break;
+        case 'situation':
+            if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+            break;
+        default:
+            // Regra Padrão
+            if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+            if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+            if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+            break;
+      }
+      // Critério final de desempate para todos os casos
+      return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
 
   const getMedalIcon = (rank: number) => {
@@ -92,14 +94,14 @@ export default function LeaderboardPage() {
               <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
-              <Select value={sortType} onValueChange={setSortType}>
-                  <SelectTrigger className="w-full md:w-[180px]">
-                      <SelectValue placeholder="Critério de desempate" />
+              <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
+                  <SelectTrigger className="w-full md:w-[220px]">
+                      <SelectValue placeholder="Critério de Ordenação" />
                   </SelectTrigger>
                   <SelectContent>
-                      <SelectItem value="default">Padrão</SelectItem>
-                      <SelectItem value="time">Menor tempo médio</SelectItem>
-                      <SelectItem value="date">Data de cadastro</SelectItem>
+                      <SelectItem value="default">Ordenar por Pontos (Padrão)</SelectItem>
+                      <SelectItem value="exact">Ordenar por Acertos (Placar Exato)</SelectItem>
+                      <SelectItem value="situation">Ordenar por Acertos (Situação)</SelectItem>
                   </SelectContent>
               </Select>
               <Button variant="outline" className="w-full md:w-auto">
@@ -152,8 +154,8 @@ export default function LeaderboardPage() {
                   <TableHead className='w-16 text-center'>Var.</TableHead>
                   <TableHead>Jogador</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">Palpites Exatos</TableHead>
-                  <TableHead className="hidden md:table-cell text-right">Acertos</TableHead>
+                  <TableHead className="hidden md:table-cell text-right">Placares Exatos</TableHead>
+                  <TableHead className="hidden md:table-cell text-right">Acertos de Situação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
