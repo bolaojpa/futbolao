@@ -10,12 +10,12 @@ import { ptBR } from 'date-fns/locale';
 import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -50,7 +50,8 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
 
 export function PredictionForm() {
     const { toast } = useToast();
-    const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
+    const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
@@ -126,7 +127,8 @@ export function PredictionForm() {
                 variant: "destructive",
             });
         } else {
-            setAiSuggestions(prev => ({ ...prev, [matchId]: res.suggestion! }));
+            setAiSuggestion(res.suggestion);
+            setIsModalOpen(true);
         }
 
         setLoadingAi(prev => ({ ...prev, [matchId]: false }));
@@ -184,12 +186,11 @@ export function PredictionForm() {
 
     if (openMatches.length === 0) {
         return (
-             <Alert>
-                <AlertTitle>Nenhuma partida aberta!</AlertTitle>
-                <AlertDescription>
-                    Não há partidas abertas para palpites no momento. Volte mais tarde!
-                </AlertDescription>
-            </Alert>
+             <Card>
+                <CardContent className="p-6 text-center">
+                     <p>Não há partidas abertas para palpites no momento. Volte mais tarde!</p>
+                </CardContent>
+            </Card>
         )
     }
 
@@ -215,8 +216,11 @@ export function PredictionForm() {
                                     </TooltipContent>
                                 </Tooltip>
                             )}
-                            <CardHeader className='pb-4 pt-4 text-center'>
+                            <CardHeader className='pb-2 pt-4 text-center'>
                                 <CardTitle className="text-base font-semibold">{match.campeonato}</CardTitle>
+                                <div className="text-xs text-muted-foreground">
+                                    <UpcomingMatchDate matchDateString={match.data} />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center justify-around w-full gap-2">
@@ -250,27 +254,17 @@ export function PredictionForm() {
                                         <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                      </div>
                                 </div>
-                                {aiSuggestions[match.id] && (
-                                    <Alert className="mt-4 bg-primary/10 border-primary/20">
-                                        <Wand2 className="h-4 w-4 text-primary" />
-                                        <AlertTitle className="font-headline text-primary">Sugestão da IA</AlertTitle>
-                                        <AlertDescription>
-                                            {aiSuggestions[match.id]}
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
                             </CardContent>
-                             <CardFooter className="flex-col gap-4">
+                             <CardFooter className="flex-col gap-2 p-4">
                                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 w-full">
-                                    <div className='text-center'>
-                                        <UpcomingMatchDate matchDateString={match.data} />
+                                    <div className='text-center h-4'>
                                         {lastUpdated[match.id] && (
-                                            <p className="text-xs text-muted-foreground mt-1">
+                                            <p className="text-xs text-muted-foreground">
                                                 {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
                                             </p>
                                         )}
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                                         <Button 
                                             variant="outline" 
                                             onClick={() => handleAiSuggestion(match.id)} 
@@ -295,6 +289,26 @@ export function PredictionForm() {
                     );
                 })}
             </div>
+
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                             <Wand2 className="h-5 w-5 text-primary" />
+                             Sugestão da IA
+                        </DialogTitle>
+                        <DialogDescription>
+                            Com base na tendência de outros jogadores, esta é a sugestão para sua aposta. Use com sabedoria!
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 font-semibold text-center text-lg">
+                        {aiSuggestion}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
         </TooltipProvider>
     );
 }
+
+    
