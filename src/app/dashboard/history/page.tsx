@@ -19,12 +19,36 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 
+type FilterType = 'all' | 'exact' | 'situation' | 'miss';
+
 export default function HistoryPage() {
   const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
+  const [filterType, setFilterType] = useState<FilterType>('all');
 
-  const finishedMatches = [...mockMatches.recent]
-    .filter(match => match.campeonato === mockChampionships.find(c => c.id === selectedChampionship)?.nome)
+  const filteredMatches = [...mockMatches.recent]
+    .filter(match => {
+        const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
+        if (!prediction || !match.maxPontos) return false;
+        
+        // Primeiro, filtra pelo campeonato
+        const championshipMatch = match.campeonato === mockChampionships.find(c => c.id === selectedChampionship)?.nome;
+        if (!championshipMatch) return false;
+
+        // Depois, pelo tipo de acerto
+        switch (filterType) {
+            case 'exact':
+                return prediction.pontos === match.maxPontos && match.maxPontos > 0;
+            case 'situation':
+                return prediction.pontos > 0 && prediction.pontos < match.maxPontos;
+            case 'miss':
+                return prediction.pontos === 0;
+            case 'all':
+            default:
+                return true;
+        }
+    })
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+
 
   const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
     if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40';
@@ -40,14 +64,14 @@ export default function HistoryPage() {
 
   return (
     <div className="container mx-auto space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline">Histórico de Palpites</h1>
           <p className="text-muted-foreground">
             Reveja seus palpites passados e suas pontuações.
           </p>
         </div>
-         <div className="w-full md:w-auto">
+         <div className="flex flex-col md:flex-row gap-2">
             <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
                 <SelectTrigger className="w-full md:w-[280px]">
                     <SelectValue placeholder="Filtrar por campeonato" />
@@ -58,11 +82,22 @@ export default function HistoryPage() {
                     ))}
                 </SelectContent>
             </Select>
+             <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
+                <SelectTrigger className="w-full md:w-[280px]">
+                    <SelectValue placeholder="Filtrar por resultado" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Mostrar Todos</SelectItem>
+                    <SelectItem value="exact">Acertos de Placar Exato</SelectItem>
+                    <SelectItem value="situation">Acertos de Situação</SelectItem>
+                    <SelectItem value="miss">Errados</SelectItem>
+                </SelectContent>
+            </Select>
         </div>
       </div>
 
       <div className="w-full space-y-4">
-        {finishedMatches.length > 0 ? finishedMatches.map((match) => {
+        {filteredMatches.length > 0 ? filteredMatches.map((match) => {
           const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
           if (!prediction || !match.maxPontos) return null;
 
@@ -134,7 +169,7 @@ export default function HistoryPage() {
         }) : (
             <Card>
                 <CardContent className="p-6 text-center">
-                    <p>Nenhum resultado encontrado para este campeonato.</p>
+                    <p>Nenhum resultado encontrado para os filtros selecionados.</p>
                 </CardContent>
             </Card>
         )}
