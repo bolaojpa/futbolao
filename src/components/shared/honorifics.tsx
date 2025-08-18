@@ -10,7 +10,7 @@ const honorificsVariants = cva(
         variants: {
             variant: {
                 default: "bottom-0 left-1/2 -translate-x-1/2",
-                badge: "-bottom-1 -right-1",
+                badge: "bottom-0 left-1/2 -translate-x-1/2",
             },
         },
         defaultVariants: {
@@ -29,7 +29,7 @@ export const Honorifics = ({ count, variant }: HonorificsProps) => {
     let IconComponent: React.ComponentType<{ className?: string }>;
     let displayCount = 0;
     let iconClass = "text-yellow-400 fill-yellow-400";
-    let iconSize = variant === 'badge' ? "h-2.5 w-2.5" : "h-3.5 w-3.5";
+    let iconSize = variant === 'badge' ? "h-2 w-2" : "h-3 h-3";
 
 
     if (count >= 10) {
