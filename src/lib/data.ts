@@ -13,6 +13,22 @@ export const mockUser = {
   totalJogos: 88,
   totalCampeonatos: 4,
   taxaAcerto: 62.5,
+  championshipStats: [
+    {
+      championshipId: 'champ_1',
+      pontos: 85,
+      acertosExatos: 7,
+      acertosSituacao: 12,
+      maiorSequencia: 3,
+    },
+    {
+      championshipId: 'champ_2',
+      pontos: 40,
+      acertosExatos: 3,
+      acertosSituacao: 4,
+      maiorSequencia: 2,
+    }
+  ]
 };
 
 export const mockUsers = [

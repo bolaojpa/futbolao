@@ -1,5 +1,7 @@
 
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -8,12 +10,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Star, Crown, Award } from 'lucide-react';
-import { mockUser } from '@/lib/data';
+import { Edit, Gamepad2, Percent, Star, Crown, Award, Target, TrendingUp, CheckCircle } from 'lucide-react';
+import { mockUser, mockChampionships } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import type React from 'react';
+import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, title: string, value: string | number, description: string }) => (
     <Card>
@@ -42,23 +46,23 @@ const renderHonorifics = (count: number) => {
 
     if (count >= 10) {
         IconComponent = Crown;
-        displayCount = count - 9;
+        displayCount = Math.min(count - 9, 3);
         isFilled = true;
     } else if (count >= 7) {
         IconComponent = Trophy;
-        displayCount = count - 6;
+        displayCount = Math.min(count - 6, 3);
         isFilled = true;
     } else if (count >= 4) {
         IconComponent = Award;
-        displayCount = count - 3;
+        displayCount = Math.min(count - 3, 3);
         isFilled = true;
     } else {
         IconComponent = Star;
-        displayCount = count;
+        displayCount = Math.min(count, 3);
         isFilled = true;
     }
     
-    const icons = Array.from({ length: Math.min(displayCount, 3) }, (_, i) => (
+    const icons = Array.from({ length: displayCount }, (_, i) => (
         <IconComponent key={i} className={cn(iconClass, isFilled && "fill-yellow-400")} />
     ));
 
@@ -70,10 +74,11 @@ const renderHonorifics = (count: number) => {
 };
 
 export default function ProfilePage() {
-  const { apelido, nome, email, fotoPerfil, titulos, totalCampeonatos, totalJogos, taxaAcerto } = mockUser;
+  const { apelido, nome, email, fotoPerfil, titulos, totalCampeonatos, totalJogos, taxaAcerto, championshipStats } = mockUser;
   const fallbackInitials = apelido.substring(0, 2).toUpperCase();
+  const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
 
-  const stats = [
+  const generalStats = [
     { 
         icon: <Award className="h-4 w-4 text-muted-foreground" />,
         title: "Títulos",
@@ -94,11 +99,41 @@ export default function ProfilePage() {
     },
     { 
         icon: <Percent className="h-4 w-4 text-muted-foreground" />,
-        title: "Taxa de Acerto",
+        title: "Taxa de Acerto Geral",
         value: `${taxaAcerto}%`,
         description: "Percentual de palpites premiados"
     },
-];
+  ];
+
+  const selectedChampionshipStats = championshipStats.find(stat => stat.championshipId === selectedChampionship);
+  
+  const championshipSpecificStats = selectedChampionshipStats ? [
+    {
+      icon: <Star className="h-4 w-4 text-muted-foreground" />,
+      title: "Pontos",
+      value: selectedChampionshipStats.pontos,
+      description: "Total de pontos no campeonato"
+    },
+    {
+      icon: <Target className="h-4 w-4 text-muted-foreground" />,
+      title: "Acertos Exatos",
+      value: selectedChampionshipStats.acertosExatos,
+      description: "Placares cravados"
+    },
+    {
+      icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />,
+      title: "Acertos de Situação",
+      value: selectedChampionshipStats.acertosSituacao,
+      description: "Vencedor/empate corretos"
+    },
+    {
+      icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />,
+      title: "Maior Sequência de Acertos",
+      value: selectedChampionshipStats.maiorSequencia,
+      description: "Sequência de placares exatos"
+    },
+  ] : [];
+
 
   return (
     <div className="container mx-auto space-y-8">
@@ -126,10 +161,41 @@ export default function ProfilePage() {
       <Separator />
 
       <div>
-        <h2 className="text-2xl font-bold font-headline mb-4">Minhas Estatísticas</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">Informações Gerais</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {stats.map(stat => <StatCard key={stat.title} {...stat} />)}
+            {generalStats.map(stat => <StatCard key={stat.title} {...stat} />)}
         </div>
+      </div>
+      
+      <Separator />
+
+      <div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+            <h2 className="text-2xl font-bold font-headline">Minhas Estatísticas</h2>
+            <div className="w-full md:w-auto">
+                <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                    <SelectTrigger className="w-full md:w-[280px]">
+                        <SelectValue placeholder="Filtrar por campeonato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {mockChampionships.map(champ => (
+                            <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
+        {selectedChampionshipStats ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <p>Nenhuma estatística encontrada para este campeonato.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
