@@ -11,17 +11,17 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Crown, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Award } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal } from 'lucide-react';
 import { mockUser, mockChampionships, mockMatches } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import type React from 'react';
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
+import { Honorifics } from '@/components/shared/honorifics';
 
 const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, title: string, value: string | number, description: string }) => (
     <Card>
@@ -39,40 +39,6 @@ const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, 
         </CardContent>
     </Card>
 )
-
-const renderHonorifics = (count: number) => {
-    if (count === 0) return null;
-
-    let IconComponent: React.ComponentType<{ className?: string }> = Award;
-    let displayCount = 0;
-    let iconClass = "h-5 w-5 text-yellow-400";
-    let isFilled = true;
-
-    if (count >= 10) {
-        IconComponent = Crown;
-        displayCount = Math.min(count - 9, 3);
-    } else if (count >= 7) {
-        IconComponent = Trophy;
-        displayCount = Math.min(count - 6, 3);
-    } else if (count >= 4) {
-        IconComponent = Award;
-        displayCount = Math.min(count - 3, 3);
-    } else { // 1-3
-        IconComponent = Award; // Usando Award como base para as estrelas iniciais
-        displayCount = Math.min(count, 3);
-        iconClass = "h-5 w-5 text-yellow-400"; // Replicando o estilo de estrela
-    }
-    
-    const icons = Array.from({ length: displayCount }, (_, i) => (
-        <IconComponent key={i} className={cn(iconClass, isFilled && "fill-yellow-400")} />
-    ));
-
-    return (
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 h-6 rounded-full px-2">
-            {icons}
-        </div>
-    );
-};
 
 export default function ProfilePage() {
   const { 
@@ -98,12 +64,6 @@ export default function ProfilePage() {
 
   const generalStats = [
     { 
-        icon: <Award className="h-4 w-4 text-muted-foreground" />,
-        title: "Títulos",
-        value: titulos,
-        description: "Campeão da Pontuação Geral"
-    },
-    { 
         icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />,
         title: "Campeonatos Disputados",
         value: totalCampeonatos,
@@ -127,7 +87,7 @@ export default function ProfilePage() {
   
   const championshipSpecificStats = selectedChampionshipStats ? [
     {
-      icon: <Award className="h-4 w-4 text-muted-foreground" />,
+      icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />,
       title: "Pontos",
       value: selectedChampionshipStats.pontos,
       description: "Total de pontos no campeonato"
@@ -164,7 +124,7 @@ export default function ProfilePage() {
                     <AvatarImage src={displayImage} alt={displayName} />
                     <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
                 </Avatar>
-                {renderHonorifics(titulos)}
+                <Honorifics count={titulos} />
             </div>
             <div className='flex-1 text-center md:text-left'>
                 <h1 className="text-3xl font-bold font-headline">{displayName}</h1>

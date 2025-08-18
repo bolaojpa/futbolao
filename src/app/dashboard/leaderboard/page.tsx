@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Honorifics } from '@/components/shared/honorifics';
 
 type SortType = 'default' | 'exact' | 'situation';
 
@@ -201,10 +202,13 @@ export default function LeaderboardPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="w-9 h-9">
-                              <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
-                              <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                            </Avatar>
+                            <div className="relative">
+                                <Avatar className="w-9 h-9">
+                                  <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                                  <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                </Avatar>
+                                <Honorifics count={user.titulos ?? 0} variant="badge" />
+                            </div>
                             <span className="font-medium">{user.apelido}</span>
                             {getMedalIcon(rank)}
                           </div>
