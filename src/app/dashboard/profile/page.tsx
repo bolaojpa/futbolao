@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Star, Award, Gamepad2, Percent } from 'lucide-react';
+import { Edit, Award, Gamepad2, Percent, Crown } from 'lucide-react';
 import { mockUser } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -28,26 +28,29 @@ const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, 
     </Card>
 )
 
-const renderStars = (count: number) => {
-    const stars = [];
-    // This is just an example logic. It can be adapted to your rules.
-    // For now: 1 green for every 5 titles, 1 yellow for every 3 titles left, 1 outline for the rest.
-    const greenStars = Math.floor(count / 5);
-    const yellowStars = Math.floor((count % 5) / 3);
-    const outlineStars = count - (greenStars * 5) - (yellowStars * 3);
+const renderHonorific = (count: number) => {
+    if (count === 0) return null;
 
-    for(let i=0; i < greenStars; i++) {
-        stars.push(<Star key={`g-${i}`} className="w-5 h-5 text-green-500 fill-green-500" />);
-    }
-    for(let i=0; i < yellowStars; i++) {
-        stars.push(<Star key={`y-${i}`} className="w-5 h-5 text-yellow-500 fill-yellow-500" />);
-    }
-     for(let i=0; i < outlineStars; i++) {
-        // Using a simple outline star for now
-        stars.push(<Star key={`o-${i}`} className="w-5 h-5 text-yellow-400" />);
+    let crown = {
+        color: '',
+        icon: <Crown className="h-6 w-6" />
+    };
+
+    if (count >= 1 && count <= 4) {
+        crown.color = 'text-amber-700 fill-amber-700'; // Bronze
+    } else if (count >= 5 && count <= 9) {
+        crown.color = 'text-slate-400 fill-slate-400'; // Silver
+    } else if (count >= 10) {
+        crown.color = 'text-yellow-500 fill-yellow-500'; // Gold
     }
     
-    return stars;
+    if (!crown.color) return null;
+
+    return (
+        <div className={`absolute -top-3 -right-3 transform rotate-12 drop-shadow-lg ${crown.color}`}>
+            {crown.icon}
+        </div>
+    );
 }
 
 
@@ -90,11 +93,7 @@ export default function ProfilePage() {
                 <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
                 <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
             </Avatar>
-            {titulos > 0 && (
-                <div className="absolute -bottom-2 w-full flex items-center justify-center gap-1 drop-shadow-lg">
-                    {renderStars(titulos)}
-                </div>
-            )}
+            {renderHonorific(titulos)}
         </div>
         <div className='flex-1 text-center md:text-left'>
             <h1 className="text-3xl font-bold font-headline">{nome}</h1>
