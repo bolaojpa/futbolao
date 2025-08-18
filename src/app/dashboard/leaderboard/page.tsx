@@ -165,10 +165,6 @@ export default function LeaderboardPage() {
                         <SelectItem value="situation">Ordenar por Acertos (Situação)</SelectItem>
                     </SelectContent>
                 </Select>
-                <Button variant="outline" className="w-full md:w-auto">
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Compartilhar
-                </Button>
             </div>
         </div>
 
