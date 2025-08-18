@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Star, Crown, Trophy, Award } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Star, Crown, Award as AwardIcon } from 'lucide-react';
 import { mockUser } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -38,25 +38,27 @@ const renderHonorifics = (count: number) => {
     let IconComponent: React.ComponentType<{ className?: string }> = Star;
     let displayCount = 0;
     let iconClass = "h-5 w-5 text-yellow-400";
+    let isFilled = false;
 
     if (count >= 10) {
         IconComponent = Crown;
         displayCount = count - 9;
-        iconClass = cn(iconClass, "fill-yellow-400");
+        isFilled = true;
     } else if (count >= 7) {
-        IconComponent = Trophy;
+        IconComponent = AwardIcon; // Placeholder for custom trophy
         displayCount = count - 6;
-        iconClass = cn(iconClass, "fill-yellow-400");
+        isFilled = true;
     } else if (count >= 4) {
-        IconComponent = Award;
+        IconComponent = AwardIcon;
         displayCount = count - 3;
+        isFilled = true;
     } else {
         IconComponent = Star;
         displayCount = count;
     }
     
     const icons = Array.from({ length: Math.min(displayCount, 3) }, (_, i) => (
-        <IconComponent key={i} className={cn(iconClass)} />
+        <IconComponent key={i} className={cn(iconClass, isFilled && "fill-yellow-400")} />
     ));
 
     return (
@@ -72,7 +74,7 @@ export default function ProfilePage() {
 
   const stats = [
     { 
-        icon: <Award className="h-4 w-4 text-muted-foreground" />,
+        icon: <AwardIcon className="h-4 w-4 text-muted-foreground" />,
         title: "Títulos",
         value: titulos,
         description: "Campeão da Pontuação Geral"
