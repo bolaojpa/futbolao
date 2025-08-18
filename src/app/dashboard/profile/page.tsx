@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Star, Crown, Award as AwardIcon } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Star, Crown, Award } from 'lucide-react';
 import { mockUser } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -45,16 +45,17 @@ const renderHonorifics = (count: number) => {
         displayCount = count - 9;
         isFilled = true;
     } else if (count >= 7) {
-        IconComponent = AwardIcon; // Placeholder for custom trophy
+        IconComponent = Trophy;
         displayCount = count - 6;
         isFilled = true;
     } else if (count >= 4) {
-        IconComponent = AwardIcon;
+        IconComponent = Award;
         displayCount = count - 3;
         isFilled = true;
     } else {
         IconComponent = Star;
         displayCount = count;
+        isFilled = true;
     }
     
     const icons = Array.from({ length: Math.min(displayCount, 3) }, (_, i) => (
@@ -74,7 +75,7 @@ export default function ProfilePage() {
 
   const stats = [
     { 
-        icon: <AwardIcon className="h-4 w-4 text-muted-foreground" />,
+        icon: <Award className="h-4 w-4 text-muted-foreground" />,
         title: "Títulos",
         value: titulos,
         description: "Campeão da Pontuação Geral"
