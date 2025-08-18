@@ -28,6 +28,7 @@ import React, { useEffect, useState } from 'react';
 import { Countdown } from '@/components/shared/countdown';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Honorifics } from '@/components/shared/honorifics';
 
 export default function DashboardPage() {
   const { apelido } = mockUser;
@@ -126,11 +127,14 @@ export default function DashboardPage() {
         <section>
              <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
                  <CardHeader className="flex flex-row items-center gap-4 p-4">
-                     <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
-                        <Avatar className="w-full h-full border-2 border-background">
-                            <AvatarImage src={`https://placehold.co/100x100.png?text=${leader.apelido.charAt(0)}`} alt={leader.apelido} />
-                            <AvatarFallback>{leader.apelido.substring(0,2)}</AvatarFallback>
-                        </Avatar>
+                     <div className="relative w-12 h-12">
+                        <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
+                            <Avatar className="w-full h-full border-2 border-background">
+                                <AvatarImage src={`https://placehold.co/100x100.png?text=${leader.apelido.charAt(0)}`} alt={leader.apelido} />
+                                <AvatarFallback>{leader.apelido.substring(0,2)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                         <Honorifics count={leader.titulos} variant="badge" />
                     </div>
                     <div className="flex-1">
                         <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>

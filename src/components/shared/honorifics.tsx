@@ -5,12 +5,12 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 const honorificsVariants = cva(
-    "absolute flex items-center justify-center gap-1.5 h-6 rounded-full",
+    "absolute flex items-center justify-center gap-1",
     {
         variants: {
             variant: {
-                default: "bottom-1 left-1/2 -translate-x-1/2 px-2",
-                badge: "-bottom-1 -right-1.5 bg-background p-0.5 rounded-full",
+                default: "bottom-0 left-1/2 -translate-x-1/2",
+                badge: "-bottom-1 -right-1",
             },
         },
         defaultVariants: {
@@ -29,7 +29,7 @@ export const Honorifics = ({ count, variant }: HonorificsProps) => {
     let IconComponent: React.ComponentType<{ className?: string }>;
     let displayCount = 0;
     let iconClass = "text-yellow-400 fill-yellow-400";
-    let iconSize = variant === 'badge' ? "h-3.5 w-3.5" : "h-5 w-5";
+    let iconSize = variant === 'badge' ? "h-3 w-3" : "h-4 w-4";
 
 
     if (count >= 10) {
