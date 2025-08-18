@@ -9,7 +9,7 @@ export const mockUser = {
   status: 'ativo',
   funcao: 'usuario',
   dataCadastro: '2023-01-15T09:30:00Z',
-  titulos: 6,
+  titulos: 3,
   totalJogos: 88,
   totalCampeonatos: 4,
   taxaAcerto: 62.5,
