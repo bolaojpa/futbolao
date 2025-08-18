@@ -11,6 +11,8 @@ import { Edit, Award, Gamepad2, Percent, Trophy, Star, Medal, Crown } from 'luci
 import { mockUser } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import type React from 'react';
 
 const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, title: string, value: string | number, description: string }) => (
     <Card>
@@ -47,9 +49,13 @@ const renderHonorifics = (count: number) => {
     }
     
     const IconComponent = icon;
-    const icons = Array.from({ length: Math.min(displayCount, 3) }, (_, i) => (
-        <IconComponent key={i} className="h-5 w-5 text-yellow-400" />
-    ));
+    const icons = Array.from({ length: Math.min(displayCount, 3) }, (_, i) => {
+        const iconClass = cn(
+            "h-5 w-5 text-yellow-400",
+            IconComponent === Trophy && "fill-yellow-400"
+        );
+        return <IconComponent key={i} className={iconClass} />;
+    });
 
     return (
         <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 h-6 rounded-full px-2">
