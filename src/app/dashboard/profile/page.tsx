@@ -10,7 +10,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy } from 'lucide-react';
 import { mockUser, mockUsers, mockChampionships, mockMatches } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -82,6 +82,12 @@ export default function ProfilePage() {
   }
 
   const generalStats = [
+      { 
+        icon: <Trophy className="h-4 w-4 text-muted-foreground" />,
+        title: "Títulos Conquistados",
+        value: titulos,
+        description: "Total de campeonatos vencidos"
+    },
     { 
         icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />,
         title: "Campeonatos Disputados",
@@ -93,12 +99,6 @@ export default function ProfilePage() {
         title: "Total de Palpites",
         value: totalJogos,
         description: "Palpites enviados em todos os tempos"
-    },
-    { 
-        icon: <Percent className="h-4 w-4 text-muted-foreground" />,
-        title: "Taxa de Acerto Geral",
-        value: `${taxaAcerto}%`,
-        description: "Percentual de palpites premiados"
     },
   ];
 
@@ -143,7 +143,7 @@ export default function ProfilePage() {
                     <AvatarImage src={displayImage} alt={displayName} />
                     <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
                 </Avatar>
-                <Honorifics count={titulos} />
+                <Honorifics count={titulos} variant="default"/>
             </div>
             <div className='flex-1 text-center md:text-left'>
                 <h1 className="text-3xl font-bold font-headline">{displayName}</h1>
@@ -195,7 +195,7 @@ export default function ProfilePage() {
       
       <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <h2 className="text-2xl font-bold font-headline">Estatísticas por Campeonato</h2>
+            <h2 className="text-2xl font-bold font-headline">Minhas Estatísticas</h2>
             <div className="w-full md:w-auto">
                 <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
                     <SelectTrigger className="w-full md:w-[280px]">
