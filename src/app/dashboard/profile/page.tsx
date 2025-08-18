@@ -66,6 +66,8 @@ export default function ProfilePage() {
     }
     return mockUsers.find(u => u.id === userId) || mockUser;
   }, [userId]);
+  
+  const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
 
   const isOwnProfile = userToDisplay.id === mockUser.id;
 
@@ -86,7 +88,22 @@ export default function ProfilePage() {
   const displayImage = urlImagemPersonalizada || fotoPerfil;
   const fallbackInitials = displayName.substring(0, 2).toUpperCase();
 
-  const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
+  const selectedChampionshipStats = championshipStats.find(stat => stat.championshipId === selectedChampionship);
+
+  const championshipLeaders = useMemo(() => {
+    const statsForChamp = mockUsers.map(u => u.championshipStats.find(cs => cs.championshipId === selectedChampionship)).filter(Boolean);
+
+    if (statsForChamp.length === 0) {
+      return { maxPoints: 0, maxExacts: 0, maxSituations: 0, maxStreak: 0 };
+    }
+
+    const maxPoints = Math.max(...statsForChamp.map(s => s!.pontos));
+    const maxExacts = Math.max(...statsForChamp.map(s => s!.acertosExatos));
+    const maxSituations = Math.max(...statsForChamp.map(s => s!.acertosSituacao));
+    const maxStreak = Math.max(...statsForChamp.map(s => s!.maiorSequencia));
+
+    return { maxPoints, maxExacts, maxSituations, maxStreak };
+  }, [selectedChampionship]);
   
   if (!isClient) {
       return <div>Carregando perfil...</div>; // Or a skeleton loader
@@ -106,23 +123,6 @@ export default function ProfilePage() {
         description: "Palpites enviados em todos os tempos"
     },
   ];
-
-  const selectedChampionshipStats = championshipStats.find(stat => stat.championshipId === selectedChampionship);
-  
-  const championshipLeaders = useMemo(() => {
-    const statsForChamp = mockUsers.map(u => u.championshipStats.find(cs => cs.championshipId === selectedChampionship)).filter(Boolean);
-
-    if (statsForChamp.length === 0) {
-      return { maxPoints: 0, maxExacts: 0, maxSituations: 0, maxStreak: 0 };
-    }
-
-    const maxPoints = Math.max(...statsForChamp.map(s => s!.pontos));
-    const maxExacts = Math.max(...statsForChamp.map(s => s!.acertosExatos));
-    const maxSituations = Math.max(...statsForChamp.map(s => s!.acertosSituacao));
-    const maxStreak = Math.max(...statsForChamp.map(s => s!.maiorSequencia));
-
-    return { maxPoints, maxExacts, maxSituations, maxStreak };
-  }, [selectedChampionship]);
 
   const championshipSpecificStats = selectedChampionshipStats ? [
     {
