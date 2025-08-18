@@ -6,11 +6,12 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Star, Crown, Award, Target, TrendingUp, CheckCircle, Heart, Clock, Goal } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Star, Crown, Award as AwardIcon, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy } from 'lucide-react';
 import { mockUser, mockChampionships, mockMatches } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -55,7 +56,7 @@ const renderHonorifics = (count: number) => {
         displayCount = Math.min(count - 6, 3);
         isFilled = true;
     } else if (count >= 4) {
-        IconComponent = Award;
+        IconComponent = AwardIcon;
         displayCount = Math.min(count - 3, 3);
         isFilled = true;
     } else {
@@ -99,7 +100,7 @@ export default function ProfilePage() {
 
   const generalStats = [
     { 
-        icon: <Award className="h-4 w-4 text-muted-foreground" />,
+        icon: <AwardIcon className="h-4 w-4 text-muted-foreground" />,
         title: "Títulos",
         value: titulos,
         description: "Campeão da Pontuação Geral"
