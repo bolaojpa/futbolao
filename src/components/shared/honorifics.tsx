@@ -5,12 +5,12 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 const honorificsVariants = cva(
-    "absolute flex items-center justify-center gap-0.5",
+    "absolute bottom-0 left-0 w-full h-1/4 flex items-center justify-center gap-0.5",
     {
         variants: {
             variant: {
-                default: "bottom-0 left-1/2 -translate-x-1/2",
-                badge: "bottom-0 left-1/2 -translate-x-1/2",
+                default: "",
+                badge: "",
             },
         },
         defaultVariants: {
@@ -29,14 +29,15 @@ export const Honorifics = ({ count, variant }: HonorificsProps) => {
     let IconComponent: React.ComponentType<{ className?: string }>;
     let displayCount = 0;
     let iconClass = "text-yellow-400 fill-yellow-400";
-    let iconSize = variant === 'badge' ? "h-2 w-2" : "h-3 h-3";
-
+    
+    // Os ícones devem ser dimensionados para preencher a altura do container (25% do avatar)
+    let iconSize = "h-full w-auto"; 
 
     if (count >= 10) {
         IconComponent = Crown;
         displayCount = Math.min(count - 9, 3);
     } else if (count >= 7) {
-        IconComponent = Award; // Usando Award para Troféu temporariamente, conforme combinado
+        IconComponent = Award;
         displayCount = Math.min(count - 6, 3);
     } else if (count >= 4) {
         IconComponent = Award;
