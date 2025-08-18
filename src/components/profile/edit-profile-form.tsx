@@ -30,6 +30,9 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
+// Em um app real, isso viria do estado de autenticação
+const loginMethod: 'google' | 'email' = 'email'; 
+
 export function EditProfileForm() {
   const { toast } = useToast();
   const router = useRouter();
@@ -66,9 +69,17 @@ export function EditProfileForm() {
                 <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <FormControl>
-                        <Input placeholder="Seu nome completo" {...field} className="pl-10" />
+                        <Input 
+                            placeholder="Seu nome completo" 
+                            {...field} 
+                            className="pl-10" 
+                            disabled={loginMethod === 'google'}
+                        />
                     </FormControl>
                 </div>
+              {loginMethod === 'google' && (
+                <FormDescription>Seu nome é sincronizado com sua conta Google e não pode ser alterado aqui.</FormDescription>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -86,7 +97,7 @@ export function EditProfileForm() {
                 </FormControl>
               </div>
               <FormDescription>
-                Este será seu nome de exibição nos rankings.
+                Este será seu nome de exibição nos rankings. Se vazio, seu nome completo será usado.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -121,7 +132,7 @@ export function EditProfileForm() {
                     </FormControl>
                 </div>
               <FormDescription>
-                Cole a URL de uma imagem para usá-la como foto de perfil. Deixe em branco para usar a imagem da sua conta social (se aplicável).
+                Cole a URL de uma imagem para usar como foto de perfil. Deixe em branco para usar a imagem padrão.
               </FormDescription>
               <FormMessage />
             </FormItem>
