@@ -16,6 +16,7 @@ import {
   Settings,
   LogOut,
   User,
+  LifeBuoy,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -33,6 +34,7 @@ export function AppSidebar() {
   const bottomMenuItems = [
       { href: '/dashboard/profile', label: 'Meu Perfil', icon: User },
       { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
+      { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy },
   ]
 
   return (

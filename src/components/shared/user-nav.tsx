@@ -56,12 +56,14 @@ export function UserNav() {
                 </div>
             </DropdownMenuItem>
           </Link>
-           <a href="mailto:suporte@futbolao.pro">
-              <DropdownMenuItem>
-                <LifeBuoy className="mr-2 h-4 w-4" />
-                <span>Suporte</span>
+           <Link href="/dashboard/support" passHref>
+              <DropdownMenuItem asChild>
+                <div>
+                  <LifeBuoy className="mr-2 h-4 w-4" />
+                  <span>Suporte</span>
+                </div>
               </DropdownMenuItem>
-            </a>
+            </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <Link href="/login" passHref>
