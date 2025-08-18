@@ -29,18 +29,12 @@ const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, 
     </Card>
 )
 
-const renderChampionSash = (count: number) => {
+const renderTrophies = (count: number) => {
     if (count === 0) return null;
-
-    return (
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden rounded-full pointer-events-none">
-            <div className="absolute -top-1 -right-7 transform rotate-45 bg-primary w-24 h-7 flex items-center justify-center shadow-lg">
-                 <Trophy className="h-4 w-4 text-primary-foreground" />
-                 <span className="ml-1 font-bold text-xs text-primary-foreground">{count}</span>
-            </div>
-        </div>
-    );
-}
+    return Array.from({ length: count }, (_, i) => (
+        <Trophy key={i} className="h-5 w-5 text-yellow-500" />
+    ));
+};
 
 export default function ProfilePage() {
   const { apelido, nome, email, fotoPerfil, titulos, totalCampeonatos, totalJogos, taxaAcerto } = mockUser;
@@ -76,12 +70,14 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto space-y-8">
       <div className="flex flex-col md:flex-row items-center gap-6">
-        <div className="relative">
+        <div className="flex flex-col items-center gap-2">
             <Avatar className="w-24 h-24 border-4 border-primary">
                 <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
                 <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
             </Avatar>
-            {renderChampionSash(titulos)}
+             <div className="flex flex-row justify-center gap-1.5 h-6">
+                {renderTrophies(titulos)}
+            </div>
         </div>
         <div className='flex-1 text-center md:text-left'>
             <h1 className="text-3xl font-bold font-headline">{nome}</h1>
