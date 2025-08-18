@@ -52,7 +52,7 @@ const renderHonorifics = (count: number) => {
     ));
 
     return (
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 h-6 bg-black/50 rounded-full px-2">
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 h-6 rounded-full px-2">
             {icons}
         </div>
     );
