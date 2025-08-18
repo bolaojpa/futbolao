@@ -6,12 +6,12 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Star, Crown, Award as AwardIcon, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Star, Crown, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy } from 'lucide-react';
 import { mockUser, mockChampionships, mockMatches } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -21,6 +21,7 @@ import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import Link from 'next/link';
 
 const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, title: string, value: string | number, description: string }) => (
     <Card>
@@ -56,7 +57,7 @@ const renderHonorifics = (count: number) => {
         displayCount = Math.min(count - 6, 3);
         isFilled = true;
     } else if (count >= 4) {
-        IconComponent = AwardIcon;
+        IconComponent = Award;
         displayCount = Math.min(count - 3, 3);
         isFilled = true;
     } else {
@@ -75,6 +76,10 @@ const renderHonorifics = (count: number) => {
         </div>
     );
 };
+
+// Renomeado para Award para não conflitar com a tag nativa <award>
+const Award = (props: React.ComponentProps<typeof AwardIcon>) => <AwardIcon {...props} />;
+
 
 export default function ProfilePage() {
   const { 
@@ -100,7 +105,7 @@ export default function ProfilePage() {
 
   const generalStats = [
     { 
-        icon: <AwardIcon className="h-4 w-4 text-muted-foreground" />,
+        icon: <Award className="h-4 w-4 text-muted-foreground" />,
         title: "Títulos",
         value: titulos,
         description: "Campeão da Pontuação Geral"
@@ -178,9 +183,11 @@ export default function ProfilePage() {
                     </div>
                 )}
             </div>
-            <Button variant="outline">
+            <Button asChild variant="outline">
+              <Link href="/dashboard/profile/edit">
                 <Edit className="mr-2 h-4 w-4" />
                 Editar Perfil
+              </Link>
             </Button>
           </div>
         </CardContent>
