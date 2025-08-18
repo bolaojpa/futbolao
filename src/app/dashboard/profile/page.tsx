@@ -30,6 +30,8 @@ const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, 
 
 const renderStars = (count: number) => {
     const stars = [];
+    // This is just an example logic. It can be adapted to your rules.
+    // For now: 1 green for every 5 titles, 1 yellow for every 3 titles left, 1 outline for the rest.
     const greenStars = Math.floor(count / 5);
     const yellowStars = Math.floor((count % 5) / 3);
     const outlineStars = count - (greenStars * 5) - (yellowStars * 3);
@@ -40,9 +42,11 @@ const renderStars = (count: number) => {
     for(let i=0; i < yellowStars; i++) {
         stars.push(<Star key={`y-${i}`} className="w-5 h-5 text-yellow-500 fill-yellow-500" />);
     }
-    for(let i=0; i < outlineStars; i++) {
-        stars.push(<Star key={`o-${i}`} className="w-5 h-5 text-yellow-500" />);
+     for(let i=0; i < outlineStars; i++) {
+        // Using a simple outline star for now
+        stars.push(<Star key={`o-${i}`} className="w-5 h-5 text-yellow-400" />);
     }
+    
     return stars;
 }
 
@@ -81,13 +85,13 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto space-y-8">
       <div className="flex flex-col md:flex-row items-center gap-6">
-        <div className="flex flex-col items-center">
+        <div className="relative">
             <Avatar className="w-24 h-24 border-4 border-primary">
                 <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
                 <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
             </Avatar>
             {titulos > 0 && (
-                <div className="flex items-center justify-center gap-1 mt-2">
+                <div className="absolute -bottom-2 w-full flex items-center justify-center gap-1 drop-shadow-lg">
                     {renderStars(titulos)}
                 </div>
             )}
