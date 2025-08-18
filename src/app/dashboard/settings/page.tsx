@@ -1,3 +1,4 @@
+import { NotificationSettings } from '@/components/settings/notification-settings';
 import { ThemeSettings } from '@/components/settings/theme-settings';
 import {
     Card,
@@ -28,6 +29,9 @@ export default function SettingsPage() {
                     <ThemeSettings />
                 </CardContent>
             </Card>
+
+            <NotificationSettings />
+
         </div>
     );
 }
