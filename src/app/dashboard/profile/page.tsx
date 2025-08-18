@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Award, Gamepad2, Percent, Trophy } from 'lucide-react';
+import { Edit, Award, Gamepad2, Percent, Trophy, Star, Medal, Crown } from 'lucide-react';
 import { mockUser } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -29,11 +29,33 @@ const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, 
     </Card>
 )
 
-const renderTrophies = (count: number) => {
+const renderHonorifics = (count: number) => {
     if (count === 0) return null;
-    return Array.from({ length: count }, (_, i) => (
-        <Trophy key={i} className="h-5 w-5 text-yellow-500" />
+
+    let icon: React.ComponentType<{ className?: string }> = Star;
+    let displayCount = count;
+
+    if (count >= 10) {
+        icon = Crown;
+        displayCount = count - 9;
+    } else if (count >= 7) {
+        icon = Trophy;
+        displayCount = count - 6;
+    } else if (count >= 4) {
+        icon = Medal;
+        displayCount = count - 3;
+    }
+    
+    const IconComponent = icon;
+    const icons = Array.from({ length: Math.min(displayCount, 3) }, (_, i) => (
+        <IconComponent key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
     ));
+
+    return (
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 h-6 bg-black/50 rounded-full px-2">
+            {icons}
+        </div>
+    );
 };
 
 export default function ProfilePage() {
@@ -71,12 +93,12 @@ export default function ProfilePage() {
     <div className="container mx-auto space-y-8">
       <div className="flex flex-col md:flex-row items-center gap-6">
         <div className="flex flex-col items-center gap-2">
-            <Avatar className="w-24 h-24 border-4 border-primary">
-                <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
-                <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
-            </Avatar>
-             <div className="flex flex-row justify-center gap-1.5 h-6">
-                {renderTrophies(titulos)}
+             <div className="relative">
+                <Avatar className="w-24 h-24 border-4 border-primary">
+                    <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
+                    <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
+                </Avatar>
+                {renderHonorifics(titulos)}
             </div>
         </div>
         <div className='flex-1 text-center md:text-left'>
