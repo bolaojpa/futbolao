@@ -42,6 +42,7 @@ const renderHonorifics = (count: number) => {
     if (count >= 10) {
         IconComponent = Crown;
         displayCount = count - 9;
+        iconClass = cn(iconClass, "fill-yellow-400");
     } else if (count >= 7) {
         IconComponent = Trophy;
         displayCount = count - 6;
