@@ -11,7 +11,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Star, Crown, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Star, Crown, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Award as AwardIcon } from 'lucide-react';
 import { mockUser, mockChampionships, mockMatches } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import type React from 'react';
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 
