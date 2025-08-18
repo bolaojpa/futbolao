@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -18,12 +18,27 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 type FilterType = 'all' | 'exact' | 'situation' | 'miss';
 
 export default function HistoryPage() {
-  const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
-  const [filterType, setFilterType] = useState<FilterType>('all');
+  const searchParams = useSearchParams();
+  const championshipIdFromQuery = searchParams.get('championshipId');
+  const filterTypeFromQuery = searchParams.get('filterType') as FilterType | null;
+
+  const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
+  const [filterType, setFilterType] = useState<FilterType>(filterTypeFromQuery || 'all');
+  
+  // Sincroniza o estado com os parâmetros da URL, caso eles mudem.
+  useEffect(() => {
+    if (championshipIdFromQuery) {
+      setSelectedChampionship(championshipIdFromQuery);
+    }
+    if (filterTypeFromQuery) {
+      setFilterType(filterTypeFromQuery);
+    }
+  }, [championshipIdFromQuery, filterTypeFromQuery]);
 
   const filteredMatches = [...mockMatches.recent]
     .filter(match => {

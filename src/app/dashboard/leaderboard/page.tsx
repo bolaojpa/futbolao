@@ -23,16 +23,27 @@ import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus } from 'lucide-reac
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Honorifics } from '@/components/shared/honorifics';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 type SortType = 'default' | 'exact' | 'situation';
 
 export default function LeaderboardPage() {
+  const searchParams = useSearchParams();
+  const championshipIdFromQuery = searchParams.get('championshipId');
+
   const [sortType, setSortType] = useState<SortType>('default');
-  const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
+  const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
+
+  // Sincroniza o estado com o parâmetro da URL
+  useEffect(() => {
+    if (championshipIdFromQuery) {
+      setSelectedChampionship(championshipIdFromQuery);
+    }
+  }, [championshipIdFromQuery]);
   
   // Lista para o pódio (sempre com ordenação padrão)
   const sortedTop3Users = [...mockUsers].sort((a, b) => {

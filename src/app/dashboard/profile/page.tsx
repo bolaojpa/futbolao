@@ -22,23 +22,35 @@ import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { Honorifics } from '@/components/shared/honorifics';
 import { useSearchParams } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
-const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, title: string, value: string | number, description: string }) => (
-    <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-                {title}
-            </CardTitle>
-            {icon}
-        </CardHeader>
-        <CardContent>
-            <div className="text-2xl font-bold">{value}</div>
-            <p className="text-xs text-muted-foreground">
-                {description}
-            </p>
-        </CardContent>
-    </Card>
-)
+const StatCard = ({ icon, title, value, description, href }: { icon: React.ReactNode, title: string, value: string | number, description: string, href?: string }) => {
+    const cardContent = (
+         <Card className={cn(
+            "transition-all duration-200",
+             href && "hover:bg-muted/80 hover:shadow-md cursor-pointer"
+         )}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                    {title}
+                </CardTitle>
+                {icon}
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{value}</div>
+                <p className="text-xs text-muted-foreground">
+                    {description}
+                </p>
+            </CardContent>
+        </Card>
+    );
+
+    if (href) {
+        return <Link href={href} className="block">{cardContent}</Link>;
+    }
+    
+    return cardContent;
+}
 
 export default function ProfilePage() {
   const searchParams = useSearchParams();
@@ -64,7 +76,6 @@ export default function ProfilePage() {
     titulos, 
     totalCampeonatos, 
     totalJogos, 
-    taxaAcerto, 
     championshipStats,
     timeCoracao,
     ultimaAtividade,
@@ -109,19 +120,22 @@ export default function ProfilePage() {
       icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />,
       title: "Pontos",
       value: selectedChampionshipStats.pontos,
-      description: "Total de pontos no campeonato"
+      description: "Total de pontos no campeonato",
+      href: `/dashboard/leaderboard?championshipId=${selectedChampionship}`
     },
     {
       icon: <Target className="h-4 w-4 text-muted-foreground" />,
       title: "Acertos Exatos",
       value: selectedChampionshipStats.acertosExatos,
-      description: "Placares cravados"
+      description: "Placares cravados",
+      href: `/dashboard/history?championshipId=${selectedChampionship}&filterType=exact`
     },
     {
       icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />,
       title: "Acertos de Situação",
       value: selectedChampionshipStats.acertosSituacao,
-      description: "Vencedor/empate corretos"
+      description: "Vencedor/empate corretos",
+      href: `/dashboard/history?championshipId=${selectedChampionship}&filterType=situation`
     },
     {
       icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />,
