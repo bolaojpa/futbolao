@@ -1,3 +1,4 @@
+
 // Mock Data for FutBolão Pro
 
 export const mockUser = {
@@ -135,3 +136,12 @@ export const mockNotifications = [
     { id: 'notif_2', title: 'Você subiu no ranking!', message: 'Parabéns! Você agora está na 3ª posição.', read: false, createdAt: new Date(new Date().getTime() - (1000 * 60 * 60 * 2)) },
     { id: 'notif_3', title: 'Pontos atualizados', message: 'Você ganhou 10 pontos no jogo Grêmio x Internacional.', read: true, createdAt: new Date(new Date().getTime() - (1000 * 60 * 60 * 24)) },
 ];
+
+
+export const mockEmergencyMessage = {
+    id: 'msg_001',
+    title: 'Aviso Urgente do Administrador',
+    message: 'Estamos passando por uma instabilidade temporária no sistema de pontuação. Os pontos da última rodada serão recalculados em breve. Agradecemos a compreensão.',
+    active: true, // Mude para 'false' para desativar o modal
+    targetUserIds: ['all'], // 'all' para todos, ou um array de user_ids ['user_1', 'user_3']
+};
