@@ -24,11 +24,12 @@ import { Honorifics } from '@/components/shared/honorifics';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const StatCard = ({ icon, title, value, description, href }: { icon: React.ReactNode, title: string, value: string | number, description: string, href?: string }) => {
+const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: React.ReactNode, title: string, value: string | number, description: string, href?: string, isLeader?: boolean }) => {
     const cardContent = (
          <Card className={cn(
             "transition-all duration-200",
-             href && "hover:bg-muted/80 hover:shadow-md cursor-pointer"
+             href && "hover:bg-muted/80 hover:shadow-md cursor-pointer",
+             isLeader && "bg-green-500/10 border-green-500/50 shadow-lg"
          )}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -74,7 +75,6 @@ export default function ProfilePage() {
     fotoPerfil, 
     urlImagemPersonalizada,
     titulos, 
-    totalCampeonatos, 
     totalJogos, 
     championshipStats,
     timeCoracao,
@@ -93,7 +93,7 @@ export default function ProfilePage() {
   }
 
   const generalStats = [
-      { 
+    { 
         icon: <Trophy className="h-4 w-4 text-muted-foreground" />,
         title: "Títulos Conquistados",
         value: titulos,
@@ -101,12 +101,6 @@ export default function ProfilePage() {
     },
     { 
         icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />,
-        title: "Campeonatos Disputados",
-        value: totalCampeonatos,
-        description: "Total de competições participadas"
-    },
-    { 
-        icon: <Edit className="h-4 w-4 text-muted-foreground" />,
         title: "Total de Palpites",
         value: totalJogos,
         description: "Palpites enviados em todos os tempos"
@@ -115,33 +109,52 @@ export default function ProfilePage() {
 
   const selectedChampionshipStats = championshipStats.find(stat => stat.championshipId === selectedChampionship);
   
+  const championshipLeaders = useMemo(() => {
+    const statsForChamp = mockUsers.map(u => u.championshipStats.find(cs => cs.championshipId === selectedChampionship)).filter(Boolean);
+
+    if (statsForChamp.length === 0) {
+      return { maxPoints: 0, maxExacts: 0, maxSituations: 0, maxStreak: 0 };
+    }
+
+    const maxPoints = Math.max(...statsForChamp.map(s => s!.pontos));
+    const maxExacts = Math.max(...statsForChamp.map(s => s!.acertosExatos));
+    const maxSituations = Math.max(...statsForChamp.map(s => s!.acertosSituacao));
+    const maxStreak = Math.max(...statsForChamp.map(s => s!.maiorSequencia));
+
+    return { maxPoints, maxExacts, maxSituations, maxStreak };
+  }, [selectedChampionship]);
+
   const championshipSpecificStats = selectedChampionshipStats ? [
     {
       icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />,
       title: "Pontos",
       value: selectedChampionshipStats.pontos,
       description: "Total de pontos no campeonato",
-      href: `/dashboard/leaderboard?championshipId=${selectedChampionship}`
+      href: `/dashboard/leaderboard?championshipId=${selectedChampionship}`,
+      isLeader: selectedChampionshipStats.pontos === championshipLeaders.maxPoints && selectedChampionshipStats.pontos > 0,
     },
     {
       icon: <Target className="h-4 w-4 text-muted-foreground" />,
       title: "Acertos Exatos",
       value: selectedChampionshipStats.acertosExatos,
       description: "Placares cravados",
-      href: `/dashboard/history?championshipId=${selectedChampionship}&filterType=exact`
+      href: `/dashboard/history?championshipId=${selectedChampionship}&filterType=exact`,
+      isLeader: selectedChampionshipStats.acertosExatos === championshipLeaders.maxExacts && selectedChampionshipStats.acertosExatos > 0,
     },
     {
       icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />,
       title: "Acertos de Situação",
       value: selectedChampionshipStats.acertosSituacao,
       description: "Vencedor/empate corretos",
-      href: `/dashboard/history?championshipId=${selectedChampionship}&filterType=situation`
+      href: `/dashboard/history?championshipId=${selectedChampionship}&filterType=situation`,
+      isLeader: selectedChampionshipStats.acertosSituacao === championshipLeaders.maxSituations && selectedChampionshipStats.acertosSituacao > 0,
     },
     {
       icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />,
       title: "Maior Sequência de Acertos",
       value: selectedChampionshipStats.maiorSequencia,
-      description: "Sequência de placares exatos"
+      description: "Sequência de placares exatos",
+      isLeader: selectedChampionshipStats.maiorSequencia === championshipLeaders.maxStreak && selectedChampionshipStats.maiorSequencia > 0,
     },
   ] : [];
 
@@ -209,7 +222,7 @@ export default function ProfilePage() {
       
       <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <h2 className="text-2xl font-bold font-headline">Minhas Estatísticas</h2>
+            <h2 className="text-2xl font-bold font-headline">Estatísticas por Campeonato</h2>
             <div className="w-full md:w-auto">
                 <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
                     <SelectTrigger className="w-full md:w-[280px]">
