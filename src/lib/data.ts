@@ -1,5 +1,3 @@
-
-
 // Mock Data for FutBolão Pro
 
 export const mockUser = {
@@ -133,7 +131,7 @@ export const mockPredictions = [
 ];
 
 export const mockNotifications = [
-    { id: 'notif_1', title: 'Partida prestes a começar!', message: 'Atlético-MG x Cruzeiro começa em 2 horas. Dê seu palpite!', read: false },
-    { id: 'notif_2', title: 'Você subiu no ranking!', message: 'Parabéns! Você agora está na 3ª posição.', read: false },
-    { id: 'notif_3', title: 'Pontos atualizados', message: 'Você ganhou 10 pontos no jogo Grêmio x Internacional.', read: true },
-]
+    { id: 'notif_1', title: 'Partida prestes a começar!', message: 'Atlético-MG x Cruzeiro começa em 2 horas. Dê seu palpite!', read: false, createdAt: new Date(new Date().getTime() - (1000 * 60 * 5)) },
+    { id: 'notif_2', title: 'Você subiu no ranking!', message: 'Parabéns! Você agora está na 3ª posição.', read: false, createdAt: new Date(new Date().getTime() - (1000 * 60 * 60 * 2)) },
+    { id: 'notif_3', title: 'Pontos atualizados', message: 'Você ganhou 10 pontos no jogo Grêmio x Internacional.', read: true, createdAt: new Date(new Date().getTime() - (1000 * 60 * 60 * 24)) },
+];

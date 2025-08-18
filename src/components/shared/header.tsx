@@ -1,4 +1,5 @@
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { NotificationsNav } from './notifications-nav';
 import { UserNav } from './user-nav';
 
 export function Header() {
@@ -9,6 +10,7 @@ export function Header() {
           <SidebarTrigger />
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
+          <NotificationsNav />
           <UserNav />
         </div>
       </div>
