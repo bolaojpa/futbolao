@@ -22,8 +22,6 @@ import { mockUsers, mockUser, mockChampionships } from '@/lib/data';
 import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Share2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -178,8 +176,8 @@ export default function LeaderboardPage() {
                   <TableHead className='w-16 text-center'>Var.</TableHead>
                   <TableHead>Jogador</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
-                  <TableHead className="text-right">Placares Exatos</TableHead>
-                  <TableHead className="text-right">Acertos de Situação</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">Placares Exatos</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">Acertos de Situação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -212,8 +210,8 @@ export default function LeaderboardPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
-                        <TableCell className="text-right">{user.exatos}</TableCell>
-                        <TableCell className="text-right">{user.situacoes}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>
                       </TableRow>
                   )
                 })}
