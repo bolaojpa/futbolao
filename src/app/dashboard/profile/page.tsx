@@ -48,7 +48,7 @@ const renderHonorifics = (count: number) => {
     
     const IconComponent = icon;
     const icons = Array.from({ length: Math.min(displayCount, 3) }, (_, i) => (
-        <IconComponent key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+        <IconComponent key={i} className="h-5 w-5 text-yellow-400" />
     ));
 
     return (
