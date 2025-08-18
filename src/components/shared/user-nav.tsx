@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, Settings, LifeBuoy } from 'lucide-react';
 import { mockUser } from '@/lib/data';
+import Link from 'next/link';
 
 export function UserNav() {
   const { nome, email, apelido, fotoPerfil } = mockUser;
@@ -39,24 +40,36 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Configurações</span>
-          </DropdownMenuItem>
+          <Link href="/dashboard/profile" passHref>
+            <DropdownMenuItem asChild>
+                <div>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Perfil</span>
+                </div>
+            </DropdownMenuItem>
+          </Link>
+          <Link href="/dashboard/settings" passHref>
+            <DropdownMenuItem asChild>
+                <div>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configurações</span>
+                </div>
+            </DropdownMenuItem>
+          </Link>
            <DropdownMenuItem>
             <LifeBuoy className="mr-2 h-4 w-4" />
             <span>Suporte</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
-        </DropdownMenuItem>
+        <Link href="/login" passHref>
+          <DropdownMenuItem asChild>
+              <div>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sair</span>
+              </div>
+          </DropdownMenuItem>
+        </Link>
       </DropdownMenuContent>
     </DropdownMenu>
   );

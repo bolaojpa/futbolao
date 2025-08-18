@@ -32,7 +32,7 @@ export function AppSidebar() {
   
   const bottomMenuItems = [
       { href: '/dashboard/profile', label: 'Meu Perfil', icon: User },
-      { href: '#', label: 'Configurações', icon: Settings },
+      { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
   ]
 
   return (
@@ -60,13 +60,16 @@ export function AppSidebar() {
       <SidebarMenu className="flex-1 p-2">
         {menuItems.map((item) => (
           <SidebarMenuItem key={item.href}>
-            <Link href={item.href}>
+            <Link href={item.href} passHref>
               <SidebarMenuButton
+                asChild
                 isActive={pathname === item.href}
                 tooltip={{ children: item.label, side: 'right' }}
               >
-                <item.icon />
-                <span>{item.label}</span>
+                <div>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </div>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
@@ -77,22 +80,27 @@ export function AppSidebar() {
          <SidebarMenu>
             {bottomMenuItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                    <Link href={item.href}>
+                    <Link href={item.href} passHref>
                         <SidebarMenuButton
+                            asChild
                             isActive={pathname === item.href}
                             tooltip={{ children: item.label, side: 'right' }}
                         >
-                            <item.icon />
-                            <span>{item.label}</span>
+                            <div>
+                              <item.icon />
+                              <span>{item.label}</span>
+                            </div>
                         </SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
             ))}
             <SidebarMenuItem>
-                <Link href="/login">
-                    <SidebarMenuButton tooltip={{ children: "Sair", side: 'right' }}>
-                        <LogOut />
-                        <span>Sair</span>
+                <Link href="/login" passHref>
+                    <SidebarMenuButton asChild tooltip={{ children: "Sair", side: 'right' }}>
+                        <div>
+                          <LogOut />
+                          <span>Sair</span>
+                        </div>
                     </SidebarMenuButton>
                 </Link>
             </SidebarMenuItem>
