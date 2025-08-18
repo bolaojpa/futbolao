@@ -1,5 +1,5 @@
 
-import { Award, Crown, Trophy } from 'lucide-react';
+import { Award, Crown, Star } from 'lucide-react';
 import type React from 'react';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -36,13 +36,13 @@ export const Honorifics = ({ count, variant }: HonorificsProps) => {
         IconComponent = Crown;
         displayCount = Math.min(count - 9, 3);
     } else if (count >= 7) {
-        IconComponent = Trophy;
+        IconComponent = Award; // Usando Award para Troféu temporariamente, conforme combinado
         displayCount = Math.min(count - 6, 3);
     } else if (count >= 4) {
         IconComponent = Award;
         displayCount = Math.min(count - 3, 3);
     } else { // 1-3
-        IconComponent = Award; 
+        IconComponent = Star; 
         displayCount = Math.min(count, 3);
     }
     
