@@ -8,37 +8,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Award, Gamepad2, Percent, Star, Medal, Crown } from 'lucide-react';
+import { Edit, Award, Gamepad2, Percent, Star, Medal, Crown, Trophy } from 'lucide-react';
 import { mockUser } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import type React from 'react';
-
-const CustomTrophyIcon = ({ className }: { className?: string }) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      {/* Handles (stroke only) */}
-      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-      
-      {/* Body (stroke and fill) */}
-      <path className="fill-yellow-400" d="M9 12v7.5a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5V12" />
-      <path className="fill-yellow-400" d="M12 12v-2.5a4.5 4.5 0 0 1 7.5-3.5" />
-      <path className="fill-yellow-400" d="M12 12v-2.5a4.5 4.5 0 0 0-7.5-3.5" />
-      <path className="fill-yellow-400" d="M12 6.82v-1.82" />
-    </svg>
-  );
 
 const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, title: string, value: string | number, description: string }) => (
     <Card>
@@ -68,8 +43,9 @@ const renderHonorifics = (count: number) => {
         IconComponent = Crown;
         displayCount = count - 9;
     } else if (count >= 7) {
-        IconComponent = CustomTrophyIcon;
+        IconComponent = Trophy;
         displayCount = count - 6;
+        iconClass = cn(iconClass, "fill-yellow-400");
     } else if (count >= 4) {
         IconComponent = Medal;
         displayCount = count - 3;
