@@ -10,7 +10,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Users } from 'lucide-react';
 import { mockUser, mockUsers, mockChampionships, mockMatches } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -58,7 +58,6 @@ export default function ProfilePage() {
   const userId = searchParams.get('userId');
   
   const [isClient, setIsClient] = useState(false);
-  useEffect(() => setIsClient(true), []);
 
   const userToDisplay = useMemo(() => {
     if (!userId || userId === mockUser.id) {
@@ -104,6 +103,10 @@ export default function ProfilePage() {
 
     return { maxPoints, maxExacts, maxSituations, maxStreak };
   }, [selectedChampionship]);
+
+  useEffect(() => {
+    setIsClient(true)
+  }, []);
   
   if (!isClient) {
       return <div>Carregando perfil...</div>; // Or a skeleton loader
@@ -121,6 +124,12 @@ export default function ProfilePage() {
         title: "Total de Palpites",
         value: totalJogos,
         description: "Palpites enviados em todos os tempos"
+    },
+     {
+      icon: <Users className="h-4 w-4 text-muted-foreground" />,
+      title: "Campeonatos Disputados",
+      value: championshipStats.length,
+      description: "Total de campeonatos que participou"
     },
   ];
 
@@ -251,3 +260,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
