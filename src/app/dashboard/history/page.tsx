@@ -17,6 +17,7 @@ import { Users } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Link from 'next/link';
 
 export default function HistoryPage() {
   const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
@@ -110,7 +111,11 @@ export default function HistoryPage() {
                       <ul className="text-sm">
                         {prediction.outrosPalpites.map((p, i) => (
                           <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
-                            <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
+                            <div className="font-bold w-1/3 text-left">
+                               <Link href={`/dashboard/profile?userId=${p.userId}`} className="hover:underline">
+                                {p.apelido}:
+                              </Link>
+                            </div>
                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                             <div className="w-1/3 text-right">
                               <Badge variant={getPointsBadgeVariant(p.pontos, maxPointsForMatch)} className='whitespace-nowrap'>

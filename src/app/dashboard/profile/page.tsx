@@ -5,23 +5,23 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal } from 'lucide-react';
-import { mockUser, mockChampionships, mockMatches } from '@/lib/data';
+import { mockUser, mockUsers, mockChampionships, mockMatches } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { Honorifics } from '@/components/shared/honorifics';
+import { useSearchParams } from 'next/navigation';
 
 const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, title: string, value: string | number, description: string }) => (
     <Card>
@@ -41,6 +41,21 @@ const StatCard = ({ icon, title, value, description }: { icon: React.ReactNode, 
 )
 
 export default function ProfilePage() {
+  const searchParams = useSearchParams();
+  const userId = searchParams.get('userId');
+  
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => setIsClient(true), []);
+
+  const userToDisplay = useMemo(() => {
+    if (!userId || userId === mockUser.id) {
+        return mockUser;
+    }
+    return mockUsers.find(u => u.id === userId) || mockUser;
+  }, [userId]);
+
+  const isOwnProfile = userToDisplay.id === mockUser.id;
+
   const { 
     nome, 
     apelido, 
@@ -54,13 +69,17 @@ export default function ProfilePage() {
     timeCoracao,
     ultimaAtividade,
     ultimoPalpite
-  } = mockUser;
+  } = userToDisplay as typeof mockUser; // Cast to include all fields
   
   const displayName = apelido || nome;
   const displayImage = urlImagemPersonalizada || fotoPerfil;
   const fallbackInitials = displayName.substring(0, 2).toUpperCase();
 
   const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
+  
+  if (!isClient) {
+      return <div>Carregando perfil...</div>; // Or a skeleton loader
+  }
 
   const generalStats = [
     { 
@@ -136,31 +155,35 @@ export default function ProfilePage() {
                     </div>
                 )}
             </div>
-            <Button asChild variant="outline">
-              <Link href="/dashboard/profile/edit">
-                <Edit className="mr-2 h-4 w-4" />
-                Editar Perfil
-              </Link>
-            </Button>
+             {isOwnProfile && (
+                <Button asChild variant="outline">
+                  <Link href="/dashboard/profile/edit">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar Perfil
+                  </Link>
+                </Button>
+            )}
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 border-t">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="w-4 h-4" />
-                <span>
-                    Última atividade: {formatDistanceToNow(new Date(ultimaAtividade), { addSuffix: true, locale: ptBR })}
-                </span>
-            </div>
-            <Separator orientation='vertical' className='h-6 hidden sm:block' />
-            {lastGuessMatch && (
-                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Goal className="w-4 h-4" />
+         {isOwnProfile && (
+            <CardFooter className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 border-t">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="w-4 h-4" />
                     <span>
-                        Último palpite ({ultimoPalpite.palpite}): <strong>{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
+                        Última atividade: {formatDistanceToNow(new Date(ultimaAtividade), { addSuffix: true, locale: ptBR })}
                     </span>
-                 </div>
-            )}
-        </CardFooter>
+                </div>
+                <Separator orientation='vertical' className='h-6 hidden sm:block' />
+                {lastGuessMatch && (
+                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Goal className="w-4 h-4" />
+                        <span>
+                            Último palpite ({ultimoPalpite.palpite}): <strong>{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
+                        </span>
+                     </div>
+                )}
+            </CardFooter>
+        )}
       </Card>
 
       <div>
@@ -172,7 +195,7 @@ export default function ProfilePage() {
       
       <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <h2 className="text-2xl font-bold font-headline">Minhas Estatísticas</h2>
+            <h2 className="text-2xl font-bold font-headline">Estatísticas por Campeonato</h2>
             <div className="w-full md:w-auto">
                 <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
                     <SelectTrigger className="w-full md:w-[280px]">

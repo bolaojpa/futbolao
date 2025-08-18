@@ -127,19 +127,21 @@ export default function DashboardPage() {
         <section>
              <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
                  <CardHeader className="flex flex-row items-center gap-4 p-4">
-                     <div className="relative w-12 h-12">
+                     <Link href={`/dashboard/profile?userId=${leader.id}`} className="relative block w-12 h-12">
                         <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
                             <Avatar className="w-full h-full border-2 border-background">
                                 <AvatarImage src={`https://placehold.co/100x100.png?text=${leader.apelido.charAt(0)}`} alt={leader.apelido} />
                                 <AvatarFallback>{leader.apelido.substring(0,2)}</AvatarFallback>
                             </Avatar>
                         </div>
-                         <Honorifics count={leader.titulos} variant="badge" />
-                    </div>
+                         <Honorifics count={leader.titulos} />
+                    </Link>
                     <div className="flex-1">
                         <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
                         <div className="flex items-baseline gap-2">
-                            <CardTitle className="text-xl font-headline text-primary">{leader.apelido}</CardTitle>
+                            <CardTitle className="text-xl font-headline text-primary">
+                               <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
+                            </CardTitle>
                             <p className="text-xl font-headline">{leader.pontos} pts</p>
                         </div>
                         <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
@@ -213,7 +215,11 @@ export default function DashboardPage() {
                             <ul className="text-sm">
                                 {prediction.outrosPalpites.map((p, i) => (
                                     <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
-                                        <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
+                                        <div className="font-bold w-1/3 text-left">
+                                            <Link href={`/dashboard/profile?userId=${p.userId}`} className="hover:underline">
+                                                {p.apelido}:
+                                            </Link>
+                                        </div>
                                         <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                                         <div className="w-1/3 text-right">
                                              <Badge variant={getPointsBadgeVariant(p.pontos, maxPointsForMatch)} className='whitespace-nowrap'>
@@ -362,7 +368,11 @@ export default function DashboardPage() {
                             <ul className="text-sm">
                                 {prediction.outrosPalpites.map((p, i) => (
                                     <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
-                                        <span className="font-bold w-1/3 text-left">{p.apelido}:</span>
+                                        <div className="font-bold w-1/3 text-left">
+                                           <Link href={`/dashboard/profile?userId=${p.userId}`} className="hover:underline">
+                                                {p.apelido}:
+                                            </Link>
+                                        </div>
                                         <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
                                         <div className="w-1/3 text-right">
                                             <Badge variant={getPointsBadgeVariant(p.pontos, maxPointsForMatch)} className='whitespace-nowrap'>

@@ -26,6 +26,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Honorifics } from '@/components/shared/honorifics';
+import Link from 'next/link';
 
 type SortType = 'default' | 'exact' | 'situation';
 
@@ -62,9 +63,9 @@ export default function LeaderboardPage() {
   });
 
   const getMedalIcon = (rank: number) => {
-    if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500" />;
-    if (rank === 2) return <Award className="w-5 h-5 text-slate-400" />;
-    if (rank === 3) return <Award className="w-5 h-5 text-amber-700" />;
+    if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500 fill-yellow-400" />;
+    if (rank === 2) return <Award className="w-5 h-5 text-slate-400 fill-slate-400" />;
+    if (rank === 3) return <Award className="w-5 h-5 text-amber-700 fill-amber-700" />;
     if (rank === sortedTableUsers.length) return <Flashlight className="w-5 h-5 text-yellow-400 animate-flash-pulse" />;
     return null;
   };
@@ -126,6 +127,7 @@ export default function LeaderboardPage() {
                   index === 2 && "md:order-3", // 3rd place
               )}>
                   <CardHeader>
+                    <Link href={`/dashboard/profile?userId=${user.id}`} className="block w-fit mx-auto">
                       <div className={cn(
                           "w-24 h-24 rounded-full mx-auto p-1",
                           index === 0 && "bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse",
@@ -137,14 +139,19 @@ export default function LeaderboardPage() {
                               <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                           </Avatar>
                       </div>
-                      <CardTitle className="mt-4 text-2xl font-headline">{user.apelido}</CardTitle>
+                      </Link>
+                      <CardTitle className="mt-4 text-2xl font-headline">
+                         <Link href={`/dashboard/profile?userId=${user.id}`} className="hover:underline">
+                            {user.apelido}
+                        </Link>
+                      </CardTitle>
                       <CardDescription className="text-lg font-bold text-primary">{user.pontos} pts</CardDescription>
                   </CardHeader>
                   <CardContent>
                       <div className="flex justify-center text-3xl">
-                          {index === 0 && <Medal className="w-10 h-10 text-yellow-500" />}
-                          {index === 1 && <Award className="w-10 h-10 text-slate-400" />}
-                          {index === 2 && <Award className="w-10 h-10 text-amber-700" />}
+                          {index === 0 && <Medal className="w-10 h-10 text-yellow-500 fill-yellow-400" />}
+                          {index === 1 && <Award className="w-10 h-10 text-slate-400 fill-slate-400" />}
+                          {index === 2 && <Award className="w-10 h-10 text-amber-700 fill-amber-700" />}
                       </div>
                   </CardContent>
               </Card>
@@ -201,17 +208,17 @@ export default function LeaderboardPage() {
                           </Tooltip>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <Avatar className="w-9 h-9">
-                                  <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
-                                  <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                </Avatar>
-                                <Honorifics count={user.titulos ?? 0} variant="badge" />
-                            </div>
-                            <span className="font-medium">{user.apelido}</span>
-                            {getMedalIcon(rank)}
-                          </div>
+                            <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
+                                <div className="relative">
+                                    <Avatar className="w-9 h-9">
+                                    <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                    </Avatar>
+                                    <Honorifics count={user.titulos ?? 0} variant="badge" />
+                                </div>
+                                <span className="font-medium group-hover:underline">{user.apelido}</span>
+                                {getMedalIcon(rank)}
+                            </Link>
                         </TableCell>
                         <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
                         <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>
