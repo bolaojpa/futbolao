@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Award, Gamepad2, Percent, Star, Medal, Crown, Trophy } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Star, Crown, Trophy, Award } from 'lucide-react';
 import { mockUser } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -48,7 +48,7 @@ const renderHonorifics = (count: number) => {
         displayCount = count - 6;
         iconClass = cn(iconClass, "fill-yellow-400");
     } else if (count >= 4) {
-        IconComponent = Medal;
+        IconComponent = Award;
         displayCount = count - 3;
     } else {
         IconComponent = Star;
