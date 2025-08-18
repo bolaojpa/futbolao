@@ -31,9 +31,6 @@ export default function ProfilePage() {
             Editar Perfil
         </Button>
       </div>
-      
-      {/* As seções de estatísticas e últimos pontos foram removidas temporariamente para corrigir o erro de carregamento. */}
-      
     </div>
   );
 }
