@@ -5,7 +5,14 @@ export const mockUser = {
   nome: 'Carlos Silva',
   apelido: 'Carlinhos',
   email: 'carlos@exemplo.com',
-  fotoPerfil: 'https://placehold.co/100x100.png',
+  fotoPerfil: 'https://placehold.co/100x100.png', // Simula foto do Google/Social
+  urlImagemPersonalizada: '', // Campo para foto personalizada do usuário
+  timeCoracao: 'Flamengo',
+  ultimaAtividade: '2024-07-26T10:00:00Z',
+  ultimoPalpite: {
+      matchId: 'match_5',
+      palpite: '1x1'
+  },
   status: 'ativo',
   funcao: 'usuario',
   dataCadastro: '2023-01-15T09:30:00Z',
