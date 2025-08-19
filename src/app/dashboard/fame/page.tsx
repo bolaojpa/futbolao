@@ -1,4 +1,5 @@
 import { HallOfFameCarousel } from '@/components/fame/hall-of-fame-carousel';
+import { mockHallOfFame } from '@/lib/data';
 import { ShieldCheck } from 'lucide-react';
 
 export default function FamePage() {
@@ -14,7 +15,13 @@ export default function FamePage() {
                 </div>
             </div>
 
-            <HallOfFameCarousel />
+            {mockHallOfFame.length > 0 ? (
+                <HallOfFameCarousel banners={mockHallOfFame} />
+            ) : (
+                <div className="text-center text-muted-foreground py-10">
+                    <p>O Hall da Fama ainda está sendo construído. Volte em breve!</p>
+                </div>
+            )}
             
         </div>
     );
