@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import Autoplay from "embla-carousel-autoplay"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Carousel,
@@ -17,8 +18,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 export function HallOfFameCarousel() {
   const [selectedBanner, setSelectedBanner] = useState<ChampionBannerProps | null>(null);
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true })
+  )
 
-  if (!mockHallOfFame || mockHallOfFame.length === 0) {
+  const orderedHallOfFame = [...mockHallOfFame].reverse();
+
+  if (!orderedHallOfFame || orderedHallOfFame.length === 0) {
     return (
       <Card>
         <CardContent className="flex aspect-video items-center justify-center p-6">
@@ -32,13 +38,16 @@ export function HallOfFameCarousel() {
     <>
       <Carousel 
           className="w-full max-w-xl mx-auto"
+          plugins={[autoplayPlugin.current]}
+          onMouseEnter={autoplayPlugin.current.stop}
+          onMouseLeave={autoplayPlugin.current.reset}
           opts={{
               align: "start",
               loop: true,
           }}
       >
         <CarouselContent>
-          {mockHallOfFame.map((entry) => (
+          {orderedHallOfFame.map((entry) => (
             <CarouselItem key={entry.id}>
               <div className="p-1 relative group">
                   <ChampionBanner {...entry} />
@@ -52,8 +61,8 @@ export function HallOfFameCarousel() {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="hidden sm:flex" />
-        <CarouselNext className="hidden sm:flex" />
+        <CarouselPrevious className="hidden sm:flex -left-4" />
+        <CarouselNext className="hidden sm:flex -right-4" />
       </Carousel>
 
       <Dialog open={!!selectedBanner} onOpenChange={(isOpen) => !isOpen && setSelectedBanner(null)}>
