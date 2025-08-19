@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { mockMatches, mockUser, mockPredictions } from '@/lib/data';
-import { format, parseISO, differenceInHours, isToday } from 'date-fns';
+import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -59,6 +59,10 @@ export function PredictionForm() {
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
     const [isClient, setIsClient] = useState(false);
     
+    // Estado para controlar as partidas visíveis
+    const initialOpenMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)));
+    const [displayedMatches, setDisplayedMatches] = useState<Match[]>(initialOpenMatches);
+    
     // Armazena as referências dos cards para a rolagem
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -91,6 +95,16 @@ export function PredictionForm() {
                 }
             }, 100);
         }
+
+        // Lógica para remover cards de jogos que já começaram
+        const interval = setInterval(() => {
+            const now = new Date();
+            setDisplayedMatches(prevMatches => 
+                prevMatches.filter(match => !isPast(parseISO(match.data)))
+            );
+        }, 1000); // Verifica a cada segundo
+
+        return () => clearInterval(interval); // Limpa o intervalo quando o componente desmonta
 
     }, []);
 
@@ -155,8 +169,6 @@ export function PredictionForm() {
         setLoadingAi(prev => ({ ...prev, [match.id]: false }));
     };
     
-    const openMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado');
-
     const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
         if (!isClient) {
           return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>Carregando...</div>;
@@ -205,7 +217,7 @@ export function PredictionForm() {
         </div>
     }
 
-    if (openMatches.length === 0) {
+    if (displayedMatches.length === 0) {
         return (
              <Card>
                 <CardContent className="p-6 text-center">
@@ -218,7 +230,7 @@ export function PredictionForm() {
     return (
         <TooltipProvider>
             <div className="space-y-6">
-                {openMatches.map((match) => {
+                {displayedMatches.map((match) => {
                     const isEditing = !!lastUpdated[match.id];
                     const currentScore = scores[match.id] || { placarA: null, placarB: null };
                     const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
@@ -337,3 +349,5 @@ export function PredictionForm() {
         </TooltipProvider>
     );
 }
+
+    
