@@ -170,7 +170,7 @@ export default function ProfilePage() {
   const lastGuessMatch = [...mockMatches.upcoming, ...mockMatches.recent].find(m => m.id === ultimoPalpite.matchId);
 
   return (
-    <div className="container mx-auto space-y-8">
+    <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center gap-6">
@@ -260,4 +260,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

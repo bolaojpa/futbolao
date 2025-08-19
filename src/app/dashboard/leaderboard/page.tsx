@@ -108,9 +108,9 @@ export default function LeaderboardPage() {
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto space-y-8 relative">
+      <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 relative">
         <Confetti />
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div className="flex items-center gap-4">
                 <Trophy className="h-8 w-8 text-primary" />
                 <div>
@@ -132,7 +132,7 @@ export default function LeaderboardPage() {
             </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-8">
           {sortedTop3Users.slice(0, 3).map((user, index) => (
               <Card key={user.id} className={cn(
                   "relative overflow-hidden",
@@ -172,7 +172,7 @@ export default function LeaderboardPage() {
           ))}
         </div>
         
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <h3 className="text-xl font-bold font-headline">Classificação Geral</h3>
             <div className="flex gap-2 w-full md:w-auto">
                 <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>

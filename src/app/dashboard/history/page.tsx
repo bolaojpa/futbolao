@@ -78,8 +78,8 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="container mx-auto space-y-8">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
+      <div className="flex items-center gap-4 mb-8">
         <History className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold font-headline">Histórico de Palpites</h1>
@@ -89,7 +89,7 @@ export default function HistoryPage() {
         </div>
       </div>
       
-       <div className="flex flex-col md:flex-row gap-2">
+       <div className="flex flex-col md:flex-row gap-2 mb-8">
           <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
               <SelectTrigger className="w-full md:w-[280px]">
                   <SelectValue placeholder="Filtrar por campeonato" />

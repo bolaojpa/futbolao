@@ -10,8 +10,8 @@ import { LifeBuoy } from 'lucide-react';
 
 export default function SupportPage() {
     return (
-        <div className="container mx-auto space-y-8">
-            <div className="flex items-center gap-4">
+        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
+            <div className="flex items-center gap-4 mb-8">
                  <LifeBuoy className="h-8 w-8 text-primary" />
                 <div>
                     <h1 className="text-3xl font-bold font-headline">Suporte</h1>
