@@ -1,5 +1,4 @@
-
-'use client';
+"use client";
 
 import Image from "next/image";
 import { Crown } from "lucide-react";
@@ -45,27 +44,27 @@ export function ChampionBanner({
                 />
             </div>
             <div className="w-3/4 flex justify-center items-center">
-                 <h2 className="text-4xl font-extrabold tracking-wider uppercase text-center">Ganhadores</h2>
+                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-wider uppercase text-center">Ganhadores</h2>
             </div>
         </div>
 
         {/* Middle Section */}
         <div className="flex-1 flex flex-col items-center justify-center text-center border-b-2 border-white/20 py-[2%]">
-            <h3 className="text-2xl font-semibold uppercase tracking-wider text-yellow-300 font-headline">CAMPEÃO GERAL</h3>
+            <h3 className="text-xl sm:text-2xl font-semibold uppercase tracking-wider text-yellow-300 font-headline">CAMPEÃO GERAL</h3>
             <div className="flex items-center justify-center gap-4 mt-2">
-                <Image src={campeaoGeralAvatarUrl} alt={`Avatar de ${campeaoGeralNome}`} width={80} height={80} className="w-16 h-16 rounded-full border-4 border-yellow-400" />
-                <p className="text-xl font-bold">{campeaoGeralNome}</p>
+                <Image src={campeaoGeralAvatarUrl} alt={`Avatar de ${campeaoGeralNome}`} width={80} height={80} className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-yellow-400" />
+                <p className="text-lg sm:text-xl font-bold">{campeaoGeralNome}</p>
             </div>
         </div>
 
         {/* Bottom Section */}
         <div className="flex-1 flex flex-col items-center justify-center text-center pt-[2%]">
-            <h3 className="text-2xl font-semibold uppercase tracking-wider text-yellow-300 font-headline">
+            <h3 className="text-xl sm:text-2xl font-semibold uppercase tracking-wider text-yellow-300 font-headline">
                 {tipoPalpite === 'selecao' ? 'PALPITE DA SELEÇÃO' : 'PALPITE DA EQUIPE'}
             </h3>
             <div className="flex items-center justify-center gap-4 mt-2">
-                <Image src={palpiteiroAvatarUrl} alt={`Avatar de ${palpiteiroNome}`} width={80} height={80} className="w-16 h-16 rounded-full border-4 border-yellow-400" />
-                <p className="text-xl font-bold">{palpiteiroNome}</p>
+                <Image src={palpiteiroAvatarUrl} alt={`Avatar de ${palpiteiroNome}`} width={80} height={80} className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-yellow-400" />
+                <p className="text-lg sm:text-xl font-bold">{palpiteiroNome}</p>
             </div>
         </div>
     </div>

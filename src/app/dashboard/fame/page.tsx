@@ -1,11 +1,8 @@
-import { ChampionBanner } from '@/components/fame/champion-banner';
+import { HallOfFameCarousel } from '@/components/fame/hall-of-fame-carousel';
 import { mockHallOfFame } from '@/lib/data';
 import { ShieldCheck } from 'lucide-react';
 
 export default function FamePage() {
-    // Pega o banner mais recente para exibir
-    const latestBanner = mockHallOfFame.length > 0 ? mockHallOfFame[mockHallOfFame.length - 1] : null;
-
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
             <div className="flex items-center gap-4 mb-8">
@@ -19,10 +16,8 @@ export default function FamePage() {
             </div>
 
             <div className="flex-grow flex items-center justify-center">
-                 {latestBanner ? (
-                    <div className="w-full max-w-sm">
-                        <ChampionBanner {...latestBanner} />
-                    </div>
+                 {mockHallOfFame.length > 0 ? (
+                    <HallOfFameCarousel banners={mockHallOfFame} />
                 ) : (
                     <div className="text-center text-muted-foreground py-10">
                         <p>O Hall da Fama ainda está sendo construído. Volte em breve!</p>
