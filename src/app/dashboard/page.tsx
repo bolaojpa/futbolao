@@ -31,6 +31,24 @@ import { Separator } from '@/components/ui/separator';
 import { Honorifics } from '@/components/shared/honorifics';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 
+// Componente para evitar erro de hidratação com datas
+const FormattedDate = ({ dateString, formatString }: { dateString: string, formatString: string }) => {
+    const [formattedDate, setFormattedDate] = useState('');
+  
+    useEffect(() => {
+      // Formata a data apenas no cliente
+      setFormattedDate(format(parseISO(dateString), formatString, { locale: ptBR }));
+    }, [dateString, formatString]);
+  
+    if (!formattedDate) {
+      // Retorna um placeholder ou nada enquanto a data não é formatada no cliente
+      return null; 
+    }
+  
+    return <span className="text-xs text-muted-foreground mt-2">{formattedDate}</span>;
+};
+
+
 export default function DashboardPage() {
   const { apelido } = mockUser;
   
@@ -368,9 +386,7 @@ export default function DashboardPage() {
                                     {match.timeB}
                                     </div>
                                 </div>
-                                <span className="text-xs text-muted-foreground mt-2">
-                                    {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
-                                </span>
+                                <FormattedDate dateString={match.data} formatString="dd/MM/yy" />
                             </div>
                             </AccordionTrigger>
                             <AccordionContent>
