@@ -54,11 +54,18 @@ export default function LoginPage() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input type="password" placeholder="Sua senha" className="pl-10" />
             </div>
-             <div className="flex items-center space-x-2">
-                <Checkbox id="remember-me" />
-                <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Mantenha-me conectado
-                </Label>
+             <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="remember-me" />
+                    <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Mantenha-me conectado
+                    </Label>
+                </div>
+                <Link href="/forgot-password" passHref>
+                    <span className="text-sm font-semibold text-primary hover:underline">
+                        Esqueceu a senha?
+                    </span>
+                </Link>
             </div>
           </div>
         </CardContent>
@@ -77,3 +84,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
