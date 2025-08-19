@@ -44,7 +44,7 @@ export function ChampionBanner({
                 />
             </div>
             <div className="w-3/4 flex justify-center items-center">
-                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-widest uppercase text-center">Ganhadores</h2>
+                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-wider uppercase text-center">Ganhadores</h2>
             </div>
         </div>
 
