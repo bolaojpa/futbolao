@@ -50,10 +50,10 @@ export function HallOfFameCarousel() {
         <CarouselContent>
           {orderedHallOfFame.map((entry) => (
             <CarouselItem key={entry.id}>
-              <div className="p-1 relative group">
+              <div className="relative group">
                   <ChampionBanner {...entry} />
                   <div 
-                    className="absolute inset-1 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-md"
+                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-md"
                     onClick={() => setSelectedBanner(entry)}
                   >
                     <Eye className="w-16 h-16 text-white" />
