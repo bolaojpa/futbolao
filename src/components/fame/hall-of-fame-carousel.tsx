@@ -69,14 +69,16 @@ export function HallOfFameCarousel() {
       </div>
 
       <Dialog open={!!selectedBanner} onOpenChange={(isOpen) => !isOpen && setSelectedBanner(null)}>
-        <DialogContent className="max-w-4xl p-0 border-0 bg-transparent">
+        <DialogContent className="w-full max-w-none h-auto sm:max-w-4xl p-4 sm:p-6 bg-transparent border-0">
            <DialogHeader className="sr-only">
             <DialogTitle>Banner do Campeão</DialogTitle>
             <DialogDescription>
               Visualização ampliada do banner de um campeão de um campeonato anterior.
             </DialogDescription>
           </DialogHeader>
-          {selectedBanner && <ChampionBanner {...selectedBanner} />}
+          <div className="w-full h-full flex items-center justify-center">
+            {selectedBanner && <ChampionBanner {...selectedBanner} />}
+          </div>
         </DialogContent>
       </Dialog>
     </>
