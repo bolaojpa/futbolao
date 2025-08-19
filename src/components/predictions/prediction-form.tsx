@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useRouter } from 'next/navigation';
 
 type Match = typeof mockMatches.upcoming[0];
 
@@ -53,6 +54,7 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
 
 export function PredictionForm() {
     const { toast } = useToast();
+    const router = useRouter();
     const [aiModalState, setAiModalState] = useState<{ open: boolean; suggestion: string | null; match: Match | null }>({ open: false, suggestion: null, match: null });
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
@@ -98,7 +100,6 @@ export function PredictionForm() {
 
         // Lógica para remover cards de jogos que já começaram
         const interval = setInterval(() => {
-            const now = new Date();
             setDisplayedMatches(prevMatches => 
                 prevMatches.filter(match => !isPast(parseISO(match.data)))
             );
@@ -118,8 +119,21 @@ export function PredictionForm() {
         }));
     };
 
-    const handlePredictionSubmit = (matchId: string) => {
-        const isEditing = !!lastUpdated[matchId];
+    const handlePredictionSubmit = (match: Match) => {
+        // Simula a verificação do servidor
+        if (isPast(parseISO(match.data))) {
+            toast({
+                title: "Tempo Esgotado!",
+                description: "Esta partida já começou e não pode mais receber palpites.",
+                variant: "destructive",
+            });
+            // Remove o card da UI e redireciona
+            setDisplayedMatches(prev => prev.filter(m => m.id !== match.id));
+            router.push('/dashboard');
+            return;
+        }
+
+        const isEditing = !!lastUpdated[match.id];
         
         toast({
             title: `Palpite ${isEditing ? 'Alterado' : 'Enviado'}!`,
@@ -127,7 +141,7 @@ export function PredictionForm() {
             variant: "default",
         });
 
-        setLastUpdated(prev => ({ ...prev, [matchId]: new Date() }));
+        setLastUpdated(prev => ({ ...prev, [match.id]: new Date() }));
     };
 
     const handleAiSuggestion = async (match: Match) => {
@@ -315,7 +329,7 @@ export function PredictionForm() {
                                         )}
                                         Consultar IA
                                     </Button>
-                                    <Button onClick={() => handlePredictionSubmit(match.id)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
+                                    <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
                                         <Save className="mr-2 h-4 w-4" />
                                         {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
                                     </Button>
@@ -349,5 +363,3 @@ export function PredictionForm() {
         </TooltipProvider>
     );
 }
-
-    
