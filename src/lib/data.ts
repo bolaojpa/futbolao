@@ -13,15 +13,15 @@ export const mockUser = {
   ultimaAtividade: '2024-07-26T10:00:00Z',
   ultimoLogin: '2024-07-26T08:30:00Z',
   ultimoPalpite: {
-      matchId: 'match_5',
-      palpite: '1x1'
+      matchId: 'match_11',
+      palpite: '1x0'
   },
   status: 'ativo', // pendente/ativo/bloqueado
   presenceStatus: 'Disponível' as const, // "Disponível", "Ausente", "Ocupado", "Não perturbe", "Offline"
   funcao: 'usuario',
   dataCadastro: '2023-01-15T09:30:00Z',
   titulos: 3,
-  totalJogos: 88,
+  totalJogos: 92,
   championshipStats: [
     {
       championshipId: 'champ_1',
@@ -69,6 +69,11 @@ export const mockChampionships = [
 const MOCK_MATCH_RECENT_1 = { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
 const MOCK_MATCH_RECENT_2 = { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0, maxPontos: 10 };
 const MOCK_MATCH_RECENT_3 = { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 15, maxPontos: 15 };
+const MOCK_MATCH_RECENT_8 = { id: 'match_8', campeonato: 'Brasileirão Série A 2024', timeA: 'Internacional', timeB: 'Juventude', placarA: 1, placarB: 0, data: '2024-07-19T20:00:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
+const MOCK_MATCH_RECENT_9 = { id: 'match_9', campeonato: 'Brasileirão Série A 2024', timeA: 'Fortaleza', timeB: 'Criciúma', placarA: 1, placarB: 1, data: '2024-07-18T16:00:00Z', status: 'Finalizado', pontosObtidos: 10, maxPontos: 10 };
+const MOCK_MATCH_RECENT_10 = { id: 'match_10', campeonato: 'Brasileirão Série A 2024', timeA: 'Bragantino', timeB: 'Atlético-GO', placarA: 0, placarB: 2, data: '2024-07-17T18:30:00Z', status: 'Finalizado', pontosObtidos: 0, maxPontos: 10 };
+const MOCK_MATCH_RECENT_11 = { id: 'match_11', campeonato: 'Brasileirão Série A 2024', timeA: 'Cuiabá', timeB: 'Goiás', placarA: 2, placarB: 1, data: '2024-07-16T18:30:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
+
 
 // Helper para criar uma data futura para os mocks
 const futureDate = (hours: number) => {
@@ -82,6 +87,10 @@ export const mockMatches = {
     MOCK_MATCH_RECENT_1,
     MOCK_MATCH_RECENT_2,
     MOCK_MATCH_RECENT_3,
+    MOCK_MATCH_RECENT_8,
+    MOCK_MATCH_RECENT_9,
+    MOCK_MATCH_RECENT_10,
+    MOCK_MATCH_RECENT_11,
   ],
   upcoming: [
     { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo', maxPontos: 15 },
@@ -141,7 +150,44 @@ export const mockPredictions = [
     palpiteUsuario: { placarA: 1, placarB: 1 },
     pontos: 0,
     outrosPalpites: [],
-  }
+  },
+  // Predictions for new recent matches
+  {
+    userId: 'user_1',
+    matchId: 'match_8',
+    palpiteUsuario: { placarA: 2, placarB: 0 },
+    pontos: 5,
+    outrosPalpites: [
+      { userId: 'user_2', apelido: 'Fernanda', palpite: '1-0', pontos: 10 },
+    ],
+  },
+  {
+    userId: 'user_1',
+    matchId: 'match_9',
+    palpiteUsuario: { placarA: 1, placarB: 1 },
+    pontos: 10,
+    outrosPalpites: [
+       { userId: 'user_3', apelido: 'Lucas', palpite: '0-0', pontos: 5 },
+    ],
+  },
+  {
+    userId: 'user_1',
+    matchId: 'match_10',
+    palpiteUsuario: { placarA: 3, placarB: 1 },
+    pontos: 0,
+    outrosPalpites: [
+       { userId: 'user_4', apelido: 'Juliana', palpite: '0-2', pontos: 10 },
+    ],
+  },
+   {
+    userId: 'user_1',
+    matchId: 'match_11',
+    palpiteUsuario: { placarA: 1, placarB: 0 },
+    pontos: 5,
+    outrosPalpites: [
+       { userId: 'user_5', apelido: 'Rafa', palpite: '2-1', pontos: 10 },
+    ],
+  },
 ];
 
 export const mockNotifications = [
