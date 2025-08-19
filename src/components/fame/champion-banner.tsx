@@ -15,6 +15,28 @@ export interface ChampionBannerProps {
   palpiteiroAvatarUrl: string;
 }
 
+const Section = ({
+  height,
+  children,
+  className = "",
+}: {
+  height: string;
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div style={{ height }} className={`w-full flex ${className}`}>
+    {children}
+  </div>
+);
+
+const Divider = ({ height }: { height: string }) => (
+  <div style={{ height }} className="w-full bg-white/20"></div>
+);
+
+const VerticalDivider = ({ width }: { width: string }) => (
+  <div style={{ width }} className="h-full bg-white/20"></div>
+);
+
 export function ChampionBanner({
   campeonatoLogoUrl,
   campeonatoNome,
@@ -25,49 +47,77 @@ export function ChampionBanner({
   palpiteiroAvatarUrl,
 }: ChampionBannerProps) {
   return (
-    <div 
-        className="w-full h-full aspect-[857/828] bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-[3%] text-white relative overflow-hidden"
-        style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
+    <div
+      className="w-full h-full aspect-[857/828] bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-[0.33%] text-white relative overflow-hidden"
+      style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}
     >
-        {/* Decorative elements */}
-        <Crown className="absolute -top-[10%] -right-[10%] w-[35%] h-[35%] text-yellow-400/10 rotate-12" strokeWidth={1}/>
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] -z-10"></div>
+      {/* Decorative elements */}
+      <Crown
+        className="absolute -top-[10%] -right-[10%] w-[35%] h-[35%] text-yellow-400/10 rotate-12"
+        strokeWidth={1}
+      />
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] -z-10"></div>
 
-        {/* Top Section */}
-        <div className="flex-1 flex justify-between items-center border-b-2 border-white/20 pb-[2%]">
-            <div className="w-1/4 flex justify-start items-center h-full">
-                <Image 
-                    src={campeonatoLogoUrl} 
-                    alt={`Logo ${campeonatoNome}`}
-                    width={100}
-                    height={100}
-                    className="object-contain h-[80%] w-auto" 
-                />
-            </div>
-            <div className="w-3/4 flex justify-center items-center">
-                 <h2 className="w-[80%] text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-wider uppercase text-center whitespace-nowrap">Ganhadores</h2>
-            </div>
+      {/* Top Section - 32.78% height */}
+      <Section height="32.78%">
+        {/* Logo Area - 31.28% width */}
+        <div style={{ width: '31.28%' }} className="flex justify-center items-center h-full p-[5%]">
+          <Image
+            src={campeonatoLogoUrl}
+            alt={`Logo ${campeonatoNome}`}
+            width={150}
+            height={150}
+            className="object-contain h-full w-auto"
+          />
         </div>
 
-        {/* Middle Section */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center border-b-2 border-white/20 py-[2%] gap-2">
-            <h3 className="w-[45%] text-xl sm:text-2xl font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">CAMPEÃO GERAL</h3>
-            <div className="w-[50%] flex items-center justify-center gap-4">
-                <Image src={campeaoGeralAvatarUrl} alt={`Avatar de ${campeaoGeralNome}`} width={80} height={80} className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-yellow-400" />
-                <p className="text-lg sm:text-xl font-bold whitespace-nowrap truncate">{campeaoGeralNome}</p>
-            </div>
-        </div>
+        <VerticalDivider width="0.34%" />
 
-        {/* Bottom Section */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center pt-[2%] gap-2">
-            <h3 className="w-[45%] text-xl sm:text-2xl font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
-                {tipoPalpite === 'selecao' ? 'PALPITE DA SELEÇÃO' : 'PALPITE DA EQUIPE'}
-            </h3>
-            <div className="w-[50%] flex items-center justify-center gap-4">
-                <Image src={palpiteiroAvatarUrl} alt={`Avatar de ${palpiteiroNome}`} width={80} height={80} className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-yellow-400" />
-                <p className="text-lg sm:text-xl font-bold whitespace-nowrap truncate">{palpiteiroNome}</p>
-            </div>
+        {/* Ganhadores Area - 67.69% width */}
+        <div style={{ width: '67.69%' }} className="flex justify-center items-center h-full">
+          <h2 className="text-[11cqw] font-extrabold tracking-wider uppercase text-center">
+            Ganhadores
+          </h2>
         </div>
+      </Section>
+
+      <Divider height="0.33%" />
+
+      {/* Middle Section - 32.78% height */}
+      <Section height="32.78%" className="flex-col justify-center items-center text-center p-[2%]">
+        <h3 className="text-[5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
+          CAMPEÃO GERAL
+        </h3>
+        <div className="flex items-center justify-center gap-[4%] mt-[2%] w-full">
+          <Image
+            src={campeaoGeralAvatarUrl}
+            alt={`Avatar de ${campeaoGeralNome}`}
+            width={80}
+            height={80}
+            className="w-[20%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
+          />
+          <p className="text-[4.5cqw] font-bold whitespace-nowrap truncate">{campeaoGeralNome}</p>
+        </div>
+      </Section>
+
+      <Divider height="0.33%" />
+
+      {/* Bottom Section - 32.95% height */}
+      <Section height="32.95%" className="flex-col justify-center items-center text-center p-[2%]">
+        <h3 className="text-[5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
+          {tipoPalpite === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
+        </h3>
+        <div className="flex items-center justify-center gap-[4%] mt-[2%] w-full">
+          <Image
+            src={palpiteiroAvatarUrl}
+            alt={`Avatar de ${palpiteiroNome}`}
+            width={80}
+            height={80}
+            className="w-[20%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
+          />
+          <p className="text-[4.5cqw] font-bold whitespace-nowrap truncate">{palpiteiroNome}</p>
+        </div>
+      </Section>
     </div>
   );
 }
