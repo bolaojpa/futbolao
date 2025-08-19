@@ -45,7 +45,7 @@ const FormattedDate = ({ dateString, formatString }: { dateString: string, forma
       return null; 
     }
   
-    return <span className="text-xs text-muted-foreground mt-2">{formattedDate}</span>;
+    return <span className="text-xs text-muted-foreground mt-1">{formattedDate}</span>;
 };
 
 
@@ -386,7 +386,10 @@ export default function DashboardPage() {
                                     {match.timeB}
                                     </div>
                                 </div>
-                                <FormattedDate dateString={match.data} formatString="dd/MM/yy" />
+                                <div className='flex flex-col items-center justify-center mt-2 gap-1'>
+                                    <Badge variant="secondary">{match.status}</Badge>
+                                    <FormattedDate dateString={match.data} formatString="dd/MM/yy" />
+                                </div>
                             </div>
                             </AccordionTrigger>
                             <AccordionContent>
