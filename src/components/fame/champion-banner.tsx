@@ -43,7 +43,7 @@ export function ChampionBanner({
                 />
             </div>
             <div className="w-3/4 flex justify-center items-center">
-                 <h2 className="text-5xl font-extrabold tracking-widest uppercase">Ganhadores</h2>
+                 <h2 className="text-[5rem] font-extrabold tracking-widest uppercase">Ganhadores</h2>
             </div>
         </div>
 
