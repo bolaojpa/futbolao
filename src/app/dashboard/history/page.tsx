@@ -25,6 +25,23 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 
 type FilterType = 'all' | 'exact' | 'situation' | 'miss';
 
+// Componente para evitar erro de hidratação com datas
+const FormattedDate = ({ dateString }: { dateString: string }) => {
+    const [formattedDate, setFormattedDate] = useState('');
+  
+    useEffect(() => {
+      // Formata a data apenas no cliente
+      setFormattedDate(format(parseISO(dateString), "dd/MM/yy 'às' HH:mm", { locale: ptBR }));
+    }, [dateString]);
+  
+    if (!formattedDate) {
+      // Retorna um placeholder ou nada enquanto a data não é formatada no cliente
+      return null; 
+    }
+  
+    return <span className="text-xs text-muted-foreground">{formattedDate}</span>;
+};
+
 export default function HistoryPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
@@ -144,9 +161,7 @@ export default function HistoryPage() {
                       </div>
                        <div className='flex flex-col items-center justify-center mt-2 gap-2'>
                         <Badge variant="secondary">{match.status}</Badge>
-                        <span className="text-xs text-muted-foreground">
-                            {format(parseISO(match.data), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
-                        </span>
+                         <FormattedDate dateString={match.data} />
                        </div>
                     </div>
                   </AccordionTrigger>
