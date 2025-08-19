@@ -28,7 +28,7 @@ export const Honorifics = ({ count, variant }: HonorificsProps) => {
 
     let IconComponent: React.ComponentType<{ className?: string }>;
     let displayCount = 0;
-    let iconClass = "text-yellow-400 fill-yellow-400";
+    let iconClass = "text-yellow-400 fill-yellow-400 [filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.7))]";
     
     // Os ícones devem ser dimensionados para preencher a altura do container (25% do avatar)
     let iconSize = "h-full w-auto"; 
