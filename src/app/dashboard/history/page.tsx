@@ -149,7 +149,16 @@ export default function HistoryPage() {
                   <AccordionContent>
                     <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos, maxPointsForMatch))}>
                       <div className="flex justify-between items-center w-full">
-                        <span className="font-bold w-1/3 text-left">Seu Palpite:</span>
+                          <div className="w-1/3 text-left flex items-center gap-2">
+                              <div className="relative">
+                                <Avatar className="w-8 h-8">
+                                  <AvatarImage src={mockUser.fotoPerfil} alt={mockUser.apelido} />
+                                  <AvatarFallback>{mockUser.apelido.substring(0,2)}</AvatarFallback>
+                                </Avatar>
+                                <StatusIndicator status={mockUser.presenceStatus} />
+                              </div>
+                              <span className="font-bold">Seu Palpite:</span>
+                          </div>
                         <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                         <div className="w-1/3 text-right">
                           <Badge variant={getPointsBadgeVariant(prediction.pontos, maxPointsForMatch)} className='whitespace-nowrap'>
