@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -49,6 +49,24 @@ export default function HistoryPage() {
 
   const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
   const [filterType, setFilterType] = useState<FilterType>(filterTypeFromQuery || 'all');
+  const matchRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  useEffect(() => {
+    // Lógica para rolar para o card do jogo
+    if (window.location.hash) {
+        const matchId = window.location.hash.substring(1);
+        setTimeout(() => { // Timeout para garantir que o elemento esteja renderizado
+            const element = matchRefs.current[matchId];
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            }
+        }, 100);
+    }
+}, []);
   
   // Sincroniza o estado com os parâmetros da URL, caso eles mudem.
   useEffect(() => {
@@ -142,7 +160,7 @@ export default function HistoryPage() {
 
           return (
             <Accordion type="single" collapsible className="w-full" key={match.id}>
-              <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
+              <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                 <Card>
                   <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos, maxPointsForMatch))}>
                     <div className="flex flex-col items-center justify-center w-full">

@@ -111,6 +111,23 @@ export default function ProfilePage() {
 
     return { maxPoints, maxExacts, maxSituations, maxStreak };
   }, [selectedChampionship]);
+
+  const lastGuessMatch = [...mockMatches.upcoming, ...mockMatches.recent].find(m => m.id === ultimoPalpite.matchId);
+
+  const getLastGuessLink = () => {
+    if (!lastGuessMatch) return '#';
+
+    switch(lastGuessMatch.status) {
+      case 'Agendado':
+        return `/dashboard/predictions#${lastGuessMatch.id}`;
+      case 'Ao Vivo':
+        return `/dashboard#${lastGuessMatch.id}`;
+      case 'Finalizado':
+        return `/dashboard/history#${lastGuessMatch.id}`;
+      default:
+        return '#';
+    }
+  };
   
   if (!isClient) {
       return <div className="space-y-8 p-4 sm:p-6 lg:p-8">
@@ -175,8 +192,6 @@ export default function ProfilePage() {
     },
   ] : [];
 
-  const lastGuessMatch = [...mockMatches.upcoming, ...mockMatches.recent].find(m => m.id === ultimoPalpite.matchId);
-
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
         <div className="space-y-8">
@@ -228,7 +243,7 @@ export default function ProfilePage() {
                             </span>
                         </div>
                         {lastGuessMatch && (
-                            <Link href={`/dashboard/predictions#${lastGuessMatch.id}`} className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                            <Link href={getLastGuessLink()} className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                                 <Goal className="w-4 h-4" />
                                 <span>
                                     Último palpite ({ultimoPalpite.palpite}): <strong className="group-hover:underline">{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
