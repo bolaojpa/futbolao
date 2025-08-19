@@ -14,6 +14,7 @@ import {
 import { mockHallOfFame } from "@/lib/data"
 import { ChampionBanner } from "./champion-banner";
 
+
 export function HallOfFameCarousel() {
   const autoplayPlugin = useRef(
     Autoplay({ delay: 4000, stopOnInteraction: true })
@@ -45,9 +46,7 @@ export function HallOfFameCarousel() {
       <CarouselContent>
         {orderedHallOfFame.map((entry) => (
           <CarouselItem key={entry.id}>
-            <div className="relative group">
-                <ChampionBanner {...entry} />
-            </div>
+             <ChampionBanner {...entry} />
           </CarouselItem>
         ))}
       </CarouselContent>
