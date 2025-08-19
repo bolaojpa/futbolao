@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -12,22 +13,15 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             {...props}
+            version="1.1"
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            viewBox="0 0 48 48"
         >
-            <path d="M15.545 6.558C16.803 6.026 18.225 5.5 19.82 5.5c2.815 0 5.18 2.04 5.18 4.75 0 2.45-1.68 4.425-3.955 4.918" />
-            <path d="M16.5 10.5c0-1.24.96-2.25 2.25-2.25s2.25.96 2.25 2.25-.96 2.25-2.25 2.25-2.25-1.01-2.25-2.25Z" />
-            <path d="M12.25 21.5c-4.22 0-7.75-3.48-7.75-7.75S8.03 6 12.25 6s7.75 3.48 7.75 7.75" />
-            <path d="M3.5 13.75c0-3.322 2.678-6 6-6" />
-            <path d="m9.25 13.75-1.5-1.5" />
-            <path d="m9.25 13.75 1.5-1.5" />
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"></path>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+            <path fill="none" d="M0 0h48v48H0z"></path>
         </svg>
     )
 }
@@ -71,11 +65,11 @@ export default function SignupPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
             <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Link href="/dashboard">Criar Conta</Link>
+                <Link href="/pending-approval">Criar Conta</Link>
             </Button>
           <div className="text-center text-sm">
             Já tem uma conta?{' '}
-            <Link href="/login" className="font-semibold text-primary hover:underline">
+            <Link href="/" className="font-semibold text-primary hover:underline">
               Faça login
             </Link>
           </div>
