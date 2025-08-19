@@ -47,7 +47,7 @@ export default function SignupPage() {
             </div>
             <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="text" placeholder="Nome completo" className="pl-10" />
+                <Input type="text" placeholder="Nome completo" className="pl-10" required />
             </div>
             <div className="relative">
                 <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -55,11 +55,15 @@ export default function SignupPage() {
             </div>
             <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="email" placeholder="seu@email.com" className="pl-10" />
+                <Input type="email" placeholder="seu@email.com" className="pl-10" required />
             </div>
             <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="password" placeholder="Crie uma senha forte" className="pl-10" />
+                <Input type="password" placeholder="Crie uma senha forte" className="pl-10" required />
+            </div>
+            <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input type="password" placeholder="Confirme sua senha" className="pl-10" required />
             </div>
           </div>
         </CardContent>
