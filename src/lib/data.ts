@@ -1,4 +1,5 @@
 
+
 // Mock Data for FutBolão Pro
 
 export const mockUser = {
@@ -145,3 +146,26 @@ export const mockEmergencyMessage = {
     active: true, // Mude para 'false' para desativar o modal
     targetUserIds: ['all'], // 'all' para todos, ou um array de user_ids ['user_1', 'user_3']
 };
+
+export const mockHallOfFame = [
+    {
+        id: 'hof_1',
+        campeonatoLogoUrl: 'https://placehold.co/128x128.png',
+        campeonatoNome: 'Brasileirão Série A 2023',
+        campeaoGeralNome: 'Fernanda',
+        campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
+        tipoPalpite: 'equipe' as const,
+        palpiteiroNome: 'Juliana',
+        palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
+    },
+    {
+        id: 'hof_2',
+        campeonatoLogoUrl: 'https://placehold.co/128x128.png',
+        campeonatoNome: 'Copa do Mundo 2022',
+        campeaoGeralNome: 'Carlinhos',
+        campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
+        tipoPalpite: 'selecao' as const,
+        palpiteiroNome: 'Lucas',
+        palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
+    }
+]

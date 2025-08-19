@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -17,6 +18,7 @@ import {
   LogOut,
   User,
   LifeBuoy,
+  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -28,6 +30,7 @@ export function AppSidebar() {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/predictions', label: 'Palpites', icon: CalendarCheck },
     { href: '/dashboard/leaderboard', label: 'Ranking', icon: Trophy },
+    { href: '/dashboard/fame', label: 'Hall da Fama', icon: ShieldCheck },
     { href: '/dashboard/history', label: 'Histórico', icon: History },
   ];
   
