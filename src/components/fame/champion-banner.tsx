@@ -76,7 +76,7 @@ export function ChampionBanner({
 
         {/* Ganhadores Area - 67.69% width */}
         <div style={{ width: '67.69%' }} className="flex justify-center items-center h-full">
-          <h2 className="text-[11cqw] font-extrabold tracking-wider uppercase text-center">
+          <h2 className="text-[10cqw] font-extrabold tracking-wider uppercase text-center">
             Ganhadores
           </h2>
         </div>
