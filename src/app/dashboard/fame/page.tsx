@@ -15,7 +15,7 @@ export default function FamePage() {
                 </div>
             </div>
 
-            <div className="flex-grow flex items-center justify-center">
+            <div>
                  {mockHallOfFame.length > 0 ? (
                     <HallOfFameCarousel banners={mockHallOfFame} />
                 ) : (
