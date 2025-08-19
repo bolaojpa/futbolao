@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Settings, Bot, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { testPerformanceUpdate } from './actions';
+import { SparkleAnimation } from '@/components/shared/sparkle-animation';
+
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -31,10 +33,17 @@ export default function SettingsPage() {
                 variant: "destructive",
             });
         } else {
-            toast({
-                title: `(Teste) ${result.title}`,
-                description: result.message,
-                duration: 10000, 
+             toast({
+                duration: 10000,
+                description: (
+                    <div className="relative w-full h-full text-center">
+                        <div className="relative z-10">
+                            <h3 className="text-base font-semibold text-foreground">{`(Teste) ${result.title}`}</h3>
+                            <p className="text-sm text-foreground/90">{result.message}</p>
+                        </div>
+                        <SparkleAnimation />
+                    </div>
+                ),
             });
         }
         setIsLoading(false);

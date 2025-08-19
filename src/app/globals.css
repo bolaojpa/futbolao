@@ -89,3 +89,28 @@
 .animate-leader-pulse {
   animation: leader-pulse 2s infinite;
 }
+
+@keyframes flash-pulse {
+  50% {
+    opacity: '0.5'
+  }
+}
+
+.animate-flash-pulse {
+  animation: flash-pulse 1s ease-in-out infinite;
+}
+
+@keyframes sparkle-burst {
+  0% {
+    transform: scale(0.5) translate(var(--tx-start, 0), var(--ty-start, 0));
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translate(var(--tx-end, 0), var(--ty-end, 0));
+    opacity: 0;
+  }
+}
+
+.animate-sparkle-burst {
+  animation: sparkle-burst 800ms ease-out forwards;
+}
