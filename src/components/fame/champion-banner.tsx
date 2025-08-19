@@ -33,7 +33,7 @@ export function ChampionBanner({
 
         {/* Top Section (33%) */}
         <div className="flex-1 flex justify-between items-center border-b-2 border-white/20 py-2">
-            <div className="flex-1 flex justify-start items-center h-full">
+            <div className="w-1/4 flex justify-start items-center h-full">
                 <Image 
                     src={campeonatoLogoUrl} 
                     alt={`Logo ${campeonatoNome}`}
@@ -42,8 +42,8 @@ export function ChampionBanner({
                     className="object-contain h-[90%] w-auto" 
                 />
             </div>
-            <div className="flex-1 flex justify-end items-center">
-                 <h2 className="text-5xl font-extrabold tracking-widest uppercase">{/* GANHADORES */}Ganhadores</h2>
+            <div className="w-3/4 flex justify-end items-center">
+                 <h2 className="text-5xl font-extrabold tracking-widest uppercase">Ganhadores</h2>
             </div>
         </div>
 
