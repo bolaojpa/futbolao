@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { mockMatches, mockPredictions, mockUser, mockChampionships, mockUsers } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, History } from 'lucide-react';
+import { Users, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,8 +22,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
+import { Button } from '@/components/ui/button';
 
 type FilterType = 'all' | 'exact' | 'situation' | 'miss';
+const ITEMS_PER_PAGE = 5;
 
 // Componente para evitar erro de hidratação com datas
 const FormattedDate = ({ dateString }: { dateString: string }) => {
@@ -49,6 +51,7 @@ export default function HistoryPage() {
 
   const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
   const [filterType, setFilterType] = useState<FilterType>(filterTypeFromQuery || 'all');
+  const [currentPage, setCurrentPage] = useState(1);
   const matchRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
@@ -102,6 +105,17 @@ export default function HistoryPage() {
     })
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
 
+  // Lógica de Paginação
+  const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE);
+  const paginatedMatches = filteredMatches.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    // Reseta a página para 1 quando os filtros mudam
+    setCurrentPage(1);
+  }, [selectedChampionship, filterType]);
 
   const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
     if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40';
@@ -152,7 +166,7 @@ export default function HistoryPage() {
       </div>
 
       <div className="w-full space-y-4">
-        {filteredMatches.length > 0 ? filteredMatches.map((match) => {
+        {paginatedMatches.length > 0 ? paginatedMatches.map((match) => {
           const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
           if (!prediction || !match.maxPontos) return null;
 
@@ -249,6 +263,32 @@ export default function HistoryPage() {
             </Card>
         )}
       </div>
+
+       {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+            <Button 
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+            >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+            </span>
+            <Button 
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+            >
+                Próximo
+                <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+        </div>
+      )}
     </div>
   );
 }
+
+    
