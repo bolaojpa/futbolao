@@ -3,6 +3,7 @@
 
 import Image from "next/image";
 import { Crown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface ChampionBannerProps {
   id: string;
@@ -48,7 +49,7 @@ export function ChampionBanner({
 }: ChampionBannerProps) {
   return (
     <div
-      className="w-full h-full aspect-[857/828] bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-[0.33%] text-white relative overflow-hidden"
+      className="w-full h-full aspect-[857/828] bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-[0.33%] text-white relative overflow-hidden [container-type:inline-size]"
       style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}
     >
       {/* Decorative elements */}
