@@ -1,11 +1,17 @@
 
+
 "use client";
 
 import type { UserType } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
-export const StatusIndicator = ({ status }: { status: UserType['presenceStatus'] }) => {
+interface StatusIndicatorProps {
+    status: UserType['presenceStatus'];
+    className?: string;
+}
+
+export const StatusIndicator = ({ status, className }: StatusIndicatorProps) => {
     const statusConfig = {
         'Disponível': { color: 'bg-green-500', text: 'Disponível' },
         'Ausente': { color: 'bg-yellow-500', text: 'Ausente' },
@@ -20,7 +26,7 @@ export const StatusIndicator = ({ status }: { status: UserType['presenceStatus']
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <div className={cn("absolute top-0 right-0 w-3 h-3 rounded-full border border-background", config.color)} />
+                    <div className={cn("absolute top-0 right-0 w-3 h-3 rounded-full border border-background", config.color, className)} />
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>O usuário está {config.text.toLowerCase()}</p>

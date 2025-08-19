@@ -55,35 +55,6 @@ const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: R
     return cardContent;
 }
 
-const ProfileStatusDisplay = ({ status }: { status: UserType['presenceStatus'] }) => {
-    const statusConfig = {
-        'Disponível': { color: 'bg-green-500', text: 'Disponível' },
-        'Ausente': { color: 'bg-yellow-500', text: 'Ausente' },
-        'Ocupado': { color: 'bg-red-500', text: 'Ocupado' },
-        'Não perturbe': { color: 'bg-purple-500', text: 'Não perturbe' },
-        'Offline': { color: 'bg-gray-500', text: 'Offline' },
-    };
-
-    const config = statusConfig[status] || statusConfig['Offline'];
-
-    return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger>
-                    <div className="flex items-center gap-2">
-                        <div className={cn("w-3 h-3 rounded-full", config.color)} />
-                        <span className="text-sm text-muted-foreground">{config.text}</span>
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>O usuário está {config.text.toLowerCase()}</p>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-    );
-};
-
-
 export default function ProfilePage() {
   const searchParams = useSearchParams();
   const userId = searchParams.get('userId');
@@ -217,13 +188,13 @@ export default function ProfilePage() {
                             <AvatarImage src={displayImage} alt={displayName} />
                             <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
                         </Avatar>
+                        <StatusIndicator status={presenceStatus} className="w-5 h-5 border-2" />
                         <Honorifics count={titulos} variant="default"/>
                     </div>
                     <div className='flex-1 text-center md:text-left'>
                         <h1 className="text-3xl font-bold font-headline">{displayName}</h1>
                         <p className="text-muted-foreground text-lg">{nome}</p>
                         <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
-                            <ProfileStatusDisplay status={presenceStatus} />
                             {timeCoracao && (
                                 <div className='flex items-center gap-2 text-muted-foreground'>
                                     <Heart className='w-4 h-4 text-destructive/80 fill-destructive/50' />
