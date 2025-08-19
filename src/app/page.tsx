@@ -39,7 +39,7 @@ export default function LoginPage() {
           <div className="space-y-4">
              <Button variant="outline" className="w-full">
               <GoogleIcon className="mr-2 h-4 w-4" />
-              Entrar com Google
+              Continuar com Google
             </Button>
             <div className="flex items-center space-x-2">
                 <Separator className="flex-1" />
@@ -84,4 +84,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
