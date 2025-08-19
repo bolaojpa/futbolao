@@ -37,7 +37,7 @@ export function HallOfFameCarousel() {
   return (
     <>
       <Carousel 
-          className="w-full max-w-xl mx-auto"
+          className="w-full max-w-sm mx-auto"
           plugins={[autoplayPlugin.current]}
           onMouseEnter={autoplayPlugin.current.stop}
           onMouseLeave={autoplayPlugin.current.reset}
