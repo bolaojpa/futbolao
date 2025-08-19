@@ -48,7 +48,7 @@ export function UserNav() {
             <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
             <AvatarFallback>{fallbackInitials}</AvatarFallback>
           </Avatar>
-          <div className="-bottom-0.5 -right-0.5 absolute">
+          <div className="top-0 right-0 absolute">
             <StatusIndicator status={currentStatus} />
           </div>
         </Button>
@@ -64,10 +64,18 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <Link href="/dashboard/profile" passHref>
+            <DropdownMenuItem asChild>
+                <div>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Perfil</span>
+                </div>
+            </DropdownMenuItem>
+          </Link>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
                <Circle className={cn("mr-2 h-4 w-4 fill-current", statusConfig[currentStatus]?.color)} />
-              <span>{currentStatus}</span>
+              <span>Status</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
@@ -83,14 +91,6 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href="/dashboard/profile" passHref>
-            <DropdownMenuItem asChild>
-                <div>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Perfil</span>
-                </div>
-            </DropdownMenuItem>
-          </Link>
           <Link href="/dashboard/settings" passHref>
             <DropdownMenuItem asChild>
                 <div>
