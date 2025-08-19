@@ -11,6 +11,8 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog"
 import { ChampionBanner, ChampionBannerProps } from "./champion-banner";
 import Autoplay from "embla-carousel-autoplay";
@@ -59,7 +61,14 @@ export function HallOfFameCarousel({ banners }: HallOfFameCarouselProps) {
 
         <Dialog open={!!selectedBanner} onOpenChange={(isOpen) => !isOpen && setSelectedBanner(null)}>
             <DialogContent className="max-w-3xl w-full p-0 border-0">
-                {selectedBanner && <ChampionBanner {...selectedBanner} />}
+                {selectedBanner && (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="sr-only">{selectedBanner.campeonatoNome}</DialogTitle>
+                        </DialogHeader>
+                        <ChampionBanner {...selectedBanner} />
+                    </>
+                )}
             </DialogContent>
         </Dialog>
     </>
