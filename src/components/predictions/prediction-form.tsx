@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -203,7 +204,7 @@ export function PredictionForm() {
                     const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
 
                     return (
-                        <Card key={match.id} className={cn("relative overflow-hidden", needsAttention && "border-accent animate-pulse")}>
+                        <Card key={match.id} id={match.id} className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse")}>
                             {needsAttention && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>

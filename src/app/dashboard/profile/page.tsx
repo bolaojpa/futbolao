@@ -228,12 +228,12 @@ export default function ProfilePage() {
                             </span>
                         </div>
                         {lastGuessMatch && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Link href={`/dashboard/predictions#${lastGuessMatch.id}`} className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                                 <Goal className="w-4 h-4" />
                                 <span>
-                                    Último palpite ({ultimoPalpite.palpite}): <strong>{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
+                                    Último palpite ({ultimoPalpite.palpite}): <strong className="group-hover:underline">{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
                                 </span>
-                            </div>
+                            </Link>
                         )}
                     </CardFooter>
                 )}
