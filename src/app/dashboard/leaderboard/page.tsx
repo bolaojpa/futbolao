@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { mockUsers, mockUser, mockChampionships } from '@/lib/data';
+import { mockUsers, mockUser, mockChampionships, UserType } from '@/lib/data';
 import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,31 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 type SortType = 'default' | 'exact' | 'situation';
+
+
+const StatusIndicator = ({ status }: { status: UserType['presenceStatus'] }) => {
+    const statusConfig = {
+        'Disponível': { color: 'bg-green-500', text: 'Disponível' },
+        'Ausente': { color: 'bg-yellow-500', text: 'Ausente' },
+        'Ocupado': { color: 'bg-red-500', text: 'Ocupado' },
+        'Não perturbe': { color: 'bg-purple-500', text: 'Não perturbe' },
+        'Offline': { color: 'bg-gray-500', text: 'Offline' },
+    };
+
+    const config = statusConfig[status] || statusConfig['Offline'];
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                 <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background", config.color)} />
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>O usuário está {config.text.toLowerCase()}</p>
+            </TooltipContent>
+        </Tooltip>
+    );
+};
+
 
 export default function LeaderboardPage() {
   const searchParams = useSearchParams();
@@ -225,9 +250,10 @@ export default function LeaderboardPage() {
                             <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
                                 <div className="relative">
                                     <Avatar className="w-9 h-9">
-                                    <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
-                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                      <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                                      <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                     </Avatar>
+                                    <StatusIndicator status={user.presenceStatus} />
                                     <Honorifics count={user.titulos ?? 0} variant="badge" />
                                 </div>
                                 <span className="font-medium group-hover:underline">{user.apelido}</span>
