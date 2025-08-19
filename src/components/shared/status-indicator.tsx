@@ -20,7 +20,7 @@ export const StatusIndicator = ({ status }: { status: UserType['presenceStatus']
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <div className={cn("absolute top-0 right-0 w-3 h-3 rounded-full border-2 border-background", config.color)} />
+                    <div className={cn("absolute top-0 right-0 w-3 h-3 rounded-full border border-background", config.color)} />
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>O usuário está {config.text.toLowerCase()}</p>
