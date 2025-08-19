@@ -106,7 +106,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
             ))}
             <SidebarMenuItem>
-                <Link href="/login" passHref onClick={handleLinkClick}>
+                <Link href="/" passHref onClick={handleLinkClick}>
                     <SidebarMenuButton asChild tooltip={{ children: "Sair", side: 'right' }}>
                         <div>
                           <LogOut />

@@ -25,7 +25,7 @@ export default function AccountBlockedPage() {
         </CardContent>
         <CardContent>
           <Button asChild>
-            <Link href="/login">Voltar para o Login</Link>
+            <Link href="/">Voltar para o Login</Link>
           </Button>
         </CardContent>
       </Card>

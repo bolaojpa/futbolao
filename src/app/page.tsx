@@ -1,80 +1,86 @@
+
+'use client';
+
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Trophy, Users, BrainCircuit } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { Checkbox } from '@/components/ui/checkbox';
 
-export default function Home() {
-  const features = [
-    {
-      icon: <Trophy className="w-6 h-6 text-primary" />,
-      title: 'Compita com Amigos',
-      description: 'Crie ou participe de bolões e mostre quem entende mais de futebol.',
-    },
-    {
-      icon: <Users className="w-6 h-6 text-primary" />,
-      title: 'Ranking em Tempo Real',
-      description: 'Acompanhe sua posição e a de outros jogadores a cada rodada.',
-    },
-    {
-      icon: <BrainCircuit className="w-6 h-6 text-primary" />,
-      title: 'Sugestões com IA',
-      description: 'Use nossa inteligência artificial para te ajudar a dar palpites mais certeiros.',
-    },
-    {
-      icon: <CheckCircle className="w-6 h-6 text-primary" />,
-      title: 'Resultados e Pontuação',
-      description: 'Confira os placares e sua pontuação assim que as partidas acabam.',
-    },
-  ];
+function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M15.545 6.558C16.803 6.026 18.225 5.5 19.82 5.5c2.815 0 5.18 2.04 5.18 4.75 0 2.45-1.68 4.425-3.955 4.918" />
+            <path d="M16.5 10.5c0-1.24.96-2.25 2.25-2.25s2.25.96 2.25 2.25-.96 2.25-2.25 2.25-2.25-1.01-2.25-2.25Z" />
+            <path d="M12.25 21.5c-4.22 0-7.75-3.48-7.75-7.75S8.03 6 12.25 6s7.75 3.48 7.75 7.75" />
+            <path d="M3.5 13.75c0-3.322 2.678-6 6-6" />
+            <path d="m9.25 13.75-1.5-1.5" />
+            <path d="m9.25 13.75 1.5-1.5" />
+        </svg>
+    )
+}
 
+export default function LoginPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-blue-100 dark:from-background dark:to-gray-900">
-      <header className="container mx-auto px-4 py-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-primary font-headline">FutBolão Pro</h1>
-        <nav>
-          <Button asChild variant="ghost">
-            <Link href="/login">Entrar</Link>
-          </Button>
-          <Button asChild className="bg-accent hover:bg-accent/90">
-            <Link href="/signup">Criar Conta</Link>
-          </Button>
-        </nav>
-      </header>
-
-      <main className="flex-grow container mx-auto px-4 flex flex-col items-center justify-center text-center">
-        <section className="py-20 md:py-32">
-          <h2 className="text-4xl md:text-6xl font-bold mb-4 font-headline tracking-tight">
-            A Emoção do Futebol na Palma da Sua Mão
-          </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Participe de bolões, desafie seus amigos e prove que você é o mestre dos palpites. Com rankings em tempo real e a ajuda da nossa IA, a diversão é garantida.
-          </p>
-          <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            <Link href="/signup">Comece a Jogar Agora</Link>
-          </Button>
-        </section>
-
-        <section id="features" className="w-full py-20">
-            <h3 className="text-3xl font-bold mb-12 text-center font-headline">Tudo que você precisa para ser o campeão</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {features.map((feature, index) => (
-                <Card key={index} className="bg-card/80 backdrop-blur-sm border-border/20 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <CardHeader className="flex flex-row items-center gap-4">
-                    {feature.icon}
-                    <CardTitle className="font-headline text-lg">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+      <Card className="w-full max-w-md shadow-2xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-headline">Bem-vindo!</CardTitle>
+          <CardDescription>Faça login ou crie sua conta no FutBolão Pro</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+             <Button variant="outline" className="w-full">
+              <GoogleIcon className="mr-2 h-4 w-4" />
+              Entrar com Google
+            </Button>
+            <div className="flex items-center space-x-2">
+                <Separator className="flex-1" />
+                <span className="px-2 text-xs text-muted-foreground">OU</span>
+                <Separator className="flex-1" />
             </div>
-        </section>
-      </main>
-
-      <footer className="container mx-auto px-4 py-6 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} FutBolão Pro. Todos os direitos reservados.</p>
-      </footer>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input type="email" placeholder="seu@email.com" className="pl-10" />
+            </div>
+            <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input type="password" placeholder="Sua senha" className="pl-10" />
+            </div>
+             <div className="flex items-center space-x-2">
+                <Checkbox id="remember-me" />
+                <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Mantenha-me conectado
+                </Label>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-4">
+          <Button asChild className="w-full bg-primary hover:bg-primary/90">
+            <Link href="/dashboard">Entrar</Link>
+          </Button>
+          <div className="text-center text-sm">
+            Não tem uma conta?{' '}
+            <Link href="/signup" className="font-semibold text-primary hover:underline">
+              Crie uma agora
+            </Link>
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

@@ -107,7 +107,7 @@ export function UserNav() {
             </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <Link href="/login" passHref>
+        <Link href="/" passHref>
           <DropdownMenuItem asChild>
               <div>
                 <LogOut className="mr-2 h-4 w-4" />
