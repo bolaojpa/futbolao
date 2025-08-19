@@ -228,7 +228,7 @@ export default function DashboardPage() {
                                             <AvatarImage src={mockUser.fotoPerfil} alt={mockUser.apelido} />
                                             <AvatarFallback>{mockUser.apelido.substring(0,2)}</AvatarFallback>
                                           </Avatar>
-                                          <StatusIndicator status={mockUser.presenceStatus} />
+                                          <StatusIndicator status={mockUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                         </div>
                                         <span className="font-bold">Seu Palpite:</span>
                                     </div>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                                                             <AvatarImage src={otherUser.fotoPerfil} alt={p.apelido} />
                                                             <AvatarFallback>{p.apelido.substring(0,2)}</AvatarFallback>
                                                         </Avatar>
-                                                        <StatusIndicator status={otherUser.presenceStatus} />
+                                                        <StatusIndicator status={otherUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                                     </div>
                                                     <span className="font-bold group-hover:underline">{p.apelido}:</span>
                                                 </Link>
@@ -401,7 +401,7 @@ export default function DashboardPage() {
                                             <AvatarImage src={mockUser.fotoPerfil} alt={mockUser.apelido} />
                                             <AvatarFallback>{mockUser.apelido.substring(0,2)}</AvatarFallback>
                                           </Avatar>
-                                          <StatusIndicator status={mockUser.presenceStatus} />
+                                          <StatusIndicator status={mockUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                         </div>
                                         <span className="font-bold">Seu Palpite:</span>
                                     </div>
@@ -430,7 +430,7 @@ export default function DashboardPage() {
                                                         <AvatarImage src={otherUser.fotoPerfil} alt={p.apelido} />
                                                         <AvatarFallback>{p.apelido.substring(0,2)}</AvatarFallback>
                                                     </Avatar>
-                                                    <StatusIndicator status={otherUser.presenceStatus} />
+                                                    <StatusIndicator status={otherUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                                 </div>
                                                 <span className="font-bold group-hover:underline">{p.apelido}:</span>
                                             </Link>

@@ -229,7 +229,7 @@ export default function LeaderboardPage() {
                                       <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
                                       <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                     </Avatar>
-                                    <StatusIndicator status={user.presenceStatus} />
+                                    <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                     <Honorifics count={user.titulos ?? 0} variant="badge" />
                                 </div>
                                 <span className="font-medium group-hover:underline">{user.apelido}</span>

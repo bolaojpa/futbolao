@@ -47,7 +47,7 @@ export function UserNav() {
           <Avatar className="h-9 w-9">
             <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
             <AvatarFallback>{fallbackInitials}</AvatarFallback>
-            <StatusIndicator status={currentStatus} />
+            <StatusIndicator status={currentStatus} className="w-3 h-3 top-0 right-0" />
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
