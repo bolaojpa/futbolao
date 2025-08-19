@@ -10,8 +10,8 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Users } from 'lucide-react';
-import { mockUser, mockUsers, mockChampionships, mockMatches } from '@/lib/data';
+import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Users, LogIn } from 'lucide-react';
+import { mockUser, mockUsers, mockChampionships, mockMatches, UserType } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type React from 'react';
@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { Honorifics } from '@/components/shared/honorifics';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: React.ReactNode, title: string, value: string | number, description: string, href?: string, isLeader?: boolean }) => {
     const cardContent = (
@@ -52,6 +53,35 @@ const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: R
     
     return cardContent;
 }
+
+const StatusIndicator = ({ status }: { status: UserType['presenceStatus'] }) => {
+    const statusConfig = {
+        'Disponível': { color: 'bg-green-500', text: 'Disponível' },
+        'Ausente': { color: 'bg-yellow-500', text: 'Ausente' },
+        'Ocupado': { color: 'bg-red-500', text: 'Ocupado' },
+        'Não perturbe': { color: 'bg-purple-500', text: 'Não perturbe' },
+        'Offline': { color: 'bg-gray-500', text: 'Offline' },
+    };
+
+    const config = statusConfig[status] || statusConfig['Offline'];
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger>
+                    <div className="flex items-center gap-2">
+                        <div className={cn("w-3 h-3 rounded-full", config.color)} />
+                        <span className="text-sm text-muted-foreground">{config.text}</span>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>O usuário está {config.text.toLowerCase()}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+};
+
 
 export default function ProfilePage() {
   const searchParams = useSearchParams();
@@ -84,7 +114,9 @@ export default function ProfilePage() {
     championshipStats,
     timeCoracao,
     ultimaAtividade,
-    ultimoPalpite
+    ultimoLogin,
+    ultimoPalpite,
+    presenceStatus,
   } = userToDisplay as typeof mockUser; // Cast to include all fields
   
   const displayName = apelido || nome;
@@ -109,7 +141,11 @@ export default function ProfilePage() {
   }, [selectedChampionship]);
   
   if (!isClient) {
-      return <div>Carregando perfil...</div>; // Or a skeleton loader
+      return <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+        <Card><CardContent className="p-6 h-40 animate-pulse bg-muted/50"></CardContent></Card>
+        <Card><CardContent className="p-6 h-24 animate-pulse bg-muted/50"></CardContent></Card>
+        <Card><CardContent className="p-6 h-24 animate-pulse bg-muted/50"></CardContent></Card>
+      </div>;
   }
 
   const generalStats = [
@@ -183,13 +219,16 @@ export default function ProfilePage() {
             </div>
             <div className='flex-1 text-center md:text-left'>
                 <h1 className="text-3xl font-bold font-headline">{displayName}</h1>
-                {apelido && <p className="text-muted-foreground text-lg">{nome}</p>}
-                {timeCoracao && (
-                    <div className='flex items-center justify-center md:justify-start gap-2 mt-2 text-muted-foreground'>
-                        <Heart className='w-4 h-4 text-destructive/80 fill-destructive/50' />
-                        <span>{timeCoracao}</span>
-                    </div>
-                )}
+                <p className="text-muted-foreground text-lg">{nome}</p>
+                 <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
+                    <StatusIndicator status={presenceStatus} />
+                    {timeCoracao && (
+                        <div className='flex items-center gap-2 text-muted-foreground'>
+                            <Heart className='w-4 h-4 text-destructive/80 fill-destructive/50' />
+                            <span>{timeCoracao}</span>
+                        </div>
+                    )}
+                </div>
             </div>
              {isOwnProfile && (
                 <Button asChild variant="outline">
@@ -202,14 +241,19 @@ export default function ProfilePage() {
           </div>
         </CardContent>
          {isOwnProfile && (
-            <CardFooter className="flex flex-col sm:flex-row gap-4 p-4 bg-muted/50 border-t">
+            <CardFooter className="flex flex-col sm:flex-row flex-wrap items-start justify-start gap-x-6 gap-y-2 p-4 bg-muted/50 border-t">
+                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <LogIn className="w-4 h-4" />
+                    <span>
+                        Último login: {formatDistanceToNow(new Date(ultimoLogin), { addSuffix: true, locale: ptBR })}
+                    </span>
+                </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
                     <span>
                         Última atividade: {formatDistanceToNow(new Date(ultimaAtividade), { addSuffix: true, locale: ptBR })}
                     </span>
                 </div>
-                <Separator orientation='vertical' className='h-6 hidden sm:block' />
                 {lastGuessMatch && (
                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Goal className="w-4 h-4" />
