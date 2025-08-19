@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { mockMatches, mockUser, mockPredictions } from '@/lib/data';
@@ -58,6 +58,10 @@ export function PredictionForm() {
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
     const [isClient, setIsClient] = useState(false);
+    
+    // Armazena as referências dos cards para a rolagem
+    const matchRefs = useRef<Record<string, HTMLElement | null>>({});
+
 
     useEffect(() => {
         setIsClient(true);
@@ -72,6 +76,22 @@ export function PredictionForm() {
         });
         setLastUpdated(initialUpdates);
         setScores(initialScores);
+
+        // Lógica para rolar para o card do jogo
+        if (window.location.hash) {
+            const matchId = window.location.hash.substring(1);
+            setTimeout(() => { // Timeout para garantir que o elemento esteja renderizado
+                const element = matchRefs.current[matchId];
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+                }
+            }, 100);
+        }
+
     }, []);
 
     const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: number) => {
@@ -204,7 +224,12 @@ export function PredictionForm() {
                     const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
 
                     return (
-                        <Card key={match.id} id={match.id} className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse")}>
+                        <Card 
+                            key={match.id} 
+                            id={match.id} 
+                            ref={(el) => matchRefs.current[match.id] = el}
+                            className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse")}
+                        >
                             {needsAttention && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
