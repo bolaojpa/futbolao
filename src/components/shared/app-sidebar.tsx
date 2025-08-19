@@ -8,6 +8,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -25,6 +26,11 @@ import { usePathname } from 'next/navigation';
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  };
 
   const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -65,7 +71,7 @@ export function AppSidebar() {
       <SidebarMenu className="flex-1 p-2">
         {menuItems.map((item) => (
           <SidebarMenuItem key={item.href}>
-            <Link href={item.href} passHref>
+            <Link href={item.href} passHref onClick={handleLinkClick}>
               <SidebarMenuButton
                 asChild
                 isActive={pathname === item.href}
@@ -85,7 +91,7 @@ export function AppSidebar() {
          <SidebarMenu>
             {bottomMenuItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                    <Link href={item.href} passHref>
+                    <Link href={item.href} passHref onClick={handleLinkClick}>
                         <SidebarMenuButton
                             asChild
                             isActive={pathname === item.href}
@@ -100,7 +106,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
             ))}
             <SidebarMenuItem>
-                <Link href="/login" passHref>
+                <Link href="/login" passHref onClick={handleLinkClick}>
                     <SidebarMenuButton asChild tooltip={{ children: "Sair", side: 'right' }}>
                         <div>
                           <LogOut />
