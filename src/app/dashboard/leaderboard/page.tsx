@@ -28,32 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Honorifics } from '@/components/shared/honorifics';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-
-type SortType = 'default' | 'exact' | 'situation';
-
-
-const StatusIndicator = ({ status }: { status: UserType['presenceStatus'] }) => {
-    const statusConfig = {
-        'Disponível': { color: 'bg-green-500', text: 'Disponível' },
-        'Ausente': { color: 'bg-yellow-500', text: 'Ausente' },
-        'Ocupado': { color: 'bg-red-500', text: 'Ocupado' },
-        'Não perturbe': { color: 'bg-purple-500', text: 'Não perturbe' },
-        'Offline': { color: 'bg-gray-500', text: 'Offline' },
-    };
-
-    const config = statusConfig[status] || statusConfig['Offline'];
-
-    return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                 <div className={cn("absolute top-0 right-0 w-3 h-3 rounded-full border-2 border-background", config.color)} />
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>O usuário está {config.text.toLowerCase()}</p>
-            </TooltipContent>
-        </Tooltip>
-    );
-};
+import { StatusIndicator } from '@/components/shared/status-indicator';
 
 
 export default function LeaderboardPage() {
@@ -98,6 +73,8 @@ export default function LeaderboardPage() {
       return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
 
+  type SortType = 'default' | 'exact' | 'situation';
+
   const getMedalIcon = (rank: number) => {
     if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500 fill-yellow-400" />;
     if (rank === 2) return <Award className="w-5 h-5 text-slate-400 fill-slate-400" />;
@@ -133,7 +110,7 @@ export default function LeaderboardPage() {
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 relative">
+      <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
         <Confetti />
         <div className="flex items-center gap-4 mb-8">
             <Trophy className="h-8 w-8 text-primary" />

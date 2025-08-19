@@ -24,6 +24,7 @@ import { Honorifics } from '@/components/shared/honorifics';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { StatusIndicator } from '@/components/shared/status-indicator';
 
 const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: React.ReactNode, title: string, value: string | number, description: string, href?: string, isLeader?: boolean }) => {
     const cardContent = (
@@ -54,7 +55,7 @@ const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: R
     return cardContent;
 }
 
-const StatusIndicator = ({ status }: { status: UserType['presenceStatus'] }) => {
+const ProfileStatusDisplay = ({ status }: { status: UserType['presenceStatus'] }) => {
     const statusConfig = {
         'Disponível': { color: 'bg-green-500', text: 'Disponível' },
         'Ausente': { color: 'bg-yellow-500', text: 'Ausente' },
@@ -206,101 +207,103 @@ export default function ProfilePage() {
   const lastGuessMatch = [...mockMatches.upcoming, ...mockMatches.recent].find(m => m.id === ultimoPalpite.matchId);
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="relative">
-                <Avatar className="w-24 h-24 border-4 border-primary">
-                    <AvatarImage src={displayImage} alt={displayName} />
-                    <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
-                </Avatar>
-                <Honorifics count={titulos} variant="default"/>
-            </div>
-            <div className='flex-1 text-center md:text-left'>
-                <h1 className="text-3xl font-bold font-headline">{displayName}</h1>
-                <p className="text-muted-foreground text-lg">{nome}</p>
-                 <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
-                    <StatusIndicator status={presenceStatus} />
-                    {timeCoracao && (
-                        <div className='flex items-center gap-2 text-muted-foreground'>
-                            <Heart className='w-4 h-4 text-destructive/80 fill-destructive/50' />
-                            <span>{timeCoracao}</span>
+    <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
+        <div className="space-y-8">
+            <Card>
+                <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="relative">
+                        <Avatar className="w-24 h-24 border-4 border-primary">
+                            <AvatarImage src={displayImage} alt={displayName} />
+                            <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
+                        </Avatar>
+                        <Honorifics count={titulos} variant="default"/>
+                    </div>
+                    <div className='flex-1 text-center md:text-left'>
+                        <h1 className="text-3xl font-bold font-headline">{displayName}</h1>
+                        <p className="text-muted-foreground text-lg">{nome}</p>
+                        <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
+                            <ProfileStatusDisplay status={presenceStatus} />
+                            {timeCoracao && (
+                                <div className='flex items-center gap-2 text-muted-foreground'>
+                                    <Heart className='w-4 h-4 text-destructive/80 fill-destructive/50' />
+                                    <span>{timeCoracao}</span>
+                                </div>
+                            )}
                         </div>
+                    </div>
+                    {isOwnProfile && (
+                        <Button asChild variant="outline">
+                        <Link href="/dashboard/profile/edit">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar Perfil
+                        </Link>
+                        </Button>
                     )}
                 </div>
-            </div>
-             {isOwnProfile && (
-                <Button asChild variant="outline">
-                  <Link href="/dashboard/profile/edit">
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar Perfil
-                  </Link>
-                </Button>
-            )}
-          </div>
-        </CardContent>
-         {isOwnProfile && (
-            <CardFooter className="flex flex-col sm:flex-row flex-wrap items-start justify-start gap-x-6 gap-y-2 p-4 bg-muted/50 border-t">
-                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <LogIn className="w-4 h-4" />
-                    <span>
-                        Último login: {formatDistanceToNow(new Date(ultimoLogin), { addSuffix: true, locale: ptBR })}
-                    </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>
-                        Última atividade: {formatDistanceToNow(new Date(ultimaAtividade), { addSuffix: true, locale: ptBR })}
-                    </span>
-                </div>
-                {lastGuessMatch && (
-                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Goal className="w-4 h-4" />
-                        <span>
-                            Último palpite ({ultimoPalpite.palpite}): <strong>{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
-                        </span>
-                     </div>
+                </CardContent>
+                {isOwnProfile && (
+                    <CardFooter className="flex flex-col sm:flex-row flex-wrap items-start justify-start gap-x-6 gap-y-2 p-4 bg-muted/50 border-t">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <LogIn className="w-4 h-4" />
+                            <span>
+                                Último login: {formatDistanceToNow(new Date(ultimoLogin), { addSuffix: true, locale: ptBR })}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="w-4 h-4" />
+                            <span>
+                                Última atividade: {formatDistanceToNow(new Date(ultimaAtividade), { addSuffix: true, locale: ptBR })}
+                            </span>
+                        </div>
+                        {lastGuessMatch && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Goal className="w-4 h-4" />
+                                <span>
+                                    Último palpite ({ultimoPalpite.palpite}): <strong>{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
+                                </span>
+                            </div>
+                        )}
+                    </CardFooter>
                 )}
-            </CardFooter>
-        )}
-      </Card>
+            </Card>
 
-      <div>
-        <h2 className="text-2xl font-bold font-headline mb-4">Informações Gerais</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {generalStats.map(stat => <StatCard key={stat.title} {...stat} />)}
-        </div>
-      </div>
-      
-      <div>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <h2 className="text-2xl font-bold font-headline">Estatísticas por Campeonato</h2>
-            <div className="w-full md:w-auto">
-                <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
-                    <SelectTrigger className="w-full md:w-[280px]">
-                        <SelectValue placeholder="Filtrar por campeonato" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {mockChampionships.map(champ => (
-                            <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <div>
+                <h2 className="text-2xl font-bold font-headline mb-4">Informações Gerais</h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {generalStats.map(stat => <StatCard key={stat.title} {...stat} />)}
+                </div>
+            </div>
+            
+            <div>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <h2 className="text-2xl font-bold font-headline">Estatísticas por Campeonato</h2>
+                    <div className="w-full md:w-auto">
+                        <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                            <SelectTrigger className="w-full md:w-[280px]">
+                                <SelectValue placeholder="Filtrar por campeonato" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {mockChampionships.map(champ => (
+                                    <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                {selectedChampionshipStats ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
+                </div>
+                ) : (
+                <Card>
+                    <CardContent className="p-6 text-center">
+                    <p>Nenhuma estatística encontrada para este campeonato.</p>
+                    </CardContent>
+                </Card>
+                )}
             </div>
         </div>
-        {selectedChampionshipStats ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p>Nenhuma estatística encontrada para este campeonato.</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mockMatches, mockPredictions, mockUser, mockChampionships } from '@/lib/data';
+import { mockMatches, mockPredictions, mockUser, mockChampionships, mockUsers } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, History } from 'lucide-react';
@@ -19,6 +19,8 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { StatusIndicator } from '@/components/shared/status-indicator';
 
 type FilterType = 'all' | 'exact' | 'situation' | 'miss';
 
@@ -161,11 +163,21 @@ export default function HistoryPage() {
                         <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                       </div>
                       <ul className="text-sm">
-                        {prediction.outrosPalpites.map((p, i) => (
+                        {prediction.outrosPalpites.map((p, i) => {
+                           const otherUser = mockUsers.find(u => u.id === p.userId);
+                           if (!otherUser) return null;
+                          return (
                           <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
-                            <div className="font-bold w-1/3 text-left">
-                               <Link href={`/dashboard/profile?userId=${p.userId}`} className="hover:underline">
-                                {p.apelido}:
+                            <div className="w-1/3 text-left">
+                               <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
+                                <div className="relative">
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarImage src={otherUser.fotoPerfil} alt={p.apelido} />
+                                    <AvatarFallback>{p.apelido.substring(0,2)}</AvatarFallback>
+                                  </Avatar>
+                                  <StatusIndicator status={otherUser.presenceStatus} />
+                                </div>
+                                <span className="font-bold group-hover:underline">{p.apelido}:</span>
                               </Link>
                             </div>
                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
@@ -175,7 +187,7 @@ export default function HistoryPage() {
                               </Badge>
                             </div>
                           </li>
-                        ))}
+                        )})}
                       </ul>
                     </div>
                   </AccordionContent>
