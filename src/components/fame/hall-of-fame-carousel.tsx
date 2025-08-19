@@ -37,39 +37,37 @@ export function HallOfFameCarousel() {
 
   return (
     <>
-      <div className="relative w-full max-w-sm mx-auto flex items-center justify-center">
-        <Carousel 
-            className="w-full"
-            plugins={[autoplayPlugin.current]}
-            onMouseEnter={autoplayPlugin.current.stop}
-            onMouseLeave={autoplayPlugin.current.reset}
-            opts={{
-                align: "start",
-                loop: true,
-            }}
-        >
-          <CarouselContent>
-            {orderedHallOfFame.map((entry) => (
-              <CarouselItem key={entry.id}>
-                <div className="p-1 relative group">
-                    <ChampionBanner {...entry} />
-                    <div 
-                      className="absolute inset-1 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-md"
-                      onClick={() => setSelectedBanner(entry)}
-                    >
-                      <Eye className="w-16 h-16 text-white" />
-                    </div>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="absolute left-0 sm:left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10" />
-          <CarouselNext className="absolute right-0 sm:right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10" />
-        </Carousel>
-      </div>
+      <Carousel 
+          className="w-full max-w-sm mx-auto relative"
+          plugins={[autoplayPlugin.current]}
+          onMouseEnter={autoplayPlugin.current.stop}
+          onMouseLeave={autoplayPlugin.current.reset}
+          opts={{
+              align: "start",
+              loop: true,
+          }}
+      >
+        <CarouselContent>
+          {orderedHallOfFame.map((entry) => (
+            <CarouselItem key={entry.id}>
+              <div className="p-1 relative group">
+                  <ChampionBanner {...entry} />
+                  <div 
+                    className="absolute inset-1 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-md"
+                    onClick={() => setSelectedBanner(entry)}
+                  >
+                    <Eye className="w-16 h-16 text-white" />
+                  </div>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className="absolute left-0 sm:left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10" />
+        <CarouselNext className="absolute right-0 sm:right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10" />
+      </Carousel>
 
       <Dialog open={!!selectedBanner} onOpenChange={(isOpen) => !isOpen && setSelectedBanner(null)}>
-        <DialogContent className="w-full max-w-none h-auto sm:max-w-4xl p-4 sm:p-6 bg-transparent border-0">
+        <DialogContent className="w-full max-w-none h-auto sm:max-w-4xl p-4 sm:p-6 bg-transparent border-0 shadow-none">
            <DialogHeader className="sr-only">
             <DialogTitle>Banner do Campeão</DialogTitle>
             <DialogDescription>
