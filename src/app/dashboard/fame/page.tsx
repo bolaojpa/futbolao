@@ -7,7 +7,7 @@ export default function FamePage() {
     const latestBanner = mockHallOfFame.length > 0 ? mockHallOfFame[mockHallOfFame.length - 1] : null;
 
     return (
-        <div className="container mx-auto flex flex-col h-full">
+        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
             <div className="flex items-center gap-4 mb-8">
                  <ShieldCheck className="h-8 w-8 text-primary" />
                 <div>
