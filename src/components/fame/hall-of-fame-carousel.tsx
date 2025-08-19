@@ -15,6 +15,7 @@ import { mockHallOfFame } from "@/lib/data"
 import { ChampionBanner, ChampionBannerProps } from "./champion-banner";
 import { Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 export function HallOfFameCarousel() {
   const [selectedBanner, setSelectedBanner] = useState<ChampionBannerProps | null>(null);
@@ -36,34 +37,36 @@ export function HallOfFameCarousel() {
 
   return (
     <>
-      <Carousel 
-          className="w-full max-w-sm mx-auto"
-          plugins={[autoplayPlugin.current]}
-          onMouseEnter={autoplayPlugin.current.stop}
-          onMouseLeave={autoplayPlugin.current.reset}
-          opts={{
-              align: "start",
-              loop: true,
-          }}
-      >
-        <CarouselContent>
-          {orderedHallOfFame.map((entry) => (
-            <CarouselItem key={entry.id}>
-              <div className="p-1 relative group">
-                  <ChampionBanner {...entry} />
-                  <div 
-                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                    onClick={() => setSelectedBanner(entry)}
-                  >
-                    <Eye className="w-16 h-16 text-white" />
-                  </div>
-              </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious className="hidden sm:flex -left-4" />
-        <CarouselNext className="hidden sm:flex -right-4" />
-      </Carousel>
+      <div className="relative w-full max-w-sm mx-auto flex items-center justify-center">
+        <Carousel 
+            className="w-full"
+            plugins={[autoplayPlugin.current]}
+            onMouseEnter={autoplayPlugin.current.stop}
+            onMouseLeave={autoplayPlugin.current.reset}
+            opts={{
+                align: "start",
+                loop: true,
+            }}
+        >
+          <CarouselContent>
+            {orderedHallOfFame.map((entry) => (
+              <CarouselItem key={entry.id}>
+                <div className="p-1 relative group">
+                    <ChampionBanner {...entry} />
+                    <div 
+                      className="absolute inset-1 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-md"
+                      onClick={() => setSelectedBanner(entry)}
+                    >
+                      <Eye className="w-16 h-16 text-white" />
+                    </div>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="absolute left-0 sm:left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10" />
+          <CarouselNext className="absolute right-0 sm:right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10" />
+        </Carousel>
+      </div>
 
       <Dialog open={!!selectedBanner} onOpenChange={(isOpen) => !isOpen && setSelectedBanner(null)}>
         <DialogContent className="max-w-4xl p-0 border-0 bg-transparent">
