@@ -6,15 +6,25 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { User } from 'lucide-react';
 
 export default function EditProfilePage() {
     return (
         <div className="container mx-auto space-y-8">
-             <Card className="max-w-2xl mx-auto">
+            <div className="flex items-center gap-4">
+                <User className="h-8 w-8 text-primary" />
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">Editar Perfil</h1>
+                    <p className="text-muted-foreground">
+                        Atualize suas informações pessoais e de exibição.
+                    </p>
+                </div>
+            </div>
+             <Card className="max-w-2xl">
                 <CardHeader>
-                    <CardTitle>Editar Perfil</CardTitle>
+                    <CardTitle>Suas Informações</CardTitle>
                     <CardDescription>
-                        Atualize suas informações pessoais. Suas alterações serão refletidas em todo o site.
+                        Suas alterações serão refletidas em todo o site.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

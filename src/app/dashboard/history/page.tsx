@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { mockMatches, mockPredictions, mockUser, mockChampionships } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users } from 'lucide-react';
+import { Users, History } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -79,36 +79,38 @@ export default function HistoryPage() {
 
   return (
     <div className="container mx-auto space-y-8">
-      <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-4">
+        <History className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold font-headline">Histórico de Palpites</h1>
           <p className="text-muted-foreground">
             Reveja seus palpites passados e suas pontuações.
           </p>
         </div>
-         <div className="flex flex-col md:flex-row gap-2">
-            <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
-                <SelectTrigger className="w-full md:w-[280px]">
-                    <SelectValue placeholder="Filtrar por campeonato" />
-                </SelectTrigger>
-                <SelectContent>
-                    {mockChampionships.map(champ => (
-                        <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-             <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
-                <SelectTrigger className="w-full md:w-[280px]">
-                    <SelectValue placeholder="Filtrar por resultado" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Mostrar Todos</SelectItem>
-                    <SelectItem value="exact">Acertos de Placar Exato</SelectItem>
-                    <SelectItem value="situation">Acertos de Situação</SelectItem>
-                    <SelectItem value="miss">Errados</SelectItem>
-                </SelectContent>
-            </Select>
-        </div>
+      </div>
+      
+       <div className="flex flex-col md:flex-row gap-2">
+          <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+              <SelectTrigger className="w-full md:w-[280px]">
+                  <SelectValue placeholder="Filtrar por campeonato" />
+              </SelectTrigger>
+              <SelectContent>
+                  {mockChampionships.map(champ => (
+                      <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                  ))}
+              </SelectContent>
+          </Select>
+           <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
+              <SelectTrigger className="w-full md:w-[280px]">
+                  <SelectValue placeholder="Filtrar por resultado" />
+              </SelectTrigger>
+              <SelectContent>
+                  <SelectItem value="all">Mostrar Todos</SelectItem>
+                  <SelectItem value="exact">Acertos de Placar Exato</SelectItem>
+                  <SelectItem value="situation">Acertos de Situação</SelectItem>
+                  <SelectItem value="miss">Errados</SelectItem>
+              </SelectContent>
+          </Select>
       </div>
 
       <div className="w-full space-y-4">

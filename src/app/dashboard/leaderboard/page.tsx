@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { mockUsers, mockUser, mockChampionships } from '@/lib/data';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -111,9 +111,12 @@ export default function LeaderboardPage() {
       <div className="container mx-auto space-y-8 relative">
         <Confetti />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
-                <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
+            <div className="flex items-center gap-4">
+                <Trophy className="h-8 w-8 text-primary" />
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
+                    <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
+                </div>
             </div>
             <div className="w-full md:w-auto">
                 <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>

@@ -19,7 +19,7 @@ import {
 import { mockUser, mockMatches, mockPredictions, mockUsers } from '@/lib/data';
 import { format, parseISO, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal } from 'lucide-react';
+import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -119,9 +119,12 @@ export default function DashboardPage() {
 
   return (
       <div className="container mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Bem-vindo, {apelido}!</h1>
-          <p className="text-muted-foreground">Boa sorte nos seus próximos palpites.</p>
+        <div className="flex items-center gap-4">
+            <LayoutDashboard className="h-8 w-8 text-primary" />
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Bem-vindo, {apelido}!</h1>
+                <p className="text-muted-foreground">Boa sorte nos seus próximos palpites.</p>
+            </div>
         </div>
 
         <section>
