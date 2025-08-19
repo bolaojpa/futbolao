@@ -13,7 +13,7 @@ import {
 import { mockHallOfFame } from "@/lib/data"
 import { ChampionBanner, ChampionBannerProps } from "./champion-banner";
 import { Eye } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export function HallOfFameCarousel() {
   const [selectedBanner, setSelectedBanner] = useState<ChampionBannerProps | null>(null);
@@ -31,7 +31,7 @@ export function HallOfFameCarousel() {
   return (
     <>
       <Carousel 
-          className="w-full max-w-xl mx-auto" // Reduzido o tamanho máximo do carrossel
+          className="w-full max-w-xl mx-auto"
           opts={{
               align: "start",
               loop: true,
@@ -58,6 +58,12 @@ export function HallOfFameCarousel() {
 
       <Dialog open={!!selectedBanner} onOpenChange={(isOpen) => !isOpen && setSelectedBanner(null)}>
         <DialogContent className="max-w-4xl p-0 border-0 bg-transparent">
+           <DialogHeader className="sr-only">
+            <DialogTitle>Banner do Campeão</DialogTitle>
+            <DialogDescription>
+              Visualização ampliada do banner de um campeão de um campeonato anterior.
+            </DialogDescription>
+          </DialogHeader>
           {selectedBanner && <ChampionBanner {...selectedBanner} />}
         </DialogContent>
       </Dialog>
