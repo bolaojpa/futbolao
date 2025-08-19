@@ -52,7 +52,7 @@ export function ChampionBanner({
             <h3 className="text-xl font-semibold uppercase tracking-wider text-yellow-300">CAMPEÃO GERAL</h3>
             <div className="flex items-center gap-4 mt-4">
                 <Image src={campeaoGeralAvatarUrl} alt={`Avatar de ${campeaoGeralNome}`} width={80} height={80} className="rounded-full border-4 border-yellow-400" />
-                <p className="text-5xl font-bold font-headline">{campeaoGeralNome}</p>
+                <p className="text-[4rem] font-bold font-headline">{campeaoGeralNome}</p>
             </div>
         </div>
 
@@ -63,7 +63,7 @@ export function ChampionBanner({
             </h3>
             <div className="flex items-center gap-4 mt-4">
                 <Image src={palpiteiroAvatarUrl} alt={`Avatar de ${palpiteiroNome}`} width={60} height={60} className="rounded-full border-4 border-yellow-400" />
-                <p className="text-4xl font-bold font-headline">{palpiteiroNome}</p>
+                <p className="text-[4rem] font-bold font-headline">{palpiteiroNome}</p>
             </div>
         </div>
     </div>
