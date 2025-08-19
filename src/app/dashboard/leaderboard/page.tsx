@@ -46,7 +46,7 @@ const StatusIndicator = ({ status }: { status: UserType['presenceStatus'] }) => 
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                 <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-background", config.color)} />
+                 <div className={cn("absolute top-0 right-0 w-3 h-3 rounded-full border-2 border-background", config.color)} />
             </TooltipTrigger>
             <TooltipContent>
                 <p>O usuário está {config.text.toLowerCase()}</p>
@@ -135,26 +135,25 @@ export default function LeaderboardPage() {
     <TooltipProvider>
       <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 relative">
         <Confetti />
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            <div className="flex items-center gap-4">
-                <Trophy className="h-8 w-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
-                    <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
-                </div>
+        <div className="flex items-center gap-4 mb-8">
+            <Trophy className="h-8 w-8 text-primary" />
+            <div>
+                <h1 className="text-3xl font-bold font-headline">Ranking de Jogadores</h1>
+                <p className="text-muted-foreground">Veja quem são os mestres dos palpites.</p>
             </div>
-            <div className="w-full md:w-auto">
-                <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
-                    <SelectTrigger className="w-full md:w-[280px]">
-                        <SelectValue placeholder="Filtrar por campeonato" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {mockChampionships.map(champ => (
-                            <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
+        </div>
+
+        <div className="w-full md:w-auto mb-8">
+            <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                <SelectTrigger className="w-full md:w-[280px]">
+                    <SelectValue placeholder="Filtrar por campeonato" />
+                </SelectTrigger>
+                <SelectContent>
+                    {mockChampionships.map(champ => (
+                        <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-8">
