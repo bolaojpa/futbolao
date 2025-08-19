@@ -30,14 +30,6 @@ const Section = ({
   </div>
 );
 
-const Divider = ({ height }: { height: string }) => (
-  <div style={{ height }} className="w-full bg-white/20"></div>
-);
-
-const VerticalDivider = ({ width }: { width: string }) => (
-  <div style={{ width }} className="h-full bg-white/20"></div>
-);
-
 export function ChampionBanner({
   campeonatoLogoUrl,
   campeonatoNome,
@@ -59,9 +51,8 @@ export function ChampionBanner({
       />
       <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] -z-10"></div>
 
-      {/* Top Section - 32.78% height */}
+      {/* Top Section */}
       <Section height="32.78%">
-        {/* Logo Area - 31.28% width */}
         <div style={{ width: '31.28%' }} className="flex justify-center items-center h-full p-[5%]">
           <Image
             src={campeonatoLogoUrl}
@@ -72,20 +63,15 @@ export function ChampionBanner({
           />
         </div>
 
-        <VerticalDivider width="0.34%" />
-
-        {/* Ganhadores Area - 67.69% width */}
-        <div style={{ width: '67.69%' }} className="flex justify-center items-center h-full">
+        <div style={{ width: '68.72%' }} className="flex justify-center items-center h-full">
           <h2 className="text-[10cqw] font-extrabold tracking-wider uppercase text-center">
             Ganhadores
           </h2>
         </div>
       </Section>
 
-      <Divider height="0.33%" />
-
-      {/* Middle Section - 32.78% height */}
-      <Section height="32.78%" className="flex-col justify-center items-center text-center p-[2%]">
+      {/* Middle Section */}
+      <Section height="33.11%" className="flex-col justify-center items-center text-center p-[2%]">
         <h3 className="text-[5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
           CAMPEÃO GERAL
         </h3>
@@ -101,10 +87,8 @@ export function ChampionBanner({
         </div>
       </Section>
 
-      <Divider height="0.33%" />
-
-      {/* Bottom Section - 32.95% height */}
-      <Section height="32.95%" className="flex-col justify-center items-center text-center p-[2%]">
+      {/* Bottom Section */}
+      <Section height="33.28%" className="flex-col justify-center items-center text-center p-[2%]">
         <h3 className="text-[5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
           {tipoPalpite === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
