@@ -34,7 +34,7 @@ export default function SettingsPage() {
             toast({
                 title: `(Teste) ${result.title}`,
                 description: result.message,
-                duration: 5000, 
+                duration: 10000, 
             });
         }
         setIsLoading(false);
