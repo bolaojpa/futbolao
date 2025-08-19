@@ -49,21 +49,21 @@ export function ChampionBanner({
 
         {/* Middle Section (33%) */}
         <div className="flex-1 flex flex-col items-center justify-center text-center border-b-2 border-white/20 py-4">
-            <h3 className="text-xl font-semibold uppercase tracking-wider text-yellow-300">CAMPEÃO GERAL</h3>
+            <h3 className="text-[4rem] font-semibold uppercase tracking-wider text-yellow-300 font-headline">CAMPEÃO GERAL</h3>
             <div className="flex items-center gap-4 mt-4">
                 <Image src={campeaoGeralAvatarUrl} alt={`Avatar de ${campeaoGeralNome}`} width={80} height={80} className="rounded-full border-4 border-yellow-400" />
-                <p className="text-[4rem] font-bold font-headline">{campeaoGeralNome}</p>
+                <p className="text-[3rem] font-bold">{campeaoGeralNome}</p>
             </div>
         </div>
 
         {/* Bottom Section (33%) */}
         <div className="flex-1 flex flex-col items-center justify-start pt-6 text-center">
-            <h3 className="text-xl font-semibold uppercase tracking-wider text-yellow-300">
+            <h3 className="text-[4rem] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
                 {tipoPalpite === 'selecao' ? 'PALPITE DA SELEÇÃO' : 'PALPITE DA EQUIPE'}
             </h3>
             <div className="flex items-center gap-4 mt-4">
                 <Image src={palpiteiroAvatarUrl} alt={`Avatar de ${palpiteiroNome}`} width={60} height={60} className="rounded-full border-4 border-yellow-400" />
-                <p className="text-[4rem] font-bold font-headline">{palpiteiroNome}</p>
+                <p className="text-[3rem] font-bold">{palpiteiroNome}</p>
             </div>
         </div>
     </div>
