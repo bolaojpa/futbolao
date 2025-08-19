@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -141,9 +142,12 @@ export default function HistoryPage() {
                           {match.timeB}
                         </div>
                       </div>
-                      <span className="text-xs text-muted-foreground mt-2">
-                        {format(parseISO(match.data), "dd/MM/yy", { locale: ptBR })}
-                      </span>
+                       <div className='flex flex-col items-center justify-center mt-2 gap-2'>
+                        <Badge variant="secondary">{match.status}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                            {format(parseISO(match.data), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
