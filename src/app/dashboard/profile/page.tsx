@@ -188,7 +188,7 @@ export default function ProfilePage() {
                             <AvatarImage src={displayImage} alt={displayName} />
                             <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
                         </Avatar>
-                        <StatusIndicator status={presenceStatus} className="w-6 h-6 border-4 top-0 right-0" />
+                        <StatusIndicator status={presenceStatus} className="w-6 h-6 border-2 top-0 right-0" />
                         <Honorifics count={titulos} variant="default"/>
                     </div>
                     <div className='flex-1 text-center md:text-left'>
