@@ -95,9 +95,9 @@ export function ChampionBanner({
             alt={`Avatar de ${campeaoGeralNome}`}
             width={80}
             height={80}
-            className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
+            className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
           />
-          <p className="text-[6cqw] font-bold whitespace-nowrap truncate">{campeaoGeralNome}</p>
+          <p className="text-[6.5cqw] font-bold whitespace-nowrap truncate">{campeaoGeralNome}</p>
         </div>
       </Section>
 
@@ -114,9 +114,9 @@ export function ChampionBanner({
             alt={`Avatar de ${palpiteiroNome}`}
             width={80}
             height={80}
-            className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
+            className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
           />
-          <p className="text-[6cqw] font-bold whitespace-nowrap truncate">{palpiteiroNome}</p>
+          <p className="text-[6.5cqw] font-bold whitespace-nowrap truncate">{palpiteiroNome}</p>
         </div>
       </Section>
     </div>
