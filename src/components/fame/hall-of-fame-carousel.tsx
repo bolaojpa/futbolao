@@ -60,7 +60,7 @@ export function HallOfFameCarousel({ banners }: HallOfFameCarouselProps) {
         </Carousel>
 
         <Dialog open={!!selectedBanner} onOpenChange={(isOpen) => !isOpen && setSelectedBanner(null)}>
-            <DialogContent className="max-w-3xl w-full p-0 border-0">
+            <DialogContent className="max-w-3xl w-full p-0 border-0 group">
                 {selectedBanner && (
                     <>
                         <DialogHeader>
