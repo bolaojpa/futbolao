@@ -25,23 +25,26 @@ export function ChampionBanner({
   return (
     <div 
         className="aspect-[857/828] w-full rounded-lg bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-8 text-white relative overflow-hidden"
+        style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
     >
         {/* Decorative elements */}
         <Crown className="absolute -top-12 -right-12 w-48 h-48 text-yellow-400/10 rotate-12" strokeWidth={1}/>
         <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] -z-10"></div>
 
         {/* Top Section (33%) */}
-        <div className="flex-1 flex justify-between items-center border-b-2 border-white/20">
-            <div className="flex items-center gap-4">
+        <div className="flex-1 flex justify-between items-center border-b-2 border-white/20 py-2">
+            <div className="flex-1 flex justify-start items-center h-full">
                 <Image 
                     src={campeonatoLogoUrl} 
-                    alt={`Logo ${campeonatoNome}`} 
-                    width={80} 
-                    height={80} 
-                    className="object-contain" 
+                    alt={`Logo ${campeonatoNome}`}
+                    width={100}
+                    height={100}
+                    className="object-contain h-[90%] w-auto" 
                 />
             </div>
-            <h2 className="text-4xl font-extrabold tracking-widest uppercase text-shadow">GANHADORES</h2>
+            <div className="flex-1 flex justify-end items-center">
+                 <h2 className="text-5xl font-extrabold tracking-widest uppercase">{/* GANHADORES */}Ganhadores</h2>
+            </div>
         </div>
 
         {/* Middle Section (33%) */}
