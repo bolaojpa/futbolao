@@ -78,12 +78,12 @@ export default function LeaderboardPage() {
     switch (sortType) {
       case 'exact':
         return {
-          header: 'Placares Exatos',
+          header: 'Buchas',
           accessor: (user: UserType) => user.exatos,
         };
       case 'situation':
         return {
-          header: 'Acertos de Situação',
+          header: 'Situação',
           accessor: (user: UserType) => user.situacoes,
         };
       default:
@@ -203,8 +203,8 @@ export default function LeaderboardPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="default">Ordenar por Pontos (Padrão)</SelectItem>
-                        <SelectItem value="exact">Ordenar por Acertos (Placar Exato)</SelectItem>
-                        <SelectItem value="situation">Ordenar por Acertos (Situação)</SelectItem>
+                        <SelectItem value="exact">Ordenar por Buchas</SelectItem>
+                        <SelectItem value="situation">Ordenar por Situação</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -221,10 +221,10 @@ export default function LeaderboardPage() {
                   <TableHead>Jogador</TableHead>
                   <TableHead className="text-right">{sortColumnHeader}</TableHead>
                   <TableHead className="text-right hidden md:table-cell">
-                    {sortType === 'default' ? 'Placares Exatos' : 'Pontos'}
+                    {sortType === 'default' ? 'Buchas' : 'Pontos'}
                   </TableHead>
                    <TableHead className="text-right hidden md:table-cell">
-                    {sortType === 'situation' ? 'Placares Exatos' : 'Acertos de Situação'}
+                    {sortType === 'situation' ? 'Buchas' : 'Situação'}
                   </TableHead>
                 </TableRow>
               </TableHeader>
