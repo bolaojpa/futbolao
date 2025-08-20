@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { mockMatches, mockUser, mockPredictions } from '@/lib/data';
@@ -62,8 +62,7 @@ export function PredictionForm() {
     const [isClient, setIsClient] = useState(false);
     
     // Estado para controlar as partidas visíveis
-    const initialOpenMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)));
-    const [displayedMatches, setDisplayedMatches] = useState<Match[]>(initialOpenMatches);
+    const [displayedMatches, setDisplayedMatches] = useState<Match[]>([]);
     
     // Armazena as referências dos cards para a rolagem
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -73,9 +72,12 @@ export function PredictionForm() {
         setIsClient(true);
         const initialUpdates: Record<string, Date | null> = {};
         const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
+        
+        const openMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)));
+        setDisplayedMatches(openMatches);
 
         mockPredictions.forEach(p => {
-            if (p.userId === mockUser.id && mockMatches.upcoming.some(m => m.id === p.matchId && m.status === 'Agendado')) {
+            if (p.userId === mockUser.id && openMatches.some(m => m.id === p.matchId)) {
                  initialUpdates[p.matchId] = new Date(); 
                  initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
             }
@@ -216,6 +218,18 @@ export function PredictionForm() {
         return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
       };
 
+    const groupedMatches = useMemo(() => {
+        return displayedMatches.reduce((acc, match) => {
+            const phase = match.fase || 'Próximas Partidas';
+            if (!acc[phase]) {
+                acc[phase] = [];
+            }
+            acc[phase].push(match);
+            return acc;
+        }, {} as Record<string, Match[]>);
+    }, [displayedMatches]);
+
+
     if (!isClient) {
         return <div className="space-y-6">
             {[1, 2, 3].map(i => (
@@ -243,101 +257,106 @@ export function PredictionForm() {
 
     return (
         <TooltipProvider>
-            <div className="space-y-6">
-                {displayedMatches.map((match) => {
-                    const isEditing = !!lastUpdated[match.id];
-                    const currentScore = scores[match.id] || { placarA: null, placarB: null };
-                    const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
+            <div className="space-y-8">
+                {Object.entries(groupedMatches).map(([phase, matches]) => (
+                     <div key={phase} className="space-y-4">
+                        <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
+                        {matches.map((match) => {
+                            const isEditing = !!lastUpdated[match.id];
+                            const currentScore = scores[match.id] || { placarA: null, placarB: null };
+                            const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
 
-                    return (
-                        <Card 
-                            key={match.id} 
-                            id={match.id} 
-                            ref={(el) => matchRefs.current[match.id] = el}
-                            className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse")}
-                        >
-                            {needsAttention && (
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div className="absolute top-2 left-2 z-10">
-                                            <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                        <p>Palpite necessário! Esta partida começa em breve.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            )}
-                             <CardHeader className='pb-2 pt-4 text-center'>
-                                <CardTitle className="text-base font-semibold">{match.campeonato}</CardTitle>
-                                <div className="text-xs text-muted-foreground">
-                                    <UpcomingMatchDate matchDateString={match.data} />
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center justify-around w-full gap-2">
-                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                        <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                            return (
+                                <Card 
+                                    key={match.id} 
+                                    id={match.id} 
+                                    ref={(el) => matchRefs.current[match.id] = el}
+                                    className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse")}
+                                >
+                                    {needsAttention && (
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                <div className="absolute top-2 left-2 z-10">
+                                                    <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                                                </div>
                                             </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{match.timeA}</p>
+                                            <TooltipContent side="right">
+                                                <p>Palpite necessário! Esta partida começa em breve.</p>
                                             </TooltipContent>
                                         </Tooltip>
-                                     </div>
-
-                                    <div className="flex items-center justify-center gap-2">
-                                        <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
-                                        <span className="font-bold text-muted-foreground text-lg">x</span>
-                                        <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
-                                    </div>
-                                    
-                                     <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{match.timeB}</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                        <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                     </div>
-                                </div>
-                            </CardContent>
-                             <CardFooter className="flex flex-col gap-2 p-4">
-                                <div className='text-center h-4 mb-2'>
-                                    {lastUpdated[match.id] && (
-                                        <p className="text-xs text-muted-foreground">
-                                            {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
-                                        </p>
                                     )}
-                                </div>
-                                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                    <Button 
-                                        variant="outline" 
-                                        onClick={() => handleAiSuggestion(match)} 
-                                        disabled={loadingAi[match.id]}
-                                        className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                    >
-                                        {loadingAi[match.id] ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <BrainCircuit className="mr-2 h-4 w-4" />
-                                        )}
-                                        Consultar IA
-                                    </Button>
-                                    <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
-                                        <Save className="mr-2 h-4 w-4" />
-                                        {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
-                                    </Button>
-                                </div>
-                            </CardFooter>
-                        </Card>
-                    );
-                })}
+                                    <CardHeader className='pb-2 pt-4 text-center'>
+                                        <CardTitle className="text-base font-semibold">{match.campeonato}</CardTitle>
+                                        <div className="text-xs text-muted-foreground">
+                                            <UpcomingMatchDate matchDateString={match.data} />
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex items-center justify-around w-full gap-2">
+                                            <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{match.timeA}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+
+                                            <div className="flex items-center justify-center gap-2">
+                                                <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
+                                                <span className="font-bold text-muted-foreground text-lg">x</span>
+                                                <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
+                                            </div>
+                                            
+                                            <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{match.timeB}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                                <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex flex-col gap-2 p-4">
+                                        <div className='text-center h-4 mb-2'>
+                                            {lastUpdated[match.id] && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => handleAiSuggestion(match)} 
+                                                disabled={loadingAi[match.id]}
+                                                className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                            >
+                                                {loadingAi[match.id] ? (
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <BrainCircuit className="mr-2 h-4 w-4" />
+                                                )}
+                                                Consultar IA
+                                            </Button>
+                                            <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
+                                                <Save className="mr-2 h-4 w-4" />
+                                                {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
+                                            </Button>
+                                        </div>
+                                    </CardFooter>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                ))}
             </div>
 
             <Dialog open={aiModalState.open} onOpenChange={(isOpen) => setAiModalState(prev => ({...prev, open: isOpen}))}>

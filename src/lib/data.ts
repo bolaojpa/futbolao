@@ -66,13 +66,13 @@ export const mockChampionships = [
   { id: 'champ_2', nome: 'Copa Libertadores 2024', dataInicio: '2024-02-06', dataFim: '2024-11-30', pontuacao: { exato: 15, situacao: 7 } },
 ];
 
-const MOCK_MATCH_RECENT_1 = { id: 'match_1', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
-const MOCK_MATCH_RECENT_2 = { id: 'match_2', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0, maxPontos: 10 };
-const MOCK_MATCH_RECENT_3 = { id: 'match_3', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 15, maxPontos: 15 };
-const MOCK_MATCH_RECENT_8 = { id: 'match_8', campeonato: 'Brasileirão Série A 2024', timeA: 'Internacional', timeB: 'Juventude', placarA: 1, placarB: 0, data: '2024-07-19T20:00:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
-const MOCK_MATCH_RECENT_9 = { id: 'match_9', campeonato: 'Brasileirão Série A 2024', timeA: 'Fortaleza', timeB: 'Criciúma', placarA: 1, placarB: 1, data: '2024-07-18T16:00:00Z', status: 'Finalizado', pontosObtidos: 10, maxPontos: 10 };
-const MOCK_MATCH_RECENT_10 = { id: 'match_10', campeonato: 'Brasileirão Série A 2024', timeA: 'Bragantino', timeB: 'Atlético-GO', placarA: 0, placarB: 2, data: '2024-07-17T18:30:00Z', status: 'Finalizado', pontosObtidos: 0, maxPontos: 10 };
-const MOCK_MATCH_RECENT_11 = { id: 'match_11', campeonato: 'Brasileirão Série A 2024', timeA: 'Cuiabá', timeB: 'Goiás', placarA: 2, placarB: 1, data: '2024-07-16T18:30:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
+const MOCK_MATCH_RECENT_1 = { id: 'match_1', fase: 'Rodada 38', campeonato: 'Brasileirão Série A 2024', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
+const MOCK_MATCH_RECENT_2 = { id: 'match_2', fase: 'Rodada 38', campeonato: 'Brasileirão Série A 2024', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado', pontosObtidos: 0, maxPontos: 10 };
+const MOCK_MATCH_RECENT_3 = { id: 'match_3', fase: 'Final', campeonato: 'Copa Libertadores 2024', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado', pontosObtidos: 15, maxPontos: 15 };
+const MOCK_MATCH_RECENT_8 = { id: 'match_8', fase: 'Rodada 37', campeonato: 'Brasileirão Série A 2024', timeA: 'Internacional', timeB: 'Juventude', placarA: 1, placarB: 0, data: '2024-07-19T20:00:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
+const MOCK_MATCH_RECENT_9 = { id: 'match_9', fase: 'Rodada 37', campeonato: 'Brasileirão Série A 2024', timeA: 'Fortaleza', timeB: 'Criciúma', placarA: 1, placarB: 1, data: '2024-07-18T16:00:00Z', status: 'Finalizado', pontosObtidos: 10, maxPontos: 10 };
+const MOCK_MATCH_RECENT_10 = { id: 'match_10', fase: 'Rodada 36', campeonato: 'Brasileirão Série A 2024', timeA: 'Bragantino', timeB: 'Atlético-GO', placarA: 0, placarB: 2, data: '2024-07-17T18:30:00Z', status: 'Finalizado', pontosObtidos: 0, maxPontos: 10 };
+const MOCK_MATCH_RECENT_11 = { id: 'match_11', fase: 'Rodada 36', campeonato: 'Brasileirão Série A 2024', timeA: 'Cuiabá', timeB: 'Goiás', placarA: 2, placarB: 1, data: '2024-07-16T18:30:00Z', status: 'Finalizado', pontosObtidos: 5, maxPontos: 10 };
 
 
 // Helper para criar uma data futura para os mocks
@@ -93,10 +93,10 @@ export const mockMatches = {
     MOCK_MATCH_RECENT_11,
   ],
   upcoming: [
-    { id: 'match_6', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo', maxPontos: 15 },
-    { id: 'match_4', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: futureDate(1.5), status: 'Agendado', maxPontos: 10 }, // Partida para contagem regressiva
-    { id: 'match_5', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3), status: 'Agendado', maxPontos: 10 },
-    { id: 'match_7', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24), status: 'Agendado', maxPontos: 10 },
+    { id: 'match_6', fase: 'Oitavas de Final', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo', maxPontos: 15 },
+    { id: 'match_4', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: futureDate(1.5), status: 'Agendado', maxPontos: 10 }, // Partida para contagem regressiva
+    { id: 'match_5', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3), status: 'Agendado', maxPontos: 10 },
+    { id: 'match_7', fase: 'Rodada 40', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24), status: 'Agendado', maxPontos: 10 },
   ],
 };
 
