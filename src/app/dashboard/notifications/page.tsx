@@ -5,18 +5,28 @@ import { useState } from 'react';
 import { mockNotifications } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, CheckCheck, Inbox } from 'lucide-react';
+import { Bell, CheckCheck, Inbox, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const ITEMS_PER_PAGE = 10;
+
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState(mockNotifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+    const [currentPage, setCurrentPage] = useState(1);
 
     const handleMarkAllAsRead = () => {
         setNotifications(prev => prev.map(n => ({...n, read: true })));
     }
+
+    // Lógica de Paginação
+    const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
+    const paginatedNotifications = notifications.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    );
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
@@ -33,15 +43,17 @@ export default function NotificationsPage() {
             <Card className="max-w-4xl">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Histórico</CardTitle>
-                    <Button variant="outline" size="sm" onClick={handleMarkAllAsRead}>
-                        <CheckCheck className="mr-2 h-4 w-4" />
-                        Marcar todas como lidas
-                    </Button>
+                     {notifications.some(n => !n.read) && (
+                        <Button variant="outline" size="sm" onClick={handleMarkAllAsRead}>
+                            <CheckCheck className="mr-2 h-4 w-4" />
+                            Marcar todas como lidas
+                        </Button>
+                    )}
                 </CardHeader>
                 <CardContent>
-                    {notifications.length > 0 ? (
+                    {paginatedNotifications.length > 0 ? (
                         <ul className="space-y-2">
-                            {notifications.map(notification => (
+                            {paginatedNotifications.map(notification => (
                                 <li key={notification.id}>
                                     <Link href={notification.href} className={cn(
                                         "block w-full p-4 border rounded-lg transition-colors hover:bg-muted/80",
@@ -71,6 +83,30 @@ export default function NotificationsPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-4">
+                    <Button 
+                        variant="outline"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="h-4 w-4 mr-2" />
+                        Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Página {currentPage} de {totalPages}
+                    </span>
+                    <Button 
+                        variant="outline"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Próximo
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
