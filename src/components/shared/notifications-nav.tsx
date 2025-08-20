@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -9,9 +8,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { mockNotifications } from '@/lib/data';
 import { formatDistanceToNow } from 'date-fns';
@@ -24,6 +24,8 @@ export function NotificationsNav() {
     const [notifications, setNotifications] = useState(mockNotifications);
     const [isOpen, setIsOpen] = useState(false);
     
+    // Mostra apenas as 5 notificações mais recentes no dropdown
+    const recentNotifications = notifications.slice(0, 5);
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const handleMarkAsRead = (notificationId: string) => {
@@ -57,41 +59,59 @@ export function NotificationsNav() {
         <DropdownMenuLabel className='flex justify-between items-center'>
             Notificações
              {unreadCount > 0 && (
-                <Button variant="link" size="sm" className="h-auto p-0" onClick={handleMarkAllAsRead}>
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={handleMarkAllAsRead}>
                    Marcar todas como lidas
                 </Button>
             )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {notifications.length === 0 ? (
+        <DropdownMenuGroup>
+        {recentNotifications.length === 0 ? (
             <DropdownMenuItem disabled>
                 <div className="py-4 text-center text-sm text-muted-foreground">
                     Nenhuma notificação por aqui.
                 </div>
             </DropdownMenuItem>
         ) : (
-            notifications.map((notification) => (
+            recentNotifications.map((notification) => (
                 <DropdownMenuItem 
                     key={notification.id} 
-                    className="p-0"
-                    // Usamos onSelect para que o evento de clique padrão do DropdownMenuItem seja preservado
-                    // e ele possa controlar o fechamento se necessário, mas nosso link fará a navegação.
+                    className="p-0 data-[highlighted]:bg-transparent"
                     onSelect={(e) => {
-                        e.preventDefault(); // Previne o fechamento padrão para controlarmos manualmente
+                        e.preventDefault(); 
                     }}
                 >
                     <Link 
                         href={notification.href} 
-                        className={cn("block w-full p-2.5", !notification.read && "bg-blue-50/50 dark:bg-blue-900/20")}
+                        className={cn(
+                            "block w-full p-2.5 rounded-md transition-colors",
+                            !notification.read && "bg-blue-50/50 dark:bg-blue-900/20",
+                            "hover:bg-muted/80"
+                        )}
                         onClick={() => handleItemClick(notification.id)}
                     >
-                        <div className="font-semibold">{notification.title}</div>
-                        <p className="text-xs text-muted-foreground">{notification.message}</p>
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <p className="font-semibold">{notification.title}</p>
+                                <p className="text-xs text-muted-foreground">{notification.message}</p>
+                            </div>
+                            {!notification.read && (
+                               <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-2 shrink-0" title="Não lida"></div>
+                            )}
+                        </div>
                         <p className="text-xs text-blue-500 mt-1">{formatDistanceToNow(notification.createdAt, { locale: ptBR, addSuffix: true })}</p>
                     </Link>
                 </DropdownMenuItem>
             ))
         )}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="p-0 data-[highlighted]:bg-transparent">
+             <Link href="/dashboard/notifications" onClick={() => setIsOpen(false)} className="w-full flex items-center justify-center gap-2 p-2 rounded-md text-sm text-primary hover:bg-muted transition-colors">
+                Ver todas as notificações
+                <ArrowRight className="h-4 w-4" />
+            </Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
