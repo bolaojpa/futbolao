@@ -47,6 +47,7 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
 export default function HistoryPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
+  const matchIdFromQuery = searchParams.get('matchId');
   const filterTypeFromQuery = searchParams.get('filterType') as FilterType | null;
 
   const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
@@ -55,11 +56,11 @@ export default function HistoryPage() {
   const matchRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
-    // Lógica para rolar para o card do jogo
-    if (window.location.hash) {
-        const matchId = window.location.hash.substring(1);
+    const matchIdToScroll = matchIdFromQuery || window.location.hash.substring(1);
+    
+    if (matchIdToScroll) {
         setTimeout(() => { // Timeout para garantir que o elemento esteja renderizado
-            const element = matchRefs.current[matchId];
+            const element = matchRefs.current[matchIdToScroll];
             if (element) {
                 element.scrollIntoView({
                     behavior: 'smooth',
@@ -69,7 +70,7 @@ export default function HistoryPage() {
             }
         }, 100);
     }
-}, []);
+}, [matchIdFromQuery]);
   
   // Sincroniza o estado com os parâmetros da URL, caso eles mudem.
   useEffect(() => {
@@ -290,5 +291,3 @@ export default function HistoryPage() {
     </div>
   );
 }
-
-    

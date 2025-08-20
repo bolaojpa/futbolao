@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -72,7 +73,7 @@ export function NotificationsNav() {
                         handleMarkAsRead(notification.id);
                     }}
                 >
-                    <Link href={notification.href || '/dashboard'} className={cn("block w-full p-2.5", !notification.read && "bg-blue-50/50 dark:bg-blue-900/20")}>
+                    <Link href={notification.href} className={cn("block w-full p-2.5", !notification.read && "bg-blue-50/50 dark:bg-blue-900/20")}>
                         <div className="font-semibold">{notification.title}</div>
                         <p className="text-xs text-muted-foreground">{notification.message}</p>
                         <p className="text-xs text-blue-500 mt-1">{formatDistanceToNow(notification.createdAt, { locale: ptBR, addSuffix: true })}</p>
