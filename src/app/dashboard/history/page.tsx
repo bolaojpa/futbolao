@@ -109,30 +109,16 @@ export default function HistoryPage() {
 
   // Lógica de Paginação e Agrupamento
   const groupedAndPaginatedMatches = useMemo(() => {
-    const grouped = filteredMatches.reduce((acc, match) => {
-        const phase = match.fase || 'Resultados Gerais';
-        if (!acc[phase]) {
-            acc[phase] = [];
-        }
-        acc[phase].push(match);
-        return acc;
-    }, {} as Record<string, Match[]>);
-
-    const allItems: (Match | { type: 'header'; title: string })[] = [];
-    Object.entries(grouped).forEach(([phase, matches]) => {
-        allItems.push({ type: 'header', title: phase });
-        allItems.push(...matches);
-    });
-
-    const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE); // A paginação ainda se baseia no total de jogos
+    // A paginação se baseia no total de jogos
+    const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE); 
     
-    // A paginação aqui se torna mais complexa. Vamos paginar a lista de jogos, não a lista com headers.
+    // Pega o slice de jogos da página atual
     const paginatedItems = filteredMatches.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
     
-    // Agora, reagrupamos os itens paginados
+    // Agora, agrupa os itens paginados
      const paginatedGrouped = paginatedItems.reduce((acc, match) => {
         const phase = match.fase || 'Resultados Gerais';
         if (!acc[phase]) {
