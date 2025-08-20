@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { mockNotifications } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,22 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const ITEMS_PER_PAGE = 10;
+
+// Componente para evitar erro de hidratação com datas relativas
+const TimeAgo = ({ date }: { date: Date }) => {
+    const [timeAgo, setTimeAgo] = useState('');
+
+    useEffect(() => {
+        setTimeAgo(formatDistanceToNow(date, { locale: ptBR, addSuffix: true }));
+    }, [date]);
+
+    if (!timeAgo) {
+        return null; // ou um placeholder de carregamento
+    }
+
+    return <>{timeAgo}</>;
+};
+
 
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState(mockNotifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
@@ -69,7 +85,7 @@ export default function NotificationsPage() {
                                             )}
                                         </div>
                                         <p className="text-xs text-muted-foreground mt-2">
-                                            {formatDistanceToNow(notification.createdAt, { locale: ptBR, addSuffix: true })}
+                                            <TimeAgo date={notification.createdAt} />
                                         </p>
                                     </Link>
                                 </li>
