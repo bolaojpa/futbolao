@@ -34,6 +34,7 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 export default function LeaderboardPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
+  type SortType = 'default' | 'exact' | 'situation';
 
   const [sortType, setSortType] = useState<SortType>('default');
   const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
@@ -73,7 +74,27 @@ export default function LeaderboardPage() {
       return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
 
-  type SortType = 'default' | 'exact' | 'situation';
+  const getSortColumn = () => {
+    switch (sortType) {
+      case 'exact':
+        return {
+          header: 'Placares Exatos',
+          accessor: (user: UserType) => user.exatos,
+        };
+      case 'situation':
+        return {
+          header: 'Acertos de Situação',
+          accessor: (user: UserType) => user.situacoes,
+        };
+      default:
+        return {
+          header: 'Pontos',
+          accessor: (user: UserType) => user.pontos,
+        };
+    }
+  };
+
+  const { header: sortColumnHeader, accessor: sortColumnAccessor } = getSortColumn();
 
   const getMedalIcon = (rank: number) => {
     if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500 fill-yellow-400" />;
@@ -198,9 +219,13 @@ export default function LeaderboardPage() {
                   <TableHead className='w-16 text-center'>Pos.</TableHead>
                   <TableHead className='w-16 text-center'>Var.</TableHead>
                   <TableHead>Jogador</TableHead>
-                  <TableHead className="text-right">Pontos</TableHead>
-                  <TableHead className="text-right hidden md:table-cell">Placares Exatos</TableHead>
-                  <TableHead className="text-right hidden md:table-cell">Acertos de Situação</TableHead>
+                  <TableHead className="text-right">{sortColumnHeader}</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">
+                    {sortType === 'default' ? 'Placares Exatos' : 'Pontos'}
+                  </TableHead>
+                   <TableHead className="text-right hidden md:table-cell">
+                    {sortType === 'situation' ? 'Placares Exatos' : 'Acertos de Situação'}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -236,9 +261,13 @@ export default function LeaderboardPage() {
                                 {getMedalIcon(rank)}
                             </Link>
                         </TableCell>
-                        <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
-                        <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>
-                        <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user)}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">
+                          {sortType === 'default' ? user.exatos : user.pontos}
+                        </TableCell>
+                        <TableCell className="text-right hidden md:table-cell">
+                           {sortType === 'situation' ? user.exatos : user.situacoes}
+                        </TableCell>
                       </TableRow>
                   )
                 })}
