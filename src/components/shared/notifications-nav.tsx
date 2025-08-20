@@ -17,6 +17,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import Link from 'next/link';
 
 export function NotificationsNav() {
     const [notifications, setNotifications] = useState(mockNotifications);
@@ -29,7 +30,8 @@ export function NotificationsNav() {
         );
     };
     
-    const handleMarkAllAsRead = () => {
+    const handleMarkAllAsRead = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
         setNotifications(prev => prev.map(n => ({...n, read: true })));
     }
 
@@ -64,15 +66,17 @@ export function NotificationsNav() {
             notifications.map((notification) => (
                 <DropdownMenuItem 
                     key={notification.id} 
-                    className={cn("flex flex-col items-start gap-1 whitespace-normal", !notification.read && "bg-blue-50/50 dark:bg-blue-900/20")}
+                    className="p-0"
                     onSelect={(e) => {
-                        e.preventDefault(); // Impede o menu de fechar
+                        e.preventDefault();
                         handleMarkAsRead(notification.id);
                     }}
                 >
-                     <div className="font-semibold">{notification.title}</div>
-                     <p className="text-xs text-muted-foreground">{notification.message}</p>
-                     <p className="text-xs text-blue-500">{formatDistanceToNow(notification.createdAt, { locale: ptBR, addSuffix: true })}</p>
+                    <Link href={notification.href || '/dashboard'} className={cn("block w-full p-2.5", !notification.read && "bg-blue-50/50 dark:bg-blue-900/20")}>
+                        <div className="font-semibold">{notification.title}</div>
+                        <p className="text-xs text-muted-foreground">{notification.message}</p>
+                        <p className="text-xs text-blue-500 mt-1">{formatDistanceToNow(notification.createdAt, { locale: ptBR, addSuffix: true })}</p>
+                    </Link>
                 </DropdownMenuItem>
             ))
         )}
