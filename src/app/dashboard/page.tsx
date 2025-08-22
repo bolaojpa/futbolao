@@ -16,7 +16,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { mockUser, mockMatches, mockPredictions, mockUsers } from '@/lib/data';
+import { mockUser, mockMatches, mockPredictions, mockUsers, mockChampionships } from '@/lib/data';
 import { format, parseISO, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard } from 'lucide-react';
@@ -312,6 +312,7 @@ export default function DashboardPage() {
                 {upcomingMatches.map((match) => {
                 const userPrediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
                 const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !userPrediction;
+                const championship = mockChampionships.find(c => c.nome === match.campeonato);
                 
                 return (
                     <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
@@ -325,25 +326,28 @@ export default function DashboardPage() {
                             </div>
                         )}
                         <CardHeader className='pb-2'>
-                            <div className="flex justify-between items-start">
-                            <p className="text-xs text-muted-foreground">{match.campeonato}</p>
-                            <Badge variant={getStatusVariant(match.status)}>
-                                {match.status}
-                            </Badge>
+                            <div className="flex justify-start items-center gap-2">
+                                <Image src="https://placehold.co/64x64.png" alt={`Logo ${match.campeonato}`} width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
+                                <p className="text-xs text-muted-foreground font-semibold">{match.campeonato}</p>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow flex items-center justify-center p-4">
-                        <div className="flex items-center justify-around w-full text-center">
-                            <div className='flex flex-col items-center gap-2 w-1/3'>
-                                <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
+                            <div className="flex items-center justify-around w-full text-center">
+                                <div className='flex flex-col items-center gap-2 w-1/3'>
+                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                    <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
+                                </div>
+                                <div className="flex flex-col items-center justify-center gap-1 mx-2">
+                                    <Badge variant={getStatusVariant(match.status)}>
+                                        {match.status}
+                                    </Badge>
+                                    <span className="text-2xl font-bold text-muted-foreground">vs</span>
+                                </div>
+                                <div className='flex flex-col items-center gap-2 w-1/3'>
+                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                    <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
+                                </div>
                             </div>
-                            <span className="text-2xl font-bold text-muted-foreground mx-4">vs</span>
-                            <div className='flex flex-col items-center gap-2 w-1/3'>
-                                <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
-                            </div>
-                        </div>
                         </CardContent>
                         
                         {userPrediction && (
@@ -358,7 +362,7 @@ export default function DashboardPage() {
                         )}
 
                         <CardContent className="text-center bg-muted/50 py-2 mt-auto">
-                        <UpcomingMatchDate matchDateString={match.data} />
+                           <UpcomingMatchDate matchDateString={match.data} />
                         </CardContent>
                     </Card>
                     </Link>
