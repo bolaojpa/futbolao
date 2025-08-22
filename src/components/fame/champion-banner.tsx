@@ -72,7 +72,7 @@ export function ChampionBanner({
 
       {/* Middle Section */}
       <Section height="33.11%" className="flex-col justify-center items-center text-center p-[2%]">
-        <h3 className="text-[5.5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
+        <h3 className="text-[6.5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
           CAMPEÃO GERAL
         </h3>
         <div className="flex items-center justify-center gap-[4%] mt-[2%] w-full">
@@ -89,7 +89,7 @@ export function ChampionBanner({
 
       {/* Bottom Section */}
       <Section height="33.28%" className="flex-col justify-center items-center text-center p-[2%]">
-        <h3 className="text-[5.5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
+        <h3 className="text-[6.5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
           {tipoPalpite === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
         <div className="flex items-center justify-center gap-[4%] mt-[2%] w-full">
