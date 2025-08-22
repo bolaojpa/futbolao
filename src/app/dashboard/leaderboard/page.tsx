@@ -233,7 +233,13 @@ export default function LeaderboardPage() {
                   const rank = index + 1;
                   const variation = getPositionVariation(user.posicaoVariacao as 'up' | 'down' | 'stable');
                   return (
-                      <TableRow key={user.id} className={cn(user.id === mockUser.id && "bg-blue-100/50 dark:bg-blue-900/20")}>
+                      <TableRow 
+                        key={user.id} 
+                        className={cn(
+                            user.id === mockUser.id && "bg-blue-100/50 dark:bg-blue-900/20",
+                            rank === 1 && "bg-gradient-to-r from-yellow-400/20 via-yellow-300/10 to-yellow-400/20 dark:from-yellow-500/20 dark:via-yellow-400/10 dark:to-yellow-500/20"
+                        )}
+                      >
                         <TableCell className="font-medium w-16 text-center">{rank}º</TableCell>
                         <TableCell className="w-16 text-center">
                           <Tooltip>
