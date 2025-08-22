@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
   const sortedUsers = [...mockUsers].sort((a, b) => {
     if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-    if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+    if (a.exatos !== b.exatos) return b.exatos - b.exatos;
     if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - b.tempoMedio;
     return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
@@ -103,9 +103,17 @@ export default function DashboardPage() {
 
   const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
     if (status === 'Ao Vivo') return 'destructive';
-    if (status === 'Agendado') return 'secondary';
+    if (status === 'Agendado' || status === 'Hoje') return 'secondary';
     return 'default';
   };
+
+  const getMatchDisplayStatus = (matchDate: string, currentStatus: string) => {
+    if (!isClient) return currentStatus;
+    if (currentStatus === 'Agendado' && isToday(parseISO(matchDate))) {
+        return 'Hoje';
+    }
+    return currentStatus;
+  }
 
   const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
     if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40'; // Acerto exato
@@ -210,6 +218,7 @@ export default function DashboardPage() {
                     const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
                     if (!prediction) return null;
                     const maxPointsForMatch = match.maxPontos || 10;
+                    const displayStatus = getMatchDisplayStatus(match.data, match.status);
 
                     return (
                     <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -230,8 +239,8 @@ export default function DashboardPage() {
                                     {match.timeB}
                                     </div>
                                 </div>
-                                <Badge variant={getStatusVariant(match.status)} className={cn('mt-2', match.status === 'Ao Vivo' && 'animate-pulse')}>
-                                    {match.status}
+                                <Badge variant={getStatusVariant(displayStatus)} className={cn('mt-2', displayStatus === 'Ao Vivo' && 'animate-pulse')}>
+                                    {displayStatus}
                                 </Badge>
                             </div>
                             </AccordionTrigger>
@@ -313,6 +322,7 @@ export default function DashboardPage() {
                 const userPrediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
                 const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !userPrediction;
                 const championship = mockChampionships.find(c => c.nome === match.campeonato);
+                const displayStatus = getMatchDisplayStatus(match.data, match.status);
                 
                 return (
                     <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
@@ -338,8 +348,8 @@ export default function DashboardPage() {
                                     <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
                                 </div>
                                 <div className="flex flex-col items-center justify-center gap-1 mx-2">
-                                    <Badge variant={getStatusVariant(match.status)}>
-                                        {match.status}
+                                    <Badge variant={getStatusVariant(displayStatus)}>
+                                        {displayStatus}
                                     </Badge>
                                     <span className="text-2xl font-bold text-muted-foreground">vs</span>
                                 </div>
@@ -386,6 +396,7 @@ export default function DashboardPage() {
                     const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
                     if (!prediction) return null;
                     const maxPointsForMatch = match.maxPontos || 10;
+                    const displayStatus = getMatchDisplayStatus(match.data, match.status);
 
                     return (
                         <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -407,7 +418,7 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                                 <div className='flex flex-col items-center justify-center mt-2 gap-1'>
-                                    <Badge variant="secondary">{match.status}</Badge>
+                                    <Badge variant="secondary">{displayStatus}</Badge>
                                     <FormattedDate dateString={match.data} formatString="dd/MM/yy" />
                                 </div>
                             </div>
