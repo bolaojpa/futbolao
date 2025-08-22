@@ -10,7 +10,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Users, LogIn } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Users, LogIn, HelpCircle } from 'lucide-react';
 import { mockUser, mockUsers, mockChampionships, mockMatches, UserType } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -25,6 +25,7 @@ import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusIndicator } from '@/components/shared/status-indicator';
+import { HonorificsExplanationModal } from '@/components/profile/honorifics-explanation-modal';
 
 const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: React.ReactNode, title: string, value: string | number, description: string, href?: string, isLeader?: boolean }) => {
     const cardContent = (
@@ -205,6 +206,11 @@ export default function ProfilePage() {
                         </Avatar>
                         <StatusIndicator status={presenceStatus} className="w-6 h-6 border-2 top-0 right-0" />
                         <Honorifics count={titulos} variant="default"/>
+                         <HonorificsExplanationModal>
+                            <Button variant="outline" size="icon" className="absolute bottom-0 -right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm">
+                               <HelpCircle className="w-4 h-4" />
+                            </Button>
+                        </HonorificsExplanationModal>
                     </div>
                     <div className='flex-1 text-center md:text-left'>
                         <h1 className="text-3xl font-bold font-headline">{displayName}</h1>
