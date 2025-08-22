@@ -92,7 +92,7 @@
 
 @keyframes flash-pulse {
   50% {
-    opacity: '0.5'
+    opacity: 0.5;
   }
 }
 
