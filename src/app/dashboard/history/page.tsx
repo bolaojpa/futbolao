@@ -58,23 +58,6 @@ export default function HistoryPage() {
   const [filterType, setFilterType] = useState<FilterType>(filterTypeFromQuery || 'all');
   const [currentPage, setCurrentPage] = useState(1);
   const matchRefs = useRef<Record<string, HTMLElement | null>>({});
-
-  useEffect(() => {
-    const matchIdToScroll = matchIdFromQuery || window.location.hash.substring(1);
-    
-    if (matchIdToScroll) {
-        setTimeout(() => { // Timeout para garantir que o elemento esteja renderizado
-            const element = matchRefs.current[matchIdToScroll];
-            if (element) {
-                element.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                    inline: 'nearest'
-                });
-            }
-        }, 100);
-    }
-}, [matchIdFromQuery]);
   
   // Sincroniza o estado com os parâmetros da URL, caso eles mudem.
   useEffect(() => {
@@ -85,24 +68,8 @@ export default function HistoryPage() {
       setFilterType(filterTypeFromQuery);
     }
   }, [championshipIdFromQuery, filterTypeFromQuery]);
-  
-  const handleFilterChange = (type: 'championship' | 'filterType', value: string) => {
-    const newChampionshipId = type === 'championship' ? value : selectedChampionship;
-    const newFilterType = type === 'filterType' ? value : filterType;
 
-    setSelectedChampionship(newChampionshipId);
-    setFilterType(newFilterType as FilterType);
-
-    const params = new URLSearchParams(searchParams);
-    params.set('championshipId', newChampionshipId);
-    params.set('filterType', newFilterType);
-    params.delete('matchId'); // Remove o matchId para não focar em um jogo ao mudar o filtro
-
-    router.push(`${pathname}?${params.toString()}`);
-  };
-
-
-  const filteredMatches = [...mockMatches.recent]
+  const filteredMatches = useMemo(() => [...mockMatches.recent]
     .filter(match => {
         const prediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
         if (!prediction || !match.maxPontos) return false;
@@ -124,7 +91,56 @@ export default function HistoryPage() {
                 return true;
         }
     })
-    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()), [selectedChampionship, filterType]);
+
+
+  useEffect(() => {
+    const matchIdToScroll = matchIdFromQuery || window.location.hash.substring(1);
+    
+    if (matchIdToScroll) {
+        // Encontrar a página correta para a partida
+        const matchIndex = filteredMatches.findIndex(m => m.id === matchIdToScroll);
+
+        if (matchIndex !== -1) {
+            const targetPage = Math.ceil((matchIndex + 1) / ITEMS_PER_PAGE);
+            if (currentPage !== targetPage) {
+                setCurrentPage(targetPage);
+                // A rolagem será acionada pelo próximo useEffect que observa currentPage
+                return;
+            }
+        }
+        
+        // Se já estivermos na página certa, ou se a página foi definida agora, rolar
+        setTimeout(() => { 
+            const element = matchRefs.current[matchIdToScroll];
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            }
+        }, 100);
+    }
+}, [matchIdFromQuery, filteredMatches, currentPage]);
+  
+  
+  const handleFilterChange = (type: 'championship' | 'filterType', value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (type === 'championship') {
+        params.set('championshipId', value);
+        setSelectedChampionship(value);
+    } else {
+        params.set('filterType', value);
+        setFilterType(value as FilterType);
+    }
+    
+    params.delete('matchId');
+    router.push(`${pathname}?${params.toString()}`);
+    setCurrentPage(1); // Sempre reseta para a primeira página ao mudar o filtro
+  };
+
 
   // Lógica de Paginação e Agrupamento
   const groupedAndPaginatedMatches = useMemo(() => {
@@ -152,11 +168,6 @@ export default function HistoryPage() {
 
 
   const { paginatedItems, totalPages } = groupedAndPaginatedMatches;
-
-  useEffect(() => {
-    // Reseta a página para 1 quando os filtros mudam
-    setCurrentPage(1);
-  }, [selectedChampionship, filterType]);
 
   const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
     if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40';
