@@ -34,7 +34,7 @@ export function HonorificsExplanationModal({ children }: { children: React.React
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Info className="w-5 h-5"/> Sistema de Títulos</DialogTitle>
           <DialogDescription>
-            Os ícones no seu perfil representam o número de campeonatos que você venceu. Quanto mais vitórias, mais prestigiado o seu ícone se torna!
+            Os ícones no seu perfil representam o número de campeonatos que você venceu pela maior pontuação.
           </DialogDescription>
         </DialogHeader>
         
@@ -46,13 +46,13 @@ export function HonorificsExplanationModal({ children }: { children: React.React
             />
             <Separator />
              <ExplanationRow 
-                icon={<Award className="w-7 h-7 text-amber-700 fill-amber-700" />} 
+                icon={<Award className="w-7 h-7 text-yellow-500 fill-yellow-400" />} 
                 title="Veterano (4-9 Títulos)"
                 description="Você já é um competidor experiente. Os prêmios mostram sua consistência."
             />
             <Separator />
              <ExplanationRow 
-                icon={<Crown className="w-7 h-7 text-yellow-400 fill-yellow-400" />} 
+                icon={<Crown className="w-7 h-7 text-yellow-500 fill-yellow-400" />} 
                 title="Lenda (10+ Títulos)"
                 description="Você alcançou o topo! As coroas são reservadas para os maiores campeões."
             />
