@@ -27,13 +27,36 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     )
 }
 
+function AppLogo() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className="w-12 h-12 text-primary"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M12 2a10 10 0 1 0 10 10" />
+            <path d="M12 2a10 10 0 1 0-7.07 17.07" />
+            <path d="m12 12-2 4 4 2 2-4-4-2z" />
+        </svg>
+    )
+}
+
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+       <div className="flex flex-col items-center justify-center text-center mb-8">
+            <AppLogo />
+            <h1 className="text-4xl font-bold font-headline mt-4">FutBolão Pro</h1>
+            <p className="text-muted-foreground mt-2">Seu app de palpites de futebol.</p>
+       </div>
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-headline">Bem-vindo!</CardTitle>
-          <CardDescription>Faça login ou crie sua conta no FutBolão Pro</CardDescription>
+          <CardTitle className="text-2xl font-headline">Acessar sua conta</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -84,5 +107,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-
