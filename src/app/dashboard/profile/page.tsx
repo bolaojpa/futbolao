@@ -118,13 +118,18 @@ export default function ProfilePage() {
   const getLastGuessLink = () => {
     if (!lastGuessMatch) return '#';
 
+    const championshipForMatch = mockChampionships.find(c => c.nome === lastGuessMatch.campeonato);
+
     switch(lastGuessMatch.status) {
       case 'Agendado':
         return `/dashboard/predictions#${lastGuessMatch.id}`;
       case 'Ao Vivo':
         return `/dashboard#${lastGuessMatch.id}`;
       case 'Finalizado':
-        return `/dashboard/history#${lastGuessMatch.id}`;
+         if (championshipForMatch) {
+            return `/dashboard/history?championshipId=${championshipForMatch.id}&matchId=${lastGuessMatch.id}`;
+          }
+          return `/dashboard/history#${lastGuessMatch.id}`; // Fallback sem filtro
       default:
         return '#';
     }
