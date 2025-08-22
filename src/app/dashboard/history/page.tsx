@@ -19,7 +19,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,10 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
 };
 
 export default function HistoryPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+
   const championshipIdFromQuery = searchParams.get('championshipId');
   const matchIdFromQuery = searchParams.get('matchId');
   const filterTypeFromQuery = searchParams.get('filterType') as FilterType | null;
@@ -82,6 +85,22 @@ export default function HistoryPage() {
       setFilterType(filterTypeFromQuery);
     }
   }, [championshipIdFromQuery, filterTypeFromQuery]);
+  
+  const handleFilterChange = (type: 'championship' | 'filterType', value: string) => {
+    const newChampionshipId = type === 'championship' ? value : selectedChampionship;
+    const newFilterType = type === 'filterType' ? value : filterType;
+
+    setSelectedChampionship(newChampionshipId);
+    setFilterType(newFilterType as FilterType);
+
+    const params = new URLSearchParams(searchParams);
+    params.set('championshipId', newChampionshipId);
+    params.set('filterType', newFilterType);
+    params.delete('matchId'); // Remove o matchId para não focar em um jogo ao mudar o filtro
+
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
 
   const filteredMatches = [...mockMatches.recent]
     .filter(match => {
@@ -164,7 +183,7 @@ export default function HistoryPage() {
       </div>
       
        <div className="flex flex-col md:flex-row gap-2 mb-8">
-          <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+          <Select value={selectedChampionship} onValueChange={(v) => handleFilterChange('championship', v)}>
               <SelectTrigger className="w-full md:w-[280px]">
                   <SelectValue placeholder="Filtrar por campeonato" />
               </SelectTrigger>
@@ -174,7 +193,7 @@ export default function HistoryPage() {
                   ))}
               </SelectContent>
           </Select>
-           <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
+           <Select value={filterType} onValueChange={(v) => handleFilterChange('filterType', v)}>
               <SelectTrigger className="w-full md:w-[280px]">
                   <SelectValue placeholder="Filtrar por resultado" />
               </SelectTrigger>
