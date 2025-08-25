@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 
@@ -104,14 +104,17 @@ export default function AdminUsersPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <Tabs value={filterStatus} onValueChange={setFilterStatus} className="w-full md:w-auto">
-                            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-                                <TabsTrigger value="all">Todos</TabsTrigger>
-                                <TabsTrigger value="ativo">Ativos</TabsTrigger>
-                                <TabsTrigger value="pendente">Pendentes</TabsTrigger>
-                                <TabsTrigger value="bloqueado">Bloqueados</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
+                        <Select value={filterStatus} onValueChange={setFilterStatus}>
+                            <SelectTrigger className="w-full md:w-[200px]">
+                                <SelectValue placeholder="Filtrar por status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos</SelectItem>
+                                <SelectItem value="ativo">Ativos</SelectItem>
+                                <SelectItem value="pendente">Pendentes</SelectItem>
+                                <SelectItem value="bloqueado">Bloqueados</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardHeader>
                 <CardContent>
