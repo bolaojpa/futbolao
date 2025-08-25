@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { mockLogs } from '@/lib/data';
+import type { Log } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck } from 'lucide-react';
@@ -13,10 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 
 const ITEMS_PER_PAGE = 10;
-type Log = typeof mockLogs[0];
 
 const actionConfig = {
     login: { icon: LogIn, color: 'text-green-500', label: 'Login' },
@@ -58,7 +59,7 @@ export default function AdminLogsPage() {
             const typeMatch = filterType === 'all' || log.action === filterType;
             const searchMatch = searchTerm === '' || 
                                 log.actor.apelido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                log.details.toLowerCase().includes(searchTerm.toLowerCase());
+                                (typeof log.details === 'string' && log.details.toLowerCase().includes(searchTerm.toLowerCase()));
             return typeMatch && searchMatch;
         });
     }, [filterType, searchTerm]);
@@ -75,6 +76,35 @@ export default function AdminLogsPage() {
         setSelectedLog(log);
         setIsModalOpen(true);
     };
+    
+    const renderLogDetails = (log: Log) => {
+        if (log.action === 'emergency_message' && typeof log.details === 'object') {
+            const details = log.details as { title: string; message: string; target: string };
+            return (
+                <div className="space-y-4">
+                    <div className='bg-muted p-3 rounded-md'>
+                        <h4 className="font-semibold text-sm">Título da Mensagem</h4>
+                        <p className="text-sm">{details.title}</p>
+                    </div>
+                    <div className='bg-muted p-3 rounded-md'>
+                        <h4 className="font-semibold text-sm">Conteúdo da Mensagem</h4>
+                        <p className="text-sm whitespace-pre-wrap">{details.message}</p>
+                    </div>
+                     <div className='bg-muted p-3 rounded-md'>
+                        <h4 className="font-semibold text-sm">Alvo</h4>
+                        <p className="text-sm capitalize">{details.target}</p>
+                    </div>
+                </div>
+            );
+        }
+        
+        if (typeof log.details === 'string') {
+            return <p>{log.details}</p>;
+        }
+
+        return <p>Não foi possível exibir os detalhes deste log.</p>;
+    }
+
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -95,7 +125,7 @@ export default function AdminLogsPage() {
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="search"
-                                    placeholder="Buscar em detalhes ou usuário..."
+                                    placeholder="Buscar por usuário..."
                                     className="pl-8 sm:w-[200px] md:w-[280px]"
                                     value={searchTerm}
                                     onChange={(e) => {
@@ -215,6 +245,7 @@ export default function AdminLogsPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Detalhes do Log</DialogTitle>
+                        <DialogDescription>Informações completas sobre a ação registrada.</DialogDescription>
                     </DialogHeader>
                     {selectedLog && (
                          <div className="space-y-4 py-2">
@@ -222,17 +253,20 @@ export default function AdminLogsPage() {
                                  <h4 className="font-semibold text-sm text-muted-foreground">Data e Hora</h4>
                                  <p><FormattedDate dateString={selectedLog.timestamp} /></p>
                              </div>
+                              <Separator />
                              <div>
                                  <h4 className="font-semibold text-sm text-muted-foreground">Autor</h4>
                                  <p>{selectedLog.actor.apelido} ({selectedLog.actor.type})</p>
                              </div>
+                              <Separator />
                              <div>
                                  <h4 className="font-semibold text-sm text-muted-foreground">Ação</h4>
                                  <p>{actionConfig[selectedLog.action as ActionType]?.label || 'Outra'}</p>
                              </div>
+                             <Separator />
                              <div>
                                  <h4 className="font-semibold text-sm text-muted-foreground">Detalhes</h4>
-                                 <p>{selectedLog.details}</p>
+                                 {renderLogDetails(selectedLog)}
                              </div>
                          </div>
                     )}

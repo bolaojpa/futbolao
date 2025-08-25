@@ -228,7 +228,19 @@ export const mockHallOfFame = [
     }
 ];
 
-export const mockLogs = [
+export type Log = {
+  id: string;
+  timestamp: string;
+  actor: {
+    id: string;
+    apelido: string;
+    type: 'user' | 'admin' | 'moderator';
+  };
+  action: string;
+  details: string | Record<string, any>;
+};
+
+export const mockLogs: Log[] = [
   {
     id: 'log_1',
     timestamp: new Date(new Date().getTime() - (1000 * 60 * 2)).toISOString(),
@@ -283,6 +295,10 @@ export const mockLogs = [
     timestamp: new Date(new Date().getTime() - (1000 * 60 * 90)).toISOString(),
     actor: { id: 'admin_1', apelido: 'Admin', type: 'admin' as const },
     action: 'emergency_message',
-    details: 'Enviou uma mensagem de emergência para todos os usuários.',
+    details: {
+        title: mockEmergencyMessage.title,
+        message: mockEmergencyMessage.message,
+        target: 'all users'
+    },
   }
 ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
