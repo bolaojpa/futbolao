@@ -18,7 +18,7 @@ export const mockUser = {
   },
   status: 'ativo', // pendente/ativo/bloqueado
   presenceStatus: 'Disponível' as const, // "Disponível", "Ausente", "Ocupado", "Não perturbe", "Offline"
-  funcao: 'usuario',
+  funcao: 'usuario' as 'usuario' | 'moderador' | 'admin',
   dataCadastro: '2023-01-15T09:30:00Z',
   titulos: 3,
   totalJogos: 92,
@@ -52,7 +52,7 @@ export type UserType = Omit<typeof mockUser, 'email'> & {
 
 export const mockUsers: Array<UserType> = [
   { id: 'user_1', nome: 'Carlos Silva', apelido: 'Carlinhos', fotoPerfil: 'https://placehold.co/100x100.png', urlImagemPersonalizada: '', timeCoracao: 'Flamengo', ultimaAtividade: '2024-07-26T10:00:00Z', ultimoLogin: '2024-07-26T08:30:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '1x1' }, championshipStats: [{ championshipId: 'champ_1', pontos: 85, acertosExatos: 7, acertosSituacao: 12, maiorSequencia: 3 }, { championshipId: 'champ_2', pontos: 40, acertosExatos: 3, acertosSituacao: 4, maiorSequencia: 2 }], totalJogos: 88, titulos: 3, dataCadastro: '2023-01-15', pontos: 125, exatos: 10, situacoes: 5, tempoMedio: 1800, isNewLeader: false, posicaoVariacao: 'stable' as const, status: 'ativo', presenceStatus: 'Disponível', funcao: 'usuario' },
-  { id: 'user_2', nome: 'Fernanda Souza', apelido: 'Fernanda', fotoPerfil: 'https://placehold.co/100x100.png', urlImagemPersonalizada: '', timeCoracao: 'Palmeiras', ultimaAtividade: '2024-07-26T11:00:00Z', ultimoLogin: '2024-07-26T09:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '2x1' }, championshipStats: [{ championshipId: 'champ_1', pontos: 82, acertosExatos: 6, acertosSituacao: 14, maiorSequencia: 2 }, { championshipId: 'champ_2', pontos: 36, acertosExatos: 2, acertosSituacao: 5, maiorSequencia: 1 }], totalJogos: 95, titulos: 11, dataCadastro: '2023-02-20', pontos: 118, exatos: 8, situacoes: 8, tempoMedio: 2200, posicaoVariacao: 'up' as const, status: 'ativo', presenceStatus: 'Ausente', funcao: 'usuario' },
+  { id: 'user_2', nome: 'Fernanda Souza', apelido: 'Fernanda', fotoPerfil: 'https://placehold.co/100x100.png', urlImagemPersonalizada: '', timeCoracao: 'Palmeiras', ultimaAtividade: '2024-07-26T11:00:00Z', ultimoLogin: '2024-07-26T09:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '2x1' }, championshipStats: [{ championshipId: 'champ_1', pontos: 82, acertosExatos: 6, acertosSituacao: 14, maiorSequencia: 2 }, { championshipId: 'champ_2', pontos: 36, acertosExatos: 2, acertosSituacao: 5, maiorSequencia: 1 }], totalJogos: 95, titulos: 11, dataCadastro: '2023-02-20', pontos: 118, exatos: 8, situacoes: 8, tempoMedio: 2200, posicaoVariacao: 'up' as const, status: 'ativo', presenceStatus: 'Ausente', funcao: 'moderador' },
   { id: 'user_3', nome: 'Lucas Martins', apelido: 'Lucas', fotoPerfil: 'https://placehold.co/100x100.png', urlImagemPersonalizada: '', timeCoracao: 'Corinthians', ultimaAtividade: '2024-07-25T18:00:00Z', ultimoLogin: '2024-07-25T17:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '0x0' }, championshipStats: [{ championshipId: 'champ_1', pontos: 85, acertosExatos: 5, acertosSituacao: 10, maiorSequencia: 3 }], totalJogos: 102, titulos: 8, dataCadastro: '2023-01-10', pontos: 115, exatos: 9, situacoes: 4, tempoMedio: 1500, posicaoVariacao: 'down' as const, status: 'ativo', presenceStatus: 'Ocupado', funcao: 'usuario' },
   { id: 'user_4', nome: 'Juliana Lima', apelido: 'Juliana', fotoPerfil: 'https://placehold.co/100x100.png', urlImagemPersonalizada: '', timeCoracao: 'São Paulo', ultimaAtividade: '2024-07-26T09:00:00Z', ultimoLogin: '2024-07-26T08:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '1x2' }, championshipStats: [{ championshipId: 'champ_1', pontos: 70, acertosExatos: 7, acertosSituacao: 7, maiorSequencia: 2 }], totalJogos: 70, titulos: 5, dataCadastro: '2023-03-01', pontos: 102, exatos: 7, situacoes: 7, tempoMedio: 3600, posicaoVariacao: 'up' as const, status: 'ativo', presenceStatus: 'Disponível', funcao: 'usuario' },
   { id: 'user_5', nome: 'Rafael Costa', apelido: 'Rafa', fotoPerfil: 'https://placehold.co/100x100.png', urlImagemPersonalizada: '', timeCoracao: 'Santos', ultimaAtividade: '2024-07-24T22:00:00Z', ultimoLogin: '2024-07-24T21:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '3x1' }, championshipStats: [{ championshipId: 'champ_1', pontos: 65, acertosExatos: 6, acertosSituacao: 9, maiorSequencia: 1 }], totalJogos: 80, titulos: 1, dataCadastro: '2023-04-05', pontos: 99, exatos: 6, situacoes: 9, tempoMedio: 1200, posicaoVariacao: 'stable' as const, status: 'ativo', presenceStatus: 'Não perturbe', funcao: 'usuario' },
@@ -232,7 +232,7 @@ export const mockLogs = [
   {
     id: 'log_1',
     timestamp: new Date(new Date().getTime() - (1000 * 60 * 2)).toISOString(),
-    actor: { id: 'user_2', apelido: 'Fernanda', type: 'user' as const },
+    actor: { id: 'user_3', apelido: 'Lucas', type: 'user' as const },
     action: 'login',
     details: 'Usuário fez login com sucesso.',
   },
@@ -242,6 +242,13 @@ export const mockLogs = [
     actor: { id: 'user_1', apelido: 'Carlinhos', type: 'user' as const },
     action: 'prediction_update',
     details: 'Alterou palpite para o jogo Flamengo vs Palmeiras (ID: match_1) para 2x1.',
+  },
+   {
+    id: 'log_8',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 10)).toISOString(),
+    actor: { id: 'user_2', apelido: 'Fernanda', type: 'moderator' as const },
+    action: 'user_management',
+    details: 'Silenciou o usuário "Lanterna" (ID: user_8) por 24 horas por comportamento inadequado no chat.',
   },
   {
     id: 'log_3',
@@ -278,4 +285,4 @@ export const mockLogs = [
     action: 'emergency_message',
     details: 'Enviou uma mensagem de emergência para todos os usuários.',
   }
-];
+].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { mockLogs } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye } from 'lucide-react';
+import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -146,6 +147,8 @@ export default function AdminLogsPage() {
                                                 <div className="flex items-center gap-2">
                                                     {log.actor.type === 'admin' ? (
                                                         <Shield className="h-4 w-4 text-destructive" />
+                                                    ) : log.actor.type === 'moderator' ? (
+                                                        <ShieldCheck className="h-4 w-4 text-green-500" />
                                                     ) : (
                                                         <User className="h-4 w-4 text-muted-foreground" />
                                                     )}
