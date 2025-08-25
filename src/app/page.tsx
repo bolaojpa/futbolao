@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -93,9 +93,17 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button asChild className="w-full bg-primary hover:bg-primary/90">
-            <Link href="/dashboard">Entrar</Link>
-          </Button>
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button asChild className="w-full bg-primary hover:bg-primary/90">
+                    <Link href="/dashboard">Entrar como Usuário</Link>
+                </Button>
+                 <Button asChild className="w-full" variant="secondary">
+                    <Link href="/admin">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Entrar como Admin
+                    </Link>
+                </Button>
+            </div>
           <div className="text-center text-sm">
             Não tem uma conta?{' '}
             <Link href="/signup" className="font-semibold text-primary hover:underline">
