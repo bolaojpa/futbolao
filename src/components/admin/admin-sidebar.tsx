@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -35,10 +36,10 @@ export function AdminSidebar() {
   const menuItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/users', label: 'Usuários', icon: Users },
-    { href: '/admin/championships', label: 'Campeonatos', icon: Trophy },
-    { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
+    // { href: '/admin/championships', label: 'Campeonatos', icon: Trophy },
+    // { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
     { href: '/admin/logs', label: 'Logs de Atividades', icon: FileClock },
-    { href: '/admin/emergency-message', label: 'Aviso Urgente', icon: MessageSquareWarning },
+    // { href: '/admin/emergency-message', label: 'Aviso Urgente', icon: MessageSquareWarning },
   ];
   
   const bottomMenuItems = [
