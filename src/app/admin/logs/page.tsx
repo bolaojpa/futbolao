@@ -5,17 +5,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockLogs } from '@/lib/data';
-import type { Log } from '@/lib/data';
-import { format } from 'date-fns';
+import { mockLogs, Log } from '@/lib/data';
+import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck } from 'lucide-react';
+import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+
 
 const ITEMS_PER_PAGE = 10;
 
@@ -48,6 +50,8 @@ const FormattedDate = ({ dateString, formatString = "dd/MM/yyyy HH:mm:ss" }: { d
 };
 
 export default function AdminLogsPage() {
+    const { toast } = useToast();
+    const [logs, setLogs] = useState<Log[]>(mockLogs);
     const [filterType, setFilterType] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -55,14 +59,14 @@ export default function AdminLogsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     
     const filteredLogs = useMemo(() => {
-        return mockLogs.filter(log => {
+        return logs.filter(log => {
             const typeMatch = filterType === 'all' || log.action === filterType;
             const searchMatch = searchTerm === '' || 
                                 log.actor.apelido.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 (typeof log.details === 'string' && log.details.toLowerCase().includes(searchTerm.toLowerCase()));
             return typeMatch && searchMatch;
         });
-    }, [filterType, searchTerm]);
+    }, [filterType, searchTerm, logs]);
 
     const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
     const paginatedLogs = filteredLogs.slice(
@@ -76,9 +80,36 @@ export default function AdminLogsPage() {
         setSelectedLog(log);
         setIsModalOpen(true);
     };
+
+    const handleClearOldLogs = () => {
+        const thirtyDaysAgo = subDays(new Date(), 30);
+        const criticalActions = ['user_management', 'championship_create', 'emergency_message'];
+
+        const logsToKeep = logs.filter(log => {
+            const logDate = new Date(log.timestamp);
+            // Manter se for recente (últimos 30 dias) OU se for uma ação crítica de admin
+            return logDate > thirtyDaysAgo || (log.actor.type === 'admin' && criticalActions.includes(log.action));
+        });
+        
+        const logsRemovedCount = logs.length - logsToKeep.length;
+        setLogs(logsToKeep);
+        
+        if (logsRemovedCount > 0) {
+             toast({
+                title: "Limpeza Concluída!",
+                description: `${logsRemovedCount} registro(s) de log antigo(s) foram removidos.`,
+            });
+        } else {
+             toast({
+                title: "Nenhum Log Antigo",
+                description: "Não há logs com mais de 30 dias para serem limpos no momento.",
+                variant: "default",
+            });
+        }
+    };
     
     const renderLogDetails = (log: Log) => {
-        if (log.action === 'emergency_message' && typeof log.details === 'object') {
+        if (log.action === 'emergency_message' && typeof log.details === 'object' && log.details !== null) {
             const details = log.details as { title: string; message: string; target: string };
             return (
                 <div className="space-y-4">
@@ -118,40 +149,63 @@ export default function AdminLogsPage() {
 
             <Card>
                 <CardHeader>
-                    <div className="flex flex-col md:flex-row gap-4 justify-between">
-                         <CardTitle>Registros</CardTitle>
-                         <div className="flex gap-2">
-                             <div className="relative flex-1">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Buscar por usuário..."
-                                    className="pl-8 sm:w-[200px] md:w-[280px]"
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
-                                />
-                            </div>
-                             <Select value={filterType} onValueChange={(v) => {
-                                 setFilterType(v);
-                                 setCurrentPage(1);
-                             }}>
-                                <SelectTrigger className="w-full md:w-[200px]">
-                                    <SelectValue placeholder="Filtrar por ação" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Todas as Ações</SelectItem>
-                                    {uniqueActionTypes.map(action => (
-                                        <SelectItem key={action} value={action}>
-                                            {actionConfig[action as ActionType]?.label || action}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                         </div>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                        <div className="flex-1">
+                            <CardTitle>Registros</CardTitle>
+                            <CardDescription>Ações recentes realizadas no sistema.</CardDescription>
+                        </div>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="w-full sm:w-auto">
+                                    <Trash2 className="mr-2 h-4 w-4"/>
+                                    Limpar Logs Antigos
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta ação removerá permanentemente os registros de log com mais de 30 dias, exceto as ações críticas do administrador. Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleClearOldLogs}>Sim, limpar logs</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
+                     <div className="flex flex-col md:flex-row gap-2 pt-6">
+                         <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Buscar por usuário..."
+                                className="pl-8 w-full"
+                                value={searchTerm}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                            />
+                        </div>
+                         <Select value={filterType} onValueChange={(v) => {
+                             setFilterType(v);
+                             setCurrentPage(1);
+                         }}>
+                            <SelectTrigger className="w-full md:w-[200px]">
+                                <SelectValue placeholder="Filtrar por ação" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas as Ações</SelectItem>
+                                {uniqueActionTypes.map(action => (
+                                    <SelectItem key={action} value={action}>
+                                        {actionConfig[action as ActionType]?.label || action}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                     </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
