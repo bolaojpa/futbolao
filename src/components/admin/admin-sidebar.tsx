@@ -19,6 +19,7 @@ import {
   LogOut,
   Shield,
   MessageSquareWarning,
+  FileClock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -36,6 +37,7 @@ export function AdminSidebar() {
     { href: '/admin/users', label: 'Usuários', icon: Users },
     { href: '/admin/championships', label: 'Campeonatos', icon: Trophy },
     { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
+    { href: '/admin/logs', label: 'Logs de Atividades', icon: FileClock },
     { href: '/admin/emergency-message', label: 'Aviso Urgente', icon: MessageSquareWarning },
   ];
   

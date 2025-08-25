@@ -226,4 +226,56 @@ export const mockHallOfFame = [
         palpiteiroNome: 'Lucas',
         palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
     }
-]
+];
+
+export const mockLogs = [
+  {
+    id: 'log_1',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 2)).toISOString(),
+    actor: { id: 'user_2', apelido: 'Fernanda', type: 'user' as const },
+    action: 'login',
+    details: 'Usuário fez login com sucesso.',
+  },
+  {
+    id: 'log_2',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 5)).toISOString(),
+    actor: { id: 'user_1', apelido: 'Carlinhos', type: 'user' as const },
+    action: 'prediction_update',
+    details: 'Alterou palpite para o jogo Flamengo vs Palmeiras (ID: match_1) para 2x1.',
+  },
+  {
+    id: 'log_3',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 15)).toISOString(),
+    actor: { id: 'admin_1', apelido: 'Admin', type: 'admin' as const },
+    action: 'user_management',
+    details: 'Aprovou o cadastro do usuário "Gabi" (ID: user_7).',
+  },
+  {
+    id: 'log_4',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 30)).toISOString(),
+    actor: { id: 'admin_1', apelido: 'Admin', type: 'admin' as const },
+    action: 'championship_create',
+    details: 'Criou o novo campeonato "Copa América 2025" (ID: champ_3).',
+  },
+  {
+    id: 'log_5',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 45)).toISOString(),
+    actor: { id: 'user_4', apelido: 'Juliana', type: 'user' as const },
+    action: 'profile_update',
+    details: 'Atualizou o time do coração para "São Paulo FC".',
+  },
+  {
+    id: 'log_6',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 60)).toISOString(),
+    actor: { id: 'user_8', apelido: 'Lanterna', type: 'user' as const },
+    action: 'login_fail',
+    details: 'Tentativa de login falhou (senha incorreta).',
+  },
+  {
+    id: 'log_7',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 90)).toISOString(),
+    actor: { id: 'admin_1', apelido: 'Admin', type: 'admin' as const },
+    action: 'emergency_message',
+    details: 'Enviou uma mensagem de emergência para todos os usuários.',
+  }
+];
