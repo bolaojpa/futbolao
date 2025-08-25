@@ -7,13 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { mockLogs } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const ITEMS_PER_PAGE = 10;
+type Log = typeof mockLogs[0];
 
 const actionConfig = {
     login: { icon: LogIn, color: 'text-green-500', label: 'Login' },
@@ -29,12 +31,12 @@ const actionConfig = {
 type ActionType = keyof typeof actionConfig;
 
 // Componente para evitar erro de hidratação com datas
-const FormattedDate = ({ dateString }: { dateString: string }) => {
+const FormattedDate = ({ dateString, formatString = "dd/MM/yyyy HH:mm:ss" }: { dateString: string, formatString?: string }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
-      setFormattedDate(format(new Date(dateString), "dd/MM/yyyy HH:mm:ss", { locale: ptBR }));
-    }, [dateString]);
+      setFormattedDate(format(new Date(dateString), formatString, { locale: ptBR }));
+    }, [dateString, formatString]);
   
     if (!formattedDate) {
       return null; 
@@ -47,6 +49,8 @@ export default function AdminLogsPage() {
     const [filterType, setFilterType] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedLog, setSelectedLog] = useState<Log | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     
     const filteredLogs = useMemo(() => {
         return mockLogs.filter(log => {
@@ -65,6 +69,11 @@ export default function AdminLogsPage() {
     );
     
     const uniqueActionTypes = useMemo(() => [...new Set(mockLogs.map(log => log.action))], []);
+
+    const handleViewDetails = (log: Log) => {
+        setSelectedLog(log);
+        setIsModalOpen(true);
+    };
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -117,10 +126,10 @@ export default function AdminLogsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[200px]">Data e Hora</TableHead>
-                                <TableHead className="w-[180px]">Autor</TableHead>
-                                <TableHead className="w-[180px]">Ação</TableHead>
-                                <TableHead>Detalhes</TableHead>
+                                <TableHead className="hidden md:table-cell w-[180px]">Data e Hora</TableHead>
+                                <TableHead>Autor</TableHead>
+                                <TableHead>Ação</TableHead>
+                                <TableHead className="text-right w-[140px]">Opções</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -130,7 +139,7 @@ export default function AdminLogsPage() {
                                     const Icon = config.icon;
                                     return (
                                         <TableRow key={log.id}>
-                                            <TableCell className="font-mono text-xs">
+                                            <TableCell className="hidden md:table-cell font-mono text-xs">
                                                 <FormattedDate dateString={log.timestamp} />
                                             </TableCell>
                                             <TableCell>
@@ -140,7 +149,12 @@ export default function AdminLogsPage() {
                                                     ) : (
                                                         <User className="h-4 w-4 text-muted-foreground" />
                                                     )}
-                                                    <span className="font-medium">{log.actor.apelido}</span>
+                                                    <div className='flex flex-col'>
+                                                        <span className="font-medium">{log.actor.apelido}</span>
+                                                        <span className='md:hidden text-xs text-muted-foreground'>
+                                                            <FormattedDate dateString={log.timestamp} formatString="dd/MM/yy HH:mm" />
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -149,7 +163,12 @@ export default function AdminLogsPage() {
                                                     {config.label}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>{log.details}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="sm" onClick={() => handleViewDetails(log)}>
+                                                    <Eye className="h-4 w-4 mr-2"/>
+                                                    Ver Detalhes
+                                                </Button>
+                                            </TableCell>
                                         </TableRow>
                                     )
                                 })
@@ -188,6 +207,35 @@ export default function AdminLogsPage() {
                     </Button>
                 </div>
             )}
+            
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Detalhes do Log</DialogTitle>
+                    </DialogHeader>
+                    {selectedLog && (
+                         <div className="space-y-4 py-2">
+                             <div>
+                                 <h4 className="font-semibold text-sm text-muted-foreground">Data e Hora</h4>
+                                 <p><FormattedDate dateString={selectedLog.timestamp} /></p>
+                             </div>
+                             <div>
+                                 <h4 className="font-semibold text-sm text-muted-foreground">Autor</h4>
+                                 <p>{selectedLog.actor.apelido} ({selectedLog.actor.type})</p>
+                             </div>
+                             <div>
+                                 <h4 className="font-semibold text-sm text-muted-foreground">Ação</h4>
+                                 <p>{actionConfig[selectedLog.action as ActionType]?.label || 'Outra'}</p>
+                             </div>
+                             <div>
+                                 <h4 className="font-semibold text-sm text-muted-foreground">Detalhes</h4>
+                                 <p>{selectedLog.details}</p>
+                             </div>
+                         </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }
