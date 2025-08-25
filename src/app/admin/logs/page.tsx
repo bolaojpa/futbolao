@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -147,211 +148,220 @@ export default function AdminLogsPage() {
 
 
     return (
-        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
-            <div className="flex items-center gap-4 mb-8">
-                <FileClock className="h-8 w-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Logs de Atividades</h1>
-                    <p className="text-muted-foreground">Monitore todas as ações realizadas no sistema.</p>
-                </div>
-            </div>
-
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                        <div className="flex-1">
-                            <CardTitle>Registros</CardTitle>
-                            <CardDescription>Ações recentes realizadas no sistema.</CardDescription>
-                        </div>
-                         {selectedLogs.size > 0 && (
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full sm:w-auto">
-                                        <Trash2 className="mr-2 h-4 w-4"/>
-                                        Excluir Selecionados ({selectedLogs.size})
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Esta ação removerá permanentemente os {selectedLogs.size} registro(s) selecionado(s). Esta ação não pode ser desfeita.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir logs</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                         )}
+        <TooltipProvider>
+            <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
+                <div className="flex items-center gap-4 mb-8">
+                    <FileClock className="h-8 w-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline">Logs de Atividades</h1>
+                        <p className="text-muted-foreground">Monitore todas as ações realizadas no sistema.</p>
                     </div>
-                     <div className="flex flex-col md:flex-row gap-2 pt-6">
-                         <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Buscar por usuário..."
-                                className="pl-8 w-full"
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                            />
-                        </div>
-                         <Select value={filterType} onValueChange={(v) => {
-                             setFilterType(v);
-                             setCurrentPage(1);
-                         }}>
-                            <SelectTrigger className="w-full md:w-[200px]">
-                                <SelectValue placeholder="Filtrar por ação" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todas as Ações</SelectItem>
-                                {uniqueActionTypes.map(action => (
-                                    <SelectItem key={action} value={action}>
-                                        {actionConfig[action as ActionType]?.label || action}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                     </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-12">
-                                     <Checkbox 
-                                        onCheckedChange={handleSelectAllOnPage}
-                                        checked={paginatedLogs.length > 0 && paginatedLogs.every(l => selectedLogs.has(l.id))}
-                                        aria-label="Selecionar todos os logs nesta página"
-                                     />
-                                </TableHead>
-                                <TableHead className="hidden md:table-cell w-[180px]">Data e Hora</TableHead>
-                                <TableHead>Autor</TableHead>
-                                <TableHead>Ação</TableHead>
-                                <TableHead className="text-right w-[140px]">Opções</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {paginatedLogs.length > 0 ? (
-                                paginatedLogs.map(log => {
-                                    const config = actionConfig[log.action as ActionType] || actionConfig.default;
-                                    const Icon = config.icon;
-                                    return (
-                                        <TableRow key={log.id} data-state={selectedLogs.has(log.id) ? "selected" : ""}>
-                                            <TableCell>
-                                                <Checkbox 
-                                                    checked={selectedLogs.has(log.id)}
-                                                    onCheckedChange={() => handleSelectLog(log.id)}
-                                                    aria-label={`Selecionar log de ${log.actor.apelido}`}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="hidden md:table-cell font-mono text-xs">
-                                                <FormattedDate dateString={log.timestamp} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    {log.actor.type === 'admin' ? (
-                                                        <Shield className="h-4 w-4 text-destructive" />
-                                                    ) : log.actor.type === 'moderator' ? (
-                                                        <ShieldCheck className="h-4 w-4 text-green-500" />
-                                                    ) : (
-                                                        <User className="h-4 w-4 text-muted-foreground" />
-                                                    )}
-                                                    <div className='flex flex-col'>
-                                                        <span className="font-medium">{log.actor.apelido}</span>
-                                                        <span className='md:hidden text-xs text-muted-foreground'>
-                                                            <FormattedDate dateString={log.timestamp} formatString="dd/MM/yy HH:mm" />
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className={config.color}>
-                                                    <Icon className="h-3 w-3 mr-1.5" />
-                                                    {config.label}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => handleViewDetails(log)}>
-                                                    <Eye className="h-4 w-4 mr-2"/>
-                                                    Ver Detalhes
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
-                                        Nenhum registro encontrado para os filtros selecionados.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-            {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 mt-8">
-                    <Button 
-                        variant="outline"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                    >
-                        <ChevronLeft className="h-4 w-4 mr-2" />
-                        Anterior
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                        Página {currentPage} de {totalPages}
-                    </span>
-                    <Button 
-                        variant="outline"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Próximo
-                        <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
                 </div>
-            )}
-            
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Detalhes do Log</DialogTitle>
-                        <DialogDescription>Informações completas sobre a ação registrada.</DialogDescription>
-                    </DialogHeader>
-                    {selectedLog && (
-                         <div className="space-y-4 py-2">
-                             <div>
-                                 <h4 className="font-semibold text-sm text-muted-foreground">Data e Hora</h4>
-                                 <p><FormattedDate dateString={selectedLog.timestamp} /></p>
-                             </div>
-                              <Separator />
-                             <div>
-                                 <h4 className="font-semibold text-sm text-muted-foreground">Autor</h4>
-                                 <p>{selectedLog.actor.apelido} ({selectedLog.actor.type})</p>
-                             </div>
-                              <Separator />
-                             <div>
-                                 <h4 className="font-semibold text-sm text-muted-foreground">Ação</h4>
-                                 <p>{actionConfig[selectedLog.action as ActionType]?.label || 'Outra'}</p>
-                             </div>
-                             <Separator />
-                             <div>
-                                 <h4 className="font-semibold text-sm text-muted-foreground">Detalhes</h4>
-                                 {renderLogDetails(selectedLog)}
-                             </div>
-                         </div>
-                    )}
-                </DialogContent>
-            </Dialog>
 
-        </div>
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                            <div className="flex-1">
+                                <CardTitle>Registros</CardTitle>
+                                <CardDescription>Ações recentes realizadas no sistema.</CardDescription>
+                            </div>
+                            {selectedLogs.size > 0 && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full sm:w-auto">
+                                            <Trash2 className="mr-2 h-4 w-4"/>
+                                            Excluir Selecionados ({selectedLogs.size})
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta ação removerá permanentemente os {selectedLogs.size} registro(s) selecionado(s). Esta ação não pode ser desfeita.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir logs</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-2 pt-6">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Buscar por usuário..."
+                                    className="pl-8 w-full"
+                                    value={searchTerm}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                />
+                            </div>
+                            <Select value={filterType} onValueChange={(v) => {
+                                setFilterType(v);
+                                setCurrentPage(1);
+                            }}>
+                                <SelectTrigger className="w-full md:w-[200px]">
+                                    <SelectValue placeholder="Filtrar por ação" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas as Ações</SelectItem>
+                                    {uniqueActionTypes.map(action => (
+                                        <SelectItem key={action} value={action}>
+                                            {actionConfig[action as ActionType]?.label || action}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12">
+                                        <Checkbox 
+                                            onCheckedChange={handleSelectAllOnPage}
+                                            checked={paginatedLogs.length > 0 && paginatedLogs.every(l => selectedLogs.has(l.id))}
+                                            aria-label="Selecionar todos os logs nesta página"
+                                        />
+                                    </TableHead>
+                                    <TableHead className="hidden md:table-cell w-[180px]">Data e Hora</TableHead>
+                                    <TableHead>Autor</TableHead>
+                                    <TableHead>Ação</TableHead>
+                                    <TableHead className="text-right w-[140px]">Opções</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedLogs.length > 0 ? (
+                                    paginatedLogs.map(log => {
+                                        const config = actionConfig[log.action as ActionType] || actionConfig.default;
+                                        const Icon = config.icon;
+                                        return (
+                                            <TableRow key={log.id} data-state={selectedLogs.has(log.id) ? "selected" : ""}>
+                                                <TableCell>
+                                                    <Checkbox 
+                                                        checked={selectedLogs.has(log.id)}
+                                                        onCheckedChange={() => handleSelectLog(log.id)}
+                                                        aria-label={`Selecionar log de ${log.actor.apelido}`}
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="hidden md:table-cell font-mono text-xs">
+                                                    <FormattedDate dateString={log.timestamp} />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        {log.actor.type === 'admin' ? (
+                                                            <Shield className="h-4 w-4 text-destructive" />
+                                                        ) : log.actor.type === 'moderator' ? (
+                                                            <ShieldCheck className="h-4 w-4 text-green-500" />
+                                                        ) : (
+                                                            <User className="h-4 w-4 text-muted-foreground" />
+                                                        )}
+                                                        <div className='flex flex-col'>
+                                                            <span className="font-medium">{log.actor.apelido}</span>
+                                                            <span className='md:hidden text-xs text-muted-foreground'>
+                                                                <FormattedDate dateString={log.timestamp} formatString="dd/MM/yy HH:mm" />
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className={config.color}>
+                                                        <Icon className="h-3 w-3 mr-1.5" />
+                                                        {config.label}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="ghost" size="sm" onClick={() => handleViewDetails(log)}>
+                                                                <Eye className="h-4 w-4 md:mr-2"/>
+                                                                <span className="hidden md:inline">Ver Detalhes</span>
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Ver Detalhes</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center">
+                                            Nenhum registro encontrado para os filtros selecionados.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 mt-8">
+                        <Button 
+                            variant="outline"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-2" />
+                            Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                            Página {currentPage} de {totalPages}
+                        </span>
+                        <Button 
+                            variant="outline"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Próximo
+                            <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                    </div>
+                )}
+                
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Detalhes do Log</DialogTitle>
+                            <DialogDescription>Informações completas sobre a ação registrada.</DialogDescription>
+                        </DialogHeader>
+                        {selectedLog && (
+                            <div className="space-y-4 py-2">
+                                <div>
+                                    <h4 className="font-semibold text-sm text-muted-foreground">Data e Hora</h4>
+                                    <p><FormattedDate dateString={selectedLog.timestamp} /></p>
+                                </div>
+                                <Separator />
+                                <div>
+                                    <h4 className="font-semibold text-sm text-muted-foreground">Autor</h4>
+                                    <p>{selectedLog.actor.apelido} ({selectedLog.actor.type})</p>
+                                </div>
+                                <Separator />
+                                <div>
+                                    <h4 className="font-semibold text-sm text-muted-foreground">Ação</h4>
+                                    <p>{actionConfig[selectedLog.action as ActionType]?.label || 'Outra'}</p>
+                                </div>
+                                <Separator />
+                                <div>
+                                    <h4 className="font-semibold text-sm text-muted-foreground">Detalhes</h4>
+                                    {renderLogDetails(selectedLog)}
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
+            </div>
+        </TooltipProvider>
     );
 }
