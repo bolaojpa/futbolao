@@ -6,9 +6,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { mockLogs, Log } from '@/lib/data';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck, Trash2 } from 'lucide-react';
+import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck, Trash2, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -29,6 +30,7 @@ const actionConfig = {
     user_management: { icon: Shield, color: 'text-amber-500', label: 'Gestão de Usuário' },
     championship_create: { icon: Trophy, color: 'text-yellow-600', label: 'Campeonato' },
     emergency_message: { icon: MessageSquareWarning, color: 'text-red-600', label: 'Aviso Urgente' },
+    ai_notification: { icon: Bot, color: 'text-teal-500', label: 'Notificação de IA' },
     default: { icon: FileClock, color: 'text-muted-foreground', label: 'Outro' },
 };
 
@@ -57,6 +59,7 @@ export default function AdminLogsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedLog, setSelectedLog] = useState<Log | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedLogs, setSelectedLogs] = useState<Set<string>>(new Set());
     
     const filteredLogs = useMemo(() => {
         return logs.filter(log => {
@@ -81,36 +84,42 @@ export default function AdminLogsPage() {
         setIsModalOpen(true);
     };
 
-    const handleClearOldLogs = () => {
-        const thirtyDaysAgo = subDays(new Date(), 30);
-        const criticalActions = ['user_management', 'championship_create', 'emergency_message'];
-
-        const logsToKeep = logs.filter(log => {
-            const logDate = new Date(log.timestamp);
-            // Manter se for recente (últimos 30 dias) OU se for uma ação crítica de admin
-            return logDate > thirtyDaysAgo || (log.actor.type === 'admin' && criticalActions.includes(log.action));
+    const handleSelectLog = (logId: string) => {
+        setSelectedLogs(prev => {
+            const newSelection = new Set(prev);
+            if (newSelection.has(logId)) {
+                newSelection.delete(logId);
+            } else {
+                newSelection.add(logId);
+            }
+            return newSelection;
         });
-        
-        const logsRemovedCount = logs.length - logsToKeep.length;
-        setLogs(logsToKeep);
-        
-        if (logsRemovedCount > 0) {
-             toast({
-                title: "Limpeza Concluída!",
-                description: `${logsRemovedCount} registro(s) de log antigo(s) foram removidos.`,
-            });
+    };
+
+    const handleSelectAllOnPage = (checked: boolean | 'indeterminate') => {
+        if (checked) {
+            setSelectedLogs(prev => new Set([...prev, ...paginatedLogs.map(l => l.id)]));
         } else {
-             toast({
-                title: "Nenhum Log Antigo",
-                description: "Não há logs com mais de 30 dias para serem limpos no momento.",
-                variant: "default",
+             setSelectedLogs(prev => {
+                const newSelection = new Set(prev);
+                paginatedLogs.forEach(l => newSelection.delete(l.id));
+                return newSelection;
             });
         }
     };
+
+    const handleDeleteSelected = () => {
+        setLogs(prev => prev.filter(log => !selectedLogs.has(log.id)));
+        toast({
+            title: "Logs Excluídos",
+            description: `${selectedLogs.size} registro(s) de log foram removidos permanentemente.`,
+        });
+        setSelectedLogs(new Set());
+    };
     
     const renderLogDetails = (log: Log) => {
-        if (log.action === 'emergency_message' && typeof log.details === 'object' && log.details !== null) {
-            const details = log.details as { title: string; message: string; target: string };
+        if ((log.action === 'emergency_message' || log.action === 'ai_notification') && typeof log.details === 'object' && log.details !== null) {
+            const details = log.details as { title: string; message: string; target?: string };
             return (
                 <div className="space-y-4">
                     <div className='bg-muted p-3 rounded-md'>
@@ -121,10 +130,10 @@ export default function AdminLogsPage() {
                         <h4 className="font-semibold text-sm">Conteúdo da Mensagem</h4>
                         <p className="text-sm whitespace-pre-wrap">{details.message}</p>
                     </div>
-                     <div className='bg-muted p-3 rounded-md'>
+                     {details.target && (<div className='bg-muted p-3 rounded-md'>
                         <h4 className="font-semibold text-sm">Alvo</h4>
                         <p className="text-sm capitalize">{details.target}</p>
-                    </div>
+                    </div>)}
                 </div>
             );
         }
@@ -154,26 +163,28 @@ export default function AdminLogsPage() {
                             <CardTitle>Registros</CardTitle>
                             <CardDescription>Ações recentes realizadas no sistema.</CardDescription>
                         </div>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="w-full sm:w-auto">
-                                    <Trash2 className="mr-2 h-4 w-4"/>
-                                    Limpar Logs Antigos
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esta ação removerá permanentemente os registros de log com mais de 30 dias, exceto as ações críticas do administrador. Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleClearOldLogs}>Sim, limpar logs</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                         {selectedLogs.size > 0 && (
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full sm:w-auto">
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        Excluir Selecionados ({selectedLogs.size})
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta ação removerá permanentemente os {selectedLogs.size} registro(s) selecionado(s). Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir logs</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                         )}
                     </div>
                      <div className="flex flex-col md:flex-row gap-2 pt-6">
                          <div className="relative flex-1">
@@ -211,6 +222,13 @@ export default function AdminLogsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-12">
+                                     <Checkbox 
+                                        onCheckedChange={handleSelectAllOnPage}
+                                        checked={paginatedLogs.length > 0 && paginatedLogs.every(l => selectedLogs.has(l.id))}
+                                        aria-label="Selecionar todos os logs nesta página"
+                                     />
+                                </TableHead>
                                 <TableHead className="hidden md:table-cell w-[180px]">Data e Hora</TableHead>
                                 <TableHead>Autor</TableHead>
                                 <TableHead>Ação</TableHead>
@@ -223,7 +241,14 @@ export default function AdminLogsPage() {
                                     const config = actionConfig[log.action as ActionType] || actionConfig.default;
                                     const Icon = config.icon;
                                     return (
-                                        <TableRow key={log.id}>
+                                        <TableRow key={log.id} data-state={selectedLogs.has(log.id) ? "selected" : ""}>
+                                            <TableCell>
+                                                <Checkbox 
+                                                    checked={selectedLogs.has(log.id)}
+                                                    onCheckedChange={() => handleSelectLog(log.id)}
+                                                    aria-label={`Selecionar log de ${log.actor.apelido}`}
+                                                />
+                                            </TableCell>
                                             <TableCell className="hidden md:table-cell font-mono text-xs">
                                                 <FormattedDate dateString={log.timestamp} />
                                             </TableCell>
@@ -261,7 +286,7 @@ export default function AdminLogsPage() {
                                 })
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
+                                    <TableCell colSpan={5} className="h-24 text-center">
                                         Nenhum registro encontrado para os filtros selecionados.
                                     </TableCell>
                                 </TableRow>

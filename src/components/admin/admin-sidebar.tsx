@@ -46,9 +46,9 @@ export function AdminSidebar() {
   ]
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon" className="border-r border-sidebar-border bg-destructive/10 dark:bg-destructive/5">
+    <Sidebar variant="sidebar" collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-4 justify-center items-center">
-         <Shield className="w-8 h-8 text-destructive group-data-[state=collapsed]:w-6 group-data-[state=collapsed]:h-6 transition-all" />
+         <Shield className="w-8 h-8 text-primary group-data-[state=collapsed]:w-6 group-data-[state=collapsed]:h-6 transition-all" />
         <span className="font-bold text-lg text-sidebar-foreground group-data-[state=collapsed]:hidden">
           Admin
         </span>

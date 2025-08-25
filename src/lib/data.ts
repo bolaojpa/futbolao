@@ -263,6 +263,17 @@ export const mockLogs: Log[] = [
     details: 'Silenciou o usuário "Lanterna" (ID: user_8) por 24 horas por comportamento inadequado no chat.',
   },
   {
+    id: 'log_9',
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 12)).toISOString(),
+    actor: { id: 'system', apelido: 'IA', type: 'admin' as const },
+    action: 'ai_notification',
+    details: {
+        title: 'Você subiu no ranking!',
+        message: 'Parabéns! Você agora está na 3ª posição.',
+        target: 'Carlinhos (user_1)'
+    },
+  },
+  {
     id: 'log_3',
     timestamp: new Date(new Date().getTime() - (1000 * 60 * 15)).toISOString(),
     actor: { id: 'admin_1', apelido: 'Admin', type: 'admin' as const },
@@ -271,21 +282,21 @@ export const mockLogs: Log[] = [
   },
   {
     id: 'log_4',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 30)).toISOString(),
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 60 * 24 * 35)).toISOString(),
     actor: { id: 'admin_1', apelido: 'Admin', type: 'admin' as const },
     action: 'championship_create',
     details: 'Criou o novo campeonato "Copa América 2025" (ID: champ_3).',
   },
   {
     id: 'log_5',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 45)).toISOString(),
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 60 * 24 * 40)).toISOString(),
     actor: { id: 'user_4', apelido: 'Juliana', type: 'user' as const },
     action: 'profile_update',
     details: 'Atualizou o time do coração para "São Paulo FC".',
   },
   {
     id: 'log_6',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 60)).toISOString(),
+    timestamp: new Date(new Date().getTime() - (1000 * 60 * 60 * 24 * 50)).toISOString(),
     actor: { id: 'user_8', apelido: 'Lanterna', type: 'user' as const },
     action: 'login_fail',
     details: 'Tentativa de login falhou (senha incorreta).',
