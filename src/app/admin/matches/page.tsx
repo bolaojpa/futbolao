@@ -216,67 +216,17 @@ export default function AdminMatchesPage() {
                                     const hasChanged = score.placarA !== originalPlacarA || score.placarB !== originalPlacarB;
 
                                     return (
-                                        <Card key={match.id}>
-                                            <CardContent className="p-4 flex items-center justify-between gap-4">
-                                                {/* Times e placar */}
-                                                <div className="flex-1 flex items-center justify-around gap-2">
-                                                    <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                        <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Image src="https://placehold.co/128x128.png" alt={match.timeA} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent><p>{match.timeA}</p></TooltipContent>
-                                                        </Tooltip>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <Input 
-                                                            type="number" 
-                                                            className="w-16 h-12 text-center text-2xl font-bold" 
-                                                            value={score.placarA}
-                                                            onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
-                                                            min="0"
-                                                        />
-                                                        <span className="font-bold text-muted-foreground text-lg">x</span>
-                                                        <Input 
-                                                            type="number" 
-                                                            className="w-16 h-12 text-center text-2xl font-bold" 
-                                                            value={score.placarB}
-                                                            onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
-                                                            min="0"
-                                                        />
-                                                    </div>
-                                                    
-                                                    <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Image src="https://placehold.co/128x128.png" alt={match.timeB} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent><p>{match.timeB}</p></TooltipContent>
-                                                        </Tooltip>
-                                                        <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Info e Ações */}
-                                                <div className="flex items-center gap-4">
-                                                    <div className="text-center w-28">
-                                                        <div className="flex justify-center">
-                                                            <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm">
-                                                                <Save className="mr-2 h-4 w-4" />
-                                                                Salvar
-                                                            </Button>
-                                                        </div>
-                                                        <Badge variant={getStatusVariant(match.status)} className={cn('mt-2', match.status === 'Ao Vivo' && 'animate-pulse')}>
-                                                            {match.status}
-                                                        </Badge>
-                                                    </div>
-
+                                        <Card key={match.id} className="relative overflow-visible">
+                                            <CardContent className="p-4 flex flex-col items-center justify-center gap-2">
+                                                {/* Status e Ações Absolutos */}
+                                                <Badge variant={getStatusVariant(match.status)} className={cn('absolute -top-3 left-3 z-10', match.status === 'Ao Vivo' && 'animate-pulse')}>
+                                                    {match.status}
+                                                </Badge>
+                                                <div className="absolute -top-3 right-3 z-10">
                                                     <AlertDialog>
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon">
+                                                                <Button variant="ghost" size="icon" className="bg-background hover:bg-muted rounded-full h-8 w-8">
                                                                     <MoreHorizontal className="h-5 w-5" />
                                                                     <span className="sr-only">Abrir menu</span>
                                                                 </Button>
@@ -308,10 +258,63 @@ export default function AdminMatchesPage() {
                                                         </AlertDialogContent>
                                                     </AlertDialog>
                                                 </div>
-                                            </CardContent>
-                                             <CardFooter className="bg-muted/50 p-2 text-center text-xs text-muted-foreground">
+
+                                                {/* Conteúdo Centralizado */}
+                                                <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
                                                 <FormattedDate dateString={match.data} />
-                                            </CardFooter>
+                                                
+                                                <div className="flex items-center justify-around gap-2 w-full mt-4">
+                                                    {/* Time A */}
+                                                    <div className='flex-1 flex flex-col items-center justify-center gap-2'>
+                                                         <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Image src="https://placehold.co/128x128.png" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{match.timeA}</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <span className="font-bold text-lg text-center truncate w-full">{match.timeA}</span>
+                                                    </div>
+
+                                                    {/* Placar */}
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Input 
+                                                            type="number" 
+                                                            className="w-16 h-12 text-center text-2xl font-bold" 
+                                                            value={score.placarA}
+                                                            onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
+                                                            min="0"
+                                                        />
+                                                        <span className="font-bold text-muted-foreground text-lg">x</span>
+                                                        <Input 
+                                                            type="number" 
+                                                            className="w-16 h-12 text-center text-2xl font-bold" 
+                                                            value={score.placarB}
+                                                            onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
+                                                            min="0"
+                                                        />
+                                                    </div>
+                                                    
+                                                    {/* Time B */}
+                                                    <div className='flex-1 flex flex-col items-center justify-center gap-2'>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Image src="https://placehold.co/128x128.png" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{match.timeB}</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <span className="font-bold text-lg text-center truncate w-full">{match.timeB}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="h-4 mt-2">
+                                                     {/* Espaço para informação de alteração, se necessário */}
+                                                </div>
+                                                
+                                                <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm">
+                                                    <Save className="mr-2 h-4 w-4" />
+                                                    Salvar Placar
+                                                </Button>
+                                            </CardContent>
                                         </Card>
                                     )
                                 })}
@@ -337,3 +340,5 @@ export default function AdminMatchesPage() {
         </TooltipProvider>
     );
 }
+
+    
