@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -23,23 +22,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 // Componente para evitar erro de hidratação com datas
-const FormattedDate = ({ dateString }: { dateString: string }) => {
+const FormattedDate = ({ dateString, formatString = "dd/MM/yyyy 'às' HH:mm" }: { dateString: string, formatString?: string }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
         try {
             const date = parseISO(dateString);
-            setFormattedDate(format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }));
+            setFormattedDate(format(date, formatString, { locale: ptBR }));
         } catch (error) {
             setFormattedDate("Data inválida");
         }
-    }, [dateString]);
+    }, [dateString, formatString]);
   
     if (!formattedDate) {
         return null; 
     }
   
-    return <>{formattedDate}</>;
+    return <span className='text-sm text-muted-foreground'>{formattedDate}</span>;
 };
 
 export default function AdminMatchesPage() {
@@ -166,9 +165,9 @@ export default function AdminMatchesPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    {selectedChampionshipId && (
+                     {selectedChampionshipId && (
                         <div className="self-end">
-                            <MatchForm
+                             <MatchForm
                                 isOpen={isFormOpen}
                                 setIsOpen={setIsFormOpen}
                                 onSubmit={handleFormSubmit}
@@ -179,118 +178,111 @@ export default function AdminMatchesPage() {
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adicionar Partida
                                 </Button>
-                            </MatchForm>
+                             </MatchForm>
                         </div>
                     )}
                 </div>
-
-                {selectedChampionshipId ? (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>
+                
+                 {selectedChampionshipId ? (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-baseline">
+                            <h2 className="text-2xl font-bold font-headline">
                                 Partidas de {mockChampionships.find(c => c.id === selectedChampionshipId)?.nome}
-                            </CardTitle>
-                            <CardDescription>
-                                Total de {filteredMatches.length} partidas encontradas.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Confronto</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Data</TableHead>
-                                        <TableHead className="hidden md:table-cell">Fase</TableHead>
-                                        <TableHead className="text-center">Status</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredMatches.length > 0 ? (
-                                        filteredMatches.map(match => (
-                                            <TableRow key={match.id}>
-                                                <TableCell className="font-medium">
-                                                    <div className="flex items-center gap-3">
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Image src="https://placehold.co/40x40.png" alt={match.timeA} width={24} height={24} className="rounded-full" data-ai-hint="team logo" />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent><p>{match.timeA}</p></TooltipContent>
-                                                        </Tooltip>
-                                                        <span className="hidden sm:inline truncate">{match.timeA}</span>
-                                                        <span className="text-muted-foreground text-xs">vs</span>
-                                                        <span className="hidden sm:inline truncate">{match.timeB}</span>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Image src="https://placehold.co/40x40.png" alt={match.timeB} width={24} height={24} className="rounded-full" data-ai-hint="team logo" />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent><p>{match.timeB}</p></TooltipContent>
-                                                        </Tooltip>
-                                                    </div>
-                                                    <div className="text-muted-foreground text-xs md:hidden mt-1">{match.fase}</div>
-                                                </TableCell>
-                                                <TableCell className="hidden sm:table-cell">
-                                                    <FormattedDate dateString={match.data} />
-                                                </TableCell>
-                                                <TableCell className="hidden md:table-cell">{match.fase}</TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant={getStatusVariant(match.status)} className={cn(match.status === 'Ao Vivo' && 'animate-pulse')}>
-                                                        {match.status}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <AlertDialog>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                    <span className="sr-only">Abrir menu</span>
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => openScoreModal(match)}>
-                                                                    <Eye className="mr-2 h-4 w-4" />
-                                                                    Atualizar Placar
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleEdit(match)}>
-                                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                                    Editar Partida
-                                                                </DropdownMenuItem>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                                        Excluir
-                                                                    </DropdownMenuItem>
-                                                                </AlertDialogTrigger>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                A partida <strong>{match.timeA} vs {match.timeB}</strong> será removida permanentemente. Esta ação não pode ser desfeita.
-                                                            </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDelete(match.id)}>Sim, excluir</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="h-24 text-center">
-                                                Nenhuma partida encontrada para este campeonato.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                            </h2>
+                             <p className="text-sm text-muted-foreground">
+                                {filteredMatches.length} partidas encontradas.
+                            </p>
+                        </div>
+                        
+                        {filteredMatches.length > 0 ? (
+                            filteredMatches.map(match => (
+                                <Card key={match.id}>
+                                    <CardContent className="flex items-center justify-between p-4">
+                                        <div className="flex items-center gap-4 flex-1">
+                                            <div className="flex items-center justify-center gap-3 md:gap-4">
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Image src="https://placehold.co/128x128.png" alt={match.timeA} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent><p>{match.timeA}</p></TooltipContent>
+                                                </Tooltip>
+                                                <div className="hidden sm:block text-center">
+                                                    <p className="font-bold">{match.timeA}</p>
+                                                    <p className="text-muted-foreground text-xs">vs</p>
+                                                    <p className="font-bold">{match.timeB}</p>
+                                                </div>
+                                                 <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Image src="https://placehold.co/128x128.png" alt={match.timeB} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent><p>{match.timeB}</p></TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                            <div className="border-l pl-4 ml-4">
+                                                <p className="font-semibold text-primary">{match.fase}</p>
+                                                <FormattedDate dateString={match.data} />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-center">
+                                                <p className="font-bold text-2xl tracking-tighter">
+                                                    {match.placarA ?? '-'} x {match.placarB ?? '-'}
+                                                </p>
+                                                <Badge variant={getStatusVariant(match.status)} className={cn('mt-1', match.status === 'Ao Vivo' && 'animate-pulse')}>
+                                                    {match.status}
+                                                </Badge>
+                                            </div>
+                                            <AlertDialog>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <MoreHorizontal className="h-5 w-5" />
+                                                            <span className="sr-only">Abrir menu</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => openScoreModal(match)}>
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            Atualizar Placar
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleEdit(match)}>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Editar Partida
+                                                        </DropdownMenuItem>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Excluir
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        A partida <strong>{match.timeA} vs {match.timeB}</strong> será removida permanentemente. Esta ação não pode ser desfeita.
+                                                    </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(match.id)}>Sim, excluir</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        ) : (
+                            <Card className="flex flex-col items-center justify-center p-10 border-dashed">
+                                <p className="text-center text-muted-foreground">
+                                    Nenhuma partida encontrada para este campeonato.
+                                </p>
+                            </Card>
+                        )}
+                    </div>
                 ) : (
                     <Card className="flex flex-col items-center justify-center p-10 border-dashed">
                         <ShieldAlert className="h-16 w-16 text-muted-foreground/50" />
@@ -349,4 +341,5 @@ export default function AdminMatchesPage() {
 
         </TooltipProvider>
     );
-}
+
+    
