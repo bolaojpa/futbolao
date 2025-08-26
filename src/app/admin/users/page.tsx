@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -126,234 +127,243 @@ export default function AdminUsersPage() {
     };
 
     return (
-        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
-            <div className="flex items-center gap-4 mb-8">
-                <Users className="h-8 w-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Gerenciamento de Usuários</h1>
-                    <p className="text-muted-foreground">Aprove, bloqueie e gerencie os participantes do bolão.</p>
+        <TooltipProvider>
+            <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
+                <div className="flex items-center gap-4 mb-8">
+                    <Users className="h-8 w-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline">Gerenciamento de Usuários</h1>
+                        <p className="text-muted-foreground">Aprove, bloqueie e gerencie os participantes do bolão.</p>
+                    </div>
                 </div>
-            </div>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                        <div className="flex-1">
-                            <CardTitle>Lista de Usuários</CardTitle>
-                            <CardDescription>
-                                Um total de {users.length} usuários cadastrados.
-                            </CardDescription>
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                            <div className="flex-1">
+                                <CardTitle>Lista de Usuários</CardTitle>
+                                <CardDescription>
+                                    Um total de {users.length} usuários cadastrados.
+                                </CardDescription>
+                            </div>
+                            {selectedUsers.size > 0 && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full sm:w-auto">
+                                            <Trash2 className="mr-2 h-4 w-4"/>
+                                            Excluir Selecionados ({selectedUsers.size})
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta ação removerá permanentemente os {selectedUsers.size} usuário(s) selecionado(s). Esta ação não pode ser desfeita.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir usuários</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
                         </div>
-                        {selectedUsers.size > 0 && (
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full sm:w-auto">
-                                        <Trash2 className="mr-2 h-4 w-4"/>
-                                        Excluir Selecionados ({selectedUsers.size})
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Esta ação removerá permanentemente os {selectedUsers.size} usuário(s) selecionado(s). Esta ação não pode ser desfeita.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir usuários</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                    </div>
-                     <div className="flex flex-col md:flex-row gap-2 pt-6">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Buscar por nome ou apelido..."
-                                className="pl-8 w-full"
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                            />
+                        <div className="flex flex-col md:flex-row gap-2 pt-6">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Buscar por nome ou apelido..."
+                                    className="pl-8 w-full"
+                                    value={searchTerm}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                />
+                            </div>
+                            <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Filtrar por status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos os Status</SelectItem>
+                                    <SelectItem value="ativo">Ativos</SelectItem>
+                                    <SelectItem value="pendente">Pendentes</SelectItem>
+                                    <SelectItem value="bloqueado">Bloqueados</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={filterRole} onValueChange={(v) => { setFilterRole(v); setCurrentPage(1); }}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Filtrar por função" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas as Funções</SelectItem>
+                                    <SelectItem value="usuario">Usuários</SelectItem>
+                                    <SelectItem value="moderador">Moderadores</SelectItem>
+                                    <SelectItem value="admin">Admins</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
-                            <SelectTrigger className="w-full md:w-[180px]">
-                                <SelectValue placeholder="Filtrar por status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos os Status</SelectItem>
-                                <SelectItem value="ativo">Ativos</SelectItem>
-                                <SelectItem value="pendente">Pendentes</SelectItem>
-                                <SelectItem value="bloqueado">Bloqueados</SelectItem>
-                            </SelectContent>
-                        </Select>
-                         <Select value={filterRole} onValueChange={(v) => { setFilterRole(v); setCurrentPage(1); }}>
-                            <SelectTrigger className="w-full md:w-[180px]">
-                                <SelectValue placeholder="Filtrar por função" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todas as Funções</SelectItem>
-                                <SelectItem value="usuario">Usuários</SelectItem>
-                                <SelectItem value="moderador">Moderadores</SelectItem>
-                                <SelectItem value="admin">Admins</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-12">
-                                     <Checkbox 
-                                        onCheckedChange={handleSelectAllOnPage}
-                                        checked={paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUsers.has(u.id))}
-                                        aria-label="Selecionar todos os usuários nesta página"
-                                    />
-                                </TableHead>
-                                <TableHead>Usuário</TableHead>
-                                <TableHead className="hidden sm:table-cell">Função</TableHead>
-                                <TableHead className="hidden md:table-cell">Data de Cadastro</TableHead>
-                                <TableHead className="text-center">Status</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {paginatedUsers.length > 0 ? (
-                                paginatedUsers.map(user => {
-                                    const RoleIcon = roleConfig[user.funcao].icon;
-                                    return (
-                                        <TableRow key={user.id} data-state={selectedUsers.has(user.id) ? "selected" : ""}>
-                                            <TableCell>
-                                                 <Checkbox 
-                                                    checked={selectedUsers.has(user.id)}
-                                                    onCheckedChange={() => handleSelectUser(user.id)}
-                                                    aria-label={`Selecionar usuário ${user.apelido}`}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="relative">
-                                                        <Avatar className="w-9 h-9">
-                                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                            <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <StatusIndicator status={user.presenceStatus} />
-                                                    </div>
-                                                    <div>
-                                                        <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido}</Link>
-                                                        <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
-                                                        <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
-                                                            <Mail className="w-3 h-3" />
-                                                            <span>{user.email}</span>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12">
+                                        <Checkbox 
+                                            onCheckedChange={handleSelectAllOnPage}
+                                            checked={paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUsers.has(u.id))}
+                                            aria-label="Selecionar todos os usuários nesta página"
+                                        />
+                                    </TableHead>
+                                    <TableHead>Usuário</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Função</TableHead>
+                                    <TableHead className="hidden md:table-cell">Data de Cadastro</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedUsers.length > 0 ? (
+                                    paginatedUsers.map(user => {
+                                        const RoleIcon = roleConfig[user.funcao].icon;
+                                        return (
+                                            <TableRow key={user.id} data-state={selectedUsers.has(user.id) ? "selected" : ""}>
+                                                <TableCell>
+                                                    <Checkbox 
+                                                        checked={selectedUsers.has(user.id)}
+                                                        onCheckedChange={() => handleSelectUser(user.id)}
+                                                        aria-label={`Selecionar usuário ${user.apelido}`}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="relative">
+                                                                    <Avatar className="w-9 h-9">
+                                                                        <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                        <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <StatusIndicator status={user.presenceStatus} />
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>{user.email}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                        <div>
+                                                            <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido}</Link>
+                                                            <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
+                                                            <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
+                                                                <Mail className="w-3 h-3" />
+                                                                <span>{user.email}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">
-                                                <Badge variant="outline">
-                                                    <RoleIcon className="h-4 w-4 mr-1.5" />
-                                                    {roleConfig[user.funcao].label}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="hidden md:table-cell">
-                                                <FormattedDate dateString={user.dataCadastro} />
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Badge variant="secondary" className="font-normal">
-                                                    <div className={`w-2 h-2 rounded-full mr-2 ${statusConfig[user.status].color}`} />
-                                                    {statusConfig[user.status].label}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                            <span className="sr-only">Abrir menu</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuSeparator />
-                                                        {user.status === 'pendente' && (
-                                                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
-                                                                <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-                                                                <span>Aprovar Cadastro</span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {user.status === 'ativo' && user.funcao !== 'admin' && (
-                                                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'bloqueado')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                                                <UserX className="mr-2 h-4 w-4" />
-                                                                <span>Bloquear Usuário</span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                         {user.status === 'bloqueado' && (
-                                                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
-                                                                <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-                                                                <span>Desbloquear Usuário</span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        <DropdownMenuSeparator />
-                                                        {user.funcao === 'usuario' && (
-                                                             <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'moderador')}>
-                                                                <ShieldCheck className="mr-2 h-4 w-4 text-blue-500"/>
-                                                                <span>Promover a Moderador</span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {user.funcao === 'moderador' && (
-                                                             <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'usuario')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                                                <ShieldX className="mr-2 h-4 w-4" />
-                                                                <span>Rebaixar a Usuário</span>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
-                                        Nenhum usuário encontrado para os filtros selecionados.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                                </TableCell>
+                                                <TableCell className="hidden sm:table-cell">
+                                                    <Badge variant="outline">
+                                                        <RoleIcon className="h-4 w-4 mr-1.5" />
+                                                        {roleConfig[user.funcao].label}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="hidden md:table-cell">
+                                                    <FormattedDate dateString={user.dataCadastro} />
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant="secondary" className="font-normal">
+                                                        <div className={`w-2 h-2 rounded-full mr-2 ${statusConfig[user.status].color}`} />
+                                                        {statusConfig[user.status].label}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Abrir menu</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            {user.status === 'pendente' && (
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
+                                                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                                                    <span>Aprovar Cadastro</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {user.status === 'ativo' && user.funcao !== 'admin' && (
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'bloqueado')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                                                    <UserX className="mr-2 h-4 w-4" />
+                                                                    <span>Bloquear Usuário</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {user.status === 'bloqueado' && (
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
+                                                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                                                    <span>Desbloquear Usuário</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            <DropdownMenuSeparator />
+                                                            {user.funcao === 'usuario' && (
+                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'moderador')}>
+                                                                    <ShieldCheck className="mr-2 h-4 w-4 text-blue-500"/>
+                                                                    <span>Promover a Moderador</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {user.funcao === 'moderador' && (
+                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'usuario')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                                                    <ShieldX className="mr-2 h-4 w-4" />
+                                                                    <span>Rebaixar a Usuário</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-24 text-center">
+                                            Nenhum usuário encontrado para os filtros selecionados.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
 
-             {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 mt-8">
-                    <Button 
-                        variant="outline"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                    >
-                        <ChevronLeft className="h-4 w-4 mr-2" />
-                        Anterior
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                        Página {currentPage} de {totalPages}
-                    </span>
-                    <Button 
-                        variant="outline"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Próximo
-                        <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                </div>
-            )}
-        </div>
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 mt-8">
+                        <Button 
+                            variant="outline"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-2" />
+                            Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                            Página {currentPage} de {totalPages}
+                        </span>
+                        <Button 
+                            variant="outline"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Próximo
+                            <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </TooltipProvider>
     );
 }
 
