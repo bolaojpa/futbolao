@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { mockUsers, UserType } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash } from 'lucide-react';
+import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { StatusIndicator } from '@/components/shared/status-indicator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
+
+const ITEMS_PER_PAGE = 10;
 
 const statusConfig = {
     ativo: { label: 'Ativo', color: 'bg-green-500', icon: CheckCircle },
@@ -49,7 +54,10 @@ export default function AdminUsersPage() {
     const { toast } = useToast();
     const [users, setUsers] = useState<UserType[]>(mockUsers);
     const [filterStatus, setFilterStatus] = useState('all');
+    const [filterRole, setFilterRole] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
     const handleStatusChange = (userId: string, newStatus: UserType['status']) => {
         setUsers(prev => prev.map(user => user.id === userId ? { ...user, status: newStatus } : user));
@@ -70,12 +78,52 @@ export default function AdminUsersPage() {
     const filteredUsers = useMemo(() => {
         return users.filter(user => {
             const statusMatch = filterStatus === 'all' || user.status === filterStatus;
+            const roleMatch = filterRole === 'all' || user.funcao === filterRole;
             const searchMatch = searchTerm === '' || 
                                 user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 user.apelido.toLowerCase().includes(searchTerm.toLowerCase());
-            return statusMatch && searchMatch;
+            return statusMatch && roleMatch && searchMatch;
         }).sort((a, b) => new Date(b.dataCadastro).getTime() - new Date(a.dataCadastro).getTime());
-    }, [filterStatus, searchTerm, users]);
+    }, [filterStatus, filterRole, searchTerm, users]);
+
+    const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+    const paginatedUsers = filteredUsers.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    );
+
+    const handleSelectUser = (userId: string) => {
+        setSelectedUsers(prev => {
+            const newSelection = new Set(prev);
+            if (newSelection.has(userId)) {
+                newSelection.delete(userId);
+            } else {
+                newSelection.add(userId);
+            }
+            return newSelection;
+        });
+    };
+
+    const handleSelectAllOnPage = (checked: boolean | 'indeterminate') => {
+        if (checked) {
+            setSelectedUsers(prev => new Set([...prev, ...paginatedUsers.map(u => u.id)]));
+        } else {
+             setSelectedUsers(prev => {
+                const newSelection = new Set(prev);
+                paginatedUsers.forEach(u => newSelection.delete(u.id));
+                return newSelection;
+            });
+        }
+    };
+
+    const handleDeleteSelected = () => {
+        setUsers(prev => prev.filter(user => !selectedUsers.has(user.id)));
+        toast({
+            title: "Usuários Removidos",
+            description: `${selectedUsers.size} usuário(s) foram removidos permanentemente.`,
+        });
+        setSelectedUsers(new Set());
+    };
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -89,10 +137,36 @@ export default function AdminUsersPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Lista de Usuários</CardTitle>
-                    <CardDescription>
-                        Um total de {users.length} usuários cadastrados.
-                    </CardDescription>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                        <div className="flex-1">
+                            <CardTitle>Lista de Usuários</CardTitle>
+                            <CardDescription>
+                                Um total de {users.length} usuários cadastrados.
+                            </CardDescription>
+                        </div>
+                        {selectedUsers.size > 0 && (
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full sm:w-auto">
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        Excluir Selecionados ({selectedUsers.size})
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta ação removerá permanentemente os {selectedUsers.size} usuário(s) selecionado(s). Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir usuários</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
                      <div className="flex flex-col md:flex-row gap-2 pt-6">
                         <div className="relative flex-1">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -101,18 +175,32 @@ export default function AdminUsersPage() {
                                 placeholder="Buscar por nome ou apelido..."
                                 className="pl-8 w-full"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             />
                         </div>
-                        <Select value={filterStatus} onValueChange={setFilterStatus}>
-                            <SelectTrigger className="w-full md:w-[200px]">
+                        <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-full md:w-[180px]">
                                 <SelectValue placeholder="Filtrar por status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Todos</SelectItem>
+                                <SelectItem value="all">Todos os Status</SelectItem>
                                 <SelectItem value="ativo">Ativos</SelectItem>
                                 <SelectItem value="pendente">Pendentes</SelectItem>
                                 <SelectItem value="bloqueado">Bloqueados</SelectItem>
+                            </SelectContent>
+                        </Select>
+                         <Select value={filterRole} onValueChange={(v) => { setFilterRole(v); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-full md:w-[180px]">
+                                <SelectValue placeholder="Filtrar por função" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas as Funções</SelectItem>
+                                <SelectItem value="usuario">Usuários</SelectItem>
+                                <SelectItem value="moderador">Moderadores</SelectItem>
+                                <SelectItem value="admin">Admins</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -121,6 +209,13 @@ export default function AdminUsersPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-12">
+                                     <Checkbox 
+                                        onCheckedChange={handleSelectAllOnPage}
+                                        checked={paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUsers.has(u.id))}
+                                        aria-label="Selecionar todos os usuários nesta página"
+                                    />
+                                </TableHead>
                                 <TableHead>Usuário</TableHead>
                                 <TableHead className="hidden sm:table-cell">Função</TableHead>
                                 <TableHead className="hidden md:table-cell">Data de Cadastro</TableHead>
@@ -129,11 +224,18 @@ export default function AdminUsersPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredUsers.length > 0 ? (
-                                filteredUsers.map(user => {
+                            {paginatedUsers.length > 0 ? (
+                                paginatedUsers.map(user => {
                                     const RoleIcon = roleConfig[user.funcao].icon;
                                     return (
-                                        <TableRow key={user.id}>
+                                        <TableRow key={user.id} data-state={selectedUsers.has(user.id) ? "selected" : ""}>
+                                            <TableCell>
+                                                 <Checkbox 
+                                                    checked={selectedUsers.has(user.id)}
+                                                    onCheckedChange={() => handleSelectUser(user.id)}
+                                                    aria-label={`Selecionar usuário ${user.apelido}`}
+                                                />
+                                            </TableCell>
                                             <TableCell>
                                                 <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
                                                     <div className="relative">
@@ -181,7 +283,7 @@ export default function AdminUsersPage() {
                                                                 <span>Aprovar Cadastro</span>
                                                             </DropdownMenuItem>
                                                         )}
-                                                        {user.status === 'ativo' && (
+                                                        {user.status === 'ativo' && user.funcao !== 'admin' && (
                                                             <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'bloqueado')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                                                                 <UserX className="mr-2 h-4 w-4" />
                                                                 <span>Bloquear Usuário</span>
@@ -214,7 +316,7 @@ export default function AdminUsersPage() {
                                 })
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="h-24 text-center">
                                         Nenhum usuário encontrado para os filtros selecionados.
                                     </TableCell>
                                 </TableRow>
@@ -223,6 +325,30 @@ export default function AdminUsersPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+             {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-8">
+                    <Button 
+                        variant="outline"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="h-4 w-4 mr-2" />
+                        Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Página {currentPage} de {totalPages}
+                    </span>
+                    <Button 
+                        variant="outline"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Próximo
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
