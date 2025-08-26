@@ -15,6 +15,10 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { MatchForm } from '@/components/admin/match-form';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 // Componente para evitar erro de hidratação com datas
 const FormattedDate = ({ dateString }: { dateString: string }) => {
@@ -37,14 +41,53 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
 };
 
 export default function AdminMatchesPage() {
+    const [matches, setMatches] = useState<Match[]>(mockAllMatches);
     const [selectedChampionshipId, setSelectedChampionshipId] = useState<string>('');
+    const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const { toast } = useToast();
     
     const filteredMatches = useMemo(() => {
         if (!selectedChampionshipId) return [];
-        return mockAllMatches
+        return matches
             .filter(match => match.campeonatoId === selectedChampionshipId)
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [selectedChampionshipId]);
+    }, [selectedChampionshipId, matches]);
+
+    const handleCreate = () => {
+        setEditingMatch(null);
+        setIsFormOpen(true);
+    };
+
+    const handleEdit = (match: Match) => {
+        setEditingMatch(match);
+        setIsFormOpen(true);
+    };
+
+    const handleDelete = (matchId: string) => {
+        setMatches(prev => prev.filter(m => m.id !== matchId));
+        toast({
+            title: "Partida Excluída",
+            description: "A partida foi removida com sucesso.",
+        });
+    };
+
+    const handleFormSubmit = (data: Match) => {
+        if (editingMatch) {
+            setMatches(prev => prev.map(m => m.id === data.id ? data : m));
+            toast({
+                title: "Partida Atualizada",
+                description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.`,
+            });
+        } else {
+            setMatches(prev => [...prev, data]);
+            toast({
+                title: "Partida Criada!",
+                description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.`,
+            });
+        }
+    };
+
 
     const getStatusVariant = (status: Match['status']): "default" | "destructive" | "secondary" | "outline" => {
         switch(status) {
@@ -85,10 +128,18 @@ export default function AdminMatchesPage() {
                     </div>
                     {selectedChampionshipId && (
                         <div className="self-end">
-                            <Button>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adicionar Partida
-                            </Button>
+                            <MatchForm
+                                isOpen={isFormOpen}
+                                setIsOpen={setIsFormOpen}
+                                onSubmit={handleFormSubmit}
+                                match={editingMatch}
+                                championshipId={selectedChampionshipId}
+                            >
+                                <Button onClick={handleCreate}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adicionar Partida
+                                </Button>
+                            </MatchForm>
                         </div>
                     )}
                 </div>
@@ -148,28 +199,44 @@ export default function AdminMatchesPage() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                <span className="sr-only">Abrir menu</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem>
-                                                                <Eye className="mr-2 h-4 w-4" />
-                                                                Atualizar Placar
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem>
-                                                                <Pencil className="mr-2 h-4 w-4" />
-                                                                Editar Partida
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Excluir
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                    <AlertDialog>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                    <span className="sr-only">Abrir menu</span>
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem>
+                                                                    <Eye className="mr-2 h-4 w-4" />
+                                                                    Atualizar Placar
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleEdit(match)}>
+                                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                                    Editar Partida
+                                                                </DropdownMenuItem>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                        Excluir
+                                                                    </DropdownMenuItem>
+                                                                </AlertDialogTrigger>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                A partida <strong>{match.timeA} vs {match.timeB}</strong> será removida permanentemente. Esta ação não pode ser desfeita.
+                                                            </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(match.id)}>Sim, excluir</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </TableCell>
                                             </TableRow>
                                         ))
