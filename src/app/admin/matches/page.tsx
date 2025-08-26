@@ -1,0 +1,185 @@
+
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Eye, ShieldAlert, PlusCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
+
+// Componente para evitar erro de hidratação com datas
+const FormattedDate = ({ dateString }: { dateString: string }) => {
+    const [formattedDate, setFormattedDate] = useState('');
+  
+    useEffect(() => {
+        try {
+            const date = parseISO(dateString);
+            setFormattedDate(format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }));
+        } catch (error) {
+            setFormattedDate("Data inválida");
+        }
+    }, [dateString]);
+  
+    if (!formattedDate) {
+        return null; 
+    }
+  
+    return <>{formattedDate}</>;
+};
+
+export default function AdminMatchesPage() {
+    const [selectedChampionshipId, setSelectedChampionshipId] = useState<string>('');
+    
+    const filteredMatches = useMemo(() => {
+        if (!selectedChampionshipId) return [];
+        return mockAllMatches
+            .filter(match => match.campeonatoId === selectedChampionshipId)
+            .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    }, [selectedChampionshipId]);
+
+    const getStatusVariant = (status: Match['status']): "default" | "destructive" | "secondary" | "outline" => {
+        switch(status) {
+            case 'Ao Vivo': return 'destructive';
+            case 'Agendado': return 'secondary';
+            case 'Finalizado': return 'default';
+            case 'Cancelado': return 'outline';
+            default: return 'secondary';
+        }
+    }
+
+    return (
+        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
+            <div className="flex items-center gap-4 mb-8">
+                <CalendarCheck className="h-8 w-8 text-primary" />
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">Gerenciar Partidas</h1>
+                    <p className="text-muted-foreground">Adicione, edite e atualize os resultados das partidas.</p>
+                </div>
+            </div>
+
+             <div className="mb-6 flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                    <label htmlFor="championship-select" className="text-sm font-medium text-muted-foreground">
+                        Selecione um campeonato para ver as partidas
+                    </label>
+                    <Select value={selectedChampionshipId} onValueChange={setSelectedChampionshipId}>
+                        <SelectTrigger id="championship-select" className="w-full md:w-[320px] mt-1">
+                            <SelectValue placeholder="Escolha um campeonato..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {mockChampionships.map(champ => (
+                                <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 {selectedChampionshipId && (
+                    <div className="self-end">
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Partida
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+            {selectedChampionshipId ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            Partidas de {mockChampionships.find(c => c.id === selectedChampionshipId)?.nome}
+                        </CardTitle>
+                        <CardDescription>
+                            Total de {filteredMatches.length} partidas encontradas.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Confronto</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Data</TableHead>
+                                    <TableHead className="hidden md:table-cell">Fase</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredMatches.length > 0 ? (
+                                    filteredMatches.map(match => (
+                                        <TableRow key={match.id}>
+                                            <TableCell className="font-medium">
+                                                <div className="flex items-center gap-2">
+                                                    <Image src="https://placehold.co/40x40.png" alt={match.timeA} width={20} height={20} className="rounded-full" data-ai-hint="team logo" />
+                                                    <span>{match.timeA}</span>
+                                                    <span className="text-muted-foreground">vs</span>
+                                                    <span>{match.timeB}</span>
+                                                    <Image src="https://placehold.co/40x40.png" alt={match.timeB} width={20} height={20} className="rounded-full" data-ai-hint="team logo" />
+                                                </div>
+                                                <div className="text-muted-foreground text-xs md:hidden mt-1">{match.fase}</div>
+                                            </TableCell>
+                                            <TableCell className="hidden sm:table-cell">
+                                                <FormattedDate dateString={match.data} />
+                                            </TableCell>
+                                            <TableCell className="hidden md:table-cell">{match.fase}</TableCell>
+                                            <TableCell className="text-center">
+                                                 <Badge variant={getStatusVariant(match.status)} className={cn(match.status === 'Ao Vivo' && 'animate-pulse')}>
+                                                    {match.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <span className="sr-only">Abrir menu</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem>
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            Atualizar Placar
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Editar Partida
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Excluir
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center">
+                                            Nenhuma partida encontrada para este campeonato.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card className="flex flex-col items-center justify-center p-10 border-dashed">
+                    <ShieldAlert className="h-16 w-16 text-muted-foreground/50" />
+                    <p className="mt-4 text-center text-muted-foreground">
+                        Por favor, selecione um campeonato acima para começar.
+                    </p>
+                </Card>
+            )}
+        </div>
+    );
+}
