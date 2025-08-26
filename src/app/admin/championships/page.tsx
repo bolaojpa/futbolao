@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChampionshipForm } from '@/components/admin/championship-form';
 import type { Championship } from '@/lib/data';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 // Componente para evitar erro de hidratação
 const FormattedDate = ({ dateString }: { dateString: string }) => {
@@ -37,6 +39,7 @@ export default function AdminChampionshipsPage() {
     const [championships, setChampionships] = useState<Championship[]>(initialChampionships);
     const [editingChampionship, setEditingChampionship] = useState<Championship | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const { toast } = useToast();
 
     const handleCreate = () => {
         setEditingChampionship(null);
@@ -50,16 +53,27 @@ export default function AdminChampionshipsPage() {
 
     const handleDelete = (championshipId: string) => {
         setChampionships(prev => prev.filter(c => c.id !== championshipId));
-        // Adicionar toast de sucesso aqui
+        toast({
+            title: "Campeonato Excluído",
+            description: "O campeonato foi removido com sucesso.",
+        });
     };
 
     const handleFormSubmit = (data: Championship) => {
         if (editingChampionship) {
             // Lógica de Edição
             setChampionships(prev => prev.map(c => c.id === data.id ? data : c));
+            toast({
+                title: "Campeonato Atualizado",
+                description: `O campeonato "${data.nome}" foi atualizado.`,
+            });
         } else {
             // Lógica de Criação
             setChampionships(prev => [...prev, data]);
+            toast({
+                title: "Campeonato Criado!",
+                description: `O campeonato "${data.nome}" foi adicionado.`,
+            });
         }
     };
 
@@ -117,24 +131,40 @@ export default function AdminChampionshipsPage() {
                                             <FormattedDate dateString={champ.dataFim as unknown as string} />
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                        <span className="sr-only">Abrir menu</span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleEdit(champ)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Editar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(champ.id)} className="text-destructive focus:text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Excluir
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            <AlertDialog>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <span className="sr-only">Abrir menu</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => handleEdit(champ)}>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Editar
+                                                        </DropdownMenuItem>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Excluir
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                                 <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Esta ação removerá permanentemente o campeonato "{champ.nome}". Esta ação não pode ser desfeita.
+                                                    </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(champ.id)}>Sim, excluir</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </TableCell>
                                     </TableRow>
                                 ))

@@ -30,10 +30,9 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, PlusCircle, Save } from 'lucide-react';
+import { CalendarIcon, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import type { Championship } from '@/lib/data';
 import { useEffect } from 'react';
 
@@ -70,17 +69,17 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   });
 
   useEffect(() => {
-    if (championship) {
+    if (isOpen && championship) {
       form.reset({
         nome: championship.nome,
-        dataInicio: typeof championship.dataInicio === 'string' ? new Date(championship.dataInicio) : championship.dataInicio,
-        dataFim: typeof championship.dataFim === 'string' ? new Date(championship.dataFim) : championship.dataFim,
+        dataInicio: typeof championship.dataInicio === 'string' ? parseISO(championship.dataInicio) : championship.dataInicio,
+        dataFim: typeof championship.dataFim === 'string' ? parseISO(championship.dataFim) : championship.dataFim,
         pontuacao: {
           exato: championship.pontuacao.exato,
           situacao: championship.pontuacao.situacao,
         }
       });
-    } else {
+    } else if (isOpen) {
       form.reset({
         nome: '',
         dataInicio: undefined,
@@ -88,7 +87,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         pontuacao: { exato: 10, situacao: 5 }
       });
     }
-  }, [championship, form]);
+  }, [championship, isOpen, form]);
 
   const handleFormSubmit = (data: ChampionshipFormValues) => {
     const finalData: Championship = {
@@ -99,7 +98,6 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     };
     onSubmit(finalData);
     setIsOpen(false);
-    form.reset();
   };
   
   const title = championship ? "Editar Campeonato" : "Criar Novo Campeonato";
