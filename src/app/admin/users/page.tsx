@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { mockUsers, UserType } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -237,7 +237,7 @@ export default function AdminUsersPage() {
                                                 />
                                             </TableCell>
                                             <TableCell>
-                                                <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
+                                                <div className="flex items-center gap-3">
                                                     <div className="relative">
                                                         <Avatar className="w-9 h-9">
                                                             <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
@@ -246,10 +246,14 @@ export default function AdminUsersPage() {
                                                         <StatusIndicator status={user.presenceStatus} />
                                                     </div>
                                                     <div>
-                                                        <p className="font-medium group-hover:underline">{user.apelido}</p>
+                                                        <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido}</Link>
                                                         <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
+                                                        <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
+                                                            <Mail className="w-3 h-3" />
+                                                            <span>{user.email}</span>
+                                                        </div>
                                                     </div>
-                                                </Link>
+                                                </div>
                                             </TableCell>
                                             <TableCell className="hidden sm:table-cell">
                                                 <Badge variant="outline">
