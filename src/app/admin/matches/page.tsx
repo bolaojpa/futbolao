@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 // Componente para evitar erro de hidratação com datas
-const FormattedDate = ({ dateString, formatString = "dd/MM/yyyy 'às' HH:mm" }: { dateString: string, formatString?: string }) => {
+const FormattedDate = ({ dateString, formatString = "eeee, dd/MM 'às' HH:mm" }: { dateString: string, formatString?: string }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
@@ -37,7 +37,7 @@ const FormattedDate = ({ dateString, formatString = "dd/MM/yyyy 'às' HH:mm" }: 
         return null; 
     }
   
-    return <span className='text-sm text-muted-foreground'>{formattedDate}</span>;
+    return <span className='text-sm text-muted-foreground capitalize'>{formattedDate}</span>;
 };
 
 export default function AdminMatchesPage() {
@@ -66,9 +66,33 @@ export default function AdminMatchesPage() {
     
     const filteredMatches = useMemo(() => {
         if (!selectedChampionshipId) return [];
+
+        const statusOrder: Record<Match['status'], number> = {
+            'Ao Vivo': 1,
+            'Agendado': 2,
+            'Finalizado': 3,
+            'Cancelado': 4,
+        };
+
         return matches
             .filter(match => match.campeonatoId === selectedChampionshipId)
-            .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+            .sort((a, b) => {
+                const statusA = statusOrder[a.status] || 99;
+                const statusB = statusOrder[b.status] || 99;
+
+                // Se os status forem diferentes, ordena por eles (Ao Vivo/Agendado primeiro)
+                if (statusA !== statusB) {
+                    return statusA - statusB;
+                }
+                
+                // Se o status for Agendado ou Ao Vivo, ordena do mais próximo para o mais distante
+                if (a.status === 'Agendado' || a.status === 'Ao Vivo') {
+                     return new Date(a.data).getTime() - new Date(b.data).getTime();
+                }
+
+                // Se o status for Finalizado ou Cancelado, ordena do mais recente para o mais antigo
+                return new Date(b.data).getTime() - new Date(a.data).getTime();
+            });
     }, [selectedChampionshipId, matches]);
     
     const groupedMatches = useMemo(() => {
@@ -238,7 +262,7 @@ export default function AdminMatchesPage() {
                                                 <AlertDialog>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="bg-background hover:bg-muted rounded-full h-8 w-8">
+                                                            <Button variant="ghost" size="icon" className="bg-background/50 hover:bg-muted rounded-full h-8 w-8">
                                                                 <MoreHorizontal className="h-5 w-5" />
                                                                 <span className="sr-only">Abrir menu</span>
                                                             </Button>
