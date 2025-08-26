@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Eye, ShieldAlert, PlusCircle } from 'lucide-react';
+import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Eye, ShieldAlert, PlusCircle, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,7 +18,9 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/comp
 import { MatchForm } from '@/components/admin/match-form';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Componente para evitar erro de hidratação com datas
 const FormattedDate = ({ dateString }: { dateString: string }) => {
@@ -45,6 +47,15 @@ export default function AdminMatchesPage() {
     const [selectedChampionshipId, setSelectedChampionshipId] = useState<string>('');
     const [editingMatch, setEditingMatch] = useState<Match | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    
+    // Estado para o modal de atualização de placar
+    const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+    const [matchToUpdate, setMatchToUpdate] = useState<Match | null>(null);
+    const [scoreA, setScoreA] = useState<string>('');
+    const [scoreB, setScoreB] = useState<string>('');
+    const [matchStatus, setMatchStatus] = useState<Match['status']>('Agendado');
+
+
     const { toast } = useToast();
     
     const filteredMatches = useMemo(() => {
@@ -86,6 +97,35 @@ export default function AdminMatchesPage() {
                 description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.`,
             });
         }
+    };
+    
+    const openScoreModal = (match: Match) => {
+        setMatchToUpdate(match);
+        setScoreA(match.placarA?.toString() ?? '');
+        setScoreB(match.placarB?.toString() ?? '');
+        setMatchStatus(match.status);
+        setIsScoreModalOpen(true);
+    };
+
+    const handleScoreUpdate = () => {
+        if (!matchToUpdate) return;
+        
+        const numScoreA = scoreA === '' ? null : Number(scoreA);
+        const numScoreB = scoreB === '' ? null : Number(scoreB);
+
+        setMatches(prev => prev.map(m => 
+            m.id === matchToUpdate.id 
+            ? { ...m, placarA: numScoreA, placarB: numScoreB, status: matchStatus } 
+            : m
+        ));
+
+        toast({
+            title: "Placar Atualizado!",
+            description: `O placar de ${matchToUpdate.timeA} vs ${matchToUpdate.timeB} foi salvo.`,
+        });
+
+        setIsScoreModalOpen(false);
+        setMatchToUpdate(null);
     };
 
 
@@ -208,7 +248,7 @@ export default function AdminMatchesPage() {
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => openScoreModal(match)}>
                                                                     <Eye className="mr-2 h-4 w-4" />
                                                                     Atualizar Placar
                                                                 </DropdownMenuItem>
@@ -260,6 +300,53 @@ export default function AdminMatchesPage() {
                     </Card>
                 )}
             </div>
+
+            <Dialog open={isScoreModalOpen} onOpenChange={setIsScoreModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                    <DialogTitle>Atualizar Placar e Status</DialogTitle>
+                     {matchToUpdate && (
+                        <DialogDescription>
+                            Partida: {matchToUpdate.timeA} vs {matchToUpdate.timeB}
+                        </DialogDescription>
+                    )}
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="scoreA">Placar {matchToUpdate?.timeA}</Label>
+                                <Input id="scoreA" type="number" value={scoreA} onChange={(e) => setScoreA(e.target.value)} className="mt-1" />
+                            </div>
+                            <div>
+                                <Label htmlFor="scoreB">Placar {matchToUpdate?.timeB}</Label>
+                                <Input id="scoreB" type="number" value={scoreB} onChange={(e) => setScoreB(e.target.value)} className="mt-1" />
+                            </div>
+                        </div>
+                        <div>
+                             <Label htmlFor="status">Status da Partida</Label>
+                             <Select value={matchStatus} onValueChange={(v) => setMatchStatus(v as Match['status'])}>
+                                <SelectTrigger id="status" className="w-full mt-1">
+                                    <SelectValue placeholder="Selecione o status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Agendado">Agendado</SelectItem>
+                                    <SelectItem value="Ao Vivo">Ao Vivo</SelectItem>
+                                    <SelectItem value="Finalizado">Finalizado</SelectItem>
+                                    <SelectItem value="Cancelado">Cancelado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsScoreModalOpen(false)}>Cancelar</Button>
+                    <Button type="button" onClick={handleScoreUpdate}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Salvar Alterações
+                    </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </TooltipProvider>
     );
 }
