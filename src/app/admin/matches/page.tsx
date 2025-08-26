@@ -2,11 +2,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Eye, ShieldAlert, PlusCircle, Save } from 'lucide-react';
+import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +17,6 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/comp
 import { MatchForm } from '@/components/admin/match-form';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -47,15 +46,21 @@ export default function AdminMatchesPage() {
     const [editingMatch, setEditingMatch] = useState<Match | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     
-    // Estado para o modal de atualização de placar
-    const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
-    const [matchToUpdate, setMatchToUpdate] = useState<Match | null>(null);
-    const [scoreA, setScoreA] = useState<string>('');
-    const [scoreB, setScoreB] = useState<string>('');
-    const [matchStatus, setMatchStatus] = useState<Match['status']>('Agendado');
-
-
+    // Estado para os placares editáveis nos cards
+    const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const { toast } = useToast();
+
+    // Inicializa os placares no estado local quando as partidas são carregadas
+    useEffect(() => {
+        const initialScores: Record<string, { placarA: string; placarB: string; }> = {};
+        matches.forEach(match => {
+            initialScores[match.id] = {
+                placarA: match.placarA?.toString() ?? '',
+                placarB: match.placarB?.toString() ?? '',
+            };
+        });
+        setScores(initialScores);
+    }, [matches]);
     
     const filteredMatches = useMemo(() => {
         if (!selectedChampionshipId) return [];
@@ -63,6 +68,18 @@ export default function AdminMatchesPage() {
             .filter(match => match.campeonatoId === selectedChampionshipId)
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
     }, [selectedChampionshipId, matches]);
+    
+    const groupedMatches = useMemo(() => {
+        return filteredMatches.reduce((acc, match) => {
+            const phase = match.fase || 'Partidas';
+            if (!acc[phase]) {
+                acc[phase] = [];
+            }
+            acc[phase].push(match);
+            return acc;
+        }, {} as Record<string, Match[]>);
+    }, [filteredMatches]);
+
 
     const handleCreate = () => {
         setEditingMatch(null);
@@ -98,33 +115,36 @@ export default function AdminMatchesPage() {
         }
     };
     
-    const openScoreModal = (match: Match) => {
-        setMatchToUpdate(match);
-        setScoreA(match.placarA?.toString() ?? '');
-        setScoreB(match.placarB?.toString() ?? '');
-        setMatchStatus(match.status);
-        setIsScoreModalOpen(true);
+    const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: string) => {
+        setScores(prev => ({
+            ...prev,
+            [matchId]: {
+                ...(prev[matchId] || { placarA: '', placarB: '' }),
+                [team]: value,
+            },
+        }));
     };
 
-    const handleScoreUpdate = () => {
-        if (!matchToUpdate) return;
-        
-        const numScoreA = scoreA === '' ? null : Number(scoreA);
-        const numScoreB = scoreB === '' ? null : Number(scoreB);
+    const handleScoreSave = (match: Match) => {
+        const currentScore = scores[match.id];
+        if (!currentScore) return;
+
+        const numScoreA = currentScore.placarA === '' ? null : Number(currentScore.placarA);
+        const numScoreB = currentScore.placarB === '' ? null : Number(currentScore.placarB);
+
+        // Define o status para Finalizado se ambos os placares forem preenchidos
+        const newStatus: Match['status'] = (numScoreA !== null && numScoreB !== null) ? 'Finalizado' : match.status;
 
         setMatches(prev => prev.map(m => 
-            m.id === matchToUpdate.id 
-            ? { ...m, placarA: numScoreA, placarB: numScoreB, status: matchStatus } 
+            m.id === match.id 
+            ? { ...m, placarA: numScoreA, placarB: numScoreB, status: newStatus } 
             : m
         ));
 
         toast({
             title: "Placar Atualizado!",
-            description: `O placar de ${matchToUpdate.timeA} vs ${matchToUpdate.timeB} foi salvo.`,
+            description: `O placar de ${match.timeA} vs ${match.timeB} foi salvo.`,
         });
-
-        setIsScoreModalOpen(false);
-        setMatchToUpdate(null);
     };
 
 
@@ -184,97 +204,119 @@ export default function AdminMatchesPage() {
                 </div>
                 
                  {selectedChampionshipId ? (
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-baseline">
-                            <h2 className="text-2xl font-bold font-headline">
-                                Partidas de {mockChampionships.find(c => c.id === selectedChampionshipId)?.nome}
-                            </h2>
-                             <p className="text-sm text-muted-foreground">
-                                {filteredMatches.length} partidas encontradas.
-                            </p>
-                        </div>
-                        
-                        {filteredMatches.length > 0 ? (
-                            filteredMatches.map(match => (
-                                <Card key={match.id}>
-                                    <CardContent className="flex items-center justify-between p-4">
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="flex items-center justify-center gap-3 md:gap-4">
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src="https://placehold.co/128x128.png" alt={match.timeA} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent><p>{match.timeA}</p></TooltipContent>
-                                                </Tooltip>
-                                                <div className="hidden sm:block text-center">
-                                                    <p className="font-bold">{match.timeA}</p>
-                                                    <p className="text-muted-foreground text-xs">vs</p>
-                                                    <p className="font-bold">{match.timeB}</p>
-                                                </div>
-                                                 <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src="https://placehold.co/128x128.png" alt={match.timeB} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent><p>{match.timeB}</p></TooltipContent>
-                                                </Tooltip>
-                                            </div>
-                                            <div className="border-l pl-4 ml-4">
-                                                <p className="font-semibold text-primary">{match.fase}</p>
-                                                <FormattedDate dateString={match.data} />
-                                            </div>
-                                        </div>
+                    <div className="space-y-8">
+                        {Object.keys(groupedMatches).length > 0 ? (
+                           Object.entries(groupedMatches).map(([phase, matchesInPhase]) => (
+                             <div key={phase} className="space-y-4">
+                                <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
+                                {matchesInPhase.map(match => {
+                                    const score = scores[match.id] || { placarA: '', placarB: '' };
+                                    const originalPlacarA = match.placarA?.toString() ?? '';
+                                    const originalPlacarB = match.placarB?.toString() ?? '';
+                                    const hasChanged = score.placarA !== originalPlacarA || score.placarB !== originalPlacarB;
 
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-center">
-                                                <p className="font-bold text-2xl tracking-tighter">
-                                                    {match.placarA ?? '-'} x {match.placarB ?? '-'}
-                                                </p>
-                                                <Badge variant={getStatusVariant(match.status)} className={cn('mt-1', match.status === 'Ao Vivo' && 'animate-pulse')}>
-                                                    {match.status}
-                                                </Badge>
-                                            </div>
-                                            <AlertDialog>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <MoreHorizontal className="h-5 w-5" />
-                                                            <span className="sr-only">Abrir menu</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => openScoreModal(match)}>
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Atualizar Placar
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleEdit(match)}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Editar Partida
-                                                        </DropdownMenuItem>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Excluir
-                                                            </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        A partida <strong>{match.timeA} vs {match.timeB}</strong> será removida permanentemente. Esta ação não pode ser desfeita.
-                                                    </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(match.id)}>Sim, excluir</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))
+                                    return (
+                                        <Card key={match.id}>
+                                            <CardContent className="p-4 flex items-center justify-between gap-4">
+                                                {/* Times e placar */}
+                                                <div className="flex-1 flex items-center justify-around gap-2">
+                                                    <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                        <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Image src="https://placehold.co/128x128.png" alt={match.timeA} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{match.timeA}</p></TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Input 
+                                                            type="number" 
+                                                            className="w-16 h-12 text-center text-2xl font-bold" 
+                                                            value={score.placarA}
+                                                            onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
+                                                            min="0"
+                                                        />
+                                                        <span className="font-bold text-muted-foreground text-lg">x</span>
+                                                        <Input 
+                                                            type="number" 
+                                                            className="w-16 h-12 text-center text-2xl font-bold" 
+                                                            value={score.placarB}
+                                                            onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
+                                                            min="0"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Image src="https://placehold.co/128x128.png" alt={match.timeB} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{match.timeB}</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Info e Ações */}
+                                                <div className="flex items-center gap-4">
+                                                    <div className="text-center w-28">
+                                                        <div className="flex justify-center">
+                                                            <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm">
+                                                                <Save className="mr-2 h-4 w-4" />
+                                                                Salvar
+                                                            </Button>
+                                                        </div>
+                                                        <Badge variant={getStatusVariant(match.status)} className={cn('mt-2', match.status === 'Ao Vivo' && 'animate-pulse')}>
+                                                            {match.status}
+                                                        </Badge>
+                                                    </div>
+
+                                                    <AlertDialog>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon">
+                                                                    <MoreHorizontal className="h-5 w-5" />
+                                                                    <span className="sr-only">Abrir menu</span>
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => handleEdit(match)}>
+                                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                                    Editar Detalhes
+                                                                </DropdownMenuItem>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                        Excluir Partida
+                                                                    </DropdownMenuItem>
+                                                                </AlertDialogTrigger>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                A partida <strong>{match.timeA} vs {match.timeB}</strong> será removida permanentemente. Esta ação não pode ser desfeita.
+                                                            </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(match.id)}>Sim, excluir</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            </CardContent>
+                                             <CardFooter className="bg-muted/50 p-2 text-center text-xs text-muted-foreground">
+                                                <FormattedDate dateString={match.data} />
+                                            </CardFooter>
+                                        </Card>
+                                    )
+                                })}
+                            </div>
+                           ))
                         ) : (
                             <Card className="flex flex-col items-center justify-center p-10 border-dashed">
                                 <p className="text-center text-muted-foreground">
@@ -292,54 +334,6 @@ export default function AdminMatchesPage() {
                     </Card>
                 )}
             </div>
-
-            <Dialog open={isScoreModalOpen} onOpenChange={setIsScoreModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                    <DialogTitle>Atualizar Placar e Status</DialogTitle>
-                     {matchToUpdate && (
-                        <DialogDescription>
-                            Partida: {matchToUpdate.timeA} vs {matchToUpdate.timeB}
-                        </DialogDescription>
-                    )}
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="scoreA">Placar {matchToUpdate?.timeA}</Label>
-                                <Input id="scoreA" type="number" value={scoreA} onChange={(e) => setScoreA(e.target.value)} className="mt-1" />
-                            </div>
-                            <div>
-                                <Label htmlFor="scoreB">Placar {matchToUpdate?.timeB}</Label>
-                                <Input id="scoreB" type="number" value={scoreB} onChange={(e) => setScoreB(e.target.value)} className="mt-1" />
-                            </div>
-                        </div>
-                        <div>
-                             <Label htmlFor="status">Status da Partida</Label>
-                             <Select value={matchStatus} onValueChange={(v) => setMatchStatus(v as Match['status'])}>
-                                <SelectTrigger id="status" className="w-full mt-1">
-                                    <SelectValue placeholder="Selecione o status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Agendado">Agendado</SelectItem>
-                                    <SelectItem value="Ao Vivo">Ao Vivo</SelectItem>
-                                    <SelectItem value="Finalizado">Finalizado</SelectItem>
-                                    <SelectItem value="Cancelado">Cancelado</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsScoreModalOpen(false)}>Cancelar</Button>
-                    <Button type="button" onClick={handleScoreUpdate}>
-                        <Save className="mr-2 h-4 w-4" />
-                        Salvar Alterações
-                    </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
         </TooltipProvider>
     );
-
-    
+}
