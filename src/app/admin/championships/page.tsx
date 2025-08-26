@@ -1,23 +1,29 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockChampionships } from '@/lib/data';
+import { mockChampionships as initialChampionships } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Trophy, MoreHorizontal, PlusCircle, Pencil, Trash2 } from 'lucide-react';
+import { Trophy, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ChampionshipForm } from '@/components/admin/championship-form';
+import type { Championship } from '@/lib/data';
 
 // Componente para evitar erro de hidratação
 const FormattedDate = ({ dateString }: { dateString: string }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
-      setFormattedDate(format(parseISO(dateString), "dd/MM/yyyy", { locale: ptBR }));
+      try {
+        const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+        setFormattedDate(format(date, "dd/MM/yyyy", { locale: ptBR }));
+      } catch (error) {
+        setFormattedDate("Data inválida");
+      }
     }, [dateString]);
   
     if (!formattedDate) {
@@ -28,17 +34,35 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
 };
 
 export default function AdminChampionshipsPage() {
-    const [championships, setChampionships] = useState(mockChampionships);
+    const [championships, setChampionships] = useState<Championship[]>(initialChampionships);
+    const [editingChampionship, setEditingChampionship] = useState<Championship | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
 
-    const handleEdit = (championshipId: string) => {
-        // Lógica para edição será implementada aqui
-        console.log("Edit:", championshipId);
+    const handleCreate = () => {
+        setEditingChampionship(null);
+        setIsFormOpen(true);
+    };
+
+    const handleEdit = (championship: Championship) => {
+        setEditingChampionship(championship);
+        setIsFormOpen(true);
     };
 
     const handleDelete = (championshipId: string) => {
-        // Lógica para exclusão será implementada aqui
-        console.log("Delete:", championshipId);
+        setChampionships(prev => prev.filter(c => c.id !== championshipId));
+        // Adicionar toast de sucesso aqui
     };
+
+    const handleFormSubmit = (data: Championship) => {
+        if (editingChampionship) {
+            // Lógica de Edição
+            setChampionships(prev => prev.map(c => c.id === data.id ? data : c));
+        } else {
+            // Lógica de Criação
+            setChampionships(prev => [...prev, data]);
+        }
+    };
+
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -59,10 +83,16 @@ export default function AdminChampionshipsPage() {
                                 Um total de {championships.length} campeonatos cadastrados.
                             </CardDescription>
                         </div>
-                         <Button>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Criar Novo Campeonato
-                        </Button>
+                         <ChampionshipForm
+                            isOpen={isFormOpen}
+                            setIsOpen={setIsFormOpen}
+                            onSubmit={handleFormSubmit}
+                            championship={editingChampionship}
+                         >
+                            <Button onClick={handleCreate}>
+                                Criar Novo Campeonato
+                            </Button>
+                         </ChampionshipForm>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -81,10 +111,10 @@ export default function AdminChampionshipsPage() {
                                     <TableRow key={champ.id}>
                                         <TableCell className="font-medium">{champ.nome}</TableCell>
                                         <TableCell className="hidden sm:table-cell">
-                                            <FormattedDate dateString={champ.dataInicio} />
+                                            <FormattedDate dateString={champ.dataInicio as unknown as string} />
                                         </TableCell>
                                         <TableCell className="hidden sm:table-cell">
-                                            <FormattedDate dateString={champ.dataFim} />
+                                            <FormattedDate dateString={champ.dataFim as unknown as string} />
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
@@ -95,7 +125,7 @@ export default function AdminChampionshipsPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleEdit(champ.id)}>
+                                                    <DropdownMenuItem onClick={() => handleEdit(champ)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         Editar
                                                     </DropdownMenuItem>

@@ -65,7 +65,19 @@ export const mockUsers: Array<UserType> = [
   { id: 'user_11', nome: 'Admin Master', apelido: 'Admin', email: 'admin@exemplo.com', fotoPerfil: 'https://placehold.co/100x100.png', urlImagemPersonalizada: '', timeCoracao: '', ultimaAtividade: new Date().toISOString(), ultimoLogin: new Date().toISOString(), ultimoPalpite: { matchId: 'match_5', palpite: '1x0' }, championshipStats: [], totalJogos: 0, titulos: 99, dataCadastro: '2023-01-01T00:00:00Z', status: 'ativo', presenceStatus: 'Não perturbe', funcao: 'admin' },
 ];
 
-export const mockChampionships = [
+export type Championship = {
+  id: string;
+  nome: string;
+  dataInicio: Date | string;
+  dataFim: Date | string;
+  pontuacao: {
+    exato: number;
+    situacao: number;
+  };
+};
+
+
+export const mockChampionships: Championship[] = [
   { id: 'champ_1', nome: 'Brasileirão Série A 2024', dataInicio: '2024-04-13', dataFim: '2024-12-08', pontuacao: { exato: 10, situacao: 5 } },
   { id: 'champ_2', nome: 'Copa Libertadores 2024', dataInicio: '2024-02-06', dataFim: '2024-11-30', pontuacao: { exato: 15, situacao: 7 } },
 ];
