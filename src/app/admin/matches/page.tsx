@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert } from 'lucide-react';
+import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -48,6 +48,8 @@ export default function AdminMatchesPage() {
     
     // Estado para os placares editáveis nos cards
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
+    const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
+
     const { toast } = useToast();
 
     // Inicializa os placares no estado local quando as partidas são carregadas
@@ -125,25 +127,40 @@ export default function AdminMatchesPage() {
         }));
     };
 
-    const handleScoreSave = (match: Match) => {
-        const currentScore = scores[match.id];
+    const updateMatchData = (matchId: string, statusChange?: Match['status']) => {
+        const currentScore = scores[matchId];
         if (!currentScore) return;
 
         const numScoreA = currentScore.placarA === '' ? null : Number(currentScore.placarA);
         const numScoreB = currentScore.placarB === '' ? null : Number(currentScore.placarB);
-
-        // Define o status para Finalizado se ambos os placares forem preenchidos
-        const newStatus: Match['status'] = (numScoreA !== null && numScoreB !== null) ? 'Finalizado' : match.status;
-
+        
         setMatches(prev => prev.map(m => 
-            m.id === match.id 
-            ? { ...m, placarA: numScoreA, placarB: numScoreB, status: newStatus } 
+            m.id === matchId 
+            ? { 
+                ...m, 
+                placarA: numScoreA, 
+                placarB: numScoreB, 
+                status: statusChange ?? m.status // Altera o status apenas se for fornecido
+              } 
             : m
         ));
 
+        setLastUpdated(prev => ({ ...prev, [matchId]: new Date() }));
+    };
+
+    const handleScoreSave = (match: Match) => {
+        updateMatchData(match.id);
         toast({
-            title: "Placar Atualizado!",
-            description: `O placar de ${match.timeA} vs ${match.timeB} foi salvo.`,
+            title: "Placar Salvo!",
+            description: `O placar de ${match.timeA} vs ${match.timeB} foi salvo temporariamente.`,
+        });
+    };
+
+    const handleFinalizeMatch = (match: Match) => {
+        updateMatchData(match.id, 'Finalizado');
+        toast({
+            title: "Partida Finalizada!",
+            description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada.`,
         });
     };
 
@@ -256,12 +273,10 @@ export default function AdminMatchesPage() {
 
                                             <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
 
-                                                {/* Conteúdo Centralizado */}
                                                 <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
                                                 <FormattedDate dateString={match.data} />
                                                 
                                                 <div className="flex items-center justify-around gap-2 w-full">
-                                                    {/* Time A */}
                                                     <div className='flex-1 flex flex-col items-center justify-center gap-2'>
                                                          <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -272,7 +287,6 @@ export default function AdminMatchesPage() {
                                                         <span className="font-bold text-lg text-center truncate w-full">{match.timeA}</span>
                                                     </div>
 
-                                                    {/* Placar */}
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Input 
                                                             type="number" 
@@ -280,6 +294,7 @@ export default function AdminMatchesPage() {
                                                             value={score.placarA}
                                                             onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
                                                             min="0"
+                                                            disabled={match.status === 'Finalizado'}
                                                         />
                                                         <span className="font-bold text-muted-foreground text-lg">x</span>
                                                         <Input 
@@ -288,10 +303,10 @@ export default function AdminMatchesPage() {
                                                             value={score.placarB}
                                                             onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
                                                             min="0"
+                                                            disabled={match.status === 'Finalizado'}
                                                         />
                                                     </div>
                                                     
-                                                    {/* Time B */}
                                                     <div className='flex-1 flex flex-col items-center justify-center gap-2'>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -307,10 +322,23 @@ export default function AdminMatchesPage() {
                                                     {match.status}
                                                 </Badge>
                                                 
-                                                <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm">
-                                                    <Save className="mr-2 h-4 w-4" />
-                                                    Salvar Placar
-                                                </Button>
+                                                <div className="flex flex-col sm:flex-row gap-2 items-center">
+                                                    <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged || match.status === 'Finalizado'} size="sm" variant="secondary">
+                                                        <Save className="mr-2 h-4 w-4" />
+                                                        Salvar Placar
+                                                    </Button>
+                                                     {match.status !== 'Finalizado' && (
+                                                        <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
+                                                            <Flag className="mr-2 h-4 w-4" />
+                                                            Finalizar Partida
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                                 {lastUpdated[match.id] && (
+                                                    <p className="text-xs text-muted-foreground mt-2">
+                                                        Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                                    </p>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     )
