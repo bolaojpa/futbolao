@@ -216,54 +216,51 @@ export default function AdminMatchesPage() {
                                     const hasChanged = score.placarA !== originalPlacarA || score.placarB !== originalPlacarB;
 
                                     return (
-                                        <Card key={match.id} className="relative overflow-visible">
-                                            <CardContent className="p-4 flex flex-col items-center justify-center gap-2">
-                                                {/* Status e Ações Absolutos */}
-                                                <Badge variant={getStatusVariant(match.status)} className={cn('absolute -top-3 left-3 z-10', match.status === 'Ao Vivo' && 'animate-pulse')}>
-                                                    {match.status}
-                                                </Badge>
-                                                <div className="absolute -top-3 right-3 z-10">
-                                                    <AlertDialog>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="bg-background hover:bg-muted rounded-full h-8 w-8">
-                                                                    <MoreHorizontal className="h-5 w-5" />
-                                                                    <span className="sr-only">Abrir menu</span>
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => handleEdit(match)}>
-                                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                                    Editar Detalhes
+                                        <Card key={match.id} className="relative overflow-hidden">
+                                            <div className="absolute top-2 right-2 z-10">
+                                                <AlertDialog>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="bg-background hover:bg-muted rounded-full h-8 w-8">
+                                                                <MoreHorizontal className="h-5 w-5" />
+                                                                <span className="sr-only">Abrir menu</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onClick={() => handleEdit(match)}>
+                                                                <Pencil className="mr-2 h-4 w-4" />
+                                                                Editar Detalhes
+                                                            </DropdownMenuItem>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    Excluir Partida
                                                                 </DropdownMenuItem>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                                        Excluir Partida
-                                                                    </DropdownMenuItem>
-                                                                </AlertDialogTrigger>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                A partida <strong>{match.timeA} vs {match.timeB}</strong> será removida permanentemente. Esta ação não pode ser desfeita.
-                                                            </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDelete(match.id)}>Sim, excluir</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
+                                                            </AlertDialogTrigger>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            A partida <strong>{match.timeA} vs {match.timeB}</strong> será removida permanentemente. Esta ação não pode ser desfeita.
+                                                        </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDelete(match.id)}>Sim, excluir</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
+
+                                            <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
 
                                                 {/* Conteúdo Centralizado */}
                                                 <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
                                                 <FormattedDate dateString={match.data} />
                                                 
-                                                <div className="flex items-center justify-around gap-2 w-full mt-4">
+                                                <div className="flex items-center justify-around gap-2 w-full">
                                                     {/* Time A */}
                                                     <div className='flex-1 flex flex-col items-center justify-center gap-2'>
                                                          <Tooltip>
@@ -306,9 +303,9 @@ export default function AdminMatchesPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="h-4 mt-2">
-                                                     {/* Espaço para informação de alteração, se necessário */}
-                                                </div>
+                                                <Badge variant={getStatusVariant(match.status)} className={cn(match.status === 'Ao Vivo' && 'animate-pulse')}>
+                                                    {match.status}
+                                                </Badge>
                                                 
                                                 <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm">
                                                     <Save className="mr-2 h-4 w-4" />
@@ -340,5 +337,3 @@ export default function AdminMatchesPage() {
         </TooltipProvider>
     );
 }
-
-    
