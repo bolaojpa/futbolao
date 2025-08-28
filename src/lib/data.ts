@@ -71,7 +71,7 @@ export type Championship = {
   dataInicio: Date | string;
   dataFim: Date | string;
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
-  tipoPalpite: 'selecao' | 'times' | 'mista';
+  modoEquipes: 'selecao' | 'times' | 'mista';
   formatoFases?: 'fases' | 'rodadas';
   pontuacao: {
     sistema: 'tradicional' | 'combo';
@@ -107,7 +107,7 @@ export const mockChampionships: Championship[] = [
     dataInicio: '2024-04-13', 
     dataFim: '2024-12-08', 
     tipoCampeonato: 'liga',
-    tipoPalpite: 'times',
+    modoEquipes: 'times',
     pontuacao: { 
       sistema: 'tradicional',
       tradicional: { ativo: true, exato: 10, situacao: 5 },
@@ -126,7 +126,7 @@ export const mockChampionships: Championship[] = [
     dataInicio: '2024-02-06', 
     dataFim: '2024-11-30', 
     tipoCampeonato: 'copa',
-    tipoPalpite: 'times',
+    modoEquipes: 'times',
     formatoFases: 'fases',
     pontuacao: {
       sistema: 'tradicional',
@@ -319,7 +319,7 @@ export const mockHallOfFame = [
         campeonatoNome: 'Brasileirão Série A 2023',
         campeaoGeralNome: 'Fernanda',
         campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
-        tipoPalpite: 'equipe' as const,
+        modoEquipes: 'times' as const,
         palpiteiroNome: 'Juliana',
         palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
     },
@@ -329,7 +329,7 @@ export const mockHallOfFame = [
         campeonatoNome: 'Copa do Mundo 2022',
         campeaoGeralNome: 'Carlinhos',
         campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
-        tipoPalpite: 'selecao' as const,
+        modoEquipes: 'selecao' as const,
         palpiteiroNome: 'Lucas',
         palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
     }

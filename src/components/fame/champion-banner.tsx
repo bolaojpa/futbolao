@@ -11,7 +11,7 @@ export interface ChampionBannerProps {
   campeonatoNome: string;
   campeaoGeralNome: string;
   campeaoGeralAvatarUrl: string;
-  tipoPalpite: "selecao" | "equipe";
+  modoEquipes: "selecao" | "times" | "mista";
   palpiteiroNome: string;
   palpiteiroAvatarUrl: string;
 }
@@ -35,7 +35,7 @@ export function ChampionBanner({
   campeonatoNome,
   campeaoGeralNome,
   campeaoGeralAvatarUrl,
-  tipoPalpite,
+  modoEquipes,
   palpiteiroNome,
   palpiteiroAvatarUrl,
 }: ChampionBannerProps) {
@@ -90,7 +90,7 @@ export function ChampionBanner({
       {/* Bottom Section */}
       <Section height="33.28%" className="flex-col justify-center items-center text-center p-[2%]">
         <h3 className="text-[6.5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
-          {tipoPalpite === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
+          {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
         <div className="flex items-center justify-center gap-[4%] mt-[2%] w-full">
           <Image

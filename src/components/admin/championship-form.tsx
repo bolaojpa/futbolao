@@ -44,7 +44,7 @@ const championshipFormSchema = z.object({
   dataInicio: z.date({ required_error: "A data de início é obrigatória." }),
   dataFim: z.date({ required_error: "A data de fim é obrigatória." }),
   tipoCampeonato: z.enum(['liga', 'copa', 'avulso'], { required_error: "Selecione o tipo do campeonato." }),
-  tipoPalpite: z.enum(['times', 'selecao', 'mista'], { required_error: "Selecione o tipo de palpite." }),
+  modoEquipes: z.enum(['times', 'selecao', 'mista'], { required_error: "Selecione o modo de equipes." }),
   pontuacao: z.object({
     tradicional: z.object({
         ativo: z.boolean().default(true),
@@ -73,7 +73,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     defaultValues: {
         nome: '',
         tipoCampeonato: 'liga',
-        tipoPalpite: 'times',
+        modoEquipes: 'times',
         pontuacao: { 
             tradicional: { ativo: true, exato: 10, situacao: 5 }
         }
@@ -87,7 +87,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         dataInicio: typeof championship.dataInicio === 'string' ? parseISO(championship.dataInicio) : championship.dataInicio,
         dataFim: typeof championship.dataFim === 'string' ? parseISO(championship.dataFim) : championship.dataFim,
         tipoCampeonato: championship.tipoCampeonato,
-        tipoPalpite: championship.tipoPalpite,
+        modoEquipes: championship.modoEquipes,
         pontuacao: {
           tradicional: {
               ativo: championship.pontuacao.tradicional.ativo,
@@ -102,7 +102,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         dataInicio: undefined,
         dataFim: undefined,
         tipoCampeonato: 'liga',
-        tipoPalpite: 'times',
+        modoEquipes: 'times',
         pontuacao: { 
             tradicional: { ativo: true, exato: 10, situacao: 5 }
         }
@@ -119,7 +119,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       dataInicio: data.dataInicio.toISOString(),
       dataFim: data.dataFim.toISOString(),
       tipoCampeonato: data.tipoCampeonato,
-      tipoPalpite: data.tipoPalpite,
+      modoEquipes: data.modoEquipes,
       pontuacao: {
         ...championship?.pontuacao,
         tradicional: data.pontuacao.tradicional,
@@ -248,10 +248,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             />
                         <FormField
                             control={form.control}
-                            name="tipoPalpite"
+                            name="modoEquipes"
                             render={({ field }) => (
                                 <FormItem className="space-y-3">
-                                <FormLabel>Tipo de Palpite</FormLabel>
+                                <FormLabel>Modo de Equipes</FormLabel>
                                 <FormControl>
                                     <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
                                         <FormItem className="flex items-center space-x-3 space-y-0">
