@@ -70,16 +70,73 @@ export type Championship = {
   nome: string;
   dataInicio: Date | string;
   dataFim: Date | string;
+  tipoCampeonato: 'liga' | 'copa' | 'avulso';
+  tipoPalpite: 'selecao' | 'times' | 'mista';
+  formatoFases?: 'fases' | 'rodadas';
   pontuacao: {
-    exato: number;
-    situacao: number;
+    sistema: 'tradicional' | 'combo';
+    tradicional: {
+      ativo: boolean;
+      exato: number;
+      situacao: number;
+    };
+    combo: {
+      ativo: boolean;
+      gols: number;
+      placar: number;
+    };
+  };
+  banner: {
+    ativo: boolean;
+    backgroundUrl?: string;
+    campeaoGeral: {
+      ativo: boolean;
+    };
+    palpiteiro: {
+      ativo: boolean;
+      fotoAtiva: boolean;
+    }
   };
 };
 
 
 export const mockChampionships: Championship[] = [
-  { id: 'champ_1', nome: 'Brasileirão Série A 2024', dataInicio: '2024-04-13', dataFim: '2024-12-08', pontuacao: { exato: 10, situacao: 5 } },
-  { id: 'champ_2', nome: 'Copa Libertadores 2024', dataInicio: '2024-02-06', dataFim: '2024-11-30', pontuacao: { exato: 15, situacao: 7 } },
+  { 
+    id: 'champ_1', 
+    nome: 'Brasileirão Série A 2024', 
+    dataInicio: '2024-04-13', 
+    dataFim: '2024-12-08', 
+    tipoCampeonato: 'liga',
+    tipoPalpite: 'times',
+    pontuacao: { 
+      sistema: 'tradicional',
+      tradicional: { ativo: true, exato: 10, situacao: 5 },
+      combo: { ativo: false, gols: 3, placar: 7 }
+    },
+    banner: {
+      ativo: true,
+      backgroundUrl: 'https://placehold.co/857x828.png',
+      campeaoGeral: { ativo: true },
+      palpiteiro: { ativo: true, fotoAtiva: true }
+    }
+  },
+  { 
+    id: 'champ_2', 
+    nome: 'Copa Libertadores 2024', 
+    dataInicio: '2024-02-06', 
+    dataFim: '2024-11-30', 
+    tipoCampeonato: 'copa',
+    tipoPalpite: 'times',
+    formatoFases: 'fases',
+    pontuacao: {
+      sistema: 'tradicional',
+      tradicional: { ativo: true, exato: 15, situacao: 7 },
+      combo: { ativo: false, gols: 5, placar: 10 }
+    },
+    banner: {
+      ativo: false,
+    }
+  },
 ];
 
 export type Match = {
@@ -143,10 +200,10 @@ export const mockMatches = {
     MOCK_MATCH_RECENT_11,
   ],
   upcoming: [
-    { id: 'match_6', fase: 'Oitavas de Final', campeonato: 'Copa Libertadores 2024', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo', maxPontos: 15 },
-    { id: 'match_4', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: futureDate(1.5), status: 'Agendado', maxPontos: 10 }, // Partida para contagem regressiva
-    { id: 'match_5', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3), status: 'Agendado', maxPontos: 10 },
-    { id: 'match_7', fase: 'Rodada 40', campeonato: 'Brasileirão Série A 2024', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24), status: 'Agendado', maxPontos: 10 },
+    { id: 'match_6', fase: 'Oitavas de Final', campeonato: 'Copa Libertadores 2024', campeonatoId: 'champ_2', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo', maxPontos: 15 },
+    { id: 'match_4', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: futureDate(1.5), status: 'Agendado', maxPontos: 10 }, // Partida para contagem regressiva
+    { id: 'match_5', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3), status: 'Agendado', maxPontos: 10 },
+    { id: 'match_7', fase: 'Rodada 40', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24), status: 'Agendado', maxPontos: 10 },
   ],
 };
 
