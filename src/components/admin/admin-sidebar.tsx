@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -21,6 +20,7 @@ import {
   Shield,
   MessageSquareWarning,
   FileClock,
+  History,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -38,6 +38,7 @@ export function AdminSidebar() {
     { href: '/admin/users', label: 'Usuários', icon: Users },
     { href: '/admin/championships', label: 'Campeonatos', icon: Trophy },
     { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
+    { href: '/admin/history', label: 'Histórico de Partidas', icon: History },
     { href: '/admin/logs', label: 'Logs de Atividades', icon: FileClock },
     // { href: '/admin/emergency-message', label: 'Aviso Urgente', icon: MessageSquareWarning },
   ];
@@ -94,7 +95,7 @@ export function AdminSidebar() {
             ))}
             <SidebarMenuItem>
                 <Link href="/" passHref onClick={handleLinkClick}>
-                    <SidebarMenuButton asChild tooltip={{ children: "Sair do Admin", side: 'right' }}>
+                    <SidebarMenuButton asChild tooltip={{ children: "Sair", side: 'right' }}>
                         <div>
                           <LogOut />
                           <span>Sair</span>

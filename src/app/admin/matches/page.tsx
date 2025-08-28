@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,6 @@ import { MatchForm } from '@/components/admin/match-form';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 // Componente para evitar erro de hidratação com datas
 const FormattedDate = ({ dateString, formatString = "eeee, dd/MM 'às' HH:mm" }: { dateString: string, formatString?: string }) => {
@@ -67,32 +66,9 @@ export default function AdminMatchesPage() {
     const filteredMatches = useMemo(() => {
         if (!selectedChampionshipId) return [];
 
-        const statusOrder: Record<Match['status'], number> = {
-            'Ao Vivo': 1,
-            'Agendado': 2,
-            'Finalizado': 3,
-            'Cancelado': 4,
-        };
-
         return matches
-            .filter(match => match.campeonatoId === selectedChampionshipId)
-            .sort((a, b) => {
-                const statusA = statusOrder[a.status] || 99;
-                const statusB = statusOrder[b.status] || 99;
-
-                // Se os status forem diferentes, ordena por eles (Ao Vivo/Agendado primeiro)
-                if (statusA !== statusB) {
-                    return statusA - statusB;
-                }
-                
-                // Se o status for Agendado ou Ao Vivo, ordena do mais próximo para o mais distante
-                if (a.status === 'Agendado' || a.status === 'Ao Vivo') {
-                     return new Date(a.data).getTime() - new Date(b.data).getTime();
-                }
-
-                // Se o status for Finalizado ou Cancelado, ordena do mais recente para o mais antigo
-                return new Date(b.data).getTime() - new Date(a.data).getTime();
-            });
+            .filter(match => match.campeonatoId === selectedChampionshipId && (match.status === 'Agendado' || match.status === 'Ao Vivo'))
+            .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
     }, [selectedChampionshipId, matches]);
     
     const groupedMatches = useMemo(() => {
@@ -155,6 +131,11 @@ export default function AdminMatchesPage() {
         const currentScore = scores[matchId];
         if (!currentScore) return;
 
+        // Se o jogo já começou, não pode ser editado aqui (só o placar)
+        if (isPast(parseISO(matches.find(m => m.id === matchId)!.data)) && !statusChange) {
+             console.log("Apenas atualizando placar de jogo em andamento/passado");
+        }
+
         const numScoreA = currentScore.placarA === '' ? null : Number(currentScore.placarA);
         const numScoreB = currentScore.placarB === '' ? null : Number(currentScore.placarB);
         
@@ -164,7 +145,7 @@ export default function AdminMatchesPage() {
                 ...m, 
                 placarA: numScoreA, 
                 placarB: numScoreB, 
-                status: statusChange ?? m.status // Altera o status apenas se for fornecido
+                status: statusChange ?? (isPast(parseISO(m.data)) ? 'Ao Vivo' : 'Agendado')
               } 
             : m
         ));
@@ -184,7 +165,7 @@ export default function AdminMatchesPage() {
         updateMatchData(match.id, 'Finalizado');
         toast({
             title: "Partida Finalizada!",
-            description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada.`,
+            description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada e movida para o histórico.`,
         });
     };
 
@@ -206,7 +187,7 @@ export default function AdminMatchesPage() {
                     <CalendarCheck className="h-8 w-8 text-primary" />
                     <div>
                         <h1 className="text-3xl font-bold font-headline">Gerenciar Partidas</h1>
-                        <p className="text-muted-foreground">Adicione, edite e atualize os resultados das partidas.</p>
+                        <p className="text-muted-foreground">Adicione, edite e atualize os resultados das partidas agendadas ou ao vivo.</p>
                     </div>
                 </div>
 
@@ -255,6 +236,7 @@ export default function AdminMatchesPage() {
                                     const originalPlacarA = match.placarA?.toString() ?? '';
                                     const originalPlacarB = match.placarB?.toString() ?? '';
                                     const hasChanged = score.placarA !== originalPlacarA || score.placarB !== originalPlacarB;
+                                    const isLive = isPast(parseISO(match.data));
 
                                     return (
                                         <Card key={match.id} className="relative overflow-hidden">
@@ -268,7 +250,7 @@ export default function AdminMatchesPage() {
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => handleEdit(match)}>
+                                                            <DropdownMenuItem onClick={() => handleEdit(match)} disabled={isLive}>
                                                                 <Pencil className="mr-2 h-4 w-4" />
                                                                 Editar Detalhes
                                                             </DropdownMenuItem>
@@ -318,7 +300,6 @@ export default function AdminMatchesPage() {
                                                             value={score.placarA}
                                                             onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
                                                             min="0"
-                                                            disabled={match.status === 'Finalizado'}
                                                         />
                                                         <span className="font-bold text-muted-foreground text-lg">x</span>
                                                         <Input 
@@ -327,7 +308,6 @@ export default function AdminMatchesPage() {
                                                             value={score.placarB}
                                                             onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
                                                             min="0"
-                                                            disabled={match.status === 'Finalizado'}
                                                         />
                                                     </div>
                                                     
@@ -342,28 +322,28 @@ export default function AdminMatchesPage() {
                                                     </div>
                                                 </div>
 
-                                                <Badge variant={getStatusVariant(match.status)} className={cn(match.status === 'Ao Vivo' && 'animate-pulse')}>
-                                                    {match.status}
+                                                <Badge variant={getStatusVariant(isLive ? 'Ao Vivo' : match.status)} className={cn(isLive && 'animate-pulse')}>
+                                                    {isLive ? 'Ao Vivo' : match.status}
                                                 </Badge>
                                                 
+                                            </CardContent>
+                                             <CardFooter className="flex-col items-center justify-center gap-2 px-4 pb-4">
                                                 <div className="flex flex-col sm:flex-row gap-2 items-center">
-                                                    <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged || match.status === 'Finalizado'} size="sm" variant="secondary">
+                                                    <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm" variant="secondary">
                                                         <Save className="mr-2 h-4 w-4" />
                                                         Salvar Placar
                                                     </Button>
-                                                     {match.status !== 'Finalizado' && (
-                                                        <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
-                                                            <Flag className="mr-2 h-4 w-4" />
-                                                            Finalizar Partida
-                                                        </Button>
-                                                    )}
+                                                    <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
+                                                        <Flag className="mr-2 h-4 w-4" />
+                                                        Finalizar Partida
+                                                    </Button>
                                                 </div>
                                                  {lastUpdated[match.id] && (
                                                     <p className="text-xs text-muted-foreground mt-2">
                                                         Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
                                                     </p>
                                                 )}
-                                            </CardContent>
+                                             </CardFooter>
                                         </Card>
                                     )
                                 })}
@@ -372,7 +352,7 @@ export default function AdminMatchesPage() {
                         ) : (
                             <Card className="flex flex-col items-center justify-center p-10 border-dashed">
                                 <p className="text-center text-muted-foreground">
-                                    Nenhuma partida encontrada para este campeonato.
+                                    Nenhuma partida agendada ou ao vivo para este campeonato.
                                 </p>
                             </Card>
                         )}
