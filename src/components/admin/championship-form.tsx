@@ -32,7 +32,7 @@ import {
 import { Calendar } from '../ui/calendar';
 import { CalendarIcon, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import type { Championship } from '@/lib/data';
 import { useEffect } from 'react';
 
