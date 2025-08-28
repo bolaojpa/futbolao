@@ -42,16 +42,16 @@ const FormattedDate = ({ dateString, formatString = "eeee, dd/MM 'às' HH:mm" }:
 export default function AdminMatchesPage() {
     const [matches, setMatches] = useState<Match[]>(mockAllMatches);
     const [selectedChampionshipId, setSelectedChampionshipId] = useState<string>('');
+    const [selectedPhase, setSelectedPhase] = useState('all');
+    const [selectedStatus, setSelectedStatus] = useState<'all' | 'Agendado' | 'Ao Vivo'>('all');
     const [editingMatch, setEditingMatch] = useState<Match | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     
-    // Estado para os placares editáveis nos cards
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
 
     const { toast } = useToast();
 
-    // Inicializa os placares no estado local quando as partidas são carregadas
     useEffect(() => {
         const initialScores: Record<string, { placarA: string; placarB: string; }> = {};
         matches.forEach(match => {
@@ -62,14 +62,32 @@ export default function AdminMatchesPage() {
         });
         setScores(initialScores);
     }, [matches]);
+
+    const availablePhases = useMemo(() => {
+        if (!selectedChampionshipId) return [];
+        const phases = matches
+            .filter(match => match.campeonatoId === selectedChampionshipId && (match.status === 'Agendado' || match.status === 'Ao Vivo'))
+            .map(match => match.fase);
+        return [...new Set(phases)];
+    }, [selectedChampionshipId, matches]);
     
     const filteredMatches = useMemo(() => {
         if (!selectedChampionshipId) return [];
 
         return matches
-            .filter(match => match.campeonatoId === selectedChampionshipId && (match.status === 'Agendado' || match.status === 'Ao Vivo'))
+            .filter(match => {
+                 const isLive = isPast(parseISO(match.data));
+                 const currentStatus = isLive ? 'Ao Vivo' : match.status;
+
+                 const championshipMatch = match.campeonatoId === selectedChampionshipId;
+                 const activeMatch = match.status === 'Agendado' || match.status === 'Ao Vivo';
+                 const phaseMatch = selectedPhase === 'all' || match.fase === selectedPhase;
+                 const statusMatch = selectedStatus === 'all' || currentStatus === selectedStatus;
+
+                 return championshipMatch && activeMatch && phaseMatch && statusMatch;
+            })
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [selectedChampionshipId, matches]);
+    }, [selectedChampionshipId, matches, selectedPhase, selectedStatus]);
     
     const groupedMatches = useMemo(() => {
         return filteredMatches.reduce((acc, match) => {
@@ -131,11 +149,6 @@ export default function AdminMatchesPage() {
         const currentScore = scores[matchId];
         if (!currentScore) return;
 
-        // Se o jogo já começou, não pode ser editado aqui (só o placar)
-        if (isPast(parseISO(matches.find(m => m.id === matchId)!.data)) && !statusChange) {
-             console.log("Apenas atualizando placar de jogo em andamento/passado");
-        }
-
         const numScoreA = currentScore.placarA === '' ? null : Number(currentScore.placarA);
         const numScoreB = currentScore.placarB === '' ? null : Number(currentScore.placarB);
         
@@ -191,13 +204,18 @@ export default function AdminMatchesPage() {
                     </div>
                 </div>
 
-                <div className="mb-6 flex flex-col md:flex-row gap-4">
-                    <div className="flex-1">
-                        <label htmlFor="championship-select" className="text-sm font-medium text-muted-foreground">
-                            Selecione um campeonato para ver as partidas
-                        </label>
-                        <Select value={selectedChampionshipId} onValueChange={setSelectedChampionshipId}>
-                            <SelectTrigger id="championship-select" className="w-full md:w-[320px] mt-1">
+                 <Card className="mb-6">
+                    <CardHeader>
+                        <CardTitle>Filtros</CardTitle>
+                        <CardDescription>Selecione um campeonato para visualizar e filtrar suas partidas ativas.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col md:flex-row gap-4">
+                        <Select value={selectedChampionshipId} onValueChange={(value) => {
+                            setSelectedChampionshipId(value);
+                            setSelectedPhase('all');
+                            setSelectedStatus('all');
+                        }}>
+                            <SelectTrigger className="w-full md:w-[250px]">
                                 <SelectValue placeholder="Escolha um campeonato..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -206,24 +224,48 @@ export default function AdminMatchesPage() {
                                 ))}
                             </SelectContent>
                         </Select>
-                    </div>
-                     {selectedChampionshipId && (
-                        <div className="self-end">
-                             <MatchForm
-                                isOpen={isFormOpen}
-                                setIsOpen={setIsFormOpen}
-                                onSubmit={handleFormSubmit}
-                                match={editingMatch}
-                                championshipId={selectedChampionshipId}
-                            >
-                                <Button onClick={handleCreate}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Adicionar Partida
-                                </Button>
-                             </MatchForm>
-                        </div>
-                    )}
-                </div>
+
+                        <Select value={selectedPhase} onValueChange={setSelectedPhase} disabled={!selectedChampionshipId || availablePhases.length === 0}>
+                            <SelectTrigger className="w-full md:w-[250px]">
+                                <SelectValue placeholder="Filtrar por fase/rodada..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas as Fases</SelectItem>
+                                {availablePhases.map(phase => (
+                                    <SelectItem key={phase} value={phase}>{phase}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as any)} disabled={!selectedChampionshipId}>
+                            <SelectTrigger className="w-full md:w-[200px]">
+                                <SelectValue placeholder="Filtrar por status..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos os Status</SelectItem>
+                                <SelectItem value="Agendado">Agendadas</SelectItem>
+                                <SelectItem value="Ao Vivo">Ao Vivo</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                         {selectedChampionshipId && (
+                            <div className="ml-auto flex-shrink-0">
+                                <MatchForm
+                                    isOpen={isFormOpen}
+                                    setIsOpen={setIsFormOpen}
+                                    onSubmit={handleFormSubmit}
+                                    match={editingMatch}
+                                    championshipId={selectedChampionshipId}
+                                >
+                                    <Button>
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Adicionar Partida
+                                    </Button>
+                                </MatchForm>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
                 
                  {selectedChampionshipId ? (
                     <div className="space-y-8">
@@ -352,7 +394,7 @@ export default function AdminMatchesPage() {
                         ) : (
                             <Card className="flex flex-col items-center justify-center p-10 border-dashed">
                                 <p className="text-center text-muted-foreground">
-                                    Nenhuma partida agendada ou ao vivo para este campeonato.
+                                    Nenhuma partida encontrada para os filtros selecionados.
                                 </p>
                             </Card>
                         )}
@@ -369,3 +411,4 @@ export default function AdminMatchesPage() {
         </TooltipProvider>
     );
 }
+
