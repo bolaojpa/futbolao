@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert, Flag } from 'lucide-react';
+import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert, Flag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,6 +18,8 @@ import { MatchForm } from '@/components/admin/match-form';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
+
+const ITEMS_PER_PAGE = 5;
 
 // Componente para evitar erro de hidratação com datas
 const FormattedDate = ({ dateString, formatString = "eeee, dd/MM 'às' HH:mm" }: { dateString: string, formatString?: string }) => {
@@ -46,6 +48,7 @@ export default function AdminMatchesPage() {
     const [selectedStatus, setSelectedStatus] = useState<'all' | 'Agendado' | 'Ao Vivo'>('all');
     const [editingMatch, setEditingMatch] = useState<Match | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
     
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
@@ -99,6 +102,27 @@ export default function AdminMatchesPage() {
             return acc;
         }, {} as Record<string, Match[]>);
     }, [filteredMatches]);
+
+    const paginatedItems = useMemo(() => {
+        const flatMatches = Object.values(groupedMatches).flat();
+        return flatMatches.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
+    }, [groupedMatches, currentPage]);
+
+    const totalPages = Math.ceil(Object.values(groupedMatches).flat().length / ITEMS_PER_PAGE);
+
+    const paginatedGroupedMatches = useMemo(() => {
+        return paginatedItems.reduce((acc, match) => {
+            const phase = match.fase || 'Partidas';
+            if (!acc[phase]) {
+                acc[phase] = [];
+            }
+            acc[phase].push(match);
+            return acc;
+        }, {} as Record<string, Match[]>);
+    }, [paginatedItems]);
 
 
     const handleCreate = () => {
@@ -214,6 +238,7 @@ export default function AdminMatchesPage() {
                             setSelectedChampionshipId(value);
                             setSelectedPhase('all');
                             setSelectedStatus('all');
+                            setCurrentPage(1);
                         }}>
                             <SelectTrigger className="w-full md:w-[250px]">
                                 <SelectValue placeholder="Escolha um campeonato..." />
@@ -225,7 +250,7 @@ export default function AdminMatchesPage() {
                             </SelectContent>
                         </Select>
 
-                        <Select value={selectedPhase} onValueChange={setSelectedPhase} disabled={!selectedChampionshipId || availablePhases.length === 0}>
+                        <Select value={selectedPhase} onValueChange={(v) => {setSelectedPhase(v); setCurrentPage(1);}} disabled={!selectedChampionshipId || availablePhases.length === 0}>
                             <SelectTrigger className="w-full md:w-[250px]">
                                 <SelectValue placeholder="Filtrar por fase/rodada..." />
                             </SelectTrigger>
@@ -237,7 +262,7 @@ export default function AdminMatchesPage() {
                             </SelectContent>
                         </Select>
 
-                        <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as any)} disabled={!selectedChampionshipId}>
+                        <Select value={selectedStatus} onValueChange={(value) => {setSelectedStatus(value as any); setCurrentPage(1);}} disabled={!selectedChampionshipId}>
                             <SelectTrigger className="w-full md:w-[200px]">
                                 <SelectValue placeholder="Filtrar por status..." />
                             </SelectTrigger>
@@ -269,8 +294,8 @@ export default function AdminMatchesPage() {
                 
                  {selectedChampionshipId ? (
                     <div className="space-y-8">
-                        {Object.keys(groupedMatches).length > 0 ? (
-                           Object.entries(groupedMatches).map(([phase, matchesInPhase]) => (
+                        {Object.keys(paginatedGroupedMatches).length > 0 ? (
+                           Object.entries(paginatedGroupedMatches).map(([phase, matchesInPhase]) => (
                              <div key={phase} className="space-y-4">
                                 <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
                                 {matchesInPhase.map(match => {
@@ -407,8 +432,31 @@ export default function AdminMatchesPage() {
                         </p>
                     </Card>
                 )}
+
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 mt-8">
+                        <Button 
+                            variant="outline"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-2" />
+                            Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                            Página {currentPage} de {totalPages}
+                        </span>
+                        <Button 
+                            variant="outline"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Próximo
+                            <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                    </div>
+                )}
             </div>
         </TooltipProvider>
     );
 }
-

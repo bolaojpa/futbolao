@@ -1,19 +1,22 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { mockChampionships as initialChampionships } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Trophy, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChampionshipForm } from '@/components/admin/championship-form';
 import type { Championship } from '@/lib/data';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+
+
+const ITEMS_PER_PAGE = 10;
 
 // Componente para evitar erro de hidratação
 const FormattedDate = ({ dateString }: { dateString: string }) => {
@@ -39,6 +42,7 @@ export default function AdminChampionshipsPage() {
     const [championships, setChampionships] = useState<Championship[]>(initialChampionships);
     const [editingChampionship, setEditingChampionship] = useState<Championship | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
     const { toast } = useToast();
 
     const handleCreate = () => {
@@ -76,6 +80,16 @@ export default function AdminChampionshipsPage() {
             });
         }
     };
+
+    const sortedChampionships = useMemo(() => 
+        [...championships].sort((a, b) => new Date(b.dataInicio as string).getTime() - new Date(a.dataInicio as string).getTime())
+    , [championships]);
+
+    const totalPages = Math.ceil(sortedChampionships.length / ITEMS_PER_PAGE);
+    const paginatedChampionships = sortedChampionships.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
 
     return (
@@ -120,8 +134,8 @@ export default function AdminChampionshipsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {championships.length > 0 ? (
-                                championships.map(champ => (
+                            {paginatedChampionships.length > 0 ? (
+                                paginatedChampionships.map(champ => (
                                     <TableRow key={champ.id}>
                                         <TableCell className="font-medium">{champ.nome}</TableCell>
                                         <TableCell className="hidden sm:table-cell">
@@ -179,6 +193,31 @@ export default function AdminChampionshipsPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-8">
+                    <Button 
+                        variant="outline"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="h-4 w-4 mr-2" />
+                        Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Página {currentPage} de {totalPages}
+                    </span>
+                    <Button 
+                        variant="outline"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Próximo
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                </div>
+            )}
+
         </div>
     );
 }
