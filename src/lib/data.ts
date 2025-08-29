@@ -90,6 +90,7 @@ export type Championship = {
   banner: {
     ativo: boolean;
     backgroundUrl?: string;
+    displayMode?: 'photo_and_names' | 'names_only';
   };
 };
 
@@ -109,6 +110,7 @@ export const mockChampionships: Championship[] = [
     banner: {
       ativo: true,
       backgroundUrl: 'https://placehold.co/857x828.png',
+      displayMode: 'photo_and_names',
     }
   },
   { 
@@ -131,6 +133,7 @@ export const mockChampionships: Championship[] = [
     },
     banner: {
       ativo: true,
+      displayMode: 'photo_and_names',
     }
   },
 ];

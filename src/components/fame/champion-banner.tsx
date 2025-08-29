@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Image from "next/image";
@@ -14,6 +15,7 @@ export interface ChampionBannerProps {
   modoEquipes: "selecao" | "times" | "mista";
   palpiteiroNome: string;
   palpiteiroAvatarUrl: string;
+  displayMode?: 'photo_and_names' | 'names_only';
 }
 
 const Section = ({
@@ -38,7 +40,10 @@ export function ChampionBanner({
   modoEquipes,
   palpiteiroNome,
   palpiteiroAvatarUrl,
+  displayMode = 'photo_and_names',
 }: ChampionBannerProps) {
+  const showPhotos = displayMode === 'photo_and_names';
+
   return (
     <div
       className="w-full h-full aspect-[857/828] bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-[0.33%] text-white relative overflow-hidden [container-type:inline-size] rounded-lg"
@@ -75,15 +80,17 @@ export function ChampionBanner({
         <h3 className="text-[6.5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
           CAMPEÃO GERAL
         </h3>
-        <div className="flex items-center justify-center gap-[4%] mt-[2%] w-full">
-          <Image
-            src={campeaoGeralAvatarUrl}
-            alt={`Avatar de ${campeaoGeralNome}`}
-            width={80}
-            height={80}
-            className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
-          />
-          <p className="text-[6.5cqw] font-bold whitespace-nowrap truncate">{campeaoGeralNome}</p>
+        <div className={cn("flex items-center justify-center gap-[4%] mt-[2%] w-full", !showPhotos && "mt-[4%]")}>
+          {showPhotos && (
+            <Image
+              src={campeaoGeralAvatarUrl}
+              alt={`Avatar de ${campeaoGeralNome}`}
+              width={80}
+              height={80}
+              className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
+            />
+          )}
+          <p className={cn("font-bold whitespace-nowrap truncate", showPhotos ? "text-[6.5cqw]" : "text-[8cqw]")}>{campeaoGeralNome}</p>
         </div>
       </Section>
 
@@ -92,15 +99,17 @@ export function ChampionBanner({
         <h3 className="text-[6.5cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
           {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
-        <div className="flex items-center justify-center gap-[4%] mt-[2%] w-full">
-          <Image
-            src={palpiteiroAvatarUrl}
-            alt={`Avatar de ${palpiteiroNome}`}
-            width={80}
-            height={80}
-            className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
-          />
-          <p className="text-[6.5cqw] font-bold whitespace-nowrap truncate">{palpiteiroNome}</p>
+        <div className={cn("flex items-center justify-center gap-[4%] mt-[2%] w-full", !showPhotos && "mt-[4%]")}>
+          {showPhotos && (
+            <Image
+              src={palpiteiroAvatarUrl}
+              alt={`Avatar de ${palpiteiroNome}`}
+              width={80}
+              height={80}
+              className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
+            />
+          )}
+          <p className={cn("font-bold whitespace-nowrap truncate", showPhotos ? "text-[6.5cqw]" : "text-[8cqw]")}>{palpiteiroNome}</p>
         </div>
       </Section>
     </div>

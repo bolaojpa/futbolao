@@ -74,6 +74,7 @@ const championshipFormSchema = z.object({
   banner: z.object({
     ativo: z.boolean(),
     backgroundUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
+    displayMode: z.enum(['photo_and_names', 'names_only']).optional(),
   }),
 }).refine(data => data.dataFim > data.dataInicio, {
   message: "A data de fim deve ser posterior à data de início.",
@@ -115,7 +116,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         fases: [],
         banner: {
             ativo: false,
-            backgroundUrl: ""
+            backgroundUrl: "",
+            displayMode: 'photo_and_names',
         }
     },
   });
@@ -143,7 +145,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         },
         banner: {
             ativo: championship.banner?.ativo || false,
-            backgroundUrl: championship.banner?.backgroundUrl || ""
+            backgroundUrl: championship.banner?.backgroundUrl || "",
+            displayMode: championship.banner?.displayMode || 'photo_and_names',
         }
       });
       setFasesList(championship.fases || []);
@@ -161,7 +164,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         rodadas: undefined,
         banner: {
             ativo: false,
-            backgroundUrl: ""
+            backgroundUrl: "",
+            displayMode: 'photo_and_names',
         }
       });
        setFasesList([]);
@@ -209,7 +213,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       },
       banner: { 
         ativo: data.banner.ativo,
-        backgroundUrl: data.banner.backgroundUrl
+        backgroundUrl: data.banner.backgroundUrl,
+        displayMode: data.banner.displayMode,
        } 
     };
     onSubmit(finalData);
@@ -229,6 +234,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     modoEquipes: watchAllFields.modoEquipes,
     palpiteiroNome: 'Melhor Palpiteiro',
     palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
+    displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
   };
 
   return (
@@ -573,30 +579,56 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 />
                             </CardHeader>
                             <CardContent className="p-4 pt-0 space-y-4">
-                                <FormField
-                                    control={form.control}
-                                    name="banner.backgroundUrl"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>URL da Imagem de Fundo (Opcional)</FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    placeholder="https://exemplo.com/fundo.png" 
-                                                    {...field}
-                                                    disabled={!isBannerActive}
-                                                />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Use uma imagem de fundo personalizada para o banner deste campeonato.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <Button type="button" variant="outline" onClick={() => setIsPreviewOpen(true)} disabled={!isBannerActive}>
-                                    <Eye className="mr-2 h-4 w-4"/>
-                                    Pré-visualizar Banner
-                                </Button>
+                                <div className="space-y-4" style={{ opacity: isBannerActive ? 1 : 0.5 }}>
+                                    <FormField
+                                        control={form.control}
+                                        name="banner.backgroundUrl"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>URL da Imagem de Fundo (Opcional)</FormLabel>
+                                                <FormControl>
+                                                    <Input 
+                                                        placeholder="https://exemplo.com/fundo.png" 
+                                                        {...field}
+                                                        disabled={!isBannerActive}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                     <FormField
+                                        control={form.control}
+                                        name="banner.displayMode"
+                                        render={({ field }) => (
+                                            <FormItem className="space-y-2">
+                                                <FormLabel>Modo de Exibição do Banner</FormLabel>
+                                                <FormControl>
+                                                    <RadioGroup 
+                                                        onValueChange={field.onChange} 
+                                                        defaultValue={field.value}
+                                                        className="flex flex-col space-y-1"
+                                                        disabled={!isBannerActive}
+                                                    >
+                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                            <FormControl><RadioGroupItem value="photo_and_names" /></FormControl>
+                                                            <FormLabel className="font-normal">Foto e Nomes</FormLabel>
+                                                        </FormItem>
+                                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                                            <FormControl><RadioGroupItem value="names_only" /></FormControl>
+                                                            <FormLabel className="font-normal">Apenas Nomes</FormLabel>
+                                                        </FormItem>
+                                                    </RadioGroup>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <Button type="button" variant="outline" onClick={() => setIsPreviewOpen(true)} disabled={!isBannerActive}>
+                                        <Eye className="mr-2 h-4 w-4"/>
+                                        Pré-visualizar Banner
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
