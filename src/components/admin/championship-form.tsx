@@ -333,7 +333,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                     <FormItem>
                                         <FormLabel>Número de Rodadas</FormLabel>
                                         <FormControl>
-                                            <Input type="number" placeholder="Ex: 38" {...field} />
+                                            <Input type="number" placeholder="Ex: 38" {...field} value={field.value ?? ''} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -410,7 +410,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                     <FormItem>
                                         <FormLabel>Número de Rodadas</FormLabel>
                                         <FormControl>
-                                            <Input type="number" placeholder="Ex: 10" {...field} />
+                                            <Input type="number" placeholder="Ex: 10" {...field} value={field.value ?? ''} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
