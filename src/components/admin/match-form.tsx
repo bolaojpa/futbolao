@@ -92,25 +92,27 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
 
 
   useEffect(() => {
-    if (isOpen && match) {
-      const matchDate = parseISO(match.data);
-      form.reset({
-        timeA: match.timeA,
-        timeB: match.timeB,
-        fase: match.fase,
-        data: matchDate,
-        horario: format(matchDate, 'HH:mm'),
-      });
-    } else if (isOpen) {
-      form.reset({
-        timeA: '',
-        timeB: '',
-        fase: '',
-        data: undefined,
-        horario: '16:00',
-      });
+    if (isOpen) {
+        if (match) {
+            const matchDate = parseISO(match.data);
+            form.reset({
+                timeA: match.timeA,
+                timeB: match.timeB,
+                fase: match.fase,
+                data: matchDate,
+                horario: format(matchDate, 'HH:mm'),
+            });
+        } else {
+            form.reset({
+                timeA: '',
+                timeB: '',
+                fase: '',
+                data: undefined,
+                horario: '16:00',
+            });
+        }
     }
-  }, [match, isOpen, form]);
+  }, [isOpen, match, form]);
 
   const handleFormSubmit = (data: MatchFormValues) => {
     const [hours, minutes] = data.horario.split(':').map(Number);
