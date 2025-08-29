@@ -70,7 +70,12 @@ const championshipFormSchema = z.object({
         ativo: z.boolean().default(true),
         exato: z.coerce.number().int().min(1, "A pontuação deve ser no mínimo 1."),
         situacao: z.coerce.number().int().min(1, "A pontuação deve ser no mínimo 1."),
-    })
+    }),
+    combo: z.object({
+      ativo: z.boolean().default(false),
+      gols: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(0),
+      placar: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(0),
+    }).optional(),
   }),
   banner: z.object({
     ativo: z.boolean(),
@@ -114,7 +119,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         tipoCampeonato: 'liga',
         modoEquipes: 'times',
         pontuacao: { 
-            tradicional: { ativo: true, exato: 10, situacao: 5 }
+            tradicional: { ativo: true, exato: 10, situacao: 5 },
+            combo: { ativo: false, gols: 3, placar: 7 },
         },
         fases: [],
         banner: {
@@ -128,6 +134,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
   const watchAllFields = form.watch();
   const isBannerActive = watchAllFields.banner?.ativo;
+  const isComboActive = watchAllFields.pontuacao?.combo?.ativo;
 
   useEffect(() => {
     if (isOpen && championship) {
@@ -146,6 +153,11 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
               ativo: championship.pontuacao.tradicional.ativo,
               exato: championship.pontuacao.tradicional.exato,
               situacao: championship.pontuacao.tradicional.situacao
+          },
+          combo: {
+              ativo: championship.pontuacao.combo?.ativo || false,
+              gols: championship.pontuacao.combo?.gols || 3,
+              placar: championship.pontuacao.combo?.placar || 7,
           }
         },
         banner: {
@@ -165,7 +177,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         tipoCampeonato: 'liga',
         modoEquipes: 'times',
         pontuacao: { 
-            tradicional: { ativo: true, exato: 10, situacao: 5 }
+            tradicional: { ativo: true, exato: 10, situacao: 5 },
+            combo: { ativo: false, gols: 3, placar: 7 },
         },
         fases: [],
         rodadas: undefined,
@@ -217,8 +230,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       rodadas: data.tipoCampeonato === 'liga' ? data.rodadas : (data.formatoFases === 'rodadas' ? data.rodadas : undefined),
       fases: data.formatoFases === 'fases' ? data.fases : undefined,
       pontuacao: {
-        ...championship?.pontuacao,
         tradicional: data.pontuacao.tradicional,
+        combo: data.pontuacao.combo,
       },
       banner: { 
         ativo: data.banner.ativo,
@@ -565,23 +578,58 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 </div>
                             </CardContent>
                         </Card>
-                         <div>
-                            <h3 className="mb-2 text-md font-medium text-muted-foreground">Sistema de Pontuação Combo (Em breve)</h3>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4 opacity-50">
-                                <FormItem>
-                                <FormLabel>Acerto de Gols</FormLabel>
-                                <FormControl>
-                                    <Input type="number" placeholder="Ex: 3" disabled />
-                                </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                <FormLabel>Combo (Gols + Placar)</FormLabel>
-                                <FormControl>
-                                    <Input type="number" placeholder="Ex: 7" disabled />
-                                </FormControl>
-                                </FormItem>
-                            </div>
-                        </div>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between p-4">
+                                <div>
+                                    <h3 className="text-md font-medium">Sistema de Pontuação Combo</h3>
+                                    <p className="text-sm text-muted-foreground">Pontos bônus por acertar gols ou o placar exato.</p>
+                                </div>
+                                <FormField
+                                    control={form.control}
+                                    name="pontuacao.combo.ativo"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardHeader>
+                             <CardContent className="p-4 pt-0">
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4" style={{ opacity: isComboActive ? 1 : 0.5 }}>
+                                    <FormField
+                                        control={form.control}
+                                        name="pontuacao.combo.gols"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Acerto de Gols</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="Ex: 3" {...field} disabled={!isComboActive} />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="pontuacao.combo.placar"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Combo (Gols + Placar)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="Ex: 7" {...field} disabled={!isComboActive} />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                     <TabsContent value="banner" className="space-y-6">
                          <Card>
