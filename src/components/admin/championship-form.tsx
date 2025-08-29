@@ -31,7 +31,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Plus, X } from 'lucide-react';
+import { CalendarIcon, Save, Plus, X, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship } from '@/lib/data';
@@ -42,6 +42,8 @@ import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
+import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
+
 
 type Fase = {
     nome: string;
@@ -99,6 +101,7 @@ interface ChampionshipFormProps {
 export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, children }: ChampionshipFormProps) {
   const [faseInput, setFaseInput] = useState("");
   const [fasesList, setFasesList] = useState<Array<Fase>>([]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   const form = useForm<ChampionshipFormValues>({
     resolver: zodResolver(championshipFormSchema),
@@ -117,9 +120,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     },
   });
 
-  const tipoCampeonato = form.watch('tipoCampeonato');
-  const formatoFases = form.watch('formatoFases');
-  const isBannerActive = form.watch('banner.ativo');
+  const watchAllFields = form.watch();
+  const isBannerActive = watchAllFields.banner?.ativo;
 
   useEffect(() => {
     if (isOpen && championship) {
@@ -218,7 +220,19 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const description = championship ? "Altere os dados do campeonato existente." : "Preencha as informações para adicionar um novo campeonato.";
   const buttonText = championship ? "Salvar Alterações" : "Criar Campeonato";
 
+  const bannerPreviewProps: ChampionBannerProps = {
+    id: 'preview',
+    campeonatoLogoUrl: 'https://placehold.co/128x128.png',
+    campeonatoNome: watchAllFields.nome || 'Nome do Campeonato',
+    campeaoGeralNome: 'Campeão Exemplo',
+    campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
+    modoEquipes: watchAllFields.modoEquipes,
+    palpiteiroNome: 'Melhor Palpiteiro',
+    palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
+  };
+
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children}
@@ -357,7 +371,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
                         <Separator />
                         
-                        {tipoCampeonato === 'liga' ? (
+                        {watchAllFields.tipoCampeonato === 'liga' ? (
                             <FormField
                                 control={form.control}
                                 name="rodadas"
@@ -396,7 +410,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             />
                         )}
 
-                        {formatoFases === 'fases' && tipoCampeonato !== 'liga' && (
+                        {watchAllFields.formatoFases === 'fases' && watchAllFields.tipoCampeonato !== 'liga' && (
                              <div className="space-y-4 rounded-md border p-4">
                                 <h4 className="text-sm font-medium">Definir Fases</h4>
                                 <div className="flex gap-2">
@@ -445,7 +459,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                              </div>
                         )}
 
-                         {formatoFases === 'rodadas' && tipoCampeonato !== 'liga' && (
+                         {watchAllFields.formatoFases === 'rodadas' && watchAllFields.tipoCampeonato !== 'liga' && (
                              <FormField
                                 control={form.control}
                                 name="rodadas"
@@ -558,7 +572,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                     )}
                                 />
                             </CardHeader>
-                            <CardContent className="p-4 pt-0">
+                            <CardContent className="p-4 pt-0 space-y-4">
                                 <FormField
                                     control={form.control}
                                     name="banner.backgroundUrl"
@@ -579,6 +593,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                         </FormItem>
                                     )}
                                 />
+                                <Button type="button" variant="outline" onClick={() => setIsPreviewOpen(true)} disabled={!isBannerActive}>
+                                    <Eye className="mr-2 h-4 w-4"/>
+                                    Pré-visualizar Banner
+                                </Button>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -595,5 +613,24 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         </Form>
       </DialogContent>
     </Dialog>
+    
+    <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-3xl w-full p-0 border-0 bg-transparent shadow-none">
+                <DialogHeader className="hidden">
+                <DialogTitle className="sr-only">Pré-visualização do Banner</DialogTitle>
+                </DialogHeader>
+                <div 
+                    className="relative" 
+                    style={{ 
+                        backgroundImage: `url(${watchAllFields.banner?.backgroundUrl || 'https://placehold.co/857x828.png'})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                    }}
+                >
+                    <ChampionBanner {...bannerPreviewProps} />
+                </div>
+        </DialogContent>
+    </Dialog>
+  </>
   );
 }
