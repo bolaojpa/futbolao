@@ -74,13 +74,12 @@ export type Championship = {
   modoEquipes: 'selecao' | 'times' | 'mista';
   formatoFases?: 'fases' | 'rodadas';
   pontuacao: {
-    sistema: 'tradicional' | 'combo';
     tradicional: {
       ativo: boolean;
       exato: number;
       situacao: number;
     };
-    combo: {
+    combo?: {
       ativo: boolean;
       gols: number;
       placar: number;
@@ -89,13 +88,6 @@ export type Championship = {
   banner: {
     ativo: boolean;
     backgroundUrl?: string;
-    campeaoGeral: {
-      ativo: boolean;
-    };
-    palpiteiro: {
-      ativo: boolean;
-      fotoAtiva: boolean;
-    }
   };
 };
 
@@ -109,15 +101,11 @@ export const mockChampionships: Championship[] = [
     tipoCampeonato: 'liga',
     modoEquipes: 'times',
     pontuacao: { 
-      sistema: 'tradicional',
       tradicional: { ativo: true, exato: 10, situacao: 5 },
-      combo: { ativo: false, gols: 3, placar: 7 }
     },
     banner: {
       ativo: true,
       backgroundUrl: 'https://placehold.co/857x828.png',
-      campeaoGeral: { ativo: true },
-      palpiteiro: { ativo: true, fotoAtiva: true }
     }
   },
   { 
@@ -129,9 +117,7 @@ export const mockChampionships: Championship[] = [
     modoEquipes: 'times',
     formatoFases: 'fases',
     pontuacao: {
-      sistema: 'tradicional',
       tradicional: { ativo: true, exato: 15, situacao: 7 },
-      combo: { ativo: false, gols: 5, placar: 10 }
     },
     banner: {
       ativo: false,
