@@ -165,6 +165,12 @@ function toast({ ...props }: Toast) {
     },
   })
 
+  // Set a timeout to automatically dismiss the toast
+  setTimeout(() => {
+    dismiss();
+  }, props.duration || TOAST_REMOVE_DELAY);
+
+
   return {
     id: id,
     dismiss,
