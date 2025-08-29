@@ -212,12 +212,12 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
                  <FormField
                     control={form.control}
                     name="data"
                     render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem className="flex flex-col flex-1">
                         <FormLabel>Data da Partida</FormLabel>
                         <Popover>
                             <PopoverTrigger asChild>
@@ -256,7 +256,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
                     control={form.control}
                     name="horario"
                     render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem className="flex flex-col flex-1">
                             <FormLabel>Horário da Partida</FormLabel>
                             <FormControl>
                                 <Input type="time" {...field} />
@@ -279,5 +279,3 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
     </Dialog>
   );
 }
-
-    

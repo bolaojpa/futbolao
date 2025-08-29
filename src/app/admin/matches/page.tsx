@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert, Flag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert, Flag, ChevronLeft, ChevronRight, Versus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -350,7 +350,8 @@ export default function AdminMatchesPage() {
                                                 <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
                                                 <FormattedDate dateString={match.data} />
                                                 
-                                                <div className="flex items-center justify-around gap-2 w-full">
+                                                <div className="flex flex-col md:flex-row items-center justify-around gap-4 w-full">
+                                                    
                                                     <div className='flex-1 flex flex-col items-center justify-center gap-2'>
                                                          <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -358,35 +359,35 @@ export default function AdminMatchesPage() {
                                                             </TooltipTrigger>
                                                             <TooltipContent><p>{match.timeA}</p></TooltipContent>
                                                         </Tooltip>
-                                                        <span className="font-bold text-lg text-center truncate w-full">{match.timeA}</span>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-center gap-2">
+                                                        <span className="font-bold text-lg text-center">{match.timeA}</span>
                                                         <Input 
                                                             type="number" 
-                                                            className="w-16 h-12 text-center text-2xl font-bold" 
+                                                            className="w-20 h-12 text-center text-2xl font-bold" 
                                                             value={score.placarA}
                                                             onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
                                                             min="0"
                                                         />
-                                                        <span className="font-bold text-muted-foreground text-lg">x</span>
-                                                        <Input 
-                                                            type="number" 
-                                                            className="w-16 h-12 text-center text-2xl font-bold" 
-                                                            value={score.placarB}
-                                                            onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
-                                                            min="0"
-                                                        />
+                                                    </div>
+
+                                                    <div className="flex items-center justify-center text-muted-foreground my-2 md:my-0">
+                                                        <Versus className="h-6 w-6" />
                                                     </div>
                                                     
-                                                    <div className='flex-1 flex flex-col items-center justify-center gap-2'>
+                                                     <div className='flex-1 flex flex-col items-center justify-center gap-2'>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                                             </TooltipTrigger>
                                                             <TooltipContent><p>{match.timeB}</p></TooltipContent>
                                                         </Tooltip>
-                                                        <span className="font-bold text-lg text-center truncate w-full">{match.timeB}</span>
+                                                        <span className="font-bold text-lg text-center">{match.timeB}</span>
+                                                        <Input 
+                                                            type="number" 
+                                                            className="w-20 h-12 text-center text-2xl font-bold" 
+                                                            value={score.placarB}
+                                                            onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
+                                                            min="0"
+                                                        />
                                                     </div>
                                                 </div>
 
@@ -461,3 +462,4 @@ export default function AdminMatchesPage() {
         </TooltipProvider>
     );
 }
+
