@@ -206,7 +206,7 @@ export default function AdminDashboardPage() {
                                                     
                                                     <div className="flex flex-col items-center gap-4">
                                                          <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
-                                                        <div className="flex flex-col sm:flex-row gap-2 items-center">
+                                                        <div className="flex flex-row gap-2 items-center">
                                                             <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm" variant="secondary">
                                                                 <Save className="h-4 w-4 md:mr-2" />
                                                                 <span className="hidden md:inline">Salvar Placar</span>
