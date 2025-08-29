@@ -41,6 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { Card, CardHeader, CardContent } from '../ui/card';
+import { Label } from '../ui/label';
 
 
 const championshipFormSchema = z.object({
