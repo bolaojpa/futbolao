@@ -73,7 +73,7 @@ export type Championship = {
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
   modoEquipes: 'times' | 'selecao' | 'mista';
   formatoFases?: 'fases' | 'rodadas';
-  fases?: Array<{ nome: string; idaEVolta: boolean; }>;
+  fases?: Array<{ nome: string; idaEVolta: boolean }>;
   rodadas?: number;
   pontuacao: {
     tradicional: {

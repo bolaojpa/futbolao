@@ -381,16 +381,14 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                         <div key={index} className="flex items-center justify-between gap-2 rounded-md bg-muted p-2">
                                             <span>{fase.nome}</span>
                                             <div className="flex items-center gap-2">
-                                                {fase.nome.toLowerCase().includes('grupo') && (
-                                                    <div className="flex items-center gap-1.5 text-xs">
-                                                        <Switch 
-                                                            id={`ida-volta-${index}`} 
-                                                            checked={fase.idaEVolta}
-                                                            onCheckedChange={() => handleToggleIdaEVolta(index)}
-                                                        />
-                                                        <Label htmlFor={`ida-volta-${index}`}>Ida e Volta</Label>
-                                                    </div>
-                                                )}
+                                                <div className="flex items-center gap-1.5 text-xs">
+                                                    <Switch 
+                                                        id={`ida-volta-${index}`} 
+                                                        checked={fase.idaEVolta}
+                                                        onCheckedChange={() => handleToggleIdaEVolta(index)}
+                                                    />
+                                                    <Label htmlFor={`ida-volta-${index}`}>Ida e Volta</Label>
+                                                </div>
                                                 <Button type="button" size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveFase(index)}>
                                                     <X className="h-4 w-4"/>
                                                 </Button>
