@@ -73,6 +73,7 @@ const championshipFormSchema = z.object({
   }),
   banner: z.object({
     ativo: z.boolean(),
+    campeonatoLogoUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
     backgroundUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
     displayMode: z.enum(['photo_and_names', 'names_only']).optional(),
   }),
@@ -116,6 +117,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         fases: [],
         banner: {
             ativo: false,
+            campeonatoLogoUrl: "",
             backgroundUrl: "",
             displayMode: 'photo_and_names',
         }
@@ -145,6 +147,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         },
         banner: {
             ativo: championship.banner?.ativo || false,
+            campeonatoLogoUrl: championship.banner?.campeonatoLogoUrl || "",
             backgroundUrl: championship.banner?.backgroundUrl || "",
             displayMode: championship.banner?.displayMode || 'photo_and_names',
         }
@@ -164,6 +167,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         rodadas: undefined,
         banner: {
             ativo: false,
+            campeonatoLogoUrl: "",
             backgroundUrl: "",
             displayMode: 'photo_and_names',
         }
@@ -213,6 +217,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       },
       banner: { 
         ativo: data.banner.ativo,
+        campeonatoLogoUrl: data.banner.campeonatoLogoUrl,
         backgroundUrl: data.banner.backgroundUrl,
         displayMode: data.banner.displayMode,
        } 
@@ -227,7 +232,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
   const bannerPreviewProps: ChampionBannerProps = {
     id: 'preview',
-    campeonatoLogoUrl: 'https://placehold.co/128x128.png',
+    campeonatoLogoUrl: watchAllFields.banner?.campeonatoLogoUrl || 'https://placehold.co/128x128.png',
     campeonatoNome: watchAllFields.nome || 'Nome do Campeonato',
     campeaoGeralNome: 'Campeão Exemplo',
     campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
@@ -580,6 +585,23 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             </CardHeader>
                             <CardContent className="p-4 pt-0 space-y-4">
                                 <div className="space-y-4" style={{ opacity: isBannerActive ? 1 : 0.5 }}>
+                                    <FormField
+                                        control={form.control}
+                                        name="banner.campeonatoLogoUrl"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>URL da Logo do Campeonato</FormLabel>
+                                                <FormControl>
+                                                    <Input 
+                                                        placeholder="https://exemplo.com/logo.png" 
+                                                        {...field}
+                                                        disabled={!isBannerActive}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                     <FormField
                                         control={form.control}
                                         name="banner.backgroundUrl"

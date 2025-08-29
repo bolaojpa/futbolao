@@ -89,6 +89,7 @@ export type Championship = {
   };
   banner: {
     ativo: boolean;
+    campeonatoLogoUrl?: string;
     backgroundUrl?: string;
     displayMode?: 'photo_and_names' | 'names_only';
   };
@@ -109,6 +110,7 @@ export const mockChampionships: Championship[] = [
     },
     banner: {
       ativo: true,
+      campeonatoLogoUrl: 'https://logodetimes.com/times/campeonato-brasileiro-a/logo-campeonato-brasileiro-a-256.png',
       backgroundUrl: 'https://placehold.co/857x828.png',
       displayMode: 'photo_and_names',
     }
@@ -133,6 +135,7 @@ export const mockChampionships: Championship[] = [
     },
     banner: {
       ativo: true,
+      campeonatoLogoUrl: 'https://logodetimes.com/times/copa-libertadores-da-america-conmebol/logo-copa-libertadores-da-america-conmebol-256.png',
       displayMode: 'photo_and_names',
     }
   },
@@ -314,7 +317,7 @@ export const mockEmergencyMessage = {
 export const mockHallOfFame = [
     {
         id: 'hof_1',
-        campeonatoLogoUrl: 'https://placehold.co/128x128.png',
+        campeonatoLogoUrl: 'https://logodetimes.com/times/campeonato-brasileiro-a/logo-campeonato-brasileiro-a-256.png',
         campeonatoNome: 'Brasileirão Série A 2023',
         campeaoGeralNome: 'Fernanda',
         campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
@@ -324,7 +327,7 @@ export const mockHallOfFame = [
     },
     {
         id: 'hof_2',
-        campeonatoLogoUrl: 'https://placehold.co/128x128.png',
+        campeonatoLogoUrl: 'https://logodetimes.com/times/copa-libertadores-da-america-conmebol/logo-copa-libertadores-da-america-conmebol-256.png',
         campeonatoNome: 'Copa do Mundo 2022',
         campeaoGeralNome: 'Carlinhos',
         campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
