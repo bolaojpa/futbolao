@@ -192,20 +192,16 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Fase / Rodada</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value}>
+                   <Select onValueChange={field.onChange} value={field.value} disabled={availablePhases.length === 0}>
                         <FormControl>
                             <SelectTrigger>
-                                <SelectValue placeholder="Selecione a fase ou rodada" />
+                                <SelectValue placeholder={availablePhases.length > 0 ? "Selecione a fase ou rodada" : "Nenhuma fase configurada"} />
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            {availablePhases.length > 0 ? (
-                                availablePhases.map(phase => (
-                                    <SelectItem key={phase} value={phase}>{phase}</SelectItem>
-                                ))
-                            ) : (
-                                <SelectItem value="" disabled>Nenhuma fase configurada para este campeonato.</SelectItem>
-                            )}
+                            {availablePhases.map(phase => (
+                                <SelectItem key={phase} value={phase}>{phase}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                   <FormMessage />
