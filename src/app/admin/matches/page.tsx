@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { mockAllMatches, mockPredictions, mockChampionships, mockUsers, mockUser } from '@/lib/data';
 import { format, parseISO, differenceInHours, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle } from 'lucide-react';
+import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +24,9 @@ import { Button } from '@/components/ui/button';
 import { Countdown } from '@/components/shared/countdown';
 import { MatchForm } from '@/components/admin/match-form';
 import type { Match } from '@/lib/data';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -61,12 +64,14 @@ export default function AdminMatchesPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   const championshipIdFromQuery = searchParams.get('championshipId');
   const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || 'all');
   const [currentPage, setCurrentPage] = useState(1);
   const [isClient, setIsClient] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [matches, setMatches] = useState<Match[]>(mockAllMatches);
 
   useEffect(() => {
@@ -89,15 +94,39 @@ export default function AdminMatchesPage() {
     setSelectedChampionship(value);
     setCurrentPage(1); 
   };
+  
+  const handleCreate = () => {
+    setEditingMatch(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (match: Match) => {
+    setEditingMatch(match);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = (matchId: string) => {
+    setMatches(prev => prev.filter(m => m.id !== matchId));
+    toast({
+        title: "Partida Excluída",
+        description: "A partida foi removida com sucesso.",
+    });
+  };
 
   const handleFormSubmit = (data: Match) => {
-    // Para edição (não implementado neste fluxo, mas a estrutura está aqui)
-    // if (editingMatch) {
-    //     setMatches(prev => prev.map(m => m.id === data.id ? data : m));
-    // } else {
-    // Lógica de Criação
-    setMatches(prev => [...prev, data]);
-    // }
+    if (editingMatch) {
+        setMatches(prev => prev.map(m => m.id === data.id ? data : m));
+        toast({
+            title: "Partida Atualizada",
+            description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.`,
+        });
+    } else {
+        setMatches(prev => [...prev, data]);
+        toast({
+            title: "Partida Criada!",
+            description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.`,
+        });
+    }
   };
 
 
@@ -138,10 +167,10 @@ export default function AdminMatchesPage() {
             isOpen={isFormOpen} 
             setIsOpen={setIsFormOpen}
             onSubmit={handleFormSubmit}
-            match={null}
+            match={editingMatch}
             championshipId={selectedChampionship}
           >
-             <Button disabled={selectedChampionship === 'all'} className="w-full sm:w-auto">
+             <Button onClick={handleCreate} disabled={selectedChampionship === 'all'} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Adicionar Partida
             </Button>
@@ -159,7 +188,43 @@ export default function AdminMatchesPage() {
             return (
               <Accordion type="single" collapsible className="w-full" key={match.id} disabled={!hasPredictions}>
                 <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
-                  <Card>
+                  <Card className="relative">
+                     <div className="absolute top-2 right-2 z-10">
+                        <AlertDialog>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Abrir menu</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleEdit(match)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Editar
+                                    </DropdownMenuItem>
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Excluir
+                                        </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                             <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta ação removerá permanentemente a partida "{match.timeA} vs {match.timeB}". Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(match.id)}>Sim, excluir</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                     </div>
                     <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50 data-[state=closed]:cursor-default data-[disabled]:cursor-default" disabled={!hasPredictions}>
                       <div className="flex flex-col items-center justify-center w-full gap-2">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
