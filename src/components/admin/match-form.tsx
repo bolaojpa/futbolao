@@ -35,13 +35,14 @@ import { CalendarIcon, Save, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, setHours, setMinutes } from 'date-fns';
 import type { Match } from '@/lib/data';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { mockChampionships } from '@/lib/data';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const matchFormSchema = z.object({
   timeA: z.string().min(2, { message: "O nome do time deve ter pelo menos 2 caracteres." }),
   timeB: z.string().min(2, { message: "O nome do time deve ter pelo menos 2 caracteres." }),
-  fase: z.string().min(3, { message: "A fase deve ter pelo menos 3 caracteres." }),
+  fase: z.string({ required_error: "É obrigatório selecionar uma fase ou rodada."}).min(1, { message: "É obrigatório selecionar uma fase ou rodada." }),
   data: z.date({ required_error: "A data da partida é obrigatória." }),
   hora: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Formato de hora inválido (HH:mm)."}),
 }).refine(data => data.timeA !== data.timeB, {
@@ -71,6 +72,30 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
     },
   });
 
+  const selectedChampionship = useMemo(() => {
+    return mockChampionships.find(c => c.id === championshipId);
+  }, [championshipId]);
+
+  const availablePhases = useMemo(() => {
+    if (!selectedChampionship) return [];
+    
+    if (selectedChampionship.formatoFases === 'fases' && selectedChampionship.fases) {
+      return selectedChampionship.fases.map(f => f.nome);
+    }
+
+    if (selectedChampionship.formatoFases === 'rodadas' && selectedChampionship.rodadas) {
+        return Array.from({ length: selectedChampionship.rodadas }, (_, i) => `Rodada ${i + 1}`);
+    }
+
+    // Fallback para ligas que não migraram para o novo formato
+    if (selectedChampionship.tipoCampeonato === 'liga' && selectedChampionship.rodadas) {
+        return Array.from({ length: selectedChampionship.rodadas }, (_, i) => `Rodada ${i + 1}`);
+    }
+
+    return [];
+  }, [selectedChampionship]);
+
+
   useEffect(() => {
     if (isOpen && match) {
       const matchDate = parseISO(match.data);
@@ -96,15 +121,15 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
     const [hours, minutes] = data.hora.split(':').map(Number);
     const combinedDate = setMinutes(setHours(data.data, hours), minutes);
 
-    const championship = mockChampionships.find(c => c.id === championshipId)!;
+    if (!selectedChampionship) return; // Proteção
     
     // Calcula a pontuação máxima
     let maxScore = 0;
-    if (championship.pontuacao.tradicional.ativo) {
-        maxScore += championship.pontuacao.tradicional.exato;
+    if (selectedChampionship.pontuacao.tradicional.ativo) {
+        maxScore += selectedChampionship.pontuacao.tradicional.exato;
     }
-    if (championship.pontuacao.combo?.ativo) {
-        maxScore += (championship.pontuacao.combo.gols + championship.pontuacao.combo.placar);
+    if (selectedChampionship.pontuacao.combo?.ativo) {
+        maxScore += (selectedChampionship.pontuacao.combo.gols ?? 0) + (selectedChampionship.pontuacao.combo.placar ?? 0);
     }
 
 
@@ -115,8 +140,8 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
       fase: data.fase,
       data: combinedDate.toISOString(),
       status: 'Agendado',
-      campeonato: championship.nome,
-      campeonatoId: championship.id,
+      campeonato: selectedChampionship.nome,
+      campeonatoId: selectedChampionship.id,
       maxPontos: maxScore,
     };
     onSubmit(finalData);
@@ -173,9 +198,22 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Fase / Rodada</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Rodada 15, Oitavas de Final" {...field} />
-                  </FormControl>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione a fase ou rodada" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {availablePhases.length > 0 ? (
+                                availablePhases.map(phase => (
+                                    <SelectItem key={phase} value={phase}>{phase}</SelectItem>
+                                ))
+                            ) : (
+                                <SelectItem value="" disabled>Nenhuma fase configurada para este campeonato.</SelectItem>
+                            )}
+                        </SelectContent>
+                    </Select>
                   <FormMessage />
                 </FormItem>
               )}
