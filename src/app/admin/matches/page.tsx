@@ -221,13 +221,30 @@ export default function AdminMatchesPage() {
     return (
         <TooltipProvider>
             <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
-                <div className="flex items-center gap-4 mb-8">
-                    <CalendarCheck className="h-8 w-8 text-primary" />
-                    <div>
-                        <h1 className="text-3xl font-bold font-headline">Gerenciar Partidas</h1>
-                        <p className="text-muted-foreground">Adicione, edite e atualize os resultados das partidas agendadas ou ao vivo.</p>
+                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-4">
+                         <CalendarCheck className="h-8 w-8 text-primary" />
+                        <div>
+                            <h1 className="text-3xl font-bold font-headline">Gerenciar Partidas</h1>
+                            <p className="text-muted-foreground">Adicione, edite e atualize os resultados das partidas.</p>
+                        </div>
                     </div>
+                     {selectedChampionshipId && (
+                        <MatchForm
+                            isOpen={isFormOpen}
+                            setIsOpen={setIsFormOpen}
+                            onSubmit={handleFormSubmit}
+                            match={editingMatch}
+                            championshipId={selectedChampionshipId}
+                        >
+                            <Button>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adicionar Partida
+                            </Button>
+                        </MatchForm>
+                    )}
                 </div>
+
 
                  <Card className="mb-6">
                     <CardHeader>
@@ -273,23 +290,6 @@ export default function AdminMatchesPage() {
                                 <SelectItem value="Ao Vivo">Ao Vivo</SelectItem>
                             </SelectContent>
                         </Select>
-
-                         {selectedChampionshipId && (
-                            <div className="ml-auto flex-shrink-0">
-                                <MatchForm
-                                    isOpen={isFormOpen}
-                                    setIsOpen={setIsFormOpen}
-                                    onSubmit={handleFormSubmit}
-                                    match={editingMatch}
-                                    championshipId={selectedChampionshipId}
-                                >
-                                    <Button>
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Adicionar Partida
-                                    </Button>
-                                </MatchForm>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
                 
@@ -462,4 +462,3 @@ export default function AdminMatchesPage() {
         </TooltipProvider>
     );
 }
-
