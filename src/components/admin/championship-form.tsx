@@ -232,13 +232,13 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
   const bannerPreviewProps: ChampionBannerProps = {
     id: 'preview',
-    campeonatoLogoUrl: watchAllFields.banner?.campeonatoLogoUrl || 'https://placehold.co/128x128.png',
+    campeonatoLogoUrl: watchAllFields.banner?.campeonatoLogoUrl || 'https://picsum.photos/128/128',
     campeonatoNome: watchAllFields.nome || 'Nome do Campeonato',
     campeaoGeralNome: 'Campeão Exemplo',
-    campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
+    campeaoGeralAvatarUrl: 'https://picsum.photos/128/128',
     modoEquipes: watchAllFields.modoEquipes,
     palpiteiroNome: 'Melhor Palpiteiro, Segundo Melhor, Terceiro Melhor Colocado',
-    palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
+    palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
     displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
   };
 
@@ -676,7 +676,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                 <div 
                     className="relative" 
                     style={{ 
-                        backgroundImage: `url(${watchAllFields.banner?.backgroundUrl || 'https://placehold.co/857x828.png'})`,
+                        backgroundImage: `url(${watchAllFields.banner?.backgroundUrl || 'https://picsum.photos/857/828'})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                     }}

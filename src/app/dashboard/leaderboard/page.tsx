@@ -171,7 +171,7 @@ export default function LeaderboardPage() {
                           index === 2 && "bg-gradient-to-tr from-amber-600 to-yellow-700",
                       )}>
                           <Avatar className="w-full h-full border-4 border-background">
-                              <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                              <AvatarImage src={`https://picsum.photos/100/100?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
                               <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                           </Avatar>
                       </div>
@@ -257,7 +257,7 @@ export default function LeaderboardPage() {
                             <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
                                 <div className="relative">
                                     <Avatar className="w-9 h-9">
-                                      <AvatarImage src={`https://placehold.co/100x100.png?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                                      <AvatarImage src={`https://picsum.photos/100/100?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
                                       <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                     </Avatar>
                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />

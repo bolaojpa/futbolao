@@ -177,7 +177,7 @@ export default function DashboardPage() {
                         <Link href={`/dashboard/profile?userId=${leader.id}`} className="relative block w-12 h-12">
                             <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
                                 <Avatar className="w-full h-full border-2 border-background">
-                                    <AvatarImage src={`https://placehold.co/100x100.png?text=${leader.apelido.charAt(0)}`} alt={leader.apelido} />
+                                    <AvatarImage src={`https://picsum.photos/100/100?text=${leader.apelido.charAt(0)}`} alt={leader.apelido} />
                                     <AvatarFallback>{leader.apelido.substring(0,2)}</AvatarFallback>
                                 </Avatar>
                             </div>
@@ -231,9 +231,9 @@ export default function DashboardPage() {
                                         {match.timeA}
                                     </div>
                                     <div className="flex items-center justify-center gap-3 md:gap-4">
-                                        <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
+                                        <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                         <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                        <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
+                                        <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                     </div>
                                     <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                     {match.timeB}
@@ -337,14 +337,14 @@ export default function DashboardPage() {
                         )}
                         <CardHeader className='pb-2'>
                             <div className="flex justify-start items-center gap-2">
-                                <Image src="https://placehold.co/64x64.png" alt={`Logo ${match.campeonato}`} width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
+                                <Image src="https://picsum.photos/64/64" alt={`Logo ${match.campeonato}`} width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
                                 <p className="text-xs text-muted-foreground font-semibold">{match.campeonato}</p>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow flex items-center justify-center p-4">
                             <div className="flex items-center justify-around w-full text-center">
                                 <div className='flex flex-col items-center gap-2 w-1/3'>
-                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                    <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                     <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
                                 </div>
                                 <div className="flex flex-col items-center justify-center gap-1 mx-2">
@@ -354,7 +354,7 @@ export default function DashboardPage() {
                                     <span className="text-2xl font-bold text-muted-foreground">vs</span>
                                 </div>
                                 <div className='flex flex-col items-center gap-2 w-1/3'>
-                                    <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                    <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                     <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
                                 </div>
                             </div>
@@ -409,9 +409,9 @@ export default function DashboardPage() {
                                         {match.timeA}
                                     </div>
                                     <div className="flex items-center justify-center gap-3 md:gap-4">
-                                        <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
+                                        <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                         <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                        <Image src="https://placehold.co/128x128.png" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
+                                        <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                     </div>
                                     <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                     {match.timeB}
