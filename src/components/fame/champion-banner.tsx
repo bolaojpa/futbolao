@@ -80,7 +80,7 @@ export function ChampionBanner({
         <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
           CAMPEÃO GERAL
         </h3>
-        <div className={cn("flex items-center justify-center gap-[4%] mt-[1%] w-full", !showPhotos && "mt-[2%]")}>
+        <div className={cn("flex items-center justify-center gap-[4%] w-full", !showPhotos && "mt-[2%]")}>
           {showPhotos && (
             <Image
               src={campeaoGeralAvatarUrl}
@@ -90,7 +90,7 @@ export function ChampionBanner({
               className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
             />
           )}
-          <p className={cn("font-bold", showPhotos ? "text-[6cqw]" : "text-[7.5cqw]")}>{campeaoGeralNome}</p>
+          <p className={cn("font-bold", showPhotos ? "text-[5.5cqw]" : "text-[7cqw]")}>{campeaoGeralNome}</p>
         </div>
       </Section>
 
@@ -99,7 +99,7 @@ export function ChampionBanner({
         <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline whitespace-nowrap">
           {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
-        <div className={cn("flex items-center justify-center gap-[4%] mt-[1%] w-full", !showPhotos && "mt-[2%]")}>
+        <div className={cn("flex items-center justify-center gap-[4%] w-full", !showPhotos && "mt-[2%]")}>
           {showPhotos && (
             <Image
               src={palpiteiroAvatarUrl}
@@ -109,7 +109,7 @@ export function ChampionBanner({
               className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
             />
           )}
-          <p className={cn("font-bold", showPhotos ? "text-[6cqw]" : "text-[7.5cqw]")}>{palpiteiroNome}</p>
+          <p className={cn("font-bold", showPhotos ? "text-[5cqw]" : "text-[6.5cqw]")}>{palpiteiroNome}</p>
         </div>
       </Section>
     </div>
