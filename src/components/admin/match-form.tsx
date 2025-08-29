@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -60,233 +59,218 @@ interface MatchFormProps {
     children: React.ReactNode;
 }
 
-// Componente interno para isolar o estado do formulário
-function MatchFormContent({ isOpen, setIsOpen, onSubmit, match, championshipId }: MatchFormProps) {
-  const form = useForm<MatchFormValues>({
-    resolver: zodResolver(matchFormSchema),
-    defaultValues: {
-        timeA: '',
-        timeB: '',
-        fase: '',
-        horario: '16:00',
-    },
-  });
 
-  const selectedChampionship = useMemo(() => {
-    return mockChampionships.find(c => c.id === championshipId);
-  }, [championshipId]);
-
-  const availablePhases = useMemo(() => {
-    if (!selectedChampionship) return [];
-    
-    if (selectedChampionship.tipoCampeonato === 'copa' || (selectedChampionship.tipoCampeonato === 'avulso' && selectedChampionship.formatoFases === 'fases')) {
-         return selectedChampionship.fases?.map(f => f.nome) || [];
-    }
-
-    if (selectedChampionship.tipoCampeonato === 'liga' || (selectedChampionship.tipoCampeonato === 'avulso' && selectedChampionship.formatoFases === 'rodadas')) {
-        return Array.from({ length: selectedChampionship.rodadas || 0 }, (_, i) => `Rodada ${i + 1}`);
-    }
-
-    return [];
-  }, [selectedChampionship]);
-
-  useEffect(() => {
-    if (match) {
-        const matchDate = parseISO(match.data);
-        form.reset({
-            timeA: match.timeA,
-            timeB: match.timeB,
-            fase: match.fase,
-            data: matchDate,
-            horario: format(matchDate, 'HH:mm'),
-        });
-    } else {
-        form.reset({
+export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, children }: MatchFormProps) {
+    const form = useForm<MatchFormValues>({
+        resolver: zodResolver(matchFormSchema),
+        defaultValues: {
             timeA: '',
             timeB: '',
             fase: '',
-            data: undefined,
             horario: '16:00',
-        });
-    }
-  }, [match, form]);
+        },
+    });
 
-  const handleFormSubmit = (data: MatchFormValues) => {
-    const [hours, minutes] = data.horario.split(':').map(Number);
-    const combinedDate = setMinutes(setHours(data.data, hours), minutes);
+    const selectedChampionship = useMemo(() => {
+        return mockChampionships.find(c => c.id === championshipId);
+    }, [championshipId]);
 
-    if (!selectedChampionship) return;
+    const availablePhases = useMemo(() => {
+        if (!selectedChampionship) return [];
+        
+        if (selectedChampionship.tipoCampeonato === 'copa' || (selectedChampionship.tipoCampeonato === 'avulso' && selectedChampionship.formatoFases === 'fases')) {
+            return selectedChampionship.fases?.map(f => f.nome) || [];
+        }
 
-    let maxScore = 0;
-    if (selectedChampionship.pontuacao.tradicional.ativo) {
-        maxScore += selectedChampionship.pontuacao.tradicional.exato;
-    }
-    if (selectedChampionship.pontuacao.combo?.ativo) {
-        maxScore += (selectedChampionship.pontuacao.combo.gols ?? 0) + (selectedChampionship.pontuacao.combo.placar ?? 0);
-    }
+        if (selectedChampionship.tipoCampeonato === 'liga' || (selectedChampionship.tipoCampeonato === 'avulso' && selectedChampionship.formatoFases === 'rodadas')) {
+            return Array.from({ length: selectedChampionship.rodadas || 0 }, (_, i) => `Rodada ${i + 1}`);
+        }
 
-    const finalData: Match = {
-      id: match?.id || `match_${new Date().getTime()}`,
-      timeA: data.timeA,
-      timeB: data.timeB,
-      fase: data.fase,
-      data: combinedDate.toISOString(),
-      status: 'Agendado',
-      campeonato: selectedChampionship.nome,
-      campeonatoId: selectedChampionship.id,
-      maxPontos: maxScore,
+        return [];
+    }, [selectedChampionship]);
+
+    useEffect(() => {
+        if (isOpen) {
+            if (match) {
+                const matchDate = parseISO(match.data);
+                form.reset({
+                    timeA: match.timeA,
+                    timeB: match.timeB,
+                    fase: match.fase,
+                    data: matchDate,
+                    horario: format(matchDate, 'HH:mm'),
+                });
+            } else {
+                form.reset({
+                    timeA: '',
+                    timeB: '',
+                    fase: '',
+                    data: undefined,
+                    horario: '16:00',
+                });
+            }
+        }
+    }, [isOpen, match, form]);
+
+    const handleFormSubmit = (data: MatchFormValues) => {
+        const [hours, minutes] = data.horario.split(':').map(Number);
+        const combinedDate = setMinutes(setHours(data.data, hours), minutes);
+
+        if (!selectedChampionship) return;
+
+        let maxScore = 0;
+        if (selectedChampionship.pontuacao.tradicional.ativo) {
+            maxScore += selectedChampionship.pontuacao.tradicional.exato;
+        }
+        if (selectedChampionship.pontuacao.combo?.ativo) {
+            maxScore += (selectedChampionship.pontuacao.combo.gols ?? 0) + (selectedChampionship.pontuacao.combo.placar ?? 0);
+        }
+
+        const finalData: Match = {
+          id: match?.id || `match_${new Date().getTime()}`,
+          timeA: data.timeA,
+          timeB: data.timeB,
+          fase: data.fase,
+          data: combinedDate.toISOString(),
+          status: 'Agendado',
+          campeonato: selectedChampionship.nome,
+          campeonatoId: selectedChampionship.id,
+          maxPontos: maxScore,
+        };
+        onSubmit(finalData);
+        setIsOpen(false);
     };
-    onSubmit(finalData);
-    setIsOpen(false);
-  };
-  
-  const title = match ? "Editar Partida" : "Adicionar Nova Partida";
-  const description = match ? "Altere os dados da partida existente." : "Preencha as informações para adicionar uma nova partida ao campeonato.";
-  const buttonText = match ? "Salvar Alterações" : "Adicionar Partida";
 
-  return (
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                    control={form.control}
-                    name="timeA"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Time A</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Nome do time da casa" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                <FormField
-                    control={form.control}
-                    name="timeB"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Time B</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Nome do time visitante" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-            <FormField
-              control={form.control}
-              name="fase"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Fase / Rodada</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value} disabled={availablePhases.length === 0}>
-                        <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder={availablePhases.length > 0 ? "Selecione a fase ou rodada" : "Nenhuma fase configurada"} />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {availablePhases.map(phase => (
-                                <SelectItem key={phase} value={phase}>{phase}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex flex-col sm:flex-row gap-4">
-                 <FormField
-                    control={form.control}
-                    name="data"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col flex-1">
-                        <FormLabel>Data da Partida</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
+    const title = match ? "Editar Partida" : "Adicionar Nova Partida";
+    const description = match ? "Altere os dados da partida existente." : "Preencha as informações para adicionar uma nova partida ao campeonato.";
+    const buttonText = match ? "Salvar Alterações" : "Adicionar Partida";
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                {children}
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="timeA"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Time A</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Nome do time da casa" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
                                 )}
-                                >
-                                {field.value ? (
-                                    format(field.value, "dd/MM/yyyy")
-                                ) : (
-                                    <span>Escolha uma data</span>
+                            />
+                            <FormField
+                                control={form.control}
+                                name="timeB"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Time B</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Nome do time visitante" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
                                 )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                            </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={field.value}
-                                    onSelect={field.onChange}
-                                    disabled={(date) => date < new Date("1900-01-01")}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="horario"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col flex-1">
-                            <FormLabel>Horário da Partida</FormLabel>
-                            <FormControl>
-                                <Input type="time" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-             <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                <Button type="submit">
-                    <Save className="mr-2 h-4 w-4" />
-                    {buttonText}
-                </Button>
-             </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-  )
-}
-
-
-export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, children }: MatchFormProps) {
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      {isOpen && (
-         <MatchFormContent 
-            isOpen={isOpen}
-            setIsOpen={setIsOpen}
-            onSubmit={onSubmit}
-            match={match}
-            championshipId={championshipId}
-         >
-             {children}
-        </MatchFormContent>
-      )}
-    </Dialog>
-  );
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="fase"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Fase / Rodada</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} disabled={availablePhases.length === 0}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={availablePhases.length > 0 ? "Selecione a fase ou rodada" : "Nenhuma fase configurada"} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {availablePhases.map(phase => (
+                                                <SelectItem key={phase} value={phase}>{phase}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <FormField
+                                control={form.control}
+                                name="data"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col flex-1">
+                                    <FormLabel>Data da Partida</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "pl-3 text-left font-normal",
+                                                !field.value && "text-muted-foreground"
+                                            )}
+                                            >
+                                            {field.value ? (
+                                                format(field.value, "dd/MM/yyyy")
+                                            ) : (
+                                                <span>Escolha uma data</span>
+                                            )}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value}
+                                                onSelect={field.onChange}
+                                                disabled={(date) => date < new Date("1900-01-01")}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="horario"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col flex-1">
+                                        <FormLabel>Horário da Partida</FormLabel>
+                                        <FormControl>
+                                            <Input type="time" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
+                            <Button type="submit">
+                                <Save className="mr-2 h-4 w-4" />
+                                {buttonText}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
 }
