@@ -40,6 +40,7 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
+import { Card, CardHeader, CardContent } from '../ui/card';
 
 
 const championshipFormSchema = z.object({
