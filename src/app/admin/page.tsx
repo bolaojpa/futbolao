@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { mockAllMatches, Match, mockUsers, mockPredictions } from '@/lib/data';
+import { mockAllMatches, Match, mockUsers, mockPredictions, mockChampionships } from '@/lib/data';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye } from 'lucide-react';
@@ -165,77 +165,69 @@ export default function AdminDashboardPage() {
                                 const originalPlacarA = match.placarA?.toString() ?? '';
                                 const originalPlacarB = match.placarB?.toString() ?? '';
                                 const hasChanged = score.placarA !== originalPlacarA || score.placarB !== originalPlacarB;
+                                const championship = mockChampionships.find(c => c.id === match.campeonatoId);
 
                                 return (
                                 <Accordion type="single" collapsible className="w-full" key={match.id}>
                                     <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
                                         <Card className="relative overflow-hidden border-destructive/50">
+                                            <CardHeader className="flex flex-row items-center gap-2 p-3 bg-muted/30">
+                                                {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
+                                                <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
+                                            </CardHeader>
                                             <AccordionTrigger className="p-4 hover:no-underline [&>svg]:hidden">
-                                                 <div className="flex flex-col items-center justify-center gap-4 w-full">
-                                                    <div className='flex items-center gap-2'>
-                                                        <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
-                                                        <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
-                                                    </div>
-                                                    <div className="flex flex-col md:flex-row items-center justify-around gap-4 w-full">
-                                                        <div className='flex-1 flex flex-col items-center justify-center gap-2'>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <Image src="https://picsum.photos/128/128" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent><p>{match.timeA}</p></TooltipContent>
-                                                            </Tooltip>
-                                                            <span className="font-bold text-lg text-center">{match.timeA}</span>
+                                                <div className="flex flex-col items-center justify-center w-full gap-3">
+                                                    <div className="flex items-center justify-around w-full">
+                                                        <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                            <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                            <Image src="https://picsum.photos/128/128" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                                         </div>
-
-                                                        <div className="flex items-center justify-center gap-2 text-muted-foreground my-2 md:my-0">
+                                                        <div className="flex items-center justify-center gap-2 mx-2">
                                                             <Input 
                                                                 type="number" 
-                                                                className="w-20 h-12 text-center text-2xl font-bold" 
+                                                                className="w-16 h-12 text-center text-2xl font-bold" 
                                                                 value={score.placarA}
                                                                 onChange={(e) => { e.stopPropagation(); handleScoreChange(match.id, 'placarA', e.target.value); }}
                                                                 onClick={(e) => e.stopPropagation()}
                                                                 min="0"
                                                             />
-                                                            <Swords className="h-6 w-6" />
+                                                            <span className='text-2xl font-bold text-muted-foreground'>-</span>
                                                             <Input 
                                                                 type="number" 
-                                                                className="w-20 h-12 text-center text-2xl font-bold" 
+                                                                className="w-16 h-12 text-center text-2xl font-bold" 
                                                                 value={score.placarB}
                                                                 onChange={(e) => { e.stopPropagation(); handleScoreChange(match.id, 'placarB', e.target.value); }}
                                                                 onClick={(e) => e.stopPropagation()}
                                                                 min="0"
                                                             />
                                                         </div>
-                                                        
-                                                        <div className='flex-1 flex flex-col items-center justify-center gap-2'>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent><p>{match.timeB}</p></TooltipContent>
-                                                            </Tooltip>
-                                                            <span className="font-bold text-lg text-center">{match.timeB}</span>
+                                                        <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                            <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                            <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                         </div>
                                                     </div>
+                                                    
+                                                    <div className="flex flex-col items-center gap-4">
+                                                         <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
+                                                        <div className="flex flex-col sm:flex-row gap-2 items-center">
+                                                            <Button onClick={(e) => { e.stopPropagation(); handleScoreSave(match); }} disabled={!hasChanged} size="sm" variant="secondary">
+                                                                <Save className="mr-2 h-4 w-4" />
+                                                                Salvar Placar
+                                                            </Button>
+                                                            <Button onClick={(e) => { e.stopPropagation(); handleFinalizeMatch(match); }} disabled={score.placarA === '' || score.placarB === ''} size="sm">
+                                                                <Flag className="mr-2 h-4 w-4" />
+                                                                Finalizar Partida
+                                                            </Button>
+                                                        </div>
+                                                        {lastUpdated[match.id] && (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
                                                  </div>
                                             </AccordionTrigger>
-                                            <CardFooter className="flex-col items-center justify-center gap-2 px-4 pb-4 pt-0 border-t">
-                                                <div className="flex flex-col sm:flex-row gap-2 items-center mt-4">
-                                                    <Button onClick={(e) => { e.stopPropagation(); handleScoreSave(match); }} disabled={!hasChanged} size="sm" variant="secondary">
-                                                        <Save className="mr-2 h-4 w-4" />
-                                                        Salvar Placar
-                                                    </Button>
-                                                    <Button onClick={(e) => { e.stopPropagation(); handleFinalizeMatch(match); }} disabled={score.placarA === '' || score.placarB === ''} size="sm">
-                                                        <Flag className="mr-2 h-4 w-4" />
-                                                        Finalizar Partida
-                                                    </Button>
-                                                </div>
-                                                {lastUpdated[match.id] && (
-                                                    <p className="text-xs text-muted-foreground mt-2">
-                                                        Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
-                                                    </p>
-                                                )}
-                                            </CardFooter>
                                             <AccordionContent>
                                                  <div className="bg-background/80 border-t">
                                                     <div className="text-center py-2">
@@ -288,5 +280,4 @@ export default function AdminDashboardPage() {
             </div>
         </TooltipProvider>
     );
-
-    
+}
