@@ -73,6 +73,8 @@ export type Championship = {
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
   modoEquipes: 'times' | 'selecao' | 'mista';
   formatoFases?: 'fases' | 'rodadas';
+  fases?: Array<{ nome: string; idaEVolta: boolean; }>;
+  rodadas?: number;
   pontuacao: {
     tradicional: {
       ativo: boolean;
@@ -100,6 +102,7 @@ export const mockChampionships: Championship[] = [
     dataFim: '2024-12-08', 
     tipoCampeonato: 'liga',
     modoEquipes: 'times',
+    rodadas: 38,
     pontuacao: { 
       tradicional: { ativo: true, exato: 10, situacao: 5 },
     },
@@ -116,6 +119,13 @@ export const mockChampionships: Championship[] = [
     tipoCampeonato: 'copa',
     modoEquipes: 'times',
     formatoFases: 'fases',
+    fases: [
+        { nome: 'Fase de Grupos', idaEVolta: true },
+        { nome: 'Oitavas de Final', idaEVolta: true },
+        { nome: 'Quartas de Final', idaEVolta: true },
+        { nome: 'Semifinal', idaEVolta: true },
+        { nome: 'Final', idaEVolta: false },
+    ],
     pontuacao: {
       tradicional: { ativo: true, exato: 15, situacao: 7 },
     },
