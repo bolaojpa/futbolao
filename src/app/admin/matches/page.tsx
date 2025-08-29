@@ -69,10 +69,16 @@ export default function AdminMatchesPage() {
 
     const availablePhases = useMemo(() => {
         if (!selectedChampionshipId) return [];
-        const phases = matches
-            .filter(match => match.campeonatoId === selectedChampionshipId && (match.status === 'Agendado' || match.status === 'Ao Vivo'))
-            .map(match => match.fase);
-        return [...new Set(phases)];
+        const championship = mockChampionships.find(c => c.id === selectedChampionshipId);
+        if (!championship) return [];
+
+        if (championship.tipoCampeonato === 'liga' || championship.formatoFases === 'rodadas') {
+            return Array.from({ length: championship.rodadas || 0 }, (_, i) => `Rodada ${i + 1}`);
+        }
+        if (championship.tipoCampeonato === 'copa' || championship.formatoFases === 'fases') {
+            return championship.fases?.map(f => f.nome) || [];
+        }
+        return [];
     }, [selectedChampionshipId, matches]);
     
     const filteredMatches = useMemo(() => {
@@ -251,14 +257,14 @@ export default function AdminMatchesPage() {
                         <CardTitle>Filtros</CardTitle>
                         <CardDescription>Selecione um campeonato para visualizar e filtrar suas partidas ativas.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col md:flex-row gap-4">
+                    <CardContent className="flex flex-col sm:flex-row gap-4">
                         <Select value={selectedChampionshipId} onValueChange={(value) => {
                             setSelectedChampionshipId(value);
                             setSelectedPhase('all');
                             setSelectedStatus('all');
                             setCurrentPage(1);
                         }}>
-                            <SelectTrigger className="w-full md:w-[250px]">
+                            <SelectTrigger className="w-full sm:flex-1 min-w-0">
                                 <SelectValue placeholder="Escolha um campeonato..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -269,7 +275,7 @@ export default function AdminMatchesPage() {
                         </Select>
 
                         <Select value={selectedPhase} onValueChange={(v) => {setSelectedPhase(v); setCurrentPage(1);}} disabled={!selectedChampionshipId || availablePhases.length === 0}>
-                            <SelectTrigger className="w-full md:w-[250px]">
+                            <SelectTrigger className="w-full sm:flex-1 min-w-0">
                                 <SelectValue placeholder="Filtrar por fase/rodada..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -281,7 +287,7 @@ export default function AdminMatchesPage() {
                         </Select>
 
                         <Select value={selectedStatus} onValueChange={(value) => {setSelectedStatus(value as any); setCurrentPage(1);}} disabled={!selectedChampionshipId}>
-                            <SelectTrigger className="w-full md:w-[200px]">
+                            <SelectTrigger className="w-full sm:w-auto sm:max-w-xs min-w-0">
                                 <SelectValue placeholder="Filtrar por status..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -462,3 +468,4 @@ export default function AdminMatchesPage() {
         </TooltipProvider>
     );
 }
+
