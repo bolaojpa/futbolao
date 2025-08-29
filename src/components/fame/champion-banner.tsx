@@ -82,7 +82,7 @@ export function ChampionBanner({
         <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
           CAMPEÃO GERAL
         </h3>
-        <div className={cn("flex items-center justify-center gap-[4%]", showPhotos ? "flex-row" : "flex-col")}>
+        <div className={cn("flex items-center justify-center gap-[2%]", showPhotos ? "flex-row" : "flex-col")}>
           {showPhotos && (
             <Image
               src={campeaoGeralAvatarUrl}
@@ -92,7 +92,7 @@ export function ChampionBanner({
               className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
             />
           )}
-          <p className={cn("font-bold",
+          <p className={cn("font-bold whitespace-nowrap",
             hasMultipleCampeoes ? "text-[4cqw]" : "text-[5cqw]",
             !showPhotos && (hasMultipleCampeoes ? "text-[4.5cqw]" : "text-[6cqw]")
           )}>{campeaoGeralNome}</p>
@@ -104,7 +104,7 @@ export function ChampionBanner({
         <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
           {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
-        <div className={cn("flex items-center justify-center gap-[4%]", showPhotos ? "flex-row" : "flex-col")}>
+        <div className={cn("flex items-center justify-center gap-[2%]", showPhotos ? "flex-row" : "flex-col")}>
           {showPhotos && (
             <Image
               src={palpiteiroAvatarUrl}
