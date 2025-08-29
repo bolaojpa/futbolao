@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -162,23 +163,21 @@ export default function AdminDashboardPage() {
                         <div className="space-y-4">
                             {liveMatches.map(match => {
                                 const score = scores[match.id] || { placarA: '', placarB: '' };
-                                const originalPlacarA = match.placarA?.toString() ?? '';
-                                const originalPlacarB = match.placarB?.toString() ?? '';
-                                const hasChanged = score.placarA !== originalPlacarA || score.placarB !== originalPlacarB;
+                                const hasChanged = score.placarA !== (match.placarA?.toString() ?? '0') || score.placarB !== (match.placarB?.toString() ?? '0');
                                 const championship = mockChampionships.find(c => c.id === match.campeonatoId);
 
                                 return (
                                 <Accordion type="single" collapsible className="w-full" key={match.id}>
                                     <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
                                         <Card className="relative overflow-hidden border-destructive/50">
-                                            <CardHeader className="flex flex-row items-center gap-2 p-3 bg-muted/30">
-                                                {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
-                                                <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
-                                            </CardHeader>
                                              <div className="p-4">
+                                                <div className="flex justify-center items-center gap-2 mb-4">
+                                                    {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={20} height={20} />}
+                                                    <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
+                                                </div>
                                                 <div className="flex flex-col items-center justify-center w-full gap-4">
                                                     <div className="flex items-center justify-around w-full">
-                                                        <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                        <div className='flex-1 flex flex-col md:flex-row items-center justify-end gap-3'>
                                                             <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
                                                             <Image src="https://picsum.photos/128/128" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                                         </div>
@@ -199,9 +198,9 @@ export default function AdminDashboardPage() {
                                                                 min="0"
                                                             />
                                                         </div>
-                                                        <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                            <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                        <div className='flex-1 flex flex-col-reverse md:flex-row items-center justify-start gap-3'>
                                                             <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                            <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                                         </div>
                                                     </div>
                                                     
@@ -282,5 +281,3 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
-
-    

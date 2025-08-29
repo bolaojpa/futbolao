@@ -224,30 +224,28 @@ export default function DashboardPage() {
                     <Accordion type="single" collapsible className="w-full" key={match.id}>
                         <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                         <Card className='border-accent/50'>
-                             <CardHeader className="flex flex-row items-center gap-2 p-3 bg-muted/30">
-                                {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
-                                <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
-                            </CardHeader>
                             <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos, maxPointsForMatch))}>
                             <div className="flex flex-col items-center justify-center w-full">
+                                <div className="flex justify-center items-center gap-2 mb-2">
+                                    {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
+                                    <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
+                                </div>
                                 <div className="flex items-center justify-center w-full">
                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                         <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
                                         <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                     </div>
-                                    <div className="flex items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
-                                        {`${match.placarA ?? 0}`}
-                                        <span className="text-muted-foreground mx-2">-</span>
-                                        {`${match.placarB ?? 0}`}
+                                    <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
+                                        <span>{`${match.placarA ?? 0}`} - {`${match.placarB ?? 0}`}</span>
+                                        <Badge variant="destructive" className='mt-2 animate-pulse'>
+                                            Ao Vivo
+                                        </Badge>
                                     </div>
                                     <div className='flex-1 flex flex-row items-center justify-start gap-3'>
                                         <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeB}`} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
                                         <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                     </div>
                                 </div>
-                                <Badge variant="destructive" className='mt-2 animate-pulse'>
-                                    Ao Vivo
-                                </Badge>
                             </div>
                             </AccordionTrigger>
                             <AccordionContent>
@@ -341,15 +339,13 @@ export default function DashboardPage() {
                                 <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
                             </div>
                         )}
-                        <CardHeader className='pb-2'>
-                            <div className="flex justify-start items-center gap-2">
+                        <CardContent className="flex-grow flex flex-col justify-center items-center p-4">
+                            <div className="flex justify-center items-center gap-2 mb-2">
                                 {championship?.iconUrl ? (
                                     <Image src={championship.iconUrl} alt="" width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
                                 ) : null}
                                 <p className="text-xs text-muted-foreground font-semibold">{match.campeonato}</p>
                             </div>
-                        </CardHeader>
-                        <CardContent className="flex-grow flex items-center justify-center p-4">
                             <div className="flex items-center justify-around w-full text-center">
                                 <div className='flex flex-col items-center gap-2 w-1/3'>
                                     <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
