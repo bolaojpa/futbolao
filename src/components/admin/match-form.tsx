@@ -2,14 +2,13 @@
 
 "use client";
 
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,7 +32,7 @@ import {
 import { Calendar } from '../ui/calendar';
 import { CalendarIcon, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, parse, parseISO, setHours, setMinutes } from 'date-fns';
+import { format, parseISO, setHours, setMinutes } from 'date-fns';
 import type { Match } from '@/lib/data';
 import { useEffect, useMemo } from 'react';
 import { mockChampionships } from '@/lib/data';
@@ -61,7 +60,8 @@ interface MatchFormProps {
     children: React.ReactNode;
 }
 
-export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, children }: MatchFormProps) {
+// Componente interno para isolar o estado do formulário
+function MatchFormContent({ isOpen, setIsOpen, onSubmit, match, championshipId }: MatchFormProps) {
   const form = useForm<MatchFormValues>({
     resolver: zodResolver(matchFormSchema),
     defaultValues: {
@@ -90,29 +90,26 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
     return [];
   }, [selectedChampionship]);
 
-
   useEffect(() => {
-    if (isOpen) {
-        if (match) {
-            const matchDate = parseISO(match.data);
-            form.reset({
-                timeA: match.timeA,
-                timeB: match.timeB,
-                fase: match.fase,
-                data: matchDate,
-                horario: format(matchDate, 'HH:mm'),
-            });
-        } else {
-            form.reset({
-                timeA: '',
-                timeB: '',
-                fase: '',
-                data: undefined,
-                horario: '16:00',
-            });
-        }
+    if (match) {
+        const matchDate = parseISO(match.data);
+        form.reset({
+            timeA: match.timeA,
+            timeB: match.timeB,
+            fase: match.fase,
+            data: matchDate,
+            horario: format(matchDate, 'HH:mm'),
+        });
+    } else {
+        form.reset({
+            timeA: '',
+            timeB: '',
+            fase: '',
+            data: undefined,
+            horario: '16:00',
+        });
     }
-  }, [isOpen, match, form]);
+  }, [match, form]);
 
   const handleFormSubmit = (data: MatchFormValues) => {
     const [hours, minutes] = data.horario.split(':').map(Number);
@@ -127,7 +124,6 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
     if (selectedChampionship.pontuacao.combo?.ativo) {
         maxScore += (selectedChampionship.pontuacao.combo.gols ?? 0) + (selectedChampionship.pontuacao.combo.placar ?? 0);
     }
-
 
     const finalData: Match = {
       id: match?.id || `match_${new Date().getTime()}`,
@@ -149,10 +145,6 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
   const buttonText = match ? "Salvar Alterações" : "Adicionar Partida";
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
@@ -274,6 +266,27 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
           </form>
         </Form>
       </DialogContent>
+  )
+}
+
+
+export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, children }: MatchFormProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      {isOpen && (
+         <MatchFormContent 
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            onSubmit={onSubmit}
+            match={match}
+            championshipId={championshipId}
+         >
+             {children}
+        </MatchFormContent>
+      )}
     </Dialog>
   );
 }
