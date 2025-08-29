@@ -82,7 +82,7 @@ export function ChampionBanner({
         <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
           CAMPEÃO GERAL
         </h3>
-        <div className={cn("flex items-center justify-end flex-col gap-[2%] w-full h-full", !showPhotos && "mt-[2%]")}>
+        <div className={cn("flex items-center justify-end flex-col gap-[2%] w-full pb-[2%]", !showPhotos && "mt-[2%]")}>
           {showPhotos && (
             <Image
               src={campeaoGeralAvatarUrl}
@@ -104,7 +104,7 @@ export function ChampionBanner({
         <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
           {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
-        <div className={cn("flex items-center justify-end flex-col gap-[2%] w-full h-full", !showPhotos && "mt-[2%]")}>
+        <div className={cn("flex items-center justify-end flex-col gap-[2%] w-full pb-[2%]", !showPhotos && "mt-[2%]")}>
           {showPhotos && (
             <Image
               src={palpiteiroAvatarUrl}
