@@ -39,6 +39,7 @@ import { useEffect } from 'react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
+import { Switch } from '../ui/switch';
 
 
 const championshipFormSchema = z.object({
@@ -317,37 +318,58 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
                     </TabsContent>
                     <TabsContent value="scoring" className="space-y-4">
-                        <div>
-                            <h3 className="mb-2 text-md font-medium">Pontuação Tradicional</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4">
-                                <FormField
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between p-4">
+                                <div>
+                                    <h3 className="text-md font-medium">Pontuação Tradicional</h3>
+                                    <p className="text-sm text-muted-foreground">O sistema de pontuação padrão.</p>
+                                </div>
+                                 <FormField
                                     control={form.control}
-                                    name="pontuacao.tradicional.exato"
+                                    name="pontuacao.tradicional.ativo"
                                     render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel>Placar Exato (Bucha)</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" placeholder="Ex: 10" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
-                                    control={form.control}
-                                    name="pontuacao.tradicional.situacao"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                        <FormLabel>Situação (Vencedor/Empate)</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" placeholder="Ex: 5" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </div>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="pontuacao.tradicional.exato"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Placar Exato (Bucha)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="Ex: 10" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="pontuacao.tradicional.situacao"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Situação (Vencedor/Empate)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="Ex: 5" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
                          <div>
                             <h3 className="mb-2 text-md font-medium text-muted-foreground">Sistema de Pontuação Combo (Em breve)</h3>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4 opacity-50">

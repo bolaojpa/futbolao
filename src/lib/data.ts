@@ -71,7 +71,7 @@ export type Championship = {
   dataInicio: Date | string;
   dataFim: Date | string;
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
-  modoEquipes: 'selecao' | 'times' | 'mista';
+  modoEquipes: 'times' | 'selecao' | 'mista';
   formatoFases?: 'fases' | 'rodadas';
   pontuacao: {
     tradicional: {
