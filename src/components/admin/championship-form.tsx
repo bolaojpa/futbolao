@@ -145,6 +145,17 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const watchAllFields = form.watch();
   const isBannerActive = watchAllFields.banner?.ativo;
   const isComboActive = watchAllFields.pontuacao?.combo?.ativo;
+  const tipoCampeonato = watchAllFields.tipoCampeonato;
+
+  // Lógica para forçar 'fases' para copa/avulso
+  useEffect(() => {
+    if (tipoCampeonato === 'copa' || tipoCampeonato === 'avulso') {
+        if (form.getValues('formatoFases') !== 'fases') {
+            form.setValue('formatoFases', 'fases');
+        }
+    }
+  }, [tipoCampeonato, form]);
+
 
   useEffect(() => {
     if (isOpen && championship) {
@@ -428,7 +439,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
                         <Separator />
                         
-                        {watchAllFields.tipoCampeonato === 'liga' ? (
+                        {tipoCampeonato === 'liga' && (
                             <FormField
                                 control={form.control}
                                 name="rodadas"
@@ -442,34 +453,11 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                     </FormItem>
                                 )}
                             />
-                        ) : (
-                             <FormField
-                                control={form.control}
-                                name="formatoFases"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-3">
-                                    <FormLabel>Estrutura do Campeonato</FormLabel>
-                                    <FormControl>
-                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl><RadioGroupItem value="fases" /></FormControl>
-                                                <FormLabel className="font-normal">Fases (Ex: Grupos, Oitavas, Quartas)</FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl><RadioGroupItem value="rodadas" /></FormControl>
-                                                <FormLabel className="font-normal">Rodadas (Ex: Rodada 1, Rodada 2)</FormLabel>
-                                            </FormItem>
-                                        </RadioGroup>
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         )}
 
-                        {watchAllFields.formatoFases === 'fases' && watchAllFields.tipoCampeonato !== 'liga' && (
+                        {(tipoCampeonato === 'copa' || tipoCampeonato === 'avulso') && (
                              <div className="space-y-4 rounded-md border p-4">
-                                <h4 className="text-sm font-medium">Definir Fases</h4>
+                                <h4 className="text-sm font-medium">Estrutura do Campeonato (Fases)</h4>
                                  <div className="flex gap-2">
                                      <Select onValueChange={(value) => value && handleAddFase(value)}>
                                         <SelectTrigger>
@@ -526,23 +514,6 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 </div>
                              </div>
                         )}
-
-                         {watchAllFields.formatoFases === 'rodadas' && watchAllFields.tipoCampeonato !== 'liga' && (
-                             <FormField
-                                control={form.control}
-                                name="rodadas"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Número de Rodadas</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" placeholder="Ex: 10" {...field} value={field.value ?? ''} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                         )}
-
 
                     </TabsContent>
                     <TabsContent value="scoring" className="space-y-4">
