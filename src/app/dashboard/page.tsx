@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Honorifics } from '@/components/shared/honorifics';
 import { StatusIndicator } from '@/components/shared/status-indicator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Componente para evitar erro de hidratação com datas
 const FormattedDate = ({ dateString, formatString }: { dateString: string, formatString: string }) => {
@@ -161,6 +162,7 @@ export default function DashboardPage() {
   };
 
   return (
+    <TooltipProvider>
       <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4 mb-8">
             <LayoutDashboard className="h-8 w-8 text-primary" />
@@ -328,6 +330,11 @@ export default function DashboardPage() {
                 const championship = mockChampionships.find(c => c.id === match.campeonatoId);
                 const displayStatus = getMatchDisplayStatus(match.data, match.status);
                 
+                const totalPredictions = mockPredictions.filter(p => p.matchId === match.id).length;
+                const totalUsers = mockUsers.filter(u => u.status === 'ativo').length;
+                const missingPredictions = totalUsers - totalPredictions;
+                const hasMissingPredictions = displayStatus === 'Hoje' && missingPredictions > 0;
+
                 return (
                     <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
                     <Card className={cn(
@@ -335,9 +342,28 @@ export default function DashboardPage() {
                         needsAttention && "border-accent animate-pulse"
                     )}>
                         {needsAttention && (
-                            <div className="absolute top-2 left-2 z-10">
-                                <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
-                            </div>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="absolute top-2 left-2 z-10">
+                                        <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    <p>Seu palpite é necessário! Esta partida começa em breve.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
+                        {hasMissingPredictions && (
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="absolute top-2 right-2 z-10">
+                                        <Users className="h-5 w-5 text-blue-500" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                    <p>Aguardando palpites de {missingPredictions} jogador(es).</p>
+                                </TooltipContent>
+                            </Tooltip>
                         )}
                         <CardContent className="flex-grow flex flex-col justify-center items-center p-4">
                             <div className="flex justify-center items-center gap-2 mb-2">
@@ -490,5 +516,6 @@ export default function DashboardPage() {
             </section>
         </div>
       </div>
+    </TooltipProvider>
   );
 }
