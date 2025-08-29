@@ -56,11 +56,10 @@ interface MatchFormProps {
     onSubmit: (data: Match) => void;
     match: Match | null;
     championshipId: string;
-    children: React.ReactNode;
 }
 
 
-export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, children }: MatchFormProps) {
+export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }: MatchFormProps) {
     const form = useForm<MatchFormValues>({
         resolver: zodResolver(matchFormSchema),
         defaultValues: {
@@ -147,9 +146,6 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                {children}
-            </DialogTrigger>
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>

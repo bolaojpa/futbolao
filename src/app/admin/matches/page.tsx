@@ -163,19 +163,21 @@ export default function AdminMatchesPage() {
                   ))}
               </SelectContent>
           </Select>
-          <MatchForm 
-            isOpen={isFormOpen} 
-            setIsOpen={setIsFormOpen}
-            onSubmit={handleFormSubmit}
-            match={editingMatch}
-            championshipId={selectedChampionship}
-          >
-             <Button onClick={handleCreate} disabled={selectedChampionship === 'all'} className="w-full sm:w-auto">
+          <div className="w-full sm:w-auto">
+            <Button onClick={handleCreate} disabled={selectedChampionship === 'all'} className="w-full sm:w-auto">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Adicionar Partida
             </Button>
-          </MatchForm>
+          </div>
       </div>
+
+      <MatchForm 
+        isOpen={isFormOpen} 
+        setIsOpen={setIsFormOpen}
+        onSubmit={handleFormSubmit}
+        match={editingMatch}
+        championshipId={editingMatch ? editingMatch.campeonatoId : selectedChampionship}
+      />
 
 
       <div className="w-full space-y-4">
