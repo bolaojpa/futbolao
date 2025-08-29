@@ -330,10 +330,10 @@ export default function DashboardPage() {
                 const championship = mockChampionships.find(c => c.id === match.campeonatoId);
                 const displayStatus = getMatchDisplayStatus(match.data, match.status);
                 
-                const totalPredictions = mockPredictions.filter(p => p.matchId === match.id).length;
-                const totalUsers = mockUsers.filter(u => u.status === 'ativo').length;
-                const missingPredictions = totalUsers - totalPredictions;
-                const hasMissingPredictions = displayStatus === 'Hoje' && missingPredictions > 0;
+                const predictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
+                const participants = championship?.participantes || [];
+                const missingPredictionsCount = participants.filter(pId => !predictionsForMatch.some(pred => pred.userId === pId)).length;
+                const hasMissingPredictions = displayStatus === 'Hoje' && missingPredictionsCount > 0;
 
                 return (
                     <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
@@ -361,7 +361,7 @@ export default function DashboardPage() {
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="top">
-                                    <p>Aguardando palpites de {missingPredictions} jogador(es).</p>
+                                    <p>Aguardando palpites de {missingPredictionsCount} jogador(es).</p>
                                 </TooltipContent>
                             </Tooltip>
                         )}

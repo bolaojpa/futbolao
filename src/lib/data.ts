@@ -76,6 +76,7 @@ export type Championship = {
   dataFim: Date | string;
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
   modoEquipes: 'times' | 'selecao' | 'mista';
+  participantes: string[]; // Array de user IDs
   formatoFases?: 'fases' | 'rodadas';
   fases?: Array<{ nome: string; idaEVolta: boolean; rodadas?: number; }>;
   rodadas?: number;
@@ -109,6 +110,7 @@ export const mockChampionships: Championship[] = [
     dataFim: '2024-12-08', 
     tipoCampeonato: 'liga',
     modoEquipes: 'times',
+    participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5', 'user_6', 'user_7', 'user_8'],
     rodadas: 38,
     pontuacao: { 
       tradicional: { ativo: true, exato: 10, situacao: 5 },
@@ -129,6 +131,7 @@ export const mockChampionships: Championship[] = [
     dataFim: '2024-11-30', 
     tipoCampeonato: 'copa',
     modoEquipes: 'times',
+    participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5'],
     formatoFases: 'fases',
     fases: [
         { nome: 'Fase de Grupos', idaEVolta: true, rodadas: 6 },
