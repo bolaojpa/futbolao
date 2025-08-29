@@ -69,6 +69,10 @@ const championshipFormSchema = z.object({
         situacao: z.coerce.number().int().min(1, "A pontuação deve ser no mínimo 1."),
     })
   }),
+  banner: z.object({
+    ativo: z.boolean(),
+    backgroundUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
+  }),
 }).refine(data => data.dataFim > data.dataInicio, {
   message: "A data de fim deve ser posterior à data de início.",
   path: ["dataFim"], 
@@ -106,11 +110,16 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
             tradicional: { ativo: true, exato: 10, situacao: 5 }
         },
         fases: [],
+        banner: {
+            ativo: false,
+            backgroundUrl: ""
+        }
     },
   });
 
   const tipoCampeonato = form.watch('tipoCampeonato');
   const formatoFases = form.watch('formatoFases');
+  const isBannerActive = form.watch('banner.ativo');
 
   useEffect(() => {
     if (isOpen && championship) {
@@ -129,6 +138,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
               exato: championship.pontuacao.tradicional.exato,
               situacao: championship.pontuacao.tradicional.situacao
           }
+        },
+        banner: {
+            ativo: championship.banner?.ativo || false,
+            backgroundUrl: championship.banner?.backgroundUrl || ""
         }
       });
       setFasesList(championship.fases || []);
@@ -144,6 +157,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         },
         fases: [],
         rodadas: undefined,
+        banner: {
+            ativo: false,
+            backgroundUrl: ""
+        }
       });
        setFasesList([]);
     }
@@ -188,7 +205,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         ...championship?.pontuacao,
         tradicional: data.pontuacao.tradicional,
       },
-      banner: championship?.banner || { ativo: false } 
+      banner: { 
+        ativo: data.banner.ativo,
+        backgroundUrl: data.banner.backgroundUrl
+       } 
     };
     onSubmit(finalData);
     setIsOpen(false);
@@ -514,8 +534,53 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             </div>
                         </div>
                     </TabsContent>
-                    <TabsContent value="banner" className="space-y-4">
-                         <p className="text-sm text-muted-foreground text-center p-4 border rounded-md">As opções de personalização do banner para o Hall da Fama aparecerão aqui em breve.</p>
+                    <TabsContent value="banner" className="space-y-6">
+                         <Card>
+                            <CardHeader className="p-4">
+                                <FormField
+                                    control={form.control}
+                                    name="banner.ativo"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base">Gerar Banner do Campeão</FormLabel>
+                                                <FormDescription>
+                                                    Ative para criar um banner no Hall da Fama ao finalizar este campeonato.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                                <FormField
+                                    control={form.control}
+                                    name="banner.backgroundUrl"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>URL da Imagem de Fundo (Opcional)</FormLabel>
+                                            <FormControl>
+                                                <Input 
+                                                    placeholder="https://exemplo.com/fundo.png" 
+                                                    {...field}
+                                                    disabled={!isBannerActive}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Use uma imagem de fundo personalizada para o banner deste campeonato.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                 </div>
             </Tabs>

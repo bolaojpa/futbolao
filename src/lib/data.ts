@@ -130,7 +130,7 @@ export const mockChampionships: Championship[] = [
       tradicional: { ativo: true, exato: 15, situacao: 7 },
     },
     banner: {
-      ativo: false,
+      ativo: true,
     }
   },
 ];
