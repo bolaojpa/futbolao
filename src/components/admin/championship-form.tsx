@@ -146,16 +146,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const isBannerActive = watchAllFields.banner?.ativo;
   const isComboActive = watchAllFields.pontuacao?.combo?.ativo;
   const tipoCampeonato = watchAllFields.tipoCampeonato;
-
-  // Lógica para forçar 'fases' para copa/avulso
-  useEffect(() => {
-    if (tipoCampeonato === 'copa' || tipoCampeonato === 'avulso') {
-        if (form.getValues('formatoFases') !== 'fases') {
-            form.setValue('formatoFases', 'fases');
-        }
-    }
-  }, [tipoCampeonato, form]);
-
+  const formatoFases = watchAllFields.formatoFases;
 
   useEffect(() => {
     if (isOpen && championship) {
@@ -439,7 +430,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
                         <Separator />
                         
-                        {tipoCampeonato === 'liga' && (
+                        {tipoCampeonato === 'liga' ? (
                             <FormField
                                 control={form.control}
                                 name="rodadas"
@@ -453,65 +444,103 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                     </FormItem>
                                 )}
                             />
-                        )}
-
-                        {(tipoCampeonato === 'copa' || tipoCampeonato === 'avulso') && (
+                        ) : (
                              <div className="space-y-4 rounded-md border p-4">
-                                <h4 className="text-sm font-medium">Estrutura do Campeonato (Fases)</h4>
-                                 <div className="flex gap-2">
-                                     <Select onValueChange={(value) => value && handleAddFase(value)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Selecione uma fase para adicionar..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {predefinedPhases.map(phase => (
-                                                <SelectItem 
-                                                    key={phase} 
-                                                    value={phase}
-                                                    disabled={fasesList.some(f => f.nome === phase)}
-                                                >
-                                                    {phase}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    {fasesList.map((fase, index) => (
-                                        <div key={index} className="flex flex-col gap-2 rounded-md bg-muted p-2">
-                                             <div className="flex items-center justify-between gap-2">
-                                                <span className="font-semibold">{fase.nome}</span>
-                                                <Button type="button" size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveFase(index)}>
-                                                    <X className="h-4 w-4"/>
-                                                </Button>
-                                             </div>
-                                             <div className="flex items-center justify-between gap-4">
-                                                <div className="flex items-center gap-1.5 text-xs">
-                                                    <Switch 
-                                                        id={`ida-volta-${index}`} 
-                                                        checked={fase.idaEVolta}
-                                                        onCheckedChange={(checked) => handleFaseChange(index, 'idaEVolta', checked)}
-                                                    />
-                                                    <Label htmlFor={`ida-volta-${index}`}>Ida e Volta</Label>
-                                                </div>
-                                                {fase.nome === 'Fase de Grupos' && (
-                                                    <div className="flex items-center gap-2">
-                                                        <Label htmlFor={`rodadas-fase-${index}`} className="text-xs">Rodadas</Label>
-                                                        <Input
-                                                            id={`rodadas-fase-${index}`}
-                                                            type="number"
-                                                            className="h-7 w-16"
-                                                            value={fase.rodadas ?? ''}
-                                                            onChange={(e) => handleFaseChange(index, 'rodadas', e.target.value === '' ? undefined : Number(e.target.value))}
-                                                            placeholder="Ex: 6"
-                                                        />
-                                                    </div>
-                                                )}
-                                             </div>
+                                <FormField
+                                    control={form.control}
+                                    name="formatoFases"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-2">
+                                        <FormLabel>Estrutura do Campeonato</FormLabel>
+                                        <FormControl>
+                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
+                                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                                    <FormControl><RadioGroupItem value="fases" /></FormControl>
+                                                    <FormLabel className="font-normal">Baseado em Fases (Mata-mata)</FormLabel>
+                                                </FormItem>
+                                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                                    <FormControl><RadioGroupItem value="rodadas" /></FormControl>
+                                                    <FormLabel className="font-normal">Baseado em Rodadas</FormLabel>
+                                                </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                {formatoFases === 'fases' && (
+                                    <div className="space-y-4 pl-2">
+                                        <div className="flex gap-2">
+                                            <Select onValueChange={(value) => value && handleAddFase(value)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione uma fase para adicionar..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {predefinedPhases.map(phase => (
+                                                        <SelectItem 
+                                                            key={phase} 
+                                                            value={phase}
+                                                            disabled={fasesList.some(f => f.nome === phase)}
+                                                        >
+                                                            {phase}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                    ))}
-                                    {fasesList.length === 0 && <p className="text-xs text-muted-foreground text-center">Nenhuma fase adicionada.</p>}
-                                </div>
+                                        <div className="space-y-2">
+                                            {fasesList.map((fase, index) => (
+                                                <div key={index} className="flex flex-col gap-2 rounded-md bg-muted p-2">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="font-semibold">{fase.nome}</span>
+                                                        <Button type="button" size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveFase(index)}>
+                                                            <X className="h-4 w-4"/>
+                                                        </Button>
+                                                    </div>
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <div className="flex items-center gap-1.5 text-xs">
+                                                            <Switch 
+                                                                id={`ida-volta-${index}`} 
+                                                                checked={fase.idaEVolta}
+                                                                onCheckedChange={(checked) => handleFaseChange(index, 'idaEVolta', checked)}
+                                                            />
+                                                            <Label htmlFor={`ida-volta-${index}`}>Ida e Volta</Label>
+                                                        </div>
+                                                        {fase.nome === 'Fase de Grupos' && (
+                                                            <div className="flex items-center gap-2">
+                                                                <Label htmlFor={`rodadas-fase-${index}`} className="text-xs">Rodadas</Label>
+                                                                <Input
+                                                                    id={`rodadas-fase-${index}`}
+                                                                    type="number"
+                                                                    className="h-7 w-16"
+                                                                    value={fase.rodadas ?? ''}
+                                                                    onChange={(e) => handleFaseChange(index, 'rodadas', e.target.value === '' ? undefined : Number(e.target.value))}
+                                                                    placeholder="Ex: 6"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {fasesList.length === 0 && <p className="text-xs text-muted-foreground text-center">Nenhuma fase adicionada.</p>}
+                                        </div>
+                                    </div>
+                                )}
+                                {formatoFases === 'rodadas' && (
+                                     <FormField
+                                        control={form.control}
+                                        name="rodadas"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Número de Rodadas</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="Ex: 3" {...field} value={field.value ?? ''} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                              </div>
                         )}
 
