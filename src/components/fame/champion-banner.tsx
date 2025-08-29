@@ -78,7 +78,7 @@ export function ChampionBanner({
       </Section>
 
       {/* Middle Section */}
-      <Section height="33.11%" className="flex-col justify-center items-center text-center p-[2%]">
+      <Section height="33.11%" className="flex-col justify-start items-center text-center p-[2%]">
         <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
           CAMPEÃO GERAL
         </h3>
@@ -100,7 +100,7 @@ export function ChampionBanner({
       </Section>
 
       {/* Bottom Section */}
-      <Section height="33.28%" className="flex-col justify-center items-center text-center p-[2%]">
+      <Section height="33.28%" className="flex-col justify-start items-center text-center p-[2%]">
         <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
           {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
