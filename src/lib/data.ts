@@ -65,7 +65,7 @@ export const mockUsers: Array<UserType> = [
   { id: 'user_11', nome: 'Admin Master', apelido: 'Admin', email: 'admin@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: '', ultimaAtividade: new Date().toISOString(), ultimoLogin: new Date().toISOString(), ultimoPalpite: { matchId: 'match_5', palpite: '1x0' }, championshipStats: [], totalJogos: 0, titulos: 99, dataCadastro: '2023-01-01T00:00:00Z', status: 'ativo', presenceStatus: 'Não perturbe', funcao: 'admin' },
 ].map(user => ({
   ...user,
-  fotoPerfil: user.fotoPerfil.replace('placehold.co', 'picsum.photos'),
+  fotoPerfil: user.fotoPerfil,
 }));
 
 export type Championship = {
@@ -428,3 +428,5 @@ export const mockLogs: Log[] = [
     },
   }
 ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    
