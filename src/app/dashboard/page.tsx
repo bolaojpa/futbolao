@@ -337,9 +337,9 @@ export default function DashboardPage() {
                         )}
                         <CardHeader className='pb-2'>
                             <div className="flex justify-start items-center gap-2">
-                                {championship?.iconUrl && (
-                                    <Image src={championship.iconUrl} alt={`Logo ${match.campeonato}`} width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
-                                )}
+                                {championship?.iconUrl ? (
+                                    <Image src={championship.iconUrl} alt="" width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
+                                ) : null}
                                 <p className="text-xs text-muted-foreground font-semibold">{match.campeonato}</p>
                             </div>
                         </CardHeader>
