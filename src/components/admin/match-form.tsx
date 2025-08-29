@@ -106,7 +106,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
       status: 'Agendado',
       campeonato: championship.nome,
       campeonatoId: championship.id,
-      maxPontos: championship.pontuacao.exato,
+      maxPontos: championship.pontuacao.tradicional.exato,
     };
     onSubmit(finalData);
     setIsOpen(false);
