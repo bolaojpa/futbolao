@@ -1,29 +1,210 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldAlert } from 'lucide-react';
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { mockAllMatches, Match } from '@/lib/data';
+import { format, parseISO, isPast } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Flag, LayoutDashboard, Save, Swords, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 
 export default function AdminDashboardPage() {
-    return (
-        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
-            <div className="flex items-center gap-4 mb-8">
-                <ShieldAlert className="h-8 w-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Painel do Administrador</h1>
-                    <p className="text-muted-foreground">Bem-vindo. Use os menus para gerenciar o aplicativo.</p>
-                </div>
-            </div>
+    const [liveMatches, setLiveMatches] = useState<Match[]>([]);
+    const [allMatches, setAllMatches] = useState<Match[]>(mockAllMatches);
+    const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
+    const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Visão Geral</CardTitle>
-                    <CardDescription>
-                        Esta é a página inicial do seu painel de controle.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p>Selecione uma opção na barra lateral para começar a gerenciar os usuários, campeonatos e outras áreas do FutBolão Pro.</p>
-                </CardContent>
-            </Card>
-        </div>
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const updateLiveMatches = () => {
+            const now = new Date();
+            const live = allMatches.filter(match => 
+                match.status !== 'Finalizado' && 
+                match.status !== 'Cancelado' &&
+                isPast(parseISO(match.data))
+            );
+
+            setLiveMatches(live.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()));
+
+            // Inicializa placares
+            setScores(prevScores => {
+                const newScores = {...prevScores};
+                live.forEach(match => {
+                    if (!newScores[match.id]) {
+                        newScores[match.id] = { 
+                            placarA: match.placarA?.toString() ?? '0', 
+                            placarB: match.placarB?.toString() ?? '0' 
+                        };
+                    }
+                });
+                return newScores;
+            });
+        };
+
+        updateLiveMatches();
+        const interval = setInterval(updateLiveMatches, 5000); 
+
+        return () => clearInterval(interval);
+    }, [allMatches]);
+    
+
+    const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: string) => {
+        setScores(prev => ({
+            ...prev,
+            [matchId]: {
+                ...(prev[matchId] || { placarA: '', placarB: '' }),
+                [team]: value,
+            },
+        }));
+    };
+
+    const updateMatchDataInMock = (matchId: string, statusChange?: Match['status']) => {
+        const currentScore = scores[matchId];
+        if (!currentScore) return;
+
+        const numScoreA = currentScore.placarA === '' ? null : Number(currentScore.placarA);
+        const numScoreB = currentScore.placarB === '' ? null : Number(currentScore.placarB);
+        
+        setAllMatches(prev => prev.map(m => 
+            m.id === matchId 
+            ? { 
+                ...m, 
+                placarA: numScoreA, 
+                placarB: numScoreB, 
+                status: statusChange ?? 'Ao Vivo'
+              } 
+            : m
+        ));
+
+        setLastUpdated(prev => ({ ...prev, [matchId]: new Date() }));
+    };
+
+    const handleScoreSave = (match: Match) => {
+        updateMatchDataInMock(match.id);
+        toast({
+            title: "Placar Salvo!",
+            description: `O placar de ${match.timeA} vs ${match.timeB} foi salvo temporariamente.`,
+        });
+    };
+
+    const handleFinalizeMatch = (match: Match) => {
+        updateMatchDataInMock(match.id, 'Finalizado');
+        toast({
+            title: "Partida Finalizada!",
+            description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada e movida para o histórico.`,
+        });
+    };
+
+    return (
+        <TooltipProvider>
+            <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
+                <div className="flex items-center gap-4 mb-8">
+                    <LayoutDashboard className="h-8 w-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline">Dashboard do Administrador</h1>
+                        <p className="text-muted-foreground">Gerencie partidas ao vivo e acompanhe o andamento.</p>
+                    </div>
+                </div>
+
+                <section>
+                    <div className="flex items-center gap-2 mb-4">
+                         <Zap className="w-6 h-6 text-destructive animate-pulse" />
+                        <h2 className="text-2xl font-bold font-headline">Partidas Ao Vivo ({liveMatches.length})</h2>
+                    </div>
+                    {liveMatches.length > 0 ? (
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {liveMatches.map(match => {
+                                const score = scores[match.id] || { placarA: '', placarB: '' };
+                                const originalPlacarA = match.placarA?.toString() ?? '';
+                                const originalPlacarB = match.placarB?.toString() ?? '';
+                                const hasChanged = score.placarA !== originalPlacarA || score.placarB !== originalPlacarB;
+
+                                return (
+                                <Card key={match.id} className="relative overflow-hidden border-destructive/50">
+                                    <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
+
+                                        <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
+                                        <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
+                                        
+                                        <div className="flex flex-col md:flex-row items-center justify-around gap-4 w-full">
+                                            
+                                            <div className='flex-1 flex flex-col items-center justify-center gap-2'>
+                                                 <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Image src="https://picsum.photos/128/128" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent><p>{match.timeA}</p></TooltipContent>
+                                                </Tooltip>
+                                                <span className="font-bold text-lg text-center">{match.timeA}</span>
+                                                <Input 
+                                                    type="number" 
+                                                    className="w-20 h-12 text-center text-2xl font-bold" 
+                                                    value={score.placarA}
+                                                    onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
+                                                    min="0"
+                                                />
+                                            </div>
+
+                                            <div className="flex items-center justify-center text-muted-foreground my-2 md:my-0">
+                                                <Swords className="h-6 w-6" />
+                                            </div>
+                                            
+                                             <div className='flex-1 flex flex-col items-center justify-center gap-2'>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent><p>{match.timeB}</p></TooltipContent>
+                                                </Tooltip>
+                                                <span className="font-bold text-lg text-center">{match.timeB}</span>
+                                                <Input 
+                                                    type="number" 
+                                                    className="w-20 h-12 text-center text-2xl font-bold" 
+                                                    value={score.placarB}
+                                                    onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
+                                                    min="0"
+                                                />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                     <CardFooter className="flex-col items-center justify-center gap-2 px-4 pb-4">
+                                        <div className="flex flex-col sm:flex-row gap-2 items-center">
+                                            <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm" variant="secondary">
+                                                <Save className="mr-2 h-4 w-4" />
+                                                Salvar Placar
+                                            </Button>
+                                            <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
+                                                <Flag className="mr-2 h-4 w-4" />
+                                                Finalizar Partida
+                                            </Button>
+                                        </div>
+                                         {lastUpdated[match.id] && (
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                                Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                            </p>
+                                        )}
+                                     </CardFooter>
+                                </Card>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <Card>
+                            <CardContent className="p-6 text-center text-muted-foreground">
+                                <p>Nenhuma partida ao vivo no momento.</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </section>
+            </div>
+        </TooltipProvider>
     );
 }
