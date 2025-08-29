@@ -26,6 +26,7 @@ import type { Match } from '@/lib/data';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -185,8 +186,15 @@ export default function AdminMatchesPage() {
             const allPredictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
             const hasPredictions = allPredictionsForMatch.length > 0;
             const championship = mockChampionships.find(c => c.id === match.campeonatoId);
-            const totalParticipants = championship?.participantes.length || 0;
-            const hasMissingPredictions = hasPredictions && allPredictionsForMatch.length < totalParticipants;
+            const participants = championship?.participantes || [];
+            const totalParticipants = participants.length;
+            
+            const predictedUserIds = new Set(allPredictionsForMatch.map(p => p.userId));
+            const missingUsers = participants
+                .map(pId => mockUsers.find(u => u.id === pId))
+                .filter(u => u && !predictedUserIds.has(u.id));
+
+            const hasMissingPredictions = missingUsers.length > 0;
 
             return (
               <Accordion type="single" collapsible className="w-full" key={match.id} disabled={!hasPredictions}>
@@ -261,10 +269,24 @@ export default function AdminMatchesPage() {
                         <AccordionContent>
                         <div className="bg-background/80 border-t">
                              <div className="text-center p-2">
-                                <h4 className="font-semibold flex items-center justify-center gap-2">
-                                    <Users className="w-4 h-4" /> 
-                                    Palpites dos Usuários ({allPredictionsForMatch.length}/{totalParticipants})
-                                </h4>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <h4 className={cn("font-semibold flex items-center justify-center gap-2", hasMissingPredictions && "cursor-help")}>
+                                                <Users className="w-4 h-4" /> 
+                                                Palpites dos Usuários ({allPredictionsForMatch.length}/{totalParticipants})
+                                            </h4>
+                                        </TooltipTrigger>
+                                        {hasMissingPredictions && (
+                                            <TooltipContent>
+                                                <p className="font-semibold">Palpites Pendentes:</p>
+                                                <ul className="list-disc list-inside">
+                                                    {missingUsers.map(user => user && <li key={user.id}>{user.apelido}</li>)}
+                                                </ul>
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                </TooltipProvider>
                             </div>
                                 <ul className="text-sm">
                                 {allPredictionsForMatch.map((p, i) => {
@@ -331,4 +353,3 @@ export default function AdminMatchesPage() {
     </div>
   );
 }
-
