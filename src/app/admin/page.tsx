@@ -175,8 +175,8 @@ export default function AdminDashboardPage() {
                                                 {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
                                                 <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
                                             </CardHeader>
-                                            <AccordionTrigger className="p-4 hover:no-underline [&>svg]:hidden">
-                                                <div className="flex flex-col items-center justify-center w-full gap-3">
+                                             <div className="p-4">
+                                                <div className="flex flex-col items-center justify-center w-full gap-4">
                                                     <div className="flex items-center justify-around w-full">
                                                         <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                                             <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
@@ -187,8 +187,7 @@ export default function AdminDashboardPage() {
                                                                 type="number" 
                                                                 className="w-16 h-12 text-center text-2xl font-bold" 
                                                                 value={score.placarA}
-                                                                onChange={(e) => { e.stopPropagation(); handleScoreChange(match.id, 'placarA', e.target.value); }}
-                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
                                                                 min="0"
                                                             />
                                                             <span className='text-2xl font-bold text-muted-foreground'>-</span>
@@ -196,8 +195,7 @@ export default function AdminDashboardPage() {
                                                                 type="number" 
                                                                 className="w-16 h-12 text-center text-2xl font-bold" 
                                                                 value={score.placarB}
-                                                                onChange={(e) => { e.stopPropagation(); handleScoreChange(match.id, 'placarB', e.target.value); }}
-                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
                                                                 min="0"
                                                             />
                                                         </div>
@@ -210,11 +208,11 @@ export default function AdminDashboardPage() {
                                                     <div className="flex flex-col items-center gap-4">
                                                          <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
                                                         <div className="flex flex-col sm:flex-row gap-2 items-center">
-                                                            <Button onClick={(e) => { e.stopPropagation(); handleScoreSave(match); }} disabled={!hasChanged} size="sm" variant="secondary">
+                                                            <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm" variant="secondary">
                                                                 <Save className="mr-2 h-4 w-4" />
                                                                 Salvar Placar
                                                             </Button>
-                                                            <Button onClick={(e) => { e.stopPropagation(); handleFinalizeMatch(match); }} disabled={score.placarA === '' || score.placarB === ''} size="sm">
+                                                            <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
                                                                 <Flag className="mr-2 h-4 w-4" />
                                                                 Finalizar Partida
                                                             </Button>
@@ -227,6 +225,9 @@ export default function AdminDashboardPage() {
                                                     </div>
 
                                                  </div>
+                                            </div>
+                                            <AccordionTrigger className="w-full flex justify-center py-2 bg-muted/50 hover:bg-muted text-sm font-semibold">
+                                                <span>Ver Palpites dos Usuários</span>
                                             </AccordionTrigger>
                                             <AccordionContent>
                                                  <div className="bg-background/80 border-t">
@@ -281,3 +282,5 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
+    
