@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { mockAllMatches, Match, mockUsers, mockPredictions, mockChampionships } from '@/lib/data';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye } from 'lucide-react';
+import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -170,8 +170,8 @@ export default function AdminDashboardPage() {
                                 <Accordion type="single" collapsible className="w-full" key={match.id}>
                                     <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
                                         <Card className="relative overflow-hidden border-destructive/50">
-                                            <AccordionTrigger className="p-4 hover:no-underline data-[state=open]:bg-muted/50 w-full">
-                                                <div className="flex flex-col items-center justify-center w-full gap-4">
+                                             <div className="p-4">
+                                                 <div className="flex flex-col items-center justify-center w-full gap-4">
                                                     <div className="flex justify-center items-center gap-2 text-center">
                                                         {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={20} height={20} />}
                                                         <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
@@ -182,37 +182,26 @@ export default function AdminDashboardPage() {
                                                             <Image src="https://picsum.photos/128/128" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                                         </div>
                                                         <div className="flex items-center justify-center gap-2 mx-2">
-                                                            <span className="text-2xl font-bold">{score.placarA}</span>
+                                                            <Input 
+                                                                type="number" 
+                                                                className="w-16 h-12 text-center text-2xl font-bold" 
+                                                                value={score.placarA}
+                                                                onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
+                                                                min="0"
+                                                            />
                                                             <span className='text-2xl font-bold text-muted-foreground'>-</span>
-                                                            <span className="text-2xl font-bold">{score.placarB}</span>
+                                                            <Input 
+                                                                type="number" 
+                                                                className="w-16 h-12 text-center text-2xl font-bold" 
+                                                                value={score.placarB}
+                                                                onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
+                                                                min="0"
+                                                            />
                                                         </div>
                                                         <div className='flex-1 flex flex-row items-center justify-start gap-3'>
                                                             <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                                             <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </AccordionTrigger>
-                                             <div className="p-4 border-t">
-                                                 <div className="flex flex-col items-center justify-center w-full gap-4">
-                                                    <div className="flex items-center justify-center gap-2 mx-2">
-                                                        <Input 
-                                                            type="number" 
-                                                            className="w-16 h-12 text-center text-2xl font-bold" 
-                                                            value={score.placarA}
-                                                            onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
-                                                            min="0"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        />
-                                                        <span className='text-2xl font-bold text-muted-foreground'>-</span>
-                                                        <Input 
-                                                            type="number" 
-                                                            className="w-16 h-12 text-center text-2xl font-bold" 
-                                                            value={score.placarB}
-                                                            onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
-                                                            min="0"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        />
                                                     </div>
                                                     <div className="flex flex-col items-center gap-4">
                                                          <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
@@ -234,6 +223,9 @@ export default function AdminDashboardPage() {
                                                     </div>
                                                  </div>
                                             </div>
+                                             <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
+                                                <ChevronDown className="h-4 w-4 mx-auto" />
+                                            </AccordionTrigger>
                                             <AccordionContent>
                                                  <div className="bg-background/80 border-t">
                                                     <div className="text-center py-2">
@@ -287,3 +279,4 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
