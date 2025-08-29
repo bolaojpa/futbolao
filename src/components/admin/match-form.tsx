@@ -31,9 +31,9 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Clock } from 'lucide-react';
+import { CalendarIcon, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, parseISO, setHours, setMinutes } from 'date-fns';
+import { format, parse, parseISO, setHours, setMinutes } from 'date-fns';
 import type { Match } from '@/lib/data';
 import { useEffect, useMemo } from 'react';
 import { mockChampionships } from '@/lib/data';
@@ -44,8 +44,7 @@ const matchFormSchema = z.object({
   timeB: z.string().min(2, { message: "O nome do time deve ter pelo menos 2 caracteres." }),
   fase: z.string({ required_error: "É obrigatório selecionar uma fase ou rodada."}).min(1, { message: "É obrigatório selecionar uma fase ou rodada." }),
   data: z.date({ required_error: "A data da partida é obrigatória." }),
-  hora: z.string({ required_error: "A hora é obrigatória." }),
-  minuto: z.string({ required_error: "O minuto é obrigatório." }),
+  horario: z.string({ required_error: "O horário da partida é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato de hora inválido."),
 }).refine(data => data.timeA !== data.timeB, {
     message: "Os times A e B não podem ser iguais.",
     path: ["timeB"],
@@ -62,9 +61,6 @@ interface MatchFormProps {
     children: React.ReactNode;
 }
 
-const hoursOptions = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-const minutesOptions = ['00', '15', '30', '45'];
-
 export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, children }: MatchFormProps) {
   const form = useForm<MatchFormValues>({
     resolver: zodResolver(matchFormSchema),
@@ -72,8 +68,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
         timeA: '',
         timeB: '',
         fase: '',
-        hora: '16',
-        minuto: '00',
+        horario: '16:00',
     },
   });
 
@@ -84,12 +79,12 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
   const availablePhases = useMemo(() => {
     if (!selectedChampionship) return [];
     
-    if (selectedChampionship.formatoFases === 'fases' && selectedChampionship.fases) {
-      return selectedChampionship.fases.map(f => f.nome);
+    if (selectedChampionship.tipoCampeonato === 'copa' || (selectedChampionship.tipoCampeonato === 'avulso' && selectedChampionship.formatoFases === 'fases')) {
+         return selectedChampionship.fases?.map(f => f.nome) || [];
     }
 
-    if (selectedChampionship.rodadas) {
-        return Array.from({ length: selectedChampionship.rodadas }, (_, i) => `Rodada ${i + 1}`);
+    if (selectedChampionship.tipoCampeonato === 'liga' || (selectedChampionship.tipoCampeonato === 'avulso' && selectedChampionship.formatoFases === 'rodadas')) {
+        return Array.from({ length: selectedChampionship.rodadas || 0 }, (_, i) => `Rodada ${i + 1}`);
     }
 
     return [];
@@ -104,8 +99,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
         timeB: match.timeB,
         fase: match.fase,
         data: matchDate,
-        hora: format(matchDate, 'HH'),
-        minuto: format(matchDate, 'mm'),
+        horario: format(matchDate, 'HH:mm'),
       });
     } else if (isOpen) {
       form.reset({
@@ -113,15 +107,13 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
         timeB: '',
         fase: '',
         data: undefined,
-        hora: '16',
-        minuto: '00',
+        horario: '16:00',
       });
     }
   }, [match, isOpen, form]);
 
   const handleFormSubmit = (data: MatchFormValues) => {
-    const hours = parseInt(data.hora, 10);
-    const minutes = parseInt(data.minuto, 10);
+    const [hours, minutes] = data.horario.split(':').map(Number);
     const combinedDate = setMinutes(setHours(data.data, hours), minutes);
 
     if (!selectedChampionship) return;
@@ -260,54 +252,19 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
                         </FormItem>
                     )}
                 />
-                 <div className="flex flex-col">
-                    <FormLabel>Hora da Partida</FormLabel>
-                    <div className="flex items-center gap-2">
-                        <FormField
-                            control={form.control}
-                            name="hora"
-                            render={({ field }) => (
-                                <FormItem className="flex-1">
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Hora" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {hoursOptions.map(hour => (
-                                                <SelectItem key={hour} value={hour}>{hour}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <span className="mt-2 text-muted-foreground">:</span>
-                        <FormField
-                            control={form.control}
-                            name="minuto"
-                            render={({ field }) => (
-                                <FormItem className="flex-1">
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Min" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {minutesOptions.map(min => (
-                                                <SelectItem key={min} value={min}>{min}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                </div>
+                <FormField
+                    control={form.control}
+                    name="horario"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Horário da Partida</FormLabel>
+                            <FormControl>
+                                <Input type="time" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
             </div>
              <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
@@ -322,3 +279,5 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
     </Dialog>
   );
 }
+
+    
