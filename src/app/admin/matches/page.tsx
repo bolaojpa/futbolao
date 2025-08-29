@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { mockAllMatches, mockPredictions, mockChampionships, mockUsers, mockUser } from '@/lib/data';
 import { format, parseISO, differenceInHours, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords } from 'lucide-react';
+import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,9 +22,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '@/components/shared/countdown';
+import { MatchForm } from '@/components/admin/match-form';
+import type { Match } from '@/lib/data';
 
 const ITEMS_PER_PAGE = 10;
-type Match = typeof mockAllMatches[0];
 
 const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
     const matchDate = parseISO(matchDateString);
@@ -65,18 +66,20 @@ export default function AdminMatchesPage() {
   const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || 'all');
   const [currentPage, setCurrentPage] = useState(1);
   const [isClient, setIsClient] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [matches, setMatches] = useState<Match[]>(mockAllMatches);
 
   useEffect(() => {
       setIsClient(true);
   }, [])
   
-  const filteredMatches = useMemo(() => [...mockAllMatches]
+  const filteredMatches = useMemo(() => matches
     .filter(match => {
         const isScheduled = match.status === 'Agendado';
         const isChampionshipMatch = selectedChampionship === 'all' || match.campeonatoId === selectedChampionship;
         return isScheduled && isChampionshipMatch;
     })
-    .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()), [selectedChampionship]);
+    .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()), [selectedChampionship, matches]);
 
 
   const handleFilterChange = (value: string) => {
@@ -85,6 +88,16 @@ export default function AdminMatchesPage() {
     router.push(`${pathname}?${params.toString()}`);
     setSelectedChampionship(value);
     setCurrentPage(1); 
+  };
+
+  const handleFormSubmit = (data: Match) => {
+    // Para edição (não implementado neste fluxo, mas a estrutura está aqui)
+    // if (editingMatch) {
+    //     setMatches(prev => prev.map(m => m.id === data.id ? data : m));
+    // } else {
+    // Lógica de Criação
+    setMatches(prev => [...prev, data]);
+    // }
   };
 
 
@@ -109,9 +122,9 @@ export default function AdminMatchesPage() {
         </div>
       </div>
       
-       <div className="flex flex-col md:flex-row gap-2 mb-8">
+      <div className="flex flex-col sm:flex-row gap-2 mb-8 items-center">
           <Select value={selectedChampionship} onValueChange={handleFilterChange}>
-              <SelectTrigger className="w-full md:w-[280px]">
+              <SelectTrigger className="w-full sm:w-auto sm:min-w-[280px] sm:max-w-xs [&>span]:truncate">
                   <SelectValue placeholder="Filtrar por campeonato" />
               </SelectTrigger>
               <SelectContent>
@@ -121,7 +134,20 @@ export default function AdminMatchesPage() {
                   ))}
               </SelectContent>
           </Select>
+          <MatchForm 
+            isOpen={isFormOpen} 
+            setIsOpen={setIsFormOpen}
+            onSubmit={handleFormSubmit}
+            match={null}
+            championshipId={selectedChampionship}
+          >
+             <Button disabled={selectedChampionship === 'all'} className="w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Partida
+            </Button>
+          </MatchForm>
       </div>
+
 
       <div className="w-full space-y-4">
         {paginatedMatches.length > 0 ? (
@@ -137,7 +163,7 @@ export default function AdminMatchesPage() {
                     <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50 data-[state=closed]:cursor-default data-[disabled]:cursor-default" disabled={!hasPredictions}>
                       <div className="flex flex-col items-center justify-center w-full gap-2">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
-                            {championship?.iconUrl && <Image src={championship.iconUrl} alt={match.campeonato} width={16} height={16} />}
+                            {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
                             {match.campeonato} - {match.fase}
                         </div>
                         <div className="flex items-center justify-center w-full">
