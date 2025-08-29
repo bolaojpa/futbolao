@@ -44,7 +44,8 @@ const matchFormSchema = z.object({
   timeB: z.string().min(2, { message: "O nome do time deve ter pelo menos 2 caracteres." }),
   fase: z.string({ required_error: "É obrigatório selecionar uma fase ou rodada."}).min(1, { message: "É obrigatório selecionar uma fase ou rodada." }),
   data: z.date({ required_error: "A data da partida é obrigatória." }),
-  hora: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Formato de hora inválido (HH:mm)."}),
+  hora: z.string({ required_error: "A hora é obrigatória." }),
+  minuto: z.string({ required_error: "O minuto é obrigatório." }),
 }).refine(data => data.timeA !== data.timeB, {
     message: "Os times A e B não podem ser iguais.",
     path: ["timeB"],
@@ -61,6 +62,9 @@ interface MatchFormProps {
     children: React.ReactNode;
 }
 
+const hoursOptions = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+const minutesOptions = ['00', '15', '30', '45'];
+
 export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, children }: MatchFormProps) {
   const form = useForm<MatchFormValues>({
     resolver: zodResolver(matchFormSchema),
@@ -68,7 +72,8 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
         timeA: '',
         timeB: '',
         fase: '',
-        hora: '16:00',
+        hora: '16',
+        minuto: '00',
     },
   });
 
@@ -83,12 +88,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
       return selectedChampionship.fases.map(f => f.nome);
     }
 
-    if (selectedChampionship.formatoFases === 'rodadas' && selectedChampionship.rodadas) {
-        return Array.from({ length: selectedChampionship.rodadas }, (_, i) => `Rodada ${i + 1}`);
-    }
-
-    // Fallback para ligas que não migraram para o novo formato
-    if (selectedChampionship.tipoCampeonato === 'liga' && selectedChampionship.rodadas) {
+    if (selectedChampionship.rodadas) {
         return Array.from({ length: selectedChampionship.rodadas }, (_, i) => `Rodada ${i + 1}`);
     }
 
@@ -104,7 +104,8 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
         timeB: match.timeB,
         fase: match.fase,
         data: matchDate,
-        hora: format(matchDate, 'HH:mm'),
+        hora: format(matchDate, 'HH'),
+        minuto: format(matchDate, 'mm'),
       });
     } else if (isOpen) {
       form.reset({
@@ -112,18 +113,19 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
         timeB: '',
         fase: '',
         data: undefined,
-        hora: '16:00',
+        hora: '16',
+        minuto: '00',
       });
     }
   }, [match, isOpen, form]);
 
   const handleFormSubmit = (data: MatchFormValues) => {
-    const [hours, minutes] = data.hora.split(':').map(Number);
+    const hours = parseInt(data.hora, 10);
+    const minutes = parseInt(data.minuto, 10);
     const combinedDate = setMinutes(setHours(data.data, hours), minutes);
 
-    if (!selectedChampionship) return; // Proteção
-    
-    // Calcula a pontuação máxima
+    if (!selectedChampionship) return;
+
     let maxScore = 0;
     if (selectedChampionship.pontuacao.tradicional.ativo) {
         maxScore += selectedChampionship.pontuacao.tradicional.exato;
@@ -157,7 +159,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -198,7 +200,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Fase / Rodada</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                   <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecione a fase ou rodada" />
@@ -258,22 +260,54 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
                         </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="hora"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Hora da Partida</FormLabel>
-                         <div className="relative">
-                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <FormControl>
-                                <Input placeholder="HH:mm" {...field} className="pl-10" />
-                            </FormControl>
-                         </div>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                 <div className="flex flex-col">
+                    <FormLabel>Hora da Partida</FormLabel>
+                    <div className="flex items-center gap-2">
+                        <FormField
+                            control={form.control}
+                            name="hora"
+                            render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Hora" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {hoursOptions.map(hour => (
+                                                <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <span className="mt-2 text-muted-foreground">:</span>
+                        <FormField
+                            control={form.control}
+                            name="minuto"
+                            render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Min" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {minutesOptions.map(min => (
+                                                <SelectItem key={min} value={min}>{min}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
             </div>
              <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
