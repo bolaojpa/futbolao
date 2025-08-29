@@ -9,11 +9,10 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { mockAllMatches, mockPredictions, mockChampionships, mockUsers, mockUser } from '@/lib/data';
+import { mockAllMatches, mockPredictions, mockChampionships, mockUsers } from '@/lib/data';
 import { format, parseISO, differenceInHours, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -121,7 +120,7 @@ export default function AdminMatchesPage() {
             description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.`,
         });
     } else {
-        setMatches(prev => [...prev, data]);
+        setMatches(prev => [...prev, { ...data, id: `match_${new Date().getTime()}` }]);
         toast({
             title: "Partida Criada!",
             description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.`,
@@ -187,11 +186,12 @@ export default function AdminMatchesPage() {
             const hasPredictions = allPredictionsForMatch.length > 0;
             const championship = mockChampionships.find(c => c.id === match.campeonatoId);
             const totalParticipants = championship?.participantes.length || 0;
+            const hasMissingPredictions = hasPredictions && allPredictionsForMatch.length < totalParticipants;
 
             return (
               <Accordion type="single" collapsible className="w-full" key={match.id} disabled={!hasPredictions}>
-                <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
-                  <Card className="relative">
+                <AccordionItem value={match.id} className="border-0">
+                  <Card className={cn("relative", hasMissingPredictions && "animate-border-pulse border-blue-500/50")}>
                      <div className="absolute top-2 right-2 z-10">
                         <AlertDialog>
                             <DropdownMenu>
@@ -228,7 +228,7 @@ export default function AdminMatchesPage() {
                             </AlertDialogContent>
                         </AlertDialog>
                      </div>
-                    <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50 data-[state=closed]:cursor-default data-[disabled]:cursor-default" disabled={!hasPredictions}>
+                    <div className="p-4">
                       <div className="flex flex-col items-center justify-center w-full gap-2">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
                             {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
@@ -251,12 +251,20 @@ export default function AdminMatchesPage() {
                            {isClient ? <UpcomingMatchDate matchDateString={match.data} /> : <div className="h-4 w-24 bg-muted rounded-md animate-pulse"></div>}
                         </div>
                       </div>
-                    </AccordionTrigger>
+                    </div>
+                     {hasPredictions && (
+                        <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
+                            <ChevronDown className="h-4 w-4 mx-auto" />
+                        </AccordionTrigger>
+                    )}
                     {hasPredictions && (
                         <AccordionContent>
                         <div className="bg-background/80 border-t">
-                            <div className="text-center py-2">
-                            <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários ({allPredictionsForMatch.length}/{totalParticipants})</h4>
+                             <div className="text-center p-2">
+                                <h4 className="font-semibold flex items-center justify-center gap-2">
+                                    <Users className="w-4 h-4" /> 
+                                    Palpites dos Usuários ({allPredictionsForMatch.length}/{totalParticipants})
+                                </h4>
                             </div>
                                 <ul className="text-sm">
                                 {allPredictionsForMatch.map((p, i) => {
@@ -323,3 +331,4 @@ export default function AdminMatchesPage() {
     </div>
   );
 }
+

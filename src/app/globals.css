@@ -114,3 +114,13 @@
 .animate-sparkle-burst {
   animation: sparkle-burst 800ms ease-out forwards;
 }
+
+@keyframes border-pulse {
+  50% {
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.25);
+  }
+}
+
+.animate-border-pulse {
+  animation: border-pulse 2s infinite;
+}

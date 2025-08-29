@@ -98,13 +98,19 @@ export default {
           '50%': {
             opacity: '0.5'
           }
-        }
+        },
+         'border-pulse': {
+          '50%': {
+            boxShadow: '0 0 0 4px hsl(var(--primary) / 0.25)',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'leader-pulse': 'leader-pulse 2s infinite',
         'flash-pulse': 'flash-pulse 1s ease-in-out infinite',
+        'border-pulse': 'border-pulse 2s infinite',
       },
     },
   },
