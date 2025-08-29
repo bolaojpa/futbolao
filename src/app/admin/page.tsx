@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
                                     <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
                                         <Card className="relative overflow-hidden border-destructive/50">
                                              <div className="p-4">
-                                                <div className="flex justify-center items-center gap-2 mb-4">
+                                                <div className="flex justify-center items-center gap-2 mb-4 text-center">
                                                     {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={20} height={20} />}
                                                     <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
                                                 </div>
@@ -199,8 +199,8 @@ export default function AdminDashboardPage() {
                                                             />
                                                         </div>
                                                         <div className='flex-1 flex flex-col-reverse md:flex-row items-center justify-start gap-3'>
-                                                            <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                             <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                            <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                         </div>
                                                     </div>
                                                     
@@ -208,12 +208,12 @@ export default function AdminDashboardPage() {
                                                          <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
                                                         <div className="flex flex-col sm:flex-row gap-2 items-center">
                                                             <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm" variant="secondary">
-                                                                <Save className="mr-2 h-4 w-4" />
-                                                                Salvar Placar
+                                                                <Save className="h-4 w-4 md:mr-2" />
+                                                                <span className="hidden md:inline">Salvar Placar</span>
                                                             </Button>
                                                             <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
-                                                                <Flag className="mr-2 h-4 w-4" />
-                                                                Finalizar Partida
+                                                                <Flag className="h-4 w-4 md:mr-2" />
+                                                                <span className="hidden md:inline">Finalizar Partida</span>
                                                             </Button>
                                                         </div>
                                                         {lastUpdated[match.id] && (
