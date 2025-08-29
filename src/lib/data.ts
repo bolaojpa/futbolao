@@ -112,6 +112,7 @@ export const mockChampionships: Championship[] = [
     rodadas: 38,
     pontuacao: { 
       tradicional: { ativo: true, exato: 10, situacao: 5 },
+      combo: { ativo: false, gols: 3, placar: 7 },
     },
     banner: {
       ativo: true,
@@ -138,6 +139,7 @@ export const mockChampionships: Championship[] = [
     ],
     pontuacao: {
       tradicional: { ativo: true, exato: 15, situacao: 7 },
+      combo: { ativo: false, gols: 5, placar: 10 },
     },
     banner: {
       ativo: true,

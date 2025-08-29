@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm, Controller } from 'react-hook-form';
@@ -96,6 +97,16 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
     const combinedDate = setMinutes(setHours(data.data, hours), minutes);
 
     const championship = mockChampionships.find(c => c.id === championshipId)!;
+    
+    // Calcula a pontuação máxima
+    let maxScore = 0;
+    if (championship.pontuacao.tradicional.ativo) {
+        maxScore += championship.pontuacao.tradicional.exato;
+    }
+    if (championship.pontuacao.combo?.ativo) {
+        maxScore += (championship.pontuacao.combo.gols + championship.pontuacao.combo.placar);
+    }
+
 
     const finalData: Match = {
       id: match?.id || `match_${new Date().getTime()}`,
@@ -106,7 +117,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId, 
       status: 'Agendado',
       campeonato: championship.nome,
       campeonatoId: championship.id,
-      maxPontos: championship.pontuacao.tradicional.exato,
+      maxPontos: maxScore,
     };
     onSubmit(finalData);
     setIsOpen(false);
