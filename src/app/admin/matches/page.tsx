@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { mockChampionships, mockAllMatches, Match } from '@/lib/data';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert, Flag, ChevronLeft, ChevronRight, Versus } from 'lucide-react';
+import { CalendarCheck, MoreHorizontal, Pencil, Trash2, Save, PlusCircle, ShieldAlert, Flag, ChevronLeft, ChevronRight, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -370,7 +370,7 @@ export default function AdminMatchesPage() {
                                                     </div>
 
                                                     <div className="flex items-center justify-center text-muted-foreground my-2 md:my-0">
-                                                        <Versus className="h-6 w-6" />
+                                                        <Swords className="h-6 w-6" />
                                                     </div>
                                                     
                                                      <div className='flex-1 flex flex-col items-center justify-center gap-2'>
