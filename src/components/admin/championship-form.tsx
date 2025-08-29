@@ -31,7 +31,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Plus, X, Eye, Image as ImageIcon } from 'lucide-react';
+import { CalendarIcon, Save, Plus, X, Eye, Image as ImageIcon, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship } from '@/lib/data';
@@ -43,6 +43,7 @@ import { Switch } from '../ui/switch';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 type Fase = {
@@ -98,6 +99,16 @@ const championshipFormSchema = z.object({
 
 type ChampionshipFormValues = z.infer<typeof championshipFormSchema>;
 
+const predefinedPhases = [
+    'Fase de Grupos',
+    '16 avos de final',
+    'Oitavas de final',
+    'Quartas de final',
+    'Semifinal',
+    'Disputa 3º lugar',
+    'Final',
+];
+
 interface ChampionshipFormProps {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
@@ -107,7 +118,6 @@ interface ChampionshipFormProps {
 }
 
 export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, children }: ChampionshipFormProps) {
-  const [faseInput, setFaseInput] = useState("");
   const [fasesList, setFasesList] = useState<Array<Fase>>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
@@ -197,10 +207,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     form.setValue('fases', fasesList);
   }, [fasesList, form]);
 
-  const handleAddFase = () => {
-    if (faseInput.trim()) {
-        setFasesList(prev => [...prev, { nome: faseInput.trim(), idaEVolta: false }]);
-        setFaseInput("");
+  const handleAddFase = (faseNome: string) => {
+    if (faseNome && !fasesList.find(f => f.nome === faseNome)) {
+        setFasesList(prev => [...prev, { nome: faseNome, idaEVolta: false }]);
     }
   };
 
@@ -461,14 +470,23 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                         {watchAllFields.formatoFases === 'fases' && watchAllFields.tipoCampeonato !== 'liga' && (
                              <div className="space-y-4 rounded-md border p-4">
                                 <h4 className="text-sm font-medium">Definir Fases</h4>
-                                <div className="flex gap-2">
-                                    <Input 
-                                        placeholder="Nome da fase (ex: Fase de Grupos)" 
-                                        value={faseInput}
-                                        onChange={(e) => setFaseInput(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddFase(); } }}
-                                    />
-                                    <Button type="button" onClick={handleAddFase}><Plus className="h-4 w-4" /></Button>
+                                 <div className="flex gap-2">
+                                     <Select onValueChange={(value) => value && handleAddFase(value)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione uma fase para adicionar..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {predefinedPhases.map(phase => (
+                                                <SelectItem 
+                                                    key={phase} 
+                                                    value={phase}
+                                                    disabled={fasesList.some(f => f.nome === phase)}
+                                                >
+                                                    {phase}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-2">
                                     {fasesList.map((fase, index) => (
@@ -488,17 +506,19 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                                     />
                                                     <Label htmlFor={`ida-volta-${index}`}>Ida e Volta</Label>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Label htmlFor={`rodadas-fase-${index}`} className="text-xs">Rodadas</Label>
-                                                    <Input
-                                                        id={`rodadas-fase-${index}`}
-                                                        type="number"
-                                                        className="h-7 w-16"
-                                                        value={fase.rodadas ?? ''}
-                                                        onChange={(e) => handleFaseChange(index, 'rodadas', e.target.value === '' ? undefined : Number(e.target.value))}
-                                                        placeholder="N/A"
-                                                    />
-                                                </div>
+                                                {fase.nome === 'Fase de Grupos' && (
+                                                    <div className="flex items-center gap-2">
+                                                        <Label htmlFor={`rodadas-fase-${index}`} className="text-xs">Rodadas</Label>
+                                                        <Input
+                                                            id={`rodadas-fase-${index}`}
+                                                            type="number"
+                                                            className="h-7 w-16"
+                                                            value={fase.rodadas ?? ''}
+                                                            onChange={(e) => handleFaseChange(index, 'rodadas', e.target.value === '' ? undefined : Number(e.target.value))}
+                                                            placeholder="Ex: 6"
+                                                        />
+                                                    </div>
+                                                )}
                                              </div>
                                         </div>
                                     ))}
