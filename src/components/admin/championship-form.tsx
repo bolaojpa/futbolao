@@ -43,6 +43,11 @@ import { Switch } from '../ui/switch';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 
+type Fase = {
+    nome: string;
+    idaEVolta: boolean;
+    rodadas?: number;
+}
 
 const championshipFormSchema = z.object({
   nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }).max(50, "O nome não pode ter mais de 50 caracteres."),
@@ -51,7 +56,11 @@ const championshipFormSchema = z.object({
   tipoCampeonato: z.enum(['liga', 'copa', 'avulso'], { required_error: "Selecione o tipo do campeonato." }),
   modoEquipes: z.enum(['times', 'selecao', 'mista'], { required_error: "Selecione o modo de equipes." }),
   formatoFases: z.enum(['fases', 'rodadas']).optional(),
-  fases: z.array(z.object({ nome: z.string(), idaEVolta: z.boolean() })).optional(),
+  fases: z.array(z.object({ 
+      nome: z.string().min(1, "O nome da fase é obrigatório."), 
+      idaEVolta: z.boolean(),
+      rodadas: z.coerce.number().int().min(1).optional(),
+    })).optional(),
   rodadas: z.coerce.number().int().min(1, "Deve haver pelo menos 1 rodada.").optional(),
   pontuacao: z.object({
     tradicional: z.object({
@@ -64,7 +73,6 @@ const championshipFormSchema = z.object({
   message: "A data de fim deve ser posterior à data de início.",
   path: ["dataFim"], 
 }).refine(data => {
-    // Se o tipo de campeonato não for 'liga', o formatoFases é obrigatório.
     if (data.tipoCampeonato !== 'liga') {
         return !!data.formatoFases;
     }
@@ -86,7 +94,7 @@ interface ChampionshipFormProps {
 
 export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, children }: ChampionshipFormProps) {
   const [faseInput, setFaseInput] = useState("");
-  const [fasesList, setFasesList] = useState<Array<{ nome: string; idaEVolta: boolean; }>>([]);
+  const [fasesList, setFasesList] = useState<Array<Fase>>([]);
   
   const form = useForm<ChampionshipFormValues>({
     resolver: zodResolver(championshipFormSchema),
@@ -156,13 +164,17 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     setFasesList(prev => prev.filter((_, i) => i !== index));
   };
   
-  const handleToggleIdaEVolta = (index: number) => {
-    setFasesList(prev => prev.map((fase, i) => i === index ? { ...fase, idaEVolta: !fase.idaEVolta } : fase));
-  }
+  const handleFaseChange = <K extends keyof Fase>(index: number, key: K, value: Fase[K]) => {
+      setFasesList(prev => {
+          const newList = [...prev];
+          newList[index][key] = value;
+          return newList;
+      });
+  };
 
   const handleFormSubmit = (data: ChampionshipFormValues) => {
     const finalData: Championship = {
-      ...championship, // Mantém campos não editados
+      ...championship, 
       id: championship?.id || `champ_${new Date().getTime()}`,
       nome: data.nome,
       dataInicio: data.dataInicio.toISOString(),
@@ -176,7 +188,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         ...championship?.pontuacao,
         tradicional: data.pontuacao.tradicional,
       },
-      banner: championship?.banner || { ativo: false } // Placeholder
+      banner: championship?.banner || { ativo: false } 
     };
     onSubmit(finalData);
     setIsOpen(false);
@@ -378,21 +390,34 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 </div>
                                 <div className="space-y-2">
                                     {fasesList.map((fase, index) => (
-                                        <div key={index} className="flex items-center justify-between gap-2 rounded-md bg-muted p-2">
-                                            <span>{fase.nome}</span>
-                                            <div className="flex items-center gap-2">
+                                        <div key={index} className="flex flex-col gap-2 rounded-md bg-muted p-2">
+                                             <div className="flex items-center justify-between gap-2">
+                                                <span className="font-semibold">{fase.nome}</span>
+                                                <Button type="button" size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveFase(index)}>
+                                                    <X className="h-4 w-4"/>
+                                                </Button>
+                                             </div>
+                                             <div className="flex items-center justify-between gap-4">
                                                 <div className="flex items-center gap-1.5 text-xs">
                                                     <Switch 
                                                         id={`ida-volta-${index}`} 
                                                         checked={fase.idaEVolta}
-                                                        onCheckedChange={() => handleToggleIdaEVolta(index)}
+                                                        onCheckedChange={(checked) => handleFaseChange(index, 'idaEVolta', checked)}
                                                     />
                                                     <Label htmlFor={`ida-volta-${index}`}>Ida e Volta</Label>
                                                 </div>
-                                                <Button type="button" size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveFase(index)}>
-                                                    <X className="h-4 w-4"/>
-                                                </Button>
-                                            </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Label htmlFor={`rodadas-fase-${index}`} className="text-xs">Rodadas</Label>
+                                                    <Input
+                                                        id={`rodadas-fase-${index}`}
+                                                        type="number"
+                                                        className="h-7 w-16"
+                                                        value={fase.rodadas ?? ''}
+                                                        onChange={(e) => handleFaseChange(index, 'rodadas', e.target.value === '' ? undefined : Number(e.target.value))}
+                                                        placeholder="N/A"
+                                                    />
+                                                </div>
+                                             </div>
                                         </div>
                                     ))}
                                     {fasesList.length === 0 && <p className="text-xs text-muted-foreground text-center">Nenhuma fase adicionada.</p>}

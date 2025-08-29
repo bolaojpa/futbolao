@@ -73,7 +73,7 @@ export type Championship = {
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
   modoEquipes: 'times' | 'selecao' | 'mista';
   formatoFases?: 'fases' | 'rodadas';
-  fases?: Array<{ nome: string; idaEVolta: boolean }>;
+  fases?: Array<{ nome: string; idaEVolta: boolean; rodadas?: number; }>;
   rodadas?: number;
   pontuacao: {
     tradicional: {
@@ -120,7 +120,7 @@ export const mockChampionships: Championship[] = [
     modoEquipes: 'times',
     formatoFases: 'fases',
     fases: [
-        { nome: 'Fase de Grupos', idaEVolta: true },
+        { nome: 'Fase de Grupos', idaEVolta: true, rodadas: 6 },
         { nome: 'Oitavas de Final', idaEVolta: true },
         { nome: 'Quartas de Final', idaEVolta: true },
         { nome: 'Semifinal', idaEVolta: true },
