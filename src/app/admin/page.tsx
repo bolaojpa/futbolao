@@ -17,13 +17,13 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function AdminDashboardPage() {
     const [liveMatches, setLiveMatches] = useState<Match[]>([]);
     const [allMatches, setAllMatches] = useState<Match[]>(mockAllMatches);
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
-    const [viewingMatch, setViewingMatch] = useState<Match | null>(null);
 
     const { toast } = useToast();
 
@@ -156,10 +156,10 @@ export default function AdminDashboardPage() {
                 <section>
                     <div className="flex items-center gap-2 mb-4">
                          <Zap className="w-6 h-6 text-destructive animate-pulse" />
-                        <h2 className="text-2xl font-bold font-headline">Partidas Ao Vivo ({liveMatches.length})</h2>
+                        <h2 className="text-2xl font-bold font-headline">Acontecendo Agora ({liveMatches.length})</h2>
                     </div>
                     {liveMatches.length > 0 ? (
-                        <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
                             {liveMatches.map(match => {
                                 const score = scores[match.id] || { placarA: '', placarB: '' };
                                 const originalPlacarA = match.placarA?.toString() ?? '';
@@ -167,75 +167,113 @@ export default function AdminDashboardPage() {
                                 const hasChanged = score.placarA !== originalPlacarA || score.placarB !== originalPlacarB;
 
                                 return (
-                                <Card key={match.id} className="relative overflow-hidden border-destructive/50">
-                                    <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
+                                <Accordion type="single" collapsible className="w-full" key={match.id}>
+                                    <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
+                                        <Card className="relative overflow-hidden border-destructive/50">
+                                            <AccordionTrigger className="p-4 hover:no-underline [&>svg]:hidden">
+                                                 <div className="flex flex-col items-center justify-center gap-4 w-full">
+                                                    <div className='flex items-center gap-2'>
+                                                        <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
+                                                        <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
+                                                    </div>
+                                                    <div className="flex flex-col md:flex-row items-center justify-around gap-4 w-full">
+                                                        <div className='flex-1 flex flex-col items-center justify-center gap-2'>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Image src="https://picsum.photos/128/128" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent><p>{match.timeA}</p></TooltipContent>
+                                                            </Tooltip>
+                                                            <span className="font-bold text-lg text-center">{match.timeA}</span>
+                                                        </div>
 
-                                        <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
-                                        <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
-                                        
-                                        <div className="flex flex-col md:flex-row items-center justify-around gap-4 w-full">
-                                            
-                                            <div className='flex-1 flex flex-col items-center justify-center gap-2'>
-                                                 <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src="https://picsum.photos/128/128" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent><p>{match.timeA}</p></TooltipContent>
-                                                </Tooltip>
-                                                <span className="font-bold text-lg text-center">{match.timeA}</span>
-                                                <Input 
-                                                    type="number" 
-                                                    className="w-20 h-12 text-center text-2xl font-bold" 
-                                                    value={score.placarA}
-                                                    onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
-                                                    min="0"
-                                                />
-                                            </div>
+                                                        <div className="flex items-center justify-center gap-2 text-muted-foreground my-2 md:my-0">
+                                                            <Input 
+                                                                type="number" 
+                                                                className="w-20 h-12 text-center text-2xl font-bold" 
+                                                                value={score.placarA}
+                                                                onChange={(e) => { e.stopPropagation(); handleScoreChange(match.id, 'placarA', e.target.value); }}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                min="0"
+                                                            />
+                                                            <Swords className="h-6 w-6" />
+                                                            <Input 
+                                                                type="number" 
+                                                                className="w-20 h-12 text-center text-2xl font-bold" 
+                                                                value={score.placarB}
+                                                                onChange={(e) => { e.stopPropagation(); handleScoreChange(match.id, 'placarB', e.target.value); }}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                min="0"
+                                                            />
+                                                        </div>
+                                                        
+                                                        <div className='flex-1 flex flex-col items-center justify-center gap-2'>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent><p>{match.timeB}</p></TooltipContent>
+                                                            </Tooltip>
+                                                            <span className="font-bold text-lg text-center">{match.timeB}</span>
+                                                        </div>
+                                                    </div>
+                                                 </div>
+                                            </AccordionTrigger>
+                                            <CardFooter className="flex-col items-center justify-center gap-2 px-4 pb-4 pt-0 border-t">
+                                                <div className="flex flex-col sm:flex-row gap-2 items-center mt-4">
+                                                    <Button onClick={(e) => { e.stopPropagation(); handleScoreSave(match); }} disabled={!hasChanged} size="sm" variant="secondary">
+                                                        <Save className="mr-2 h-4 w-4" />
+                                                        Salvar Placar
+                                                    </Button>
+                                                    <Button onClick={(e) => { e.stopPropagation(); handleFinalizeMatch(match); }} disabled={score.placarA === '' || score.placarB === ''} size="sm">
+                                                        <Flag className="mr-2 h-4 w-4" />
+                                                        Finalizar Partida
+                                                    </Button>
+                                                </div>
+                                                {lastUpdated[match.id] && (
+                                                    <p className="text-xs text-muted-foreground mt-2">
+                                                        Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                                    </p>
+                                                )}
+                                            </CardFooter>
+                                            <AccordionContent>
+                                                 <div className="bg-background/80 border-t">
+                                                    <div className="text-center py-2">
+                                                    <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
+                                                    </div>
+                                                    <ul className="text-sm max-h-[40vh] overflow-y-auto">
+                                                    {mockPredictions.filter(p => p.matchId === match.id).map((p, i) => {
+                                                        const user = mockUsers.find(u => u.id === p.userId);
+                                                        if (!user || !match.maxPontos) return null;
+                                                        
+                                                        const simulatedPoints = calculateSimulatedPoints(match, p.palpiteUsuario.placarA, p.palpiteUsuario.placarB);
 
-                                            <div className="flex items-center justify-center text-muted-foreground my-2 md:my-0">
-                                                <Swords className="h-6 w-6" />
-                                            </div>
-                                            
-                                             <div className='flex-1 flex flex-col items-center justify-center gap-2'>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent><p>{match.timeB}</p></TooltipContent>
-                                                </Tooltip>
-                                                <span className="font-bold text-lg text-center">{match.timeB}</span>
-                                                <Input 
-                                                    type="number" 
-                                                    className="w-20 h-12 text-center text-2xl font-bold" 
-                                                    value={score.placarB}
-                                                    onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
-                                                    min="0"
-                                                />
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                     <CardFooter className="flex-col items-center justify-center gap-2 px-4 pb-4">
-                                        <div className="flex flex-col sm:flex-row gap-2 items-center">
-                                            <Button onClick={() => setViewingMatch(match)} variant="outline" size="sm">
-                                                <Users className="mr-2 h-4 w-4" />
-                                                Ver Palpites
-                                            </Button>
-                                            <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm" variant="secondary">
-                                                <Save className="mr-2 h-4 w-4" />
-                                                Salvar Placar
-                                            </Button>
-                                            <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
-                                                <Flag className="mr-2 h-4 w-4" />
-                                                Finalizar Partida
-                                            </Button>
-                                        </div>
-                                         {lastUpdated[match.id] && (
-                                            <p className="text-xs text-muted-foreground mt-2">
-                                                Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
-                                            </p>
-                                        )}
-                                     </CardFooter>
-                                </Card>
+                                                        return (
+                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedPoints, match.maxPontos))}>
+                                                        <div className="w-1/3 text-left flex items-center gap-2 group">
+                                                            <div className="relative">
+                                                                <Avatar className="w-8 h-8">
+                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                                </Avatar>
+                                                                <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                                            </div>
+                                                            <span className="font-bold">{user.apelido}:</span>
+                                                        </div>
+                                                        <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                        <div className="w-1/3 text-right">
+                                                            <Badge variant={getPointsBadgeVariant(simulatedPoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                            {simulatedPoints} pts
+                                                            </Badge>
+                                                        </div>
+                                                        </li>
+                                                    )})}
+                                                    </ul>
+                                                </div>
+                                            </AccordionContent>
+                                        </Card>
+                                    </AccordionItem>
+                                </Accordion>
                                 )
                             })}
                         </div>
@@ -248,55 +286,7 @@ export default function AdminDashboardPage() {
                     )}
                 </section>
             </div>
-            
-             <Dialog open={!!viewingMatch} onOpenChange={(open) => !open && setViewingMatch(null)}>
-                <DialogContent className="max-w-lg">
-                    {viewingMatch && (
-                        <>
-                            <DialogHeader>
-                                <DialogTitle>Palpites para {viewingMatch.timeA} vs {viewingMatch.timeB}</DialogTitle>
-                                <DialogDescription>
-                                    Visualizando os palpites em tempo real. O placar atual é {scores[viewingMatch.id]?.placarA ?? '?'}-{scores[viewingMatch.id]?.placarB ?? '?'}.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="py-2 max-h-[60vh] overflow-y-auto">
-                                 <ul className="text-sm">
-                                  {mockPredictions.filter(p => p.matchId === viewingMatch.id).map((p, i) => {
-                                    const user = mockUsers.find(u => u.id === p.userId);
-                                    if (!user || !viewingMatch.maxPontos) return null;
-                                    
-                                    const simulatedPoints = calculateSimulatedPoints(viewingMatch, p.palpiteUsuario.placarA, p.palpiteUsuario.placarB);
-
-                                    return (
-                                    <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedPoints, viewingMatch.maxPontos))}>
-                                      <div className="w-1/3 text-left flex items-center gap-2 group">
-                                        <div className="relative">
-                                            <Avatar className="w-8 h-8">
-                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                            <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                            </Avatar>
-                                            <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
-                                        </div>
-                                        <span className="font-bold">{user.apelido}:</span>
-                                      </div>
-                                      <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
-                                      <div className="w-1/3 text-right">
-                                        <Badge variant={getPointsBadgeVariant(simulatedPoints, viewingMatch.maxPontos)} className='whitespace-nowrap'>
-                                          {simulatedPoints} pts
-                                        </Badge>
-                                      </div>
-                                    </li>
-                                  )})}
-                                </ul>
-                            </div>
-                        </>
-                    )}
-                </DialogContent>
-             </Dialog>
-
         </TooltipProvider>
     );
-}
-
 
     
