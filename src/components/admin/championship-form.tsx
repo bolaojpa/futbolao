@@ -232,7 +232,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     campeaoGeralNome: 'Campeão Exemplo',
     campeaoGeralAvatarUrl: 'https://placehold.co/128x128.png',
     modoEquipes: watchAllFields.modoEquipes,
-    palpiteiroNome: 'Melhor Palpiteiro',
+    palpiteiroNome: 'Melhor Palpiteiro, Segundo Melhor, Terceiro Melhor Colocado',
     palpiteiroAvatarUrl: 'https://placehold.co/128x128.png',
     displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
   };

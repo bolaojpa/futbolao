@@ -90,7 +90,7 @@ export function ChampionBanner({
               className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
             />
           )}
-          <p className={cn("font-bold whitespace-nowrap truncate", showPhotos ? "text-[6.5cqw]" : "text-[8cqw]")}>{campeaoGeralNome}</p>
+          <p className={cn("font-bold", showPhotos ? "text-[6.5cqw]" : "text-[8cqw]")}>{campeaoGeralNome}</p>
         </div>
       </Section>
 
@@ -109,7 +109,7 @@ export function ChampionBanner({
               className="w-[16%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
             />
           )}
-          <p className={cn("font-bold whitespace-nowrap truncate", showPhotos ? "text-[6.5cqw]" : "text-[8cqw]")}>{palpiteiroNome}</p>
+          <p className={cn("font-bold flex-wrap", showPhotos ? "text-[6.5cqw]" : "text-[8cqw]")}>{palpiteiroNome}</p>
         </div>
       </Section>
     </div>
