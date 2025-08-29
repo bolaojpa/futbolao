@@ -3,10 +3,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { mockAllMatches, Match } from '@/lib/data';
+import { mockAllMatches, Match, mockUsers, mockPredictions } from '@/lib/data';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Flag, LayoutDashboard, Save, Swords, Zap } from 'lucide-react';
+import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -14,12 +14,16 @@ import Image from 'next/image';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { StatusIndicator } from '@/components/shared/status-indicator';
 
 export default function AdminDashboardPage() {
     const [liveMatches, setLiveMatches] = useState<Match[]>([]);
     const [allMatches, setAllMatches] = useState<Match[]>(mockAllMatches);
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
+    const [viewingMatch, setViewingMatch] = useState<Match | null>(null);
 
     const { toast } = useToast();
 
@@ -102,6 +106,41 @@ export default function AdminDashboardPage() {
             description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada e movida para o histórico.`,
         });
     };
+    
+    const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
+        if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40';
+        if (pontos > 0) return 'bg-blue-100/80 dark:bg-blue-900/40';
+        return 'bg-red-100/80 dark:bg-red-900/40';
+    };
+
+    const getPointsBadgeVariant = (pontos: number, maxPontos: number): "success" | "default" | "destructive" => {
+        if (pontos === maxPontos && maxPontos > 0) return 'success';
+        if (pontos > 0) return 'default';
+        return 'destructive';
+    };
+
+    // Lógica para calcular pontos simulados
+    const calculateSimulatedPoints = (match: Match, palpitePlacarA: number, palpitePlacarB: number): number => {
+        const liveScore = scores[match.id];
+        if (!liveScore || liveScore.placarA === '' || liveScore.placarB === '') return 0;
+        
+        const livePlacarA = Number(liveScore.placarA);
+        const livePlacarB = Number(liveScore.placarB);
+        const maxPontos = match.maxPontos ?? 10;
+        
+        const acertouPlacar = palpitePlacarA === livePlacarA && palpitePlacarB === livePlacarB;
+        if (acertouPlacar) return maxPontos;
+
+        const liveVencedor = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
+        const palpiteVencedor = palpitePlacarA > palpitePlacarB ? 'A' : palpitePlacarA < palpitePlacarB ? 'B' : 'E';
+
+        if (liveVencedor === palpiteVencedor) {
+            return maxPontos / 2; // Exemplo: metade dos pontos por acertar a situação
+        }
+
+        return 0;
+    };
+
 
     return (
         <TooltipProvider>
@@ -177,6 +216,10 @@ export default function AdminDashboardPage() {
                                     </CardContent>
                                      <CardFooter className="flex-col items-center justify-center gap-2 px-4 pb-4">
                                         <div className="flex flex-col sm:flex-row gap-2 items-center">
+                                            <Button onClick={() => setViewingMatch(match)} variant="outline" size="sm">
+                                                <Users className="mr-2 h-4 w-4" />
+                                                Ver Palpites
+                                            </Button>
                                             <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm" variant="secondary">
                                                 <Save className="mr-2 h-4 w-4" />
                                                 Salvar Placar
@@ -205,6 +248,55 @@ export default function AdminDashboardPage() {
                     )}
                 </section>
             </div>
+            
+             <Dialog open={!!viewingMatch} onOpenChange={(open) => !open && setViewingMatch(null)}>
+                <DialogContent className="max-w-lg">
+                    {viewingMatch && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle>Palpites para {viewingMatch.timeA} vs {viewingMatch.timeB}</DialogTitle>
+                                <DialogDescription>
+                                    Visualizando os palpites em tempo real. O placar atual é {scores[viewingMatch.id]?.placarA ?? '?'}-{scores[viewingMatch.id]?.placarB ?? '?'}.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-2 max-h-[60vh] overflow-y-auto">
+                                 <ul className="text-sm">
+                                  {mockPredictions.filter(p => p.matchId === viewingMatch.id).map((p, i) => {
+                                    const user = mockUsers.find(u => u.id === p.userId);
+                                    if (!user || !viewingMatch.maxPontos) return null;
+                                    
+                                    const simulatedPoints = calculateSimulatedPoints(viewingMatch, p.palpiteUsuario.placarA, p.palpiteUsuario.placarB);
+
+                                    return (
+                                    <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedPoints, viewingMatch.maxPontos))}>
+                                      <div className="w-1/3 text-left flex items-center gap-2 group">
+                                        <div className="relative">
+                                            <Avatar className="w-8 h-8">
+                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                            <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                            </Avatar>
+                                            <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                        </div>
+                                        <span className="font-bold">{user.apelido}:</span>
+                                      </div>
+                                      <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                      <div className="w-1/3 text-right">
+                                        <Badge variant={getPointsBadgeVariant(simulatedPoints, viewingMatch.maxPontos)} className='whitespace-nowrap'>
+                                          {simulatedPoints} pts
+                                        </Badge>
+                                      </div>
+                                    </li>
+                                  )})}
+                                </ul>
+                            </div>
+                        </>
+                    )}
+                </DialogContent>
+             </Dialog>
+
         </TooltipProvider>
     );
 }
+
+
+    
