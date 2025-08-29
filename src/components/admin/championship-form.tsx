@@ -31,7 +31,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Plus, X, Eye } from 'lucide-react';
+import { CalendarIcon, Save, Plus, X, Eye, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship } from '@/lib/data';
@@ -53,6 +53,7 @@ type Fase = {
 
 const championshipFormSchema = z.object({
   nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }).max(50, "O nome não pode ter mais de 50 caracteres."),
+  iconUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
   dataInicio: z.date({ required_error: "A data de início é obrigatória." }),
   dataFim: z.date({ required_error: "A data de fim é obrigatória." }),
   tipoCampeonato: z.enum(['liga', 'copa', 'avulso'], { required_error: "Selecione o tipo do campeonato." }),
@@ -109,6 +110,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     resolver: zodResolver(championshipFormSchema),
     defaultValues: {
         nome: '',
+        iconUrl: '',
         tipoCampeonato: 'liga',
         modoEquipes: 'times',
         pontuacao: { 
@@ -131,6 +133,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     if (isOpen && championship) {
       form.reset({
         nome: championship.nome,
+        iconUrl: championship.iconUrl || '',
         dataInicio: typeof championship.dataInicio === 'string' ? parseISO(championship.dataInicio) : championship.dataInicio,
         dataFim: typeof championship.dataFim === 'string' ? parseISO(championship.dataFim) : championship.dataFim,
         tipoCampeonato: championship.tipoCampeonato,
@@ -156,6 +159,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     } else if (isOpen) {
       form.reset({
         nome: '',
+        iconUrl: '',
         dataInicio: undefined,
         dataFim: undefined,
         tipoCampeonato: 'liga',
@@ -204,6 +208,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       ...championship, 
       id: championship?.id || `champ_${new Date().getTime()}`,
       nome: data.nome,
+      iconUrl: data.iconUrl,
       dataInicio: data.dataInicio.toISOString(),
       dataFim: data.dataFim.toISOString(),
       tipoCampeonato: data.tipoCampeonato,
@@ -232,7 +237,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
   const bannerPreviewProps: ChampionBannerProps = {
     id: 'preview',
-    campeonatoLogoUrl: watchAllFields.banner?.campeonatoLogoUrl || 'https://picsum.photos/128/128',
+    campeonatoLogoUrl: watchAllFields.banner?.campeonatoLogoUrl || 'https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png',
     campeonatoNome: watchAllFields.nome || 'Nome do Campeonato',
     campeaoGeralNome: 'Campeão Exemplo',
     campeaoGeralAvatarUrl: 'https://picsum.photos/128/128',
@@ -272,6 +277,25 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 <FormControl>
                                     <Input placeholder="Ex: Brasileirão Série A 2025" {...field} />
                                 </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="iconUrl"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>URL do Ícone do Campeonato</FormLabel>
+                                <div className="relative">
+                                    <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <FormControl>
+                                        <Input placeholder="https://exemplo.com/icone.png" {...field} className="pl-10" />
+                                    </FormControl>
+                                </div>
+                                <FormDescription>
+                                    Este ícone aparecerá ao lado do nome do campeonato nos cards de partidas.
+                                </FormDescription>
                                 <FormMessage />
                                 </FormItem>
                             )}
@@ -590,7 +614,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                         name="banner.campeonatoLogoUrl"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>URL da Logo do Campeonato</FormLabel>
+                                                <FormLabel>URL da Logo do Banner</FormLabel>
                                                 <FormControl>
                                                     <Input 
                                                         placeholder="https://exemplo.com/logo.png" 
@@ -610,7 +634,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                                 <FormLabel>URL da Imagem de Fundo (Opcional)</FormLabel>
                                                 <FormControl>
                                                     <Input 
-                                                        placeholder="https://exemplo.com/fundo.png" 
+                                                        placeholder="https://picsum.photos/857/828" 
                                                         {...field}
                                                         disabled={!isBannerActive}
                                                     />

@@ -321,7 +321,7 @@ export default function DashboardPage() {
                 {upcomingMatches.map((match) => {
                 const userPrediction = mockPredictions.find(p => p.matchId === match.id && p.userId === mockUser.id);
                 const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !userPrediction;
-                const championship = mockChampionships.find(c => c.nome === match.campeonato);
+                const championship = mockChampionships.find(c => c.id === match.campeonatoId);
                 const displayStatus = getMatchDisplayStatus(match.data, match.status);
                 
                 return (
@@ -337,7 +337,9 @@ export default function DashboardPage() {
                         )}
                         <CardHeader className='pb-2'>
                             <div className="flex justify-start items-center gap-2">
-                                <Image src="https://picsum.photos/64/64" alt={`Logo ${match.campeonato}`} width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
+                                {championship?.iconUrl && (
+                                    <Image src={championship.iconUrl} alt={`Logo ${match.campeonato}`} width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
+                                )}
                                 <p className="text-xs text-muted-foreground font-semibold">{match.campeonato}</p>
                             </div>
                         </CardHeader>

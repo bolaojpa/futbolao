@@ -71,6 +71,7 @@ export const mockUsers: Array<UserType> = [
 export type Championship = {
   id: string;
   nome: string;
+  iconUrl?: string;
   dataInicio: Date | string;
   dataFim: Date | string;
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
@@ -103,6 +104,7 @@ export const mockChampionships: Championship[] = [
   { 
     id: 'champ_1', 
     nome: 'Brasileirão Série A 2024', 
+    iconUrl: 'https://logodetimes.com/times/campeonato-brasileiro-a/logo-campeonato-brasileiro-a-64.png',
     dataInicio: '2024-04-13', 
     dataFim: '2024-12-08', 
     tipoCampeonato: 'liga',
@@ -121,6 +123,7 @@ export const mockChampionships: Championship[] = [
   { 
     id: 'champ_2', 
     nome: 'Copa Libertadores 2024', 
+    iconUrl: 'https://logodetimes.com/times/copa-libertadores-da-america-conmebol/logo-copa-libertadores-da-america-conmebol-64.png',
     dataInicio: '2024-02-06', 
     dataFim: '2024-11-30', 
     tipoCampeonato: 'copa',
@@ -320,7 +323,7 @@ export const mockEmergencyMessage = {
 export const mockHallOfFame = [
     {
         id: 'hof_1',
-        campeonatoLogoUrl: 'https://logodetimes.com/times/campeonato-brasileiro-a/logo-campeonato-brasileiro-a-256.png',
+        campeonatoLogoUrl: 'https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png',
         campeonatoNome: 'Brasileirão Série A 2023',
         campeaoGeralNome: 'Fernanda',
         campeaoGeralAvatarUrl: 'https://picsum.photos/128/128',
