@@ -186,6 +186,7 @@ export default function AdminMatchesPage() {
             const allPredictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
             const hasPredictions = allPredictionsForMatch.length > 0;
             const championship = mockChampionships.find(c => c.id === match.campeonatoId);
+            const totalParticipants = championship?.participantes.length || 0;
 
             return (
               <Accordion type="single" collapsible className="w-full" key={match.id} disabled={!hasPredictions}>
@@ -255,7 +256,7 @@ export default function AdminMatchesPage() {
                         <AccordionContent>
                         <div className="bg-background/80 border-t">
                             <div className="text-center py-2">
-                            <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários ({allPredictionsForMatch.length})</h4>
+                            <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários ({allPredictionsForMatch.length}/{totalParticipants})</h4>
                             </div>
                                 <ul className="text-sm">
                                 {allPredictionsForMatch.map((p, i) => {
