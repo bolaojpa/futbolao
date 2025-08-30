@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Countdown } from '@/components/shared/countdown';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -54,10 +54,15 @@ export default function DashboardPage() {
   const { apelido } = mockUser;
   
   const liveMatches = mockMatches.upcoming.filter(match => match.status === 'Ao Vivo');
-  const upcomingMatches = mockMatches.upcoming.filter(match => match.status !== 'Ao Vivo').sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
   
   const [isClient, setIsClient] = useState(false);
   const matchRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  const upcomingMatches = useMemo(() => {
+    return mockMatches.upcoming
+      .filter(match => match.status !== 'Ao Vivo')
+      .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+  }, []);
 
 
   useEffect(() => {
@@ -82,7 +87,7 @@ export default function DashboardPage() {
     if (a.pontos !== b.pontos) return b.pontos - a.pontos;
     if (a.exatos !== b.exatos) return b.exatos - b.exatos;
     if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - b.tempoMedio;
-    return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
+    return new Date(a.dataCadastro).getTime() - new Date(a.dataCadastro).getTime();
   });
   const leader = sortedUsers[0];
   const secondPlace = sortedUsers[1];
