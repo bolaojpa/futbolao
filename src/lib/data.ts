@@ -440,4 +440,19 @@ export const mockLogs: Log[] = [
   }
 ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    
+
+export type Team = {
+    id: string;
+    name: string;
+    crestUrl: string;
+    type: 'club' | 'national';
+};
+
+export const mockTeams: Team[] = [
+    { id: '5', name: 'FC Bayern München', crestUrl: 'https://crests.football-data.org/5.svg', type: 'club' },
+    { id: '57', name: 'Arsenal FC', crestUrl: 'https://crests.football-data.org/57.svg', type: 'club' },
+    { id: '64', name: 'Liverpool FC', crestUrl: 'https://crests.football-data.org/64.svg', type: 'club' },
+    { id: '66', name: 'Manchester United FC', crestUrl: 'https://crests.football-data.org/66.svg', type: 'club' },
+    { id: '770', name: 'England', crestUrl: 'https://crests.football-data.org/770.svg', type: 'national' },
+    { id: '760', name: 'Brazil', crestUrl: 'https://crests.football-data.org/760.svg', type: 'national' },
+];

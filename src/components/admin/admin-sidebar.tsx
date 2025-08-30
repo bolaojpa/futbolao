@@ -39,6 +39,7 @@ export function AdminSidebar() {
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/users', label: 'Usuários', icon: Users },
     { href: '/admin/championships', label: 'Campeonatos', icon: Trophy },
+    { href: '/admin/teams', label: 'Equipes', icon: Shield },
     { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
     { href: '/admin/history', label: 'Histórico de Partidas', icon: History },
     { href: '/admin/fame', label: 'Hall da Fama', icon: ShieldCheck },
