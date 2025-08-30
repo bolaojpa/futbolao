@@ -21,7 +21,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
     Popover,
@@ -34,12 +33,14 @@ import { cn } from '@/lib/utils';
 import { format, parseISO, setHours, setMinutes } from 'date-fns';
 import type { Match } from '@/lib/data';
 import { useEffect, useMemo } from 'react';
-import { mockChampionships } from '@/lib/data';
+import { mockChampionships, mockTeams } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Combobox } from '../ui/combobox';
+
 
 const matchFormSchema = z.object({
-  timeA: z.string().min(2, { message: "O nome do time deve ter pelo menos 2 caracteres." }),
-  timeB: z.string().min(2, { message: "O nome do time deve ter pelo menos 2 caracteres." }),
+  timeA: z.string().min(1, { message: "É obrigatório selecionar o Time A." }),
+  timeB: z.string().min(1, { message: "É obrigatório selecionar o Time B." }),
   fase: z.string({ required_error: "É obrigatório selecionar uma fase ou rodada."}).min(1, { message: "É obrigatório selecionar uma fase ou rodada." }),
   data: z.date({ required_error: "A data da partida é obrigatória." }),
   horario: z.string({ required_error: "O horário da partida é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato de hora inválido."),
@@ -87,6 +88,16 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
 
         return [];
     }, [selectedChampionship]);
+
+    const teamOptions = useMemo(() => {
+        if (!selectedChampionship) return [];
+        const filteredTeams = mockTeams.filter(team => {
+            if (selectedChampionship.modoEquipes === 'mista') return true;
+            return team.type === (selectedChampionship.modoEquipes === 'times' ? 'club' : 'national');
+        });
+        return filteredTeams.map(team => ({ label: team.name, value: team.name }));
+    }, [selectedChampionship]);
+
 
     useEffect(() => {
         if (isOpen) {
@@ -158,11 +169,16 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
                                 control={form.control}
                                 name="timeA"
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="flex flex-col">
                                     <FormLabel>Time A</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Nome do time da casa" {...field} />
-                                    </FormControl>
+                                    <Combobox
+                                        options={teamOptions}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Selecione o time da casa"
+                                        searchPlaceholder="Buscar time..."
+                                        notFoundMessage="Nenhum time encontrado."
+                                    />
                                     <FormMessage />
                                     </FormItem>
                                 )}
@@ -171,11 +187,16 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
                                 control={form.control}
                                 name="timeB"
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="flex flex-col">
                                     <FormLabel>Time B</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Nome do time visitante" {...field} />
-                                    </FormControl>
+                                     <Combobox
+                                        options={teamOptions}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Selecione o time visitante"
+                                        searchPlaceholder="Buscar time..."
+                                        notFoundMessage="Nenhum time encontrado."
+                                    />
                                     <FormMessage />
                                     </FormItem>
                                 )}
