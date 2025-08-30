@@ -83,8 +83,11 @@ export default function AdminMatchesPage() {
         const isScheduled = match.status === 'Agendado';
         const isChampionshipMatch = selectedChampionship === 'all' || match.campeonatoId === selectedChampionship;
         return isScheduled && isChampionshipMatch;
-    })
-    .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()), [selectedChampionship, matches]);
+    }), [selectedChampionship, matches]);
+
+  const sortedMatches = useMemo(() => 
+    [...filteredMatches].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+  , [filteredMatches]);
 
 
   const handleFilterChange = (value: string) => {
@@ -131,13 +134,13 @@ export default function AdminMatchesPage() {
 
 
   const paginatedMatches = useMemo(() => {
-     return filteredMatches.slice(
+     return sortedMatches.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
-  }, [filteredMatches, currentPage]);
+  }, [sortedMatches, currentPage]);
 
-  const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(sortedMatches.length / ITEMS_PER_PAGE);
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
