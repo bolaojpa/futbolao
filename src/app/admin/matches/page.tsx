@@ -184,7 +184,6 @@ export default function AdminMatchesPage() {
         {paginatedMatches.length > 0 ? (
           paginatedMatches.map((match) => {
             const allPredictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
-            const hasPredictions = allPredictionsForMatch.length > 0;
             const championship = mockChampionships.find(c => c.id === match.campeonatoId);
             const participants = championship?.participantes || [];
             const totalParticipants = participants.length;
@@ -197,7 +196,7 @@ export default function AdminMatchesPage() {
             const hasMissingPredictions = missingUsers.length > 0;
 
             return (
-              <Accordion type="single" collapsible className="w-full" key={match.id} disabled={!hasPredictions}>
+              <Accordion type="single" collapsible className="w-full" key={match.id}>
                 <AccordionItem value={match.id} className="border-0">
                   <Card className={cn("relative", hasMissingPredictions && "animate-border-pulse border-blue-500/50")}>
                      <div className="absolute top-2 right-2 z-10">
@@ -260,13 +259,10 @@ export default function AdminMatchesPage() {
                         </div>
                       </div>
                     </div>
-                     {hasPredictions && (
-                        <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
-                            <ChevronDown className="h-4 w-4 mx-auto" />
-                        </AccordionTrigger>
-                    )}
-                    {hasPredictions && (
-                        <AccordionContent>
+                    <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
+                        <ChevronDown className="h-4 w-4 mx-auto" />
+                    </AccordionTrigger>
+                    <AccordionContent>
                         <div className="bg-background/80 border-t">
                              <div className="text-center p-2">
                                 <TooltipProvider>
@@ -288,6 +284,7 @@ export default function AdminMatchesPage() {
                                     </Tooltip>
                                 </TooltipProvider>
                             </div>
+                            {allPredictionsForMatch.length > 0 ? (
                                 <ul className="text-sm">
                                 {allPredictionsForMatch.map((p, i) => {
                                     const user = mockUsers.find(u => u.id === p.userId);
@@ -310,9 +307,13 @@ export default function AdminMatchesPage() {
                                     </li>
                                 )})}
                                 </ul>
+                            ) : (
+                                <div className="text-center p-4 text-muted-foreground">
+                                    Nenhum palpite registrado para esta partida ainda.
+                                </div>
+                            )}
                         </div>
-                        </AccordionContent>
-                    )}
+                    </AccordionContent>
                   </Card>
                 </AccordionItem>
               </Accordion>
