@@ -9,7 +9,7 @@ export function Header() {
         <div className="md:hidden">
           <SidebarTrigger />
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex items-center justify-end space-x-4 ml-auto">
           <NotificationsNav />
           <UserNav />
         </div>

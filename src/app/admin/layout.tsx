@@ -10,9 +10,9 @@ export default function AdminLayout({
 }) {
   return (
     <SidebarProvider>
-      <div className='flex min-h-screen'>
+      <div className='flex min-h-screen w-full'>
         <AdminSidebar />
-        <div className="flex flex-1 flex-col w-full">
+        <div className="flex flex-1 flex-col">
           {/* A header pode ser reutilizada ou uma específica do admin pode ser criada */}
           <Header /> 
           <main className="flex-1 bg-blue-50/50 dark:bg-gray-900/50">
