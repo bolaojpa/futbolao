@@ -1,5 +1,4 @@
 
-
 // Mock Data for FutBolão Pro
 
 export const mockUser = {
@@ -74,6 +73,7 @@ export type Championship = {
   iconUrl?: string;
   dataInicio: Date | string;
   dataFim: Date | string;
+  status: 'ativo' | 'arquivado';
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
   modoEquipes: 'times' | 'selecao' | 'mista';
   participantes: string[]; // Array de user IDs
@@ -120,6 +120,7 @@ export const mockChampionships: Championship[] = [
     iconUrl: 'https://logodetimes.com/times/campeonato-brasileiro-a/logo-campeonato-brasileiro-a-64.png',
     dataInicio: '2024-04-13', 
     dataFim: '2024-12-08', 
+    status: 'ativo',
     tipoCampeonato: 'liga',
     modoEquipes: 'times',
     participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5', 'user_6', 'user_7', 'user_8'],
@@ -146,6 +147,7 @@ export const mockChampionships: Championship[] = [
     iconUrl: 'https://logodetimes.com/times/copa-libertadores-da-america-conmebol/logo-copa-libertadores-da-america-conmebol-64.png',
     dataInicio: '2024-02-06', 
     dataFim: '2024-11-30', 
+    status: 'arquivado',
     tipoCampeonato: 'copa',
     modoEquipes: 'times',
     participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5'],
