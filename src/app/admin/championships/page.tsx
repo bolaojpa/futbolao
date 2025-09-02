@@ -4,16 +4,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockChampionships as initialChampionships } from '@/lib/data';
+import { mockChampionships as initialChampionships, mockTeams, Team } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ChampionshipForm } from '@/components/admin/championship-form';
 import type { Championship } from '@/lib/data';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Combobox } from '@/components/ui/combobox';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -37,6 +40,84 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
   
     return <>{formattedDate}</>;
 };
+
+const FinalizeChampionshipModal = ({ championship, children }: { championship: Championship, children: React.ReactNode }) => {
+    const [ranking, setRanking] = useState<Record<string, string>>({
+        pos1: '', pos2: '', pos3: '', pos4: '', pos5: ''
+    });
+    const { toast } = useToast();
+
+    const teamOptions = useMemo(() => {
+        const filteredTeams = mockTeams.filter(team => {
+            if (championship.modoEquipes === 'mista') return true;
+            return team.type === (championship.modoEquipes === 'times' ? 'club' : 'national');
+        });
+        return filteredTeams.map(team => ({ label: team.name, value: team.name }));
+    }, [championship]);
+
+    const handleRankingChange = (position: string, value: string) => {
+        setRanking(prev => ({ ...prev, [position]: value }));
+    };
+
+    const handleSaveRanking = () => {
+        // Lógica para salvar o ranking e premiar os vencedores
+        console.log("Saving final ranking:", ranking);
+        toast({
+            title: "Campeonato Finalizado!",
+            description: `O ranking final de "${championship.nome}" foi salvo e os vencedores premiados.`,
+        });
+        // Aqui você fecharia o modal, o DialogClose faz isso automaticamente
+    };
+    
+    const positions = [
+        { key: 'pos1', label: '1º Lugar (Campeão)' },
+        { key: 'pos2', label: '2º Lugar (Vice-campeão)' },
+        { key: 'pos3', label: '3º Lugar' },
+        { key: 'pos4', label: '4º Lugar' },
+        { key: 'pos5', label: '5º Lugar' },
+    ];
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Finalizar e Premiar Campeonato</DialogTitle>
+                    <DialogDescription>
+                        Insira a classificação final para o campeonato "{championship.nome}". Esta ação é irreversível.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    {positions.map(pos => (
+                         <div key={pos.key} className="space-y-2">
+                            <Label htmlFor={pos.key}>{pos.label}</Label>
+                            <Combobox
+                                options={teamOptions}
+                                value={ranking[pos.key]}
+                                onChange={(value) => handleRankingChange(pos.key, value)}
+                                placeholder="Selecione a equipe..."
+                                searchPlaceholder="Buscar equipe..."
+                                notFoundMessage="Nenhuma equipe encontrada."
+                            />
+                        </div>
+                    ))}
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline">Cancelar</Button>
+                    </DialogClose>
+                     <DialogClose asChild>
+                        <Button onClick={handleSaveRanking}>
+                            <Save className="mr-2 h-4 w-4" />
+                            Salvar e Finalizar
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 export default function AdminChampionshipsPage() {
     const [championships, setChampionships] = useState<Championship[]>(initialChampionships);
@@ -158,7 +239,14 @@ export default function AdminChampionshipsPage() {
                                                             <Pencil className="mr-2 h-4 w-4" />
                                                             Editar
                                                         </DropdownMenuItem>
-                                                        <AlertDialogTrigger asChild>
+                                                        <DropdownMenuSeparator />
+                                                        <FinalizeChampionshipModal championship={champ}>
+                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                                <Trophy className="mr-2 h-4 w-4" />
+                                                                Finalizar e Premiar
+                                                            </DropdownMenuItem>
+                                                        </FinalizeChampionshipModal>
+                                                         <AlertDialogTrigger asChild>
                                                             <DropdownMenuItem className="text-destructive focus:text-destructive">
                                                                 <Trash2 className="mr-2 h-4 w-4" />
                                                                 Excluir
