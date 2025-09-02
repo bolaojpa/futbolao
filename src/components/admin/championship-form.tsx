@@ -47,7 +47,7 @@ import { mockTeams } from '@/lib/data';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '../ui/checkbox';
 import Image from 'next/image';
-import { Badge } from '../ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Combobox } from '../ui/combobox';
 
 
@@ -176,6 +176,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const formatoFases = watchAllFields.formatoFases;
   const modoEquipes = watchAllFields.modoEquipes;
   const selectedTeamIds = watchAllFields.teamIds || [];
+  const finalRankingValues = watchAllFields.finalRanking || {};
 
   const teamOptionsForRanking = useMemo(() => {
     if (!selectedTeamIds) return [];
@@ -345,6 +346,16 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         { key: 'pos4', label: '4º Lugar' },
         { key: 'pos5', label: '5º Lugar' },
     ];
+    
+  const getFilteredRankingOptions = (currentKey: string) => {
+    const selectedValues = Object.entries(finalRankingValues)
+        .filter(([key]) => key !== currentKey)
+        .map(([, value]) => value)
+        .filter(Boolean);
+
+    return teamOptionsForRanking.filter(option => !selectedValues.includes(option.value));
+  };
+
 
   return (
     <>
@@ -952,7 +963,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                                                     <FormLabel>{pos.label}</FormLabel>
                                                                     <FormControl>
                                                                         <Combobox
-                                                                            options={teamOptionsForRanking}
+                                                                            options={getFilteredRankingOptions(pos.key)}
                                                                             value={field.value || ''}
                                                                             onChange={field.onChange}
                                                                             placeholder="Selecione a equipe..."
