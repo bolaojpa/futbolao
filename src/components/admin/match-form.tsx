@@ -293,4 +293,3 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
         </Dialog>
     );
 }
-
