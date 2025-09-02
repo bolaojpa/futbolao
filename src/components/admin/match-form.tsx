@@ -77,13 +77,13 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
 
     const availablePhases = useMemo(() => {
         if (!selectedChampionship) return [];
-        
-        if (selectedChampionship.tipoCampeonato === 'copa' || (selectedChampionship.tipoCampeonato === 'avulso' && selectedChampionship.formatoFases === 'fases')) {
-            return selectedChampionship.fases?.map(f => f.nome) || [];
-        }
 
-        if (selectedChampionship.tipoCampeonato === 'liga' || (selectedChampionship.tipoCampeonato === 'avulso' && selectedChampionship.formatoFases === 'rodadas')) {
-            return Array.from({ length: selectedChampionship.rodadas || 0 }, (_, i) => `Rodada ${i + 1}`);
+        if (selectedChampionship.fases && selectedChampionship.fases.length > 0) {
+            return selectedChampionship.fases.map(f => f.nome);
+        }
+        
+        if (selectedChampionship.rodadas) {
+             return Array.from({ length: selectedChampionship.rodadas }, (_, i) => `Rodada ${i + 1}`);
         }
 
         return [];
@@ -92,10 +92,9 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
     const teamOptions = useMemo(() => {
         if (!selectedChampionship || !selectedChampionship.teamIds) return [];
         
-        // Mapeia os IDs para os objetos completos das equipes
         const participatingTeams: Team[] = selectedChampionship.teamIds
             .map(id => mockTeams.find(team => team.id === id))
-            .filter((team): team is Team => !!team); // Filtra quaisquer equipes não encontradas
+            .filter((team): team is Team => !!team);
 
         return participatingTeams.map(team => ({ label: team.name, value: team.name }));
     }, [selectedChampionship]);
