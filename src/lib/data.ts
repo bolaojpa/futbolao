@@ -341,6 +341,7 @@ export const mockHallOfFame = [
         modoEquipes: 'times' as const,
         palpiteiroNome: 'Juliana',
         palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
+        displayMode: 'photo_and_names' as const,
     },
     {
         id: 'hof_2',
@@ -351,6 +352,7 @@ export const mockHallOfFame = [
         modoEquipes: 'selecao' as const,
         palpiteiroNome: 'Lucas',
         palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
+        displayMode: 'names_only' as const,
     }
 ];
 

@@ -240,6 +240,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       formatoFases: data.tipoCampeonato === 'liga' ? 'rodadas' : data.formatoFases,
       rodadas: data.tipoCampeonato === 'liga' ? data.rodadas : (data.formatoFases === 'rodadas' ? data.rodadas : undefined),
       fases: data.formatoFases === 'fases' ? data.fases : undefined,
+      participantes: championship?.participantes || [],
       pontuacao: {
         tradicional: data.pontuacao.tradicional,
         combo: data.pontuacao.combo,
