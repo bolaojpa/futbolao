@@ -323,7 +323,6 @@ export default function AdminLogsPage() {
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
                         >
-                            Próximo
                             <ChevronRight className="h-4 w-4 ml-2" />
                         </Button>
                     </div>
