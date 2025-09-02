@@ -30,10 +30,10 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X } from 'lucide-react';
+import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import type { Championship, Team } from '@/lib/data';
+import type { Championship, Team, UserType } from '@/lib/data';
 import { useEffect, useState, useMemo } from 'react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -43,12 +43,13 @@ import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { mockTeams } from '@/lib/data';
+import { mockTeams, mockUsers } from '@/lib/data';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '../ui/checkbox';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Combobox } from '../ui/combobox';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 
 type Fase = {
@@ -64,7 +65,8 @@ const championshipFormSchema = z.object({
   dataFim: z.date({ required_error: "A data de fim é obrigatória." }),
   tipoCampeonato: z.enum(['liga', 'copa', 'avulso'], { required_error: "Selecione o tipo do campeonato." }),
   modoEquipes: z.enum(['times', 'selecao', 'mista'], { required_error: "Selecione o modo de equipes." }),
-  teamIds: z.array(z.string()).min(1, "Selecione pelo menos uma equipe."),
+  teamIds: z.array(z.string()).min(2, "Selecione pelo menos duas equipes."),
+  participantes: z.array(z.string()).min(1, "Selecione pelo menos um participante."),
   formatoFases: z.enum(['fases', 'rodadas']).optional(),
   fases: z.array(z.object({ 
       nome: z.string().min(1, "O nome da fase é obrigatório."), 
@@ -138,6 +140,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const [fasesList, setFasesList] = useState<Array<Fase>>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [teamSearch, setTeamSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
   
   const form = useForm<ChampionshipFormValues>({
     resolver: zodResolver(championshipFormSchema),
@@ -147,6 +150,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         tipoCampeonato: 'liga',
         modoEquipes: 'times',
         teamIds: [],
+        participantes: [],
         pontuacao: { 
             tradicional: { ativo: true, exato: 10, situacao: 5 },
             combo: { ativo: false, gols: 3, placar: 7 },
@@ -176,6 +180,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const formatoFases = watchAllFields.formatoFases;
   const modoEquipes = watchAllFields.modoEquipes;
   const selectedTeamIds = watchAllFields.teamIds || [];
+  const selectedParticipantIds = watchAllFields.participantes || [];
   const finalRankingValues = watchAllFields.finalRanking || {};
 
   const teamOptionsForRanking = useMemo(() => {
@@ -194,75 +199,72 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       .filter(team => team.name.toLowerCase().includes(teamSearch.toLowerCase()))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [modoEquipes, teamSearch]);
+  
+  const availableUsers = useMemo(() => {
+    return mockUsers
+      .filter(user => user.status === 'ativo' && user.funcao !== 'admin')
+      .filter(user => user.apelido.toLowerCase().includes(userSearch.toLowerCase()) || user.nome.toLowerCase().includes(userSearch.toLowerCase()))
+      .sort((a, b) => a.apelido.localeCompare(b.apelido));
+  }, [userSearch]);
 
   useEffect(() => {
-    if (isOpen && championship) {
-      form.reset({
-        nome: championship.nome,
-        iconUrl: championship.iconUrl || '',
-        dataInicio: typeof championship.dataInicio === 'string' ? parseISO(championship.dataInicio) : championship.dataInicio,
-        dataFim: typeof championship.dataFim === 'string' ? parseISO(championship.dataFim) : championship.dataFim,
-        tipoCampeonato: championship.tipoCampeonato,
-        modoEquipes: championship.modoEquipes,
-        teamIds: championship.teamIds || [],
-        formatoFases: championship.formatoFases,
-        rodadas: championship.rodadas,
-        fases: championship.fases,
-        pontuacao: {
-          tradicional: {
-              ativo: championship.pontuacao.tradicional.ativo,
-              exato: championship.pontuacao.tradicional.exato,
-              situacao: championship.pontuacao.tradicional.situacao
-          },
-          combo: {
-              ativo: championship.pontuacao.combo?.ativo || false,
-              gols: championship.pontuacao.combo?.gols || 3,
-              placar: championship.pontuacao.combo?.placar || 7,
-          }
-        },
-        banner: {
-            ativo: championship.banner?.ativo || false,
-            campeonatoLogoUrl: championship.banner?.campeonatoLogoUrl || "",
-            backgroundUrl: championship.banner?.backgroundUrl || "",
-            displayMode: championship.banner?.displayMode || 'photo_and_names',
-        },
-        championPredictionSettings: {
-            active: championship.championPredictionSettings?.active || false,
-            numberOfPicks: championship.championPredictionSettings?.numberOfPicks || 3,
-        },
-         finalRanking: championship.finalRanking || { pos1: '', pos2: '', pos3: '', pos4: '', pos5: '' }
-      });
-      setFasesList(championship.fases || []);
-    } else if (isOpen) {
-      form.reset({
-        nome: '',
-        iconUrl: '',
-        dataInicio: undefined,
-        dataFim: undefined,
-        tipoCampeonato: 'liga',
-        modoEquipes: 'times',
-        teamIds: [],
-        pontuacao: { 
-            tradicional: { ativo: true, exato: 10, situacao: 5 },
-            combo: { ativo: false, gols: 3, placar: 7 },
-        },
-        fases: [],
-        rodadas: undefined,
-        banner: {
-            ativo: false,
-            campeonatoLogoUrl: "",
-            backgroundUrl: "",
-            displayMode: 'photo_and_names',
-        },
-        championPredictionSettings: {
-            active: false,
-            numberOfPicks: 3,
-        },
-        finalRanking: {
-            pos1: '', pos2: '', pos3: '', pos4: '', pos5: ''
+    if (isOpen) {
+        const defaultData = {
+            nome: '',
+            iconUrl: '',
+            tipoCampeonato: 'liga' as const,
+            modoEquipes: 'times' as const,
+            teamIds: [],
+            participantes: [],
+            formatoFases: undefined,
+            fases: [],
+            rodadas: undefined,
+            pontuacao: {
+                tradicional: { ativo: true, exato: 10, situacao: 5 },
+                combo: { ativo: false, gols: 3, placar: 7 },
+            },
+            banner: {
+                ativo: false,
+                campeonatoLogoUrl: "",
+                backgroundUrl: "",
+                displayMode: 'photo_and_names' as const,
+            },
+            championPredictionSettings: {
+                active: false,
+                numberOfPicks: 3,
+            },
+            finalRanking: { pos1: '', pos2: '', pos3: '', pos4: '', pos5: '' },
+            dataInicio: undefined,
+            dataFim: undefined
+        };
+
+        if (championship) {
+            form.reset({
+                ...defaultData,
+                nome: championship.nome,
+                iconUrl: championship.iconUrl || '',
+                dataInicio: typeof championship.dataInicio === 'string' ? parseISO(championship.dataInicio) : championship.dataInicio,
+                dataFim: typeof championship.dataFim === 'string' ? parseISO(championship.dataFim) : championship.dataFim,
+                tipoCampeonato: championship.tipoCampeonato,
+                modoEquipes: championship.modoEquipes,
+                teamIds: championship.teamIds || [],
+                participantes: championship.participantes || [],
+                formatoFases: championship.formatoFases,
+                rodadas: championship.rodadas,
+                fases: championship.fases,
+                pontuacao: {
+                    tradicional: championship.pontuacao.tradicional,
+                    combo: championship.pontuacao.combo || defaultData.pontuacao.combo,
+                },
+                banner: championship.banner || defaultData.banner,
+                championPredictionSettings: championship.championPredictionSettings || defaultData.championPredictionSettings,
+                finalRanking: championship.finalRanking || defaultData.finalRanking,
+            });
+            setFasesList(championship.fases || []);
+        } else {
+            form.reset(defaultData);
+            setFasesList([]);
         }
-      });
-       setFasesList([]);
     }
   }, [championship, isOpen, form]);
 
@@ -299,7 +301,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       tipoCampeonato: data.tipoCampeonato,
       modoEquipes: data.modoEquipes,
       teamIds: data.teamIds,
-      participantes: championship?.participantes || [],
+      participantes: data.participantes,
       formatoFases: data.tipoCampeonato === 'liga' ? 'rodadas' : data.formatoFases,
       rodadas: data.tipoCampeonato === 'liga' ? data.rodadas : (data.formatoFases === 'rodadas' ? data.rodadas : undefined),
       fases: data.formatoFases === 'fases' ? data.fases : undefined,
@@ -318,6 +320,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         numberOfPicks: data.championPredictionSettings.numberOfPicks || 3,
        },
        finalRanking: data.finalRanking,
+       status: championship?.status || 'ativo',
     };
     onSubmit(finalData);
     setIsOpen(false);
@@ -363,7 +366,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -371,9 +374,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="general">Gerais</TabsTrigger>
                     <TabsTrigger value="teams">Equipes</TabsTrigger>
+                    <TabsTrigger value="participants">Participantes</TabsTrigger>
                     <TabsTrigger value="scoring">Pontuação</TabsTrigger>
                     <TabsTrigger value="banner">Banner</TabsTrigger>
                 </TabsList>
@@ -655,7 +659,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 <FormField
                                     control={form.control}
                                     name="teamIds"
-                                    render={({ field }) => (
+                                    render={() => (
                                         <FormItem>
                                         <ScrollArea className="h-72 w-full rounded-md border">
                                             <div className="p-4 space-y-2">
@@ -691,6 +695,81 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                                         )}
                                                     />
                                                 )) : <p className="text-center text-sm text-muted-foreground">Nenhuma equipe encontrada.</p>}
+                                            </div>
+                                        </ScrollArea>
+                                        <FormMessage className="p-4" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="participants" className="space-y-4">
+                         <Card>
+                            <CardHeader className="p-4">
+                               <div className="flex items-center justify-between">
+                                 <div>
+                                    <h3 className="text-md font-medium">Usuários Participantes</h3>
+                                    <p className="text-sm text-muted-foreground">Selecione os usuários que poderão palpitar neste campeonato.</p>
+                                </div>
+                                <Badge variant="secondary">{selectedParticipantIds.length} selecionado(s)</Badge>
+                               </div>
+                                <div className="relative mt-4">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Buscar por nome ou apelido..."
+                                        className="pl-8"
+                                        value={userSearch}
+                                        onChange={(e) => setUserSearch(e.target.value)}
+                                    />
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <FormField
+                                    control={form.control}
+                                    name="participantes"
+                                    render={() => (
+                                        <FormItem>
+                                        <ScrollArea className="h-72 w-full rounded-md border">
+                                            <div className="p-4 space-y-2">
+                                                {availableUsers.length > 0 ? availableUsers.map((user) => (
+                                                    <FormField
+                                                        key={user.id}
+                                                        control={form.control}
+                                                        name="participantes"
+                                                        render={({ field }) => (
+                                                        <FormItem
+                                                            key={user.id}
+                                                            className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-muted"
+                                                        >
+                                                            <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(user.id)}
+                                                                onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? field.onChange([...(field.value || []), user.id])
+                                                                    : field.onChange(
+                                                                        field.value?.filter(
+                                                                        (value) => value !== user.id
+                                                                        )
+                                                                    )
+                                                                }}
+                                                            />
+                                                            </FormControl>
+                                                            <Label className="font-normal w-full flex items-center gap-3">
+                                                                <Avatar className="w-8 h-8">
+                                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                    <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-semibold">{user.apelido}</span>
+                                                                    <span className="text-xs text-muted-foreground">{user.nome}</span>
+                                                                </div>
+                                                            </Label>
+                                                        </FormItem>
+                                                        )}
+                                                    />
+                                                )) : <p className="text-center text-sm text-muted-foreground">Nenhum usuário encontrado.</p>}
                                             </div>
                                         </ScrollArea>
                                         <FormMessage className="p-4" />
