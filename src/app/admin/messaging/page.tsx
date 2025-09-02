@@ -1,19 +1,22 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Send, Eye, Users, User, Bell, AlertTriangle } from 'lucide-react';
+import { Send, Eye, Users, User, Bell, AlertTriangle, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { mockEmergencyMessage, mockUsers, mockNotifications, mockLogs, mockUser } from '@/lib/data';
 import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Combobox } from '@/components/ui/combobox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 
 type EmergencyMessage = typeof mockEmergencyMessage;
@@ -23,24 +26,41 @@ export default function AdminMessagingPage() {
     const [messageData, setMessageData] = useState<EmergencyMessage>({ ...mockEmergencyMessage, targetUserIds: ['all'] });
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
-    const [specificUser, setSpecificUser] = useState('');
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+    const [userSearch, setUserSearch] = useState("");
 
-    const userOptions = mockUsers
-        .filter(u => u.status === 'ativo')
-        .map(u => ({ label: `${u.apelido} (${u.nome})`, value: u.id }));
+    const handleUserSelect = (userId: string) => {
+        setSelectedUsers(prev => {
+            const newSelection = new Set(prev);
+            if (newSelection.has(userId)) {
+                newSelection.delete(userId);
+            } else {
+                newSelection.add(userId);
+            }
+            return newSelection;
+        });
+    };
+
+    const availableUsers = useMemo(() => {
+        return mockUsers
+        .filter(user => user.status === 'ativo' && user.funcao !== 'admin')
+        .filter(user => user.apelido.toLowerCase().includes(userSearch.toLowerCase()) || user.nome.toLowerCase().includes(userSearch.toLowerCase()))
+        .sort((a, b) => a.apelido.localeCompare(b.apelido));
+    }, [userSearch]);
 
     const handleSave = () => {
         let finalTargets: string[] = [];
         let targetDescription = 'todos os usuários';
+
         if (targetType === 'all') {
             finalTargets = ['all'];
-        } else if (specificUser) {
-            finalTargets = [specificUser];
-            targetDescription = userOptions.find(u => u.value === specificUser)?.label || 'usuário específico';
+        } else if (selectedUsers.size > 0) {
+            finalTargets = Array.from(selectedUsers);
+            targetDescription = `${selectedUsers.size} usuário(s) específico(s)`;
         } else {
             toast({
-                title: "Destinatário Inválido",
-                description: "Por favor, selecione um usuário específico para enviar a mensagem.",
+                title: "Nenhum Destinatário Selecionado",
+                description: "Por favor, selecione ao menos um usuário específico para enviar a mensagem.",
                 variant: "destructive",
             });
             return;
@@ -51,34 +71,37 @@ export default function AdminMessagingPage() {
             targetUserIds: finalTargets,
         };
         
-        // Simulação do envio
         if (finalMessageData.type === 'urgent') {
-            // Atualiza o mock da mensagem de emergência para o modal
             Object.assign(mockEmergencyMessage, finalMessageData);
              toast({
                 title: "Mensagem Urgente Ativada",
                 description: `A mensagem "${finalMessageData.title}" aparecerá como um pop-up para ${targetDescription}.`,
             });
         } else {
-            // Adiciona uma notificação ao mock de notificações
-             mockNotifications.unshift({
-                id: `notif_${new Date().getTime()}`,
-                title: finalMessageData.title,
-                message: finalMessageData.message,
-                read: false,
-                createdAt: new Date(),
-                href: '/dashboard/notifications', // Link genérico para notificações
+             // Simula o envio de notificação para múltiplos usuários
+            finalTargets.forEach(userId => {
+                const targetUser = mockUsers.find(u => u.id === userId);
+                const notificationTitle = finalMessageData.title;
+                const notificationMessage = `Mensagem do Admin: ${finalMessageData.message.substring(0, 50)}...`;
+
+                 mockNotifications.unshift({
+                    id: `notif_${new Date().getTime()}_${userId}`,
+                    title: notificationTitle,
+                    message: notificationMessage,
+                    read: false,
+                    createdAt: new Date(),
+                    href: '/dashboard/notifications',
+                });
             });
+
              toast({
                 title: "Aviso Enviado como Notificação",
                 description: `O aviso "${finalMessageData.title}" foi enviado para ${targetDescription}.`,
             });
         }
 
-         // Adiciona um log da ação
         mockLogs.unshift({
             id: `log_${new Date().getTime()}`,
-            timestamp: new Date().toISOString(),
             actor: { id: 'user_11', apelido: 'Admin', type: 'admin' },
             action: 'emergency_message',
             details: { 
@@ -170,7 +193,7 @@ export default function AdminMessagingPage() {
                                         <SelectItem value="specific">
                                             <div className="flex items-center gap-2">
                                                 <User className="h-4 w-4" />
-                                                <span>Usuário Específico</span>
+                                                <span>Usuários Específicos</span>
                                             </div>
                                         </SelectItem>
                                     </SelectContent>
@@ -179,17 +202,54 @@ export default function AdminMessagingPage() {
                         </div>
                         
                         {targetType === 'specific' && (
-                             <div className="space-y-2">
-                                <Label htmlFor="specific-user">Selecionar Usuário</Label>
-                                 <Combobox
-                                    options={userOptions}
-                                    value={specificUser}
-                                    onChange={setSpecificUser}
-                                    placeholder="Selecione um usuário..."
-                                    searchPlaceholder="Buscar por nome ou apelido..."
-                                    notFoundMessage="Nenhum usuário encontrado."
-                                />
-                             </div>
+                             <Card className="border-dashed">
+                                <CardHeader className="p-4">
+                                   <div className="flex items-center justify-between">
+                                     <div>
+                                        <h3 className="text-md font-medium">Selecionar Usuários</h3>
+                                        <p className="text-sm text-muted-foreground">Escolha os destinatários da mensagem.</p>
+                                    </div>
+                                    <Badge variant="secondary">{selectedUsers.size} selecionado(s)</Badge>
+                                   </div>
+                                    <div className="relative mt-4">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Buscar por nome ou apelido..."
+                                            className="pl-8"
+                                            value={userSearch}
+                                            onChange={(e) => setUserSearch(e.target.value)}
+                                        />
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <ScrollArea className="h-48 w-full rounded-md border">
+                                        <div className="p-4 space-y-2">
+                                            {availableUsers.map((user) => (
+                                                <div
+                                                    key={user.id}
+                                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-muted"
+                                                >
+                                                    <Checkbox
+                                                        id={`user-${user.id}`}
+                                                        checked={selectedUsers.has(user.id)}
+                                                        onCheckedChange={() => handleUserSelect(user.id)}
+                                                    />
+                                                    <Label htmlFor={`user-${user.id}`} className="font-normal w-full flex items-center gap-3 cursor-pointer">
+                                                        <Avatar className="w-8 h-8">
+                                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                            <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold">{user.apelido}</span>
+                                                            <span className="text-xs text-muted-foreground">{user.nome}</span>
+                                                        </div>
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
                         )}
 
                         <div className="space-y-2">
@@ -225,7 +285,6 @@ export default function AdminMessagingPage() {
                 </Card>
             </div>
 
-            {/* Modal de Pré-visualização */}
             <EmergencyMessageModal
                 isOpen={isPreviewOpen}
                 onClose={() => setIsPreviewOpen(false)}
