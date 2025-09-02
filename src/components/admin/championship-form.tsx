@@ -48,6 +48,7 @@ import { mockTeams } from '@/lib/data';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '../ui/checkbox';
 import Image from 'next/image';
+import { Badge } from '../ui/badge';
 
 
 type Fase = {
@@ -633,7 +634,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                                                 checked={field.value?.includes(team.id)}
                                                                 onCheckedChange={(checked) => {
                                                                 return checked
-                                                                    ? field.onChange([...field.value, team.id])
+                                                                    ? field.onChange([...(field.value || []), team.id])
                                                                     : field.onChange(
                                                                         field.value?.filter(
                                                                         (value) => value !== team.id
