@@ -307,10 +307,11 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="general">Dados Gerais</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="general">Gerais</TabsTrigger>
                     <TabsTrigger value="scoring">Pontuação</TabsTrigger>
                     <TabsTrigger value="banner">Banner</TabsTrigger>
+                    <TabsTrigger value="champion" disabled={!isBannerActive}>Palpite Campeão</TabsTrigger>
                 </TabsList>
                 <div className="py-4">
                     <TabsContent value="general" className="space-y-6">
@@ -565,52 +566,6 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 )}
                              </div>
                         )}
-                        <Separator />
-                        <Card>
-                             <CardHeader className="p-4">
-                                <FormField
-                                    control={form.control}
-                                    name="championPredictionSettings.active"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between">
-                                            <div className="space-y-0.5">
-                                                <FormLabel className="text-base flex items-center gap-2">
-                                                    <Trophy className="w-4 h-4 text-amber-500" />
-                                                    Palpite de Campeão
-                                                </FormLabel>
-                                                <FormDescription>
-                                                    Permite que usuários palpitem no ranking final do campeonato.
-                                                </FormDescription>
-                                            </div>
-                                            <FormControl>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                                 <div className="rounded-lg border p-4" style={{ opacity: isChampionPredictionActive ? 1 : 0.5 }}>
-                                    <FormField
-                                        control={form.control}
-                                        name="championPredictionSettings.numberOfPicks"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Número de Escolhas</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" placeholder="Ex: 3" {...field} disabled={!isChampionPredictionActive} />
-                                                </FormControl>
-                                                <FormDescription>Quantas equipes o usuário poderá classificar.</FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                 </div>
-                            </CardContent>
-                        </Card>
                     </TabsContent>
                     <TabsContent value="scoring" className="space-y-4">
                         <Card>
@@ -810,6 +765,53 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                         Pré-visualizar Banner
                                     </Button>
                                 </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="champion" className="space-y-6">
+                        <Card>
+                             <CardHeader className="p-4">
+                                <FormField
+                                    control={form.control}
+                                    name="championPredictionSettings.active"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base flex items-center gap-2">
+                                                    <Trophy className="w-4 h-4 text-amber-500" />
+                                                    Palpite de Campeão
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    Permite que usuários palpitem no ranking final do campeonato.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                                 <div className="rounded-lg border p-4 space-y-4" style={{ opacity: isChampionPredictionActive ? 1 : 0.5 }}>
+                                    <FormField
+                                        control={form.control}
+                                        name="championPredictionSettings.numberOfPicks"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Número de Escolhas</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="Ex: 3" {...field} value={field.value ?? ''} disabled={!isChampionPredictionActive} />
+                                                </FormControl>
+                                                <FormDescription>Quantas equipes o usuário poderá classificar.</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                 </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
