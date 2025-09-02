@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -294,3 +293,5 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
         </Dialog>
     );
 }
+
+    
