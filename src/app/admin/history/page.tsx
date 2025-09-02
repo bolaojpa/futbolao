@@ -60,6 +60,7 @@ export default function AdminHistoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editingScore, setEditingScore] = useState<{ placarA: string, placarB: string }>({ placarA: '0', placarB: '0' });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   
   const filteredMatches = useMemo(() => [...matches]
@@ -81,6 +82,7 @@ export default function AdminHistoryPage() {
         placarA: match.placarA?.toString() ?? '0',
         placarB: match.placarB?.toString() ?? '0'
     });
+    setIsEditModalOpen(true);
   };
 
   const handleScoreChange = (team: 'placarA' | 'placarB', value: string) => {
@@ -102,7 +104,7 @@ export default function AdminHistoryPage() {
         title: "Placar Atualizado",
         description: `O placar de ${editingMatch.timeA} vs ${editingMatch.timeB} foi alterado.`,
     });
-    setEditingMatch(null); // Fecha o modal
+    setIsEditModalOpen(false); // Fecha o modal
   };
 
   const handleDelete = (matchId: string) => {
@@ -176,7 +178,7 @@ export default function AdminHistoryPage() {
           </Select>
       </div>
 
-      <Dialog onOpenChange={(isOpen) => !isOpen && setEditingMatch(null)}>
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <div className="w-full space-y-4">
           {Object.keys(paginatedItems).length > 0 ? (
             Object.entries(paginatedItems).map(([phase, matches]) => (
@@ -203,12 +205,10 @@ export default function AdminHistoryPage() {
                                           </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
-                                          <DialogTrigger asChild>
-                                            <DropdownMenuItem onSelect={() => handleOpenEditModal(match)}>
-                                                <Pencil className="mr-2 h-4 w-4" />
-                                                Editar Placar
-                                            </DropdownMenuItem>
-                                          </DialogTrigger>
+                                          <DropdownMenuItem onSelect={() => handleOpenEditModal(match)}>
+                                              <Pencil className="mr-2 h-4 w-4" />
+                                              Editar Placar
+                                          </DropdownMenuItem>
                                           <AlertDialogTrigger asChild>
                                               <DropdownMenuItem className="text-destructive focus:text-destructive">
                                                   <Trash2 className="mr-2 h-4 w-4" />
@@ -362,4 +362,3 @@ export default function AdminHistoryPage() {
     </div>
   );
 }
-
