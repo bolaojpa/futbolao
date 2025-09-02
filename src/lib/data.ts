@@ -98,6 +98,10 @@ export type Championship = {
     backgroundUrl?: string;
     displayMode?: 'photo_and_names' | 'names_only';
   };
+  championPredictionSettings?: {
+    active: boolean;
+    numberOfPicks: number;
+  };
 };
 
 
@@ -121,6 +125,10 @@ export const mockChampionships: Championship[] = [
       campeonatoLogoUrl: 'https://logodetimes.com/times/campeonato-brasileiro-a/logo-campeonato-brasileiro-a-256.png',
       backgroundUrl: 'https://picsum.photos/857/828',
       displayMode: 'photo_and_names',
+    },
+    championPredictionSettings: {
+      active: true,
+      numberOfPicks: 3,
     }
   },
   { 
@@ -148,6 +156,10 @@ export const mockChampionships: Championship[] = [
       ativo: true,
       campeonatoLogoUrl: 'https://logodetimes.com/times/copa-libertadores-da-america-conmebol/logo-copa-libertadores-da-america-conmebol-256.png',
       displayMode: 'photo_and_names',
+    },
+    championPredictionSettings: {
+        active: false,
+        numberOfPicks: 5,
     }
   },
 ];

@@ -31,7 +31,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Plus, X, Eye, Image as ImageIcon, ChevronsUpDown } from 'lucide-react';
+import { CalendarIcon, Save, Plus, X, Eye, Image as ImageIcon, ChevronsUpDown, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship } from '@/lib/data';
@@ -83,6 +83,10 @@ const championshipFormSchema = z.object({
     campeonatoLogoUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
     backgroundUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
     displayMode: z.enum(['photo_and_names', 'names_only']).optional(),
+  }),
+  championPredictionSettings: z.object({
+    active: z.boolean(),
+    numberOfPicks: z.coerce.number().int().min(1, "O mínimo é 1.").max(10, "O máximo é 10.").optional(),
   }),
 }).refine(data => data.dataFim > data.dataInicio, {
   message: "A data de fim deve ser posterior à data de início.",
@@ -138,6 +142,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
             campeonatoLogoUrl: "",
             backgroundUrl: "",
             displayMode: 'photo_and_names',
+        },
+        championPredictionSettings: {
+            active: false,
+            numberOfPicks: 3,
         }
     },
   });
@@ -145,6 +153,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const watchAllFields = form.watch();
   const isBannerActive = watchAllFields.banner?.ativo;
   const isComboActive = watchAllFields.pontuacao?.combo?.ativo;
+  const isChampionPredictionActive = watchAllFields.championPredictionSettings?.active;
   const tipoCampeonato = watchAllFields.tipoCampeonato;
   const formatoFases = watchAllFields.formatoFases;
 
@@ -177,6 +186,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
             campeonatoLogoUrl: championship.banner?.campeonatoLogoUrl || "",
             backgroundUrl: championship.banner?.backgroundUrl || "",
             displayMode: championship.banner?.displayMode || 'photo_and_names',
+        },
+        championPredictionSettings: {
+            active: championship.championPredictionSettings?.active || false,
+            numberOfPicks: championship.championPredictionSettings?.numberOfPicks || 3,
         }
       });
       setFasesList(championship.fases || []);
@@ -199,6 +212,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
             campeonatoLogoUrl: "",
             backgroundUrl: "",
             displayMode: 'photo_and_names',
+        },
+        championPredictionSettings: {
+            active: false,
+            numberOfPicks: 3,
         }
       });
        setFasesList([]);
@@ -250,7 +267,11 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         campeonatoLogoUrl: data.banner.campeonatoLogoUrl,
         backgroundUrl: data.banner.backgroundUrl,
         displayMode: data.banner.displayMode,
-       } 
+       },
+       championPredictionSettings: {
+        active: data.championPredictionSettings.active,
+        numberOfPicks: data.championPredictionSettings.numberOfPicks || 3,
+       }
     };
     onSubmit(finalData);
     setIsOpen(false);
@@ -544,7 +565,52 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 )}
                              </div>
                         )}
-
+                        <Separator />
+                        <Card>
+                             <CardHeader className="p-4">
+                                <FormField
+                                    control={form.control}
+                                    name="championPredictionSettings.active"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base flex items-center gap-2">
+                                                    <Trophy className="w-4 h-4 text-amber-500" />
+                                                    Palpite de Campeão
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    Permite que usuários palpitem no ranking final do campeonato.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                                 <div className="rounded-lg border p-4" style={{ opacity: isChampionPredictionActive ? 1 : 0.5 }}>
+                                    <FormField
+                                        control={form.control}
+                                        name="championPredictionSettings.numberOfPicks"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Número de Escolhas</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="Ex: 3" {...field} disabled={!isChampionPredictionActive} />
+                                                </FormControl>
+                                                <FormDescription>Quantas equipes o usuário poderá classificar.</FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                 </div>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                     <TabsContent value="scoring" className="space-y-4">
                         <Card>
