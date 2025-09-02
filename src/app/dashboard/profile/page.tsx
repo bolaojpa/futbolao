@@ -27,6 +27,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { HonorificsExplanationModal } from '@/components/profile/honorifics-explanation-modal';
 
+const TimeAgo = ({ dateString }: { dateString: string }) => {
+    const [timeAgo, setTimeAgo] = useState('');
+    useEffect(() => {
+        setTimeAgo(formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: ptBR }))
+    }, [dateString]);
+    if (!timeAgo) return null;
+    return <>{timeAgo}</>;
+};
+
 const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: React.ReactNode, title: string, value: string | number, description: string, href?: string, isLeader?: boolean }) => {
     const cardContent = (
          <Card className={cn(
@@ -244,13 +253,13 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <LogIn className="w-4 h-4" />
                             <span>
-                                Último login: {formatDistanceToNow(new Date(ultimoLogin), { addSuffix: true, locale: ptBR })}
+                                Último login: <TimeAgo dateString={ultimoLogin} />
                             </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="w-4 h-4" />
                             <span>
-                                Última atividade: {formatDistanceToNow(new Date(ultimaAtividade), { addSuffix: true, locale: ptBR })}
+                                Última atividade: <TimeAgo dateString={ultimaAtividade} />
                             </span>
                         </div>
                         {lastGuessMatch && (

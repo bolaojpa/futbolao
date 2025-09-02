@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,6 +9,12 @@ interface CountdownProps {
 }
 
 export function Countdown({ targetDate }: CountdownProps) {
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     const calculateTimeLeft = () => {
         const target = parseISO(targetDate);
         const now = new Date();
@@ -27,12 +34,18 @@ export function Countdown({ targetDate }: CountdownProps) {
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft);
 
     useEffect(() => {
+        if (!isClient) return;
+
         const timer = setTimeout(() => {
             setTimeLeft(calculateTimeLeft());
         }, 1000);
 
         return () => clearTimeout(timer);
-    });
+    }, [isClient, timeLeft]);
+
+    if (!isClient) {
+        return <span>Carregando...</span>
+    }
 
     const formatTime = (time: number) => time.toString().padStart(2, '0');
 
