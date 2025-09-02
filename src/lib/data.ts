@@ -103,6 +103,13 @@ export type Championship = {
     active: boolean;
     numberOfPicks: number;
   };
+  finalRanking?: {
+    pos1?: string;
+    pos2?: string;
+    pos3?: string;
+    pos4?: string;
+    pos5?: string;
+  };
 };
 
 

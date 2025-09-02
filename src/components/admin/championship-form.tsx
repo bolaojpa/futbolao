@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -31,7 +30,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Plus, X, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search } from 'lucide-react';
+import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship, Team } from '@/lib/data';
@@ -49,6 +48,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '../ui/checkbox';
 import Image from 'next/image';
 import { Badge } from '../ui/badge';
+import { Combobox } from '../ui/combobox';
 
 
 type Fase = {
@@ -94,6 +94,13 @@ const championshipFormSchema = z.object({
     active: z.boolean(),
     numberOfPicks: z.coerce.number().int().min(1, "O mínimo é 1.").max(10, "O máximo é 10.").optional(),
   }),
+  finalRanking: z.object({
+    pos1: z.string().optional(),
+    pos2: z.string().optional(),
+    pos3: z.string().optional(),
+    pos4: z.string().optional(),
+    pos5: z.string().optional(),
+  }).optional(),
 }).refine(data => data.dataFim > data.dataInicio, {
   message: "A data de fim deve ser posterior à data de início.",
   path: ["dataFim"], 
@@ -154,6 +161,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         championPredictionSettings: {
             active: false,
             numberOfPicks: 3,
+        },
+        finalRanking: {
+            pos1: '', pos2: '', pos3: '', pos4: '', pos5: ''
         }
     },
   });
@@ -166,6 +176,13 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const formatoFases = watchAllFields.formatoFases;
   const modoEquipes = watchAllFields.modoEquipes;
   const selectedTeamIds = watchAllFields.teamIds || [];
+
+  const teamOptionsForRanking = useMemo(() => {
+    if (!selectedTeamIds) return [];
+
+    const participatingTeams = mockTeams.filter(team => selectedTeamIds.includes(team.id));
+    return participatingTeams.map(team => ({ label: team.name, value: team.name }));
+  }, [selectedTeamIds]);
 
   const availableTeams = useMemo(() => {
     return mockTeams
@@ -211,7 +228,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         championPredictionSettings: {
             active: championship.championPredictionSettings?.active || false,
             numberOfPicks: championship.championPredictionSettings?.numberOfPicks || 3,
-        }
+        },
+         finalRanking: championship.finalRanking || { pos1: '', pos2: '', pos3: '', pos4: '', pos5: '' }
       });
       setFasesList(championship.fases || []);
     } else if (isOpen) {
@@ -238,6 +256,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         championPredictionSettings: {
             active: false,
             numberOfPicks: 3,
+        },
+        finalRanking: {
+            pos1: '', pos2: '', pos3: '', pos4: '', pos5: ''
         }
       });
        setFasesList([]);
@@ -294,7 +315,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
        championPredictionSettings: {
         active: data.championPredictionSettings.active,
         numberOfPicks: data.championPredictionSettings.numberOfPicks || 3,
-       }
+       },
+       finalRanking: data.finalRanking,
     };
     onSubmit(finalData);
     setIsOpen(false);
@@ -315,6 +337,14 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
     displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
   };
+  
+  const rankingPositions = [
+        { key: 'pos1', label: '1º Lugar (Campeão)' },
+        { key: 'pos2', label: '2º Lugar (Vice-campeão)' },
+        { key: 'pos3', label: '3º Lugar' },
+        { key: 'pos4', label: '4º Lugar' },
+        { key: 'pos5', label: '5º Lugar' },
+    ];
 
   return (
     <>
@@ -330,7 +360,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="general">Gerais</TabsTrigger>
                     <TabsTrigger value="teams">Equipes</TabsTrigger>
                     <TabsTrigger value="scoring">Pontuação</TabsTrigger>
@@ -907,6 +937,39 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                  </div>
                             </CardContent>
                         </Card>
+                        {isChampionPredictionActive && championship && (
+                            <Card>
+                                <CardHeader className="p-4">
+                                     <h3 className="text-base font-semibold">Classificação Final do Campeonato</h3>
+                                     <p className="text-sm text-muted-foreground">Insira a ordem final das equipes para encerrar o campeonato e premiar os vencedores.</p>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0 space-y-4">
+                                    {rankingPositions.map(pos => (
+                                        <FormField
+                                            key={pos.key}
+                                            control={form.control}
+                                            name={`finalRanking.${pos.key as ('pos1' | 'pos2' | 'pos3' | 'pos4' | 'pos5')}`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>{pos.label}</FormLabel>
+                                                    <FormControl>
+                                                        <Combobox
+                                                            options={teamOptionsForRanking}
+                                                            value={field.value || ''}
+                                                            onChange={field.onChange}
+                                                            placeholder="Selecione a equipe..."
+                                                            searchPlaceholder="Buscar equipe..."
+                                                            notFoundMessage="Nenhuma equipe encontrada."
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        )}
                     </TabsContent>
                 </div>
             </Tabs>
