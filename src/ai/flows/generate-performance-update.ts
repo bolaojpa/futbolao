@@ -17,6 +17,7 @@ const PerformanceUpdateInputSchema = z.object({
   pontosGanhos: z.number().describe('O total de pontos que o usuário ganhou na última rodada.'),
   novaPosicao: z.number().describe('A nova posição do usuário no ranking.'),
   posicaoAnterior: z.number().describe('A posição anterior do usuário no ranking.'),
+  nomePartida: z.string().describe('O nome da partida que foi finalizada, ex: "Time A vs Time B".').optional(),
 });
 export type PerformanceUpdateInput = z.infer<typeof PerformanceUpdateInputSchema>;
 
@@ -42,11 +43,16 @@ const generatePerformanceUpdatePrompt = ai.definePrompt({
   - Pontos Ganhos na Rodada: {{pontosGanhos}}
   - Posição Anterior: {{posicaoAnterior}}º
   - Nova Posição: {{novaPosicao}}º
+  {{#if nomePartida}}
+  - Referente à partida: {{nomePartida}}
+  {{/if}}
 
   Se o usuário subiu no ranking (novaPosicao < posicaoAnterior), crie um título e uma mensagem de parabenização. Ex: "Você subiu no ranking!".
   Se o usuário desceu no ranking (novaPosicao > posicaoAnterior), crie uma mensagem de incentivo. Ex: "Continue na disputa!".
   Se ele manteve a posição, comente sobre a consistência. Ex: "Você se manteve firme!".
   Se os pontos ganhos foram 0, crie uma mensagem de incentivo para a próxima rodada.
+
+  Se a partida for mencionada, tente incorporá-la na mensagem. Ex: "Você mandou bem no jogo do {{nomePartida}} e ganhou {{pontosGanhos}} pontos!"
 
   Seja criativo e use uma linguagem informal e divertida, como se fosse um amigo comentando o desempenho.
   Apresente a sua sugestão de notificação em Português (PT-BR).`,

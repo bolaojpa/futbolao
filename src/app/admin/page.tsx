@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { mockAllMatches, Match, mockUsers, mockPredictions, mockChampionships } from '@/lib/data';
+import { mockAllMatches, Match, mockUsers, mockPredictions, mockChampionships, mockLogs, mockNotifications } from '@/lib/data';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown } from 'lucide-react';
@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-update';
 
 export default function AdminDashboardPage() {
     const [liveMatches, setLiveMatches] = useState<Match[]>([]);
@@ -100,12 +101,57 @@ export default function AdminDashboardPage() {
         });
     };
 
-    const handleFinalizeMatch = (match: Match) => {
+    const handleFinalizeMatch = async (match: Match) => {
         updateMatchDataInMock(match.id, 'Finalizado');
         toast({
             title: "Partida Finalizada!",
             description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada e movida para o histórico.`,
         });
+        
+        // Simulação do disparo da notificação de IA para usuários
+        const predictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
+        
+        for (const prediction of predictionsForMatch) {
+            const user = mockUsers.find(u => u.id === prediction.userId);
+            if (!user || !user.pontos) continue;
+
+            const simulatedPoints = calculateSimulatedPoints(match, prediction.palpiteUsuario.placarA, prediction.palpiteUsuario.placarB);
+            
+            // Simular mudança no ranking
+            const oldPosition = mockUsers.findIndex(u => u.id === user.id) + 1;
+            const newPosition = simulatedPoints > 5 ? oldPosition - 1 : oldPosition;
+            
+            const notificationData = {
+                apelido: user.apelido,
+                pontosGanhos: simulatedPoints,
+                posicaoAnterior: oldPosition,
+                novaPosicao: newPosition > 0 ? newPosition : 1,
+                nomePartida: `${match.timeA} vs ${match.timeB}`
+            };
+
+            // Gera notificação com IA (não bloqueia a UI)
+            generatePerformanceUpdate(notificationData).then(result => {
+                mockNotifications.unshift({
+                    id: `notif_${new Date().getTime()}`,
+                    title: result.titulo,
+                    message: result.mensagem,
+                    read: false,
+                    createdAt: new Date(),
+                    href: `/dashboard/leaderboard`
+                });
+
+                // Adiciona log da notificação de IA
+                mockLogs.unshift({
+                    id: `log_${new Date().getTime()}`,
+                    timestamp: new Date().toISOString(),
+                    actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' },
+                    action: 'ai_notification',
+                    details: { title: result.titulo, message: result.mensagem, target: user.apelido }
+                });
+            }).catch(err => {
+                console.error("Falha ao gerar notificação de IA para", user.apelido, err);
+            });
+        }
     };
     
     const getPredictionStatusClass = (pontos: number, maxPontos: number) => {

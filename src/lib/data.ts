@@ -391,7 +391,7 @@ export const mockLogs: Log[] = [
   {
     id: 'log_9',
     timestamp: new Date(new Date().getTime() - (1000 * 60 * 12)).toISOString(),
-    actor: { id: 'user_11', apelido: 'IA', type: 'admin' as const },
+    actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' as const },
     action: 'ai_notification',
     details: {
         title: 'Você subiu no ranking!',
