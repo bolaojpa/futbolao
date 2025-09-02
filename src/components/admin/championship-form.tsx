@@ -30,7 +30,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users } from 'lucide-react';
+import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship, Team, UserType } from '@/lib/data';
@@ -45,7 +45,7 @@ import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { mockTeams, mockUsers } from '@/lib/data';
 import { ScrollArea } from '../ui/scroll-area';
-import { Checkbox } from '../ui/checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Combobox } from '../ui/combobox';
@@ -374,12 +374,12 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
-                    <TabsTrigger value="general">Gerais</TabsTrigger>
-                    <TabsTrigger value="teams">Equipes</TabsTrigger>
-                    <TabsTrigger value="participants">Participantes</TabsTrigger>
-                    <TabsTrigger value="scoring">Pontuação</TabsTrigger>
-                    <TabsTrigger value="banner">Banner</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-5 md:max-w-2xl mx-auto">
+                    <TabsTrigger value="general"><ClipboardList className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Gerais</span></TabsTrigger>
+                    <TabsTrigger value="teams"><Shield className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Equipes</span></TabsTrigger>
+                    <TabsTrigger value="participants"><Users className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger>
+                    <TabsTrigger value="scoring"><Percent className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Pontuação</span></TabsTrigger>
+                    <TabsTrigger value="banner"><ImageIcon className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Banner</span></TabsTrigger>
                 </TabsList>
                 <div className="py-4">
                     <TabsContent value="general" className="space-y-6">
@@ -1097,3 +1097,5 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   </>
   );
 }
+
+    
