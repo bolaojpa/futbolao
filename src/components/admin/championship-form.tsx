@@ -378,23 +378,23 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
             <Tabs defaultValue="general" className="w-full">
                 <TabsList className="grid w-full grid-cols-5 md:max-w-2xl mx-auto">
                     <Tooltip>
-                        <TooltipTrigger asChild><TabsTrigger value="general"><ClipboardList className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Gerais</span></TabsTrigger></TooltipTrigger>
+                        <TooltipTrigger asChild><TabsTrigger value="general"><ClipboardList className="md:mr-2" /><span className="hidden md:inline">Gerais</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Gerais</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
-                        <TooltipTrigger asChild><TabsTrigger value="teams"><Shield className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Equipes</span></TabsTrigger></TooltipTrigger>
+                        <TooltipTrigger asChild><TabsTrigger value="teams"><Shield className="md:mr-2" /><span className="hidden md:inline">Equipes</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Equipes</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
-                        <TooltipTrigger asChild><TabsTrigger value="participants"><Users className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
+                        <TooltipTrigger asChild><TabsTrigger value="participants"><Users className="md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Participantes</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
-                        <TooltipTrigger asChild><TabsTrigger value="scoring"><Percent className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Pontuação</span></TabsTrigger></TooltipTrigger>
+                        <TooltipTrigger asChild><TabsTrigger value="scoring"><Percent className="md:mr-2" /><span className="hidden md:inline">Pontuação</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Pontuação</p></TooltipContent>
                     </Tooltip>
                      <Tooltip>
-                        <TooltipTrigger asChild><TabsTrigger value="banner"><ImageIcon className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Banner</span></TabsTrigger></TooltipTrigger>
+                        <TooltipTrigger asChild><TabsTrigger value="banner"><ImageIcon className="md:mr-2" /><span className="hidden md:inline">Banner</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Banner</p></TooltipContent>
                     </Tooltip>
                 </TabsList>
@@ -993,92 +993,93 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                         <Eye className="mr-2 h-4 w-4"/>
                                         Pré-visualizar Banner
                                     </Button>
-                                    
-                                    <div className="space-y-6 pt-6" style={{ opacity: isBannerActive ? 1 : 0.5 }}>
-                                        <Separator />
-                                        <Card className="border-dashed">
-                                            <CardHeader className="p-4">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="championPredictionSettings.active"
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center justify-between">
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className="text-base flex items-center gap-2">
-                                                                    <Trophy className="w-4 h-4 text-amber-500" />
-                                                                    Palpite de Campeão
-                                                                </FormLabel>
-                                                                <FormDescription>
-                                                                    Permite que usuários palpitem no ranking final.
-                                                                </FormDescription>
-                                                            </div>
-                                                            <FormControl>
-                                                                <Switch
-                                                                    checked={field.value}
-                                                                    onCheckedChange={field.onChange}
-                                                                    disabled={!isBannerActive}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </CardHeader>
-                                            <CardContent className="p-4 pt-0">
-                                                <div className="rounded-lg border p-4 space-y-4" style={{ opacity: isChampionPredictionActive ? 1 : 0.5 }}>
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="championPredictionSettings.numberOfPicks"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Número de Escolhas</FormLabel>
-                                                                <FormControl>
-                                                                    <Input type="number" placeholder="Ex: 3" {...field} value={field.value ?? ''} disabled={!isChampionPredictionActive} />
-                                                                </FormControl>
-                                                                <FormDescription>Quantas equipes o usuário poderá classificar.</FormDescription>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                        {championship && (
-                                             <Card className="border-dashed">
-                                                <CardHeader className="p-4">
-                                                    <h3 className="text-base font-semibold">Classificação Final do Campeonato</h3>
-                                                    <p className="text-sm text-muted-foreground">Insira a ordem final para encerrar e premiar.</p>
-                                                </CardHeader>
-                                                <CardContent className="p-4 pt-0 space-y-4">
-                                                    {rankingPositions.map(pos => (
-                                                        <FormField
-                                                            key={pos.key}
-                                                            control={form.control}
-                                                            name={`finalRanking.${pos.key as ('pos1' | 'pos2' | 'pos3' | 'pos4' | 'pos5')}`}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel>{pos.label}</FormLabel>
-                                                                    <FormControl>
-                                                                        <Combobox
-                                                                            options={getFilteredRankingOptions(pos.key)}
-                                                                            value={field.value || ''}
-                                                                            onChange={field.onChange}
-                                                                            placeholder="Selecione a equipe..."
-                                                                            searchPlaceholder="Buscar equipe..."
-                                                                            notFoundMessage="Nenhuma equipe encontrada."
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    ))}
-                                                </CardContent>
-                                            </Card>
-                                        )}
-                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
+                        
+                        <div className="space-y-6" style={{ opacity: isBannerActive ? 1 : 0.5 }}>
+                            <Separator />
+                            <Card className="border-dashed">
+                                <CardHeader className="p-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="championPredictionSettings.active"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-row items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <FormLabel className="text-base flex items-center gap-2">
+                                                        <Trophy className="w-4 h-4 text-amber-500" />
+                                                        Palpite de Campeão
+                                                    </FormLabel>
+                                                    <FormDescription>
+                                                        Permite que usuários palpitem no ranking final.
+                                                    </FormDescription>
+                                                </div>
+                                                <FormControl>
+                                                    <Switch
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                        disabled={!isBannerActive}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <div className="rounded-lg border p-4 space-y-4" style={{ opacity: isChampionPredictionActive ? 1 : 0.5 }}>
+                                        <FormField
+                                            control={form.control}
+                                            name="championPredictionSettings.numberOfPicks"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Número de Escolhas</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" placeholder="Ex: 3" {...field} value={field.value ?? ''} disabled={!isChampionPredictionActive} />
+                                                    </FormControl>
+                                                    <FormDescription>Quantas equipes o usuário poderá classificar.</FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {championship && isBannerActive && (
+                                <Card className="border-dashed">
+                                    <CardHeader className="p-4">
+                                        <h3 className="text-base font-semibold">Classificação Final do Campeonato</h3>
+                                        <p className="text-sm text-muted-foreground">Insira a ordem final para encerrar e premiar.</p>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-0 space-y-4">
+                                        {rankingPositions.map(pos => (
+                                            <FormField
+                                                key={pos.key}
+                                                control={form.control}
+                                                name={`finalRanking.${pos.key as ('pos1' | 'pos2' | 'pos3' | 'pos4' | 'pos5')}`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>{pos.label}</FormLabel>
+                                                        <FormControl>
+                                                            <Combobox
+                                                                options={getFilteredRankingOptions(pos.key)}
+                                                                value={field.value || ''}
+                                                                onChange={field.onChange}
+                                                                placeholder="Selecione a equipe..."
+                                                                searchPlaceholder="Buscar equipe..."
+                                                                notFoundMessage="Nenhuma equipe encontrada."
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        ))}
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
                     </TabsContent>
                 </div>
             </Tabs>
