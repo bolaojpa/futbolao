@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { fetchTeamsFromApi } from './actions';
 import { mockTeams, Team } from '@/lib/data';
 import Image from 'next/image';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function AdminTeamsPage() {
     const { toast } = useToast();
@@ -23,6 +24,7 @@ export default function AdminTeamsPage() {
     const [competitionCode, setCompetitionCode] = useState('');
     const [manualTeamName, setManualTeamName] = useState('');
     const [manualTeamCrest, setManualTeamCrest] = useState('');
+    const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
 
     const handleFetchTeams = async (type: 'club' | 'national') => {
         if (!competitionCode) {
@@ -71,21 +73,90 @@ export default function AdminTeamsPage() {
         setTeams(prev => prev.filter(t => t.id !== teamId));
         toast({ title: "Equipe Removida", description: "A equipe foi removida da sua lista.", variant: "destructive" });
     };
+    
+    const handleSelectTeam = (teamId: string) => {
+        setSelectedTeams(prev => {
+            const newSelection = new Set(prev);
+            if (newSelection.has(teamId)) {
+                newSelection.delete(teamId);
+            } else {
+                newSelection.add(teamId);
+            }
+            return newSelection;
+        });
+    };
+
+    const handleSelectAllOnPage = (type: 'club' | 'national', checked: boolean | 'indeterminate') => {
+        const pageTeams = teams.filter(t => t.type === type);
+        if (checked) {
+            setSelectedTeams(prev => new Set([...prev, ...pageTeams.map(t => t.id)]));
+        } else {
+             setSelectedTeams(prev => {
+                const newSelection = new Set(prev);
+                pageTeams.forEach(t => newSelection.delete(t.id));
+                return newSelection;
+            });
+        }
+    };
+
+    const handleDeleteSelected = () => {
+        setTeams(prev => prev.filter(team => !selectedTeams.has(team.id)));
+        toast({
+            title: "Equipes Removidas",
+            description: `${selectedTeams.size} equipe(s) foram removidas permanentemente.`,
+        });
+        setSelectedTeams(new Set());
+    };
 
     const renderTeamTable = (type: 'club' | 'national') => {
         const filteredTeams = teams.filter(t => t.type === type);
+        const allOnPageSelected = filteredTeams.length > 0 && filteredTeams.every(t => selectedTeams.has(t.id));
+
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle className="capitalize">{type === 'club' ? 'Clubes' : 'Seleções'} Cadastrados</CardTitle>
-                    <CardDescription>
-                        Total de {filteredTeams.length} equipes.
-                    </CardDescription>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                        <div>
+                            <CardTitle className="capitalize">{type === 'club' ? 'Clubes' : 'Seleções'} Cadastrados</CardTitle>
+                            <CardDescription>
+                                Total de {filteredTeams.length} equipes.
+                            </CardDescription>
+                        </div>
+                         {selectedTeams.size > 0 && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full sm:w-auto">
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        Excluir Selecionados ({selectedTeams.size})
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta ação removerá permanentemente os {selectedTeams.size} registro(s) selecionado(s). Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-12">
+                                     <Checkbox 
+                                        onCheckedChange={(checked) => handleSelectAllOnPage(type, checked)}
+                                        checked={allOnPageSelected}
+                                        aria-label="Selecionar todas as equipes nesta página"
+                                    />
+                                </TableHead>
                                 <TableHead className="w-[80px]">Escudo</TableHead>
                                 <TableHead>Nome da Equipe</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
@@ -94,7 +165,14 @@ export default function AdminTeamsPage() {
                         <TableBody>
                             {filteredTeams.length > 0 ? (
                                 filteredTeams.map(team => (
-                                    <TableRow key={team.id}>
+                                    <TableRow key={team.id} data-state={selectedTeams.has(team.id) ? "selected" : ""}>
+                                        <TableCell>
+                                             <Checkbox 
+                                                checked={selectedTeams.has(team.id)}
+                                                onCheckedChange={() => handleSelectTeam(team.id)}
+                                                aria-label={`Selecionar equipe ${team.name}`}
+                                            />
+                                        </TableCell>
                                         <TableCell>
                                             <Image src={team.crestUrl} alt={`Escudo do ${team.name}`} width={40} height={40} className="rounded-sm object-contain" />
                                         </TableCell>
@@ -124,7 +202,7 @@ export default function AdminTeamsPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">
+                                    <TableCell colSpan={4} className="h-24 text-center">
                                         Nenhuma equipe encontrada.
                                     </TableCell>
                                 </TableRow>
