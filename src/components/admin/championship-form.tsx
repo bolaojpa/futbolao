@@ -50,6 +50,7 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Combobox } from '../ui/combobox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 
 type Fase = {
@@ -373,13 +374,29 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            <TooltipProvider>
             <Tabs defaultValue="general" className="w-full">
                 <TabsList className="grid w-full grid-cols-5 md:max-w-2xl mx-auto">
-                    <TabsTrigger value="general"><ClipboardList className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Gerais</span></TabsTrigger>
-                    <TabsTrigger value="teams"><Shield className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Equipes</span></TabsTrigger>
-                    <TabsTrigger value="participants"><Users className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger>
-                    <TabsTrigger value="scoring"><Percent className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Pontuação</span></TabsTrigger>
-                    <TabsTrigger value="banner"><ImageIcon className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Banner</span></TabsTrigger>
+                    <Tooltip>
+                        <TooltipTrigger asChild><TabsTrigger value="general"><ClipboardList className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Gerais</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent><p>Gerais</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild><TabsTrigger value="teams"><Shield className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Equipes</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent><p>Equipes</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild><TabsTrigger value="participants"><Users className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent><p>Participantes</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild><TabsTrigger value="scoring"><Percent className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Pontuação</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent><p>Pontuação</p></TooltipContent>
+                    </Tooltip>
+                     <Tooltip>
+                        <TooltipTrigger asChild><TabsTrigger value="banner"><ImageIcon className="h-5 w-5 md:mr-2" /><span className="hidden md:inline">Banner</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent><p>Banner</p></TooltipContent>
+                    </Tooltip>
                 </TabsList>
                 <div className="py-4">
                     <TabsContent value="general" className="space-y-6">
@@ -1065,6 +1082,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                     </TabsContent>
                 </div>
             </Tabs>
+            </TooltipProvider>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
                 <Button type="submit">
@@ -1097,5 +1115,3 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   </>
   );
 }
-
-    
