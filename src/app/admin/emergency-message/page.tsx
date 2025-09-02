@@ -9,37 +9,64 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { MessageSquareWarning, Send, Eye, Info } from 'lucide-react';
+import { Send, Eye, Info, Users, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { mockEmergencyMessage } from '@/lib/data';
+import { mockEmergencyMessage, mockUsers } from '@/lib/data';
 import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
+import type { UserType } from '@/lib/data';
+
 
 type EmergencyMessage = typeof mockEmergencyMessage;
 
-export default function AdminEmergencyMessagePage() {
+export default function AdminMessagingPage() {
     const { toast } = useToast();
-    const [messageData, setMessageData] = useState<EmergencyMessage>(mockEmergencyMessage);
+    const [messageData, setMessageData] = useState<EmergencyMessage>({ ...mockEmergencyMessage, targetUserIds: ['all'] });
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
+    const [specificUser, setSpecificUser] = useState('');
+
+    const userOptions = mockUsers
+        .filter(u => u.status === 'ativo')
+        .map(u => ({ label: `${u.apelido} (${u.nome})`, value: u.id }));
 
     const handleSave = () => {
-        // Em um app real, isso salvaria os dados no Firestore.
-        // Aqui, apenas atualizamos o estado local e mostramos um toast.
+        let finalTargets: string[] = [];
+        if (targetType === 'all') {
+            finalTargets = ['all'];
+        } else if (specificUser) {
+            finalTargets = [specificUser];
+        } else {
+            toast({
+                title: "Destinatário Inválido",
+                description: "Por favor, selecione um usuário específico para enviar a mensagem.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const finalMessageData = {
+            ...messageData,
+            targetUserIds: finalTargets,
+        }
+
         toast({
-            title: "Aviso Atualizado",
-            description: `O aviso "${messageData.title}" foi salvo com sucesso.`,
+            title: "Mensagem Salva e Pronta para Envio",
+            description: `A mensagem "${finalMessageData.title}" será enviada para ${targetType === 'all' ? 'todos os usuários' : userOptions.find(u => u.value === specificUser)?.label}.`,
         });
-        console.log("Saving emergency message:", messageData);
+        console.log("Saving message:", finalMessageData);
     };
 
     return (
         <>
             <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
                 <div className="flex items-center gap-4">
-                    <MessageSquareWarning className="h-8 w-8 text-primary" />
+                    <Send className="h-8 w-8 text-primary" />
                     <div>
-                        <h1 className="text-3xl font-bold font-headline">Aviso Urgente</h1>
+                        <h1 className="text-3xl font-bold font-headline">Painel de Mensagens</h1>
                         <p className="text-muted-foreground">
-                            Crie e gerencie uma mensagem de aviso para todos os usuários.
+                            Crie e envie avisos ou recados para os usuários do aplicativo.
                         </p>
                     </div>
                 </div>
@@ -48,29 +75,66 @@ export default function AdminEmergencyMessagePage() {
                     <CardHeader>
                         <CardTitle>Configurar Mensagem</CardTitle>
                         <CardDescription>
-                            A mensagem aparecerá como um pop-up para os usuários ao acessarem o dashboard. Use com moderação.
+                            A mensagem aparecerá como um pop-up para os usuários selecionados ao acessarem o dashboard.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between rounded-lg border p-4">
                              <div className="space-y-0.5">
                                 <Label htmlFor="active-message" className="text-base">
-                                    Ativar Mensagem de Aviso
+                                    Ativar Mensagem
                                 </Label>
                                 <p className="text-sm text-muted-foreground">
-                                    Ative para exibir o aviso para os usuários selecionados.
+                                    Ative para exibir a mensagem para os usuários selecionados.
                                 </p>
                             </div>
                             <Switch
                                 id="active-message"
                                 checked={messageData.active}
                                 onCheckedChange={(checked) => setMessageData(prev => ({...prev, active: checked }))}
-                                aria-label="Ativar mensagem de aviso"
+                                aria-label="Ativar mensagem"
                             />
                         </div>
                         
+                         <div className="space-y-2">
+                            <Label htmlFor="target-type">Destinatário</Label>
+                             <Select value={targetType} onValueChange={(value) => setTargetType(value as 'all' | 'specific')}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o destinatário..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        <div className="flex items-center gap-2">
+                                            <Users className="h-4 w-4" />
+                                            <span>Todos os Usuários</span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="specific">
+                                         <div className="flex items-center gap-2">
+                                            <User className="h-4 w-4" />
+                                            <span>Usuário Específico</span>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        
+                        {targetType === 'specific' && (
+                             <div className="space-y-2">
+                                <Label htmlFor="specific-user">Selecionar Usuário</Label>
+                                 <Combobox
+                                    options={userOptions}
+                                    value={specificUser}
+                                    onChange={setSpecificUser}
+                                    placeholder="Selecione um usuário..."
+                                    searchPlaceholder="Buscar por nome ou apelido..."
+                                    notFoundMessage="Nenhum usuário encontrado."
+                                />
+                             </div>
+                        )}
+
                         <div className="space-y-2">
-                            <Label htmlFor="message-title">Título do Aviso</Label>
+                            <Label htmlFor="message-title">Título da Mensagem</Label>
                             <Input
                                 id="message-title"
                                 placeholder="Ex: Manutenção Programada"
@@ -88,12 +152,6 @@ export default function AdminEmergencyMessagePage() {
                                 onChange={(e) => setMessageData(prev => ({ ...prev, message: e.target.value }))}
                             />
                         </div>
-                         <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
-                             <Info className="h-5 w-5 shrink-0"/>
-                            <p className="text-xs">
-                                Atualmente, a mensagem de aviso é enviada para <strong>todos os usuários</strong>. Funcionalidades de segmentação de público serão adicionadas no futuro.
-                            </p>
-                        </div>
                     </CardContent>
                     <CardFooter className="flex justify-end gap-2">
                          <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>
@@ -102,7 +160,7 @@ export default function AdminEmergencyMessagePage() {
                         </Button>
                         <Button onClick={handleSave}>
                             <Send className="mr-2 h-4 w-4" />
-                            Salvar e Enviar
+                            Salvar e Ativar
                         </Button>
                     </CardFooter>
                 </Card>
@@ -118,4 +176,3 @@ export default function AdminEmergencyMessagePage() {
         </>
     );
 }
-

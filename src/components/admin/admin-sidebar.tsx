@@ -19,10 +19,11 @@ import {
   Settings,
   LogOut,
   Shield,
-  MessageSquareWarning,
   FileClock,
   History,
   ShieldCheck,
+  Send,
+  BarChart3,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -42,9 +43,10 @@ export function AdminSidebar() {
     { href: '/admin/teams', label: 'Equipes', icon: Shield },
     { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
     { href: '/admin/history', label: 'Histórico de Partidas', icon: History },
+    { href: '/admin/ranking', label: 'Ranking', icon: BarChart3 },
     { href: '/admin/fame', label: 'Hall da Fama', icon: ShieldCheck },
     { href: '/admin/logs', label: 'Logs de Atividades', icon: FileClock },
-    { href: '/admin/emergency-message', label: 'Aviso Urgente', icon: MessageSquareWarning },
+    { href: '/admin/messaging', label: 'Mensagens', icon: Send },
   ];
   
   const bottomMenuItems = [
