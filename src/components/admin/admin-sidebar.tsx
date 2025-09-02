@@ -44,7 +44,7 @@ export function AdminSidebar() {
     { href: '/admin/history', label: 'Histórico de Partidas', icon: History },
     { href: '/admin/fame', label: 'Hall da Fama', icon: ShieldCheck },
     { href: '/admin/logs', label: 'Logs de Atividades', icon: FileClock },
-    // { href: '/admin/emergency-message', label: 'Aviso Urgente', icon: MessageSquareWarning },
+    { href: '/admin/emergency-message', label: 'Aviso Urgente', icon: MessageSquareWarning },
   ];
   
   const bottomMenuItems = [
