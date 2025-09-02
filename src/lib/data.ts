@@ -1,5 +1,4 @@
 
-
 // Mock Data for FutBolão Pro
 
 export const mockUser = {
@@ -353,6 +352,7 @@ export const mockEmergencyMessage = {
     title: 'Aviso Urgente do Administrador',
     message: 'Estamos passando por uma instabilidade temporária no sistema de pontuação. Os pontos da última rodada serão recalculados em breve. Agradecemos a compreensão.',
     active: true, // Mude para 'false' para desativar o modal
+    type: 'urgent' as 'normal' | 'urgent',
     targetUserIds: ['all'], // 'all' para todos, ou um array de user_ids ['user_1', 'user_3']
 };
 
@@ -462,7 +462,8 @@ export const mockLogs: Log[] = [
     details: {
         title: mockEmergencyMessage.title,
         message: mockEmergencyMessage.message,
-        target: 'todos os usuários'
+        target: 'todos os usuários',
+        type: 'urgent',
     },
   }
 ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

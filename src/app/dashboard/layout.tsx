@@ -21,6 +21,7 @@ export default function DashboardLayout({
     if (
       mockEmergencyMessage &&
       mockEmergencyMessage.active &&
+      mockEmergencyMessage.type === 'urgent' && // Apenas mostra o modal para mensagens urgentes
       (mockEmergencyMessage.targetUserIds.includes('all') || mockEmergencyMessage.targetUserIds.includes(mockUser.id))
     ) {
       // Verifica se o usuário já viu esta mensagem específica (usando localStorage para simulação)
@@ -45,12 +46,14 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar />
-      <div className="flex flex-1 flex-col">
-        <Header />
-        <main className="flex-1 bg-blue-50/50 dark:bg-gray-900/50">
-          {children}
-        </main>
+      <div className="flex min-h-screen">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col">
+          <Header />
+          <main className="flex-1 bg-blue-50/50 dark:bg-gray-900/50">
+            {children}
+          </main>
+        </div>
       </div>
        {emergencyMessage && (
         <EmergencyMessageModal
