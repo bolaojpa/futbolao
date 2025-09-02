@@ -4,10 +4,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockChampionships as initialChampionships } from '@/lib/data';
+import { mockChampionships as initialChampionships, mockHallOfFame, mockUsers } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Archive, ArchiveRestore } from 'lucide-react';
+import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Award, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ChampionshipForm } from '@/components/admin/championship-form';
@@ -67,13 +67,48 @@ export default function AdminChampionshipsPage() {
         });
     };
 
-    const handleArchive = (championship: Championship) => {
-        const newStatus: ChampionshipStatus = championship.status === 'ativo' ? 'arquivado' : 'ativo';
-        setChampionships(prev => prev.map(c => c.id === championship.id ? { ...c, status: newStatus } : c));
-        toast({
-            title: `Campeonato ${newStatus === 'ativo' ? 'Restaurado' : 'Arquivado'}`,
-            description: `O campeonato "${championship.nome}" foi movido para os ${newStatus}s.`,
-        });
+    const handleFinalize = (championship: Championship) => {
+        // Validação: Verifica se o ranking final foi preenchido
+        const isRankingFilled = championship.finalRanking && Object.values(championship.finalRanking).some(v => !!v);
+        if (!isRankingFilled) {
+             toast({
+                title: "Finalização Pendente",
+                description: "É necessário definir a classificação final do campeonato antes de finalizá-lo. Edite o campeonato e preencha a seção de 'Classificação Final' na aba 'Banner'.",
+                variant: "destructive",
+                duration: 10000,
+            });
+            return;
+        }
+
+        // Lógica de finalização
+        setChampionships(prev => prev.map(c => c.id === championship.id ? { ...c, status: 'arquivado' } : c));
+        
+        // Simulação da geração de banner
+        if (championship.banner.ativo) {
+             // Simulação de lógica para encontrar o campeão do palpite de equipe
+            const melhorPalpiteiro = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+
+            mockHallOfFame.push({
+                id: `hof_${championship.id}`,
+                campeonatoLogoUrl: championship.banner.campeonatoLogoUrl || "https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png",
+                campeonatoNome: championship.nome,
+                campeaoGeralNome: championship.finalRanking?.pos1 || 'N/A',
+                campeaoGeralAvatarUrl: mockUsers.find(u => u.apelido === championship.finalRanking?.pos1)?.fotoPerfil || "https://picsum.photos/128/128",
+                modoEquipes: championship.modoEquipes,
+                palpiteiroNome: melhorPalpiteiro.apelido,
+                palpiteiroAvatarUrl: melhorPalpiteiro.fotoPerfil,
+                displayMode: championship.banner.displayMode || 'photo_and_names',
+            });
+             toast({
+                title: "Campeonato Finalizado e Banner Criado!",
+                description: `O campeonato "${championship.nome}" foi finalizado e um banner foi adicionado ao Hall da Fama.`,
+            });
+        } else {
+             toast({
+                title: "Campeonato Finalizado",
+                description: `O campeonato "${championship.nome}" foi finalizado e movido para os arquivados.`,
+            });
+        }
     };
 
 
@@ -151,7 +186,7 @@ export default function AdminChampionshipsPage() {
                              <ChampionshipTable
                                 championships={paginatedChampionships}
                                 handleEdit={handleEdit}
-                                handleArchive={handleArchive}
+                                handleFinalize={handleFinalize}
                                 handleDelete={handleDelete}
                             />
                         </CardContent>
@@ -169,7 +204,7 @@ export default function AdminChampionshipsPage() {
                             <ChampionshipTable
                                 championships={paginatedChampionships}
                                 handleEdit={handleEdit}
-                                handleArchive={handleArchive}
+                                handleFinalize={handleFinalize}
                                 handleDelete={handleDelete}
                             />
                         </CardContent>
@@ -210,12 +245,12 @@ export default function AdminChampionshipsPage() {
 interface ChampionshipTableProps {
     championships: Championship[];
     handleEdit: (championship: Championship) => void;
-    handleArchive: (championship: Championship) => void;
+    handleFinalize: (championship: Championship) => void;
     handleDelete: (championshipId: string) => void;
 }
 
 
-function ChampionshipTable({ championships, handleEdit, handleArchive, handleDelete }: ChampionshipTableProps) {
+function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDelete }: ChampionshipTableProps) {
     return (
         <Table>
             <TableHeader>
@@ -251,19 +286,14 @@ function ChampionshipTable({ championships, handleEdit, handleArchive, handleDel
                                                 <Pencil className="mr-2 h-4 w-4" />
                                                 Editar
                                             </DropdownMenuItem>
-                                             <DropdownMenuItem onClick={() => handleArchive(champ)}>
-                                                {champ.status === 'ativo' ? (
-                                                    <>
-                                                        <Archive className="mr-2 h-4 w-4" />
-                                                        Arquivar
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <ArchiveRestore className="mr-2 h-4 w-4" />
-                                                        Restaurar
-                                                    </>
-                                                )}
-                                            </DropdownMenuItem>
+                                             {champ.status === 'ativo' && (
+                                                <AlertDialogTrigger asChild>
+                                                    <DropdownMenuItem>
+                                                        <Award className="mr-2 h-4 w-4" />
+                                                        Finalizar Campeonato
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                            )}
                                             <DropdownMenuSeparator />
                                              <AlertDialogTrigger asChild>
                                                 <DropdownMenuItem className="text-destructive focus:text-destructive">
@@ -275,16 +305,28 @@ function ChampionshipTable({ championships, handleEdit, handleArchive, handleDel
                                     </DropdownMenu>
                                      <AlertDialogContent>
                                         <AlertDialogHeader>
-                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Esta ação removerá permanentemente o campeonato "{champ.nome}". Esta ação não pode ser desfeita.
-                                        </AlertDialogDescription>
+                                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                 Esta ação removerá permanentemente o campeonato "{champ.nome}". Esta ação não pode ser desfeita.
+                                            </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDelete(champ.id)}>Sim, excluir</AlertDialogAction>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(champ.id)}>Sim, excluir</AlertDialogAction>
                                         </AlertDialogFooter>
-                                    </AlertDialogContent>
+                                     </AlertDialogContent>
+                                     <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-amber-500" />Finalizar "{champ.nome}"?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta ação é irreversível. O campeonato será movido para os arquivados, e o banner de campeão será gerado (se ativado).
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleFinalize(champ)}>Sim, finalizar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                     </AlertDialogContent>
                                 </AlertDialog>
                             </TableCell>
                         </TableRow>
