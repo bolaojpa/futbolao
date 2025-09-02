@@ -31,11 +31,11 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Plus, X, Eye, Image as ImageIcon, ChevronsUpDown, Trophy } from 'lucide-react';
+import { CalendarIcon, Save, Plus, X, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import type { Championship } from '@/lib/data';
-import { useEffect, useState } from 'react';
+import type { Championship, Team } from '@/lib/data';
+import { useEffect, useState, useMemo } from 'react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
@@ -44,6 +44,10 @@ import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { mockTeams } from '@/lib/data';
+import { ScrollArea } from '../ui/scroll-area';
+import { Checkbox } from '../ui/checkbox';
+import Image from 'next/image';
 
 
 type Fase = {
@@ -59,6 +63,7 @@ const championshipFormSchema = z.object({
   dataFim: z.date({ required_error: "A data de fim é obrigatória." }),
   tipoCampeonato: z.enum(['liga', 'copa', 'avulso'], { required_error: "Selecione o tipo do campeonato." }),
   modoEquipes: z.enum(['times', 'selecao', 'mista'], { required_error: "Selecione o modo de equipes." }),
+  teamIds: z.array(z.string()).min(1, "Selecione pelo menos uma equipe."),
   formatoFases: z.enum(['fases', 'rodadas']).optional(),
   fases: z.array(z.object({ 
       nome: z.string().min(1, "O nome da fase é obrigatório."), 
@@ -124,6 +129,7 @@ interface ChampionshipFormProps {
 export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, children }: ChampionshipFormProps) {
   const [fasesList, setFasesList] = useState<Array<Fase>>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [teamSearch, setTeamSearch] = useState("");
   
   const form = useForm<ChampionshipFormValues>({
     resolver: zodResolver(championshipFormSchema),
@@ -132,6 +138,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         iconUrl: '',
         tipoCampeonato: 'liga',
         modoEquipes: 'times',
+        teamIds: [],
         pontuacao: { 
             tradicional: { ativo: true, exato: 10, situacao: 5 },
             combo: { ativo: false, gols: 3, placar: 7 },
@@ -156,6 +163,18 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const isChampionPredictionActive = watchAllFields.championPredictionSettings?.active;
   const tipoCampeonato = watchAllFields.tipoCampeonato;
   const formatoFases = watchAllFields.formatoFases;
+  const modoEquipes = watchAllFields.modoEquipes;
+  const selectedTeamIds = watchAllFields.teamIds || [];
+
+  const availableTeams = useMemo(() => {
+    return mockTeams
+      .filter(team => {
+        if (modoEquipes === 'mista') return true;
+        return team.type === (modoEquipes === 'times' ? 'club' : 'national');
+      })
+      .filter(team => team.name.toLowerCase().includes(teamSearch.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [modoEquipes, teamSearch]);
 
   useEffect(() => {
     if (isOpen && championship) {
@@ -166,6 +185,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         dataFim: typeof championship.dataFim === 'string' ? parseISO(championship.dataFim) : championship.dataFim,
         tipoCampeonato: championship.tipoCampeonato,
         modoEquipes: championship.modoEquipes,
+        teamIds: championship.teamIds || [],
         formatoFases: championship.formatoFases,
         rodadas: championship.rodadas,
         fases: championship.fases,
@@ -201,6 +221,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         dataFim: undefined,
         tipoCampeonato: 'liga',
         modoEquipes: 'times',
+        teamIds: [],
         pontuacao: { 
             tradicional: { ativo: true, exato: 10, situacao: 5 },
             combo: { ativo: false, gols: 3, placar: 7 },
@@ -254,10 +275,11 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       dataFim: data.dataFim.toISOString(),
       tipoCampeonato: data.tipoCampeonato,
       modoEquipes: data.modoEquipes,
+      teamIds: data.teamIds,
+      participantes: championship?.participantes || [],
       formatoFases: data.tipoCampeonato === 'liga' ? 'rodadas' : data.formatoFases,
       rodadas: data.tipoCampeonato === 'liga' ? data.rodadas : (data.formatoFases === 'rodadas' ? data.rodadas : undefined),
       fases: data.formatoFases === 'fases' ? data.fases : undefined,
-      participantes: championship?.participantes || [],
       pontuacao: {
         tradicional: data.pontuacao.tradicional,
         combo: data.pontuacao.combo,
@@ -299,7 +321,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -307,8 +329,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="general">Gerais</TabsTrigger>
+                    <TabsTrigger value="teams">Equipes</TabsTrigger>
                     <TabsTrigger value="scoring">Pontuação</TabsTrigger>
                     <TabsTrigger value="banner">Banner</TabsTrigger>
                     <TabsTrigger value="champion" disabled={!isBannerActive}>Palpite Campeão</TabsTrigger>
@@ -566,6 +589,75 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 )}
                              </div>
                         )}
+                    </TabsContent>
+                    <TabsContent value="teams" className="space-y-4">
+                        <Card>
+                            <CardHeader className="p-4">
+                               <div className="flex items-center justify-between">
+                                 <div>
+                                    <h3 className="text-md font-medium">Equipes Participantes</h3>
+                                    <p className="text-sm text-muted-foreground">Selecione as equipes que fazem parte deste campeonato.</p>
+                                </div>
+                                <Badge variant="secondary">{selectedTeamIds.length} selecionada(s)</Badge>
+                               </div>
+                                <div className="relative mt-4">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Buscar equipe..."
+                                        className="pl-8"
+                                        value={teamSearch}
+                                        onChange={(e) => setTeamSearch(e.target.value)}
+                                    />
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <FormField
+                                    control={form.control}
+                                    name="teamIds"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <ScrollArea className="h-72 w-full rounded-md border">
+                                            <div className="p-4 space-y-2">
+                                                {availableTeams.length > 0 ? availableTeams.map((team) => (
+                                                    <FormField
+                                                        key={team.id}
+                                                        control={form.control}
+                                                        name="teamIds"
+                                                        render={({ field }) => (
+                                                        <FormItem
+                                                            key={team.id}
+                                                            className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-muted"
+                                                        >
+                                                            <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(team.id)}
+                                                                onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? field.onChange([...field.value, team.id])
+                                                                    : field.onChange(
+                                                                        field.value?.filter(
+                                                                        (value) => value !== team.id
+                                                                        )
+                                                                    )
+                                                                }}
+                                                            />
+                                                            </FormControl>
+                                                            <Label className="font-normal w-full flex items-center gap-3">
+                                                                <Image src={team.crestUrl} alt={team.name} width={24} height={24} className="object-contain" />
+                                                                {team.name}
+                                                            </Label>
+                                                        </FormItem>
+                                                        )}
+                                                    />
+                                                )) : <p className="text-center text-sm text-muted-foreground">Nenhuma equipe encontrada.</p>}
+                                            </div>
+                                        </ScrollArea>
+                                        <FormMessage className="p-4" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                     <TabsContent value="scoring" className="space-y-4">
                         <Card>

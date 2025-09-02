@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -31,7 +32,7 @@ import { Calendar } from '../ui/calendar';
 import { CalendarIcon, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, setHours, setMinutes } from 'date-fns';
-import type { Match } from '@/lib/data';
+import type { Match, Team } from '@/lib/data';
 import { useEffect, useMemo } from 'react';
 import { mockChampionships, mockTeams } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -90,12 +91,14 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
     }, [selectedChampionship]);
 
     const teamOptions = useMemo(() => {
-        if (!selectedChampionship) return [];
-        const filteredTeams = mockTeams.filter(team => {
-            if (selectedChampionship.modoEquipes === 'mista') return true;
-            return team.type === (selectedChampionship.modoEquipes === 'times' ? 'club' : 'national');
-        });
-        return filteredTeams.map(team => ({ label: team.name, value: team.name }));
+        if (!selectedChampionship || !selectedChampionship.teamIds) return [];
+        
+        // Mapeia os IDs para os objetos completos das equipes
+        const participatingTeams: Team[] = selectedChampionship.teamIds
+            .map(id => mockTeams.find(team => team.id === id))
+            .filter((team): team is Team => !!team); // Filtra quaisquer equipes não encontradas
+
+        return participatingTeams.map(team => ({ label: team.name, value: team.name }));
     }, [selectedChampionship]);
 
 

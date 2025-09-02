@@ -77,6 +77,7 @@ export type Championship = {
   tipoCampeonato: 'liga' | 'copa' | 'avulso';
   modoEquipes: 'times' | 'selecao' | 'mista';
   participantes: string[]; // Array de user IDs
+  teamIds: string[]; // Array de team IDs
   formatoFases?: 'fases' | 'rodadas';
   fases?: Array<{ nome: string; idaEVolta: boolean; rodadas?: number; }>;
   rodadas?: number;
@@ -115,6 +116,7 @@ export const mockChampionships: Championship[] = [
     tipoCampeonato: 'liga',
     modoEquipes: 'times',
     participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5', 'user_6', 'user_7', 'user_8'],
+    teamIds: ['5', '57', '64', '66'], // Exemplo com alguns times
     rodadas: 38,
     pontuacao: { 
       tradicional: { ativo: true, exato: 10, situacao: 5 },
@@ -140,6 +142,7 @@ export const mockChampionships: Championship[] = [
     tipoCampeonato: 'copa',
     modoEquipes: 'times',
     participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5'],
+    teamIds: ['5', '64'], // Exemplo
     formatoFases: 'fases',
     fases: [
         { nome: 'Fase de Grupos', idaEVolta: true, rodadas: 6 },

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -48,11 +49,10 @@ const FinalizeChampionshipModal = ({ championship, children }: { championship: C
     const { toast } = useToast();
 
     const teamOptions = useMemo(() => {
-        const filteredTeams = mockTeams.filter(team => {
-            if (championship.modoEquipes === 'mista') return true;
-            return team.type === (championship.modoEquipes === 'times' ? 'club' : 'national');
-        });
-        return filteredTeams.map(team => ({ label: team.name, value: team.name }));
+        if (!championship.teamIds) return [];
+
+        const participatingTeams = mockTeams.filter(team => championship.teamIds.includes(team.id));
+        return participatingTeams.map(team => ({ label: team.name, value: team.name }));
     }, [championship]);
 
     const handleRankingChange = (position: string, value: string) => {
