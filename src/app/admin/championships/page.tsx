@@ -77,7 +77,7 @@ export default function AdminChampionshipsPage() {
     }
 
     const handleFinalize = (championship: Championship) => {
-        // Validação: Verifica se o ranking final foi preenchido
+        // Validação: Verifica se a classificação final foi preenchida
         const isRankingFilled = championship.finalRanking && Object.values(championship.finalRanking).some(v => !!v);
         if (!isRankingFilled) {
              toast({
@@ -270,7 +270,8 @@ function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDe
                     <TableHead>Nome do Campeonato</TableHead>
                     <TableHead className="hidden sm:table-cell">Data de Início</TableHead>
                     <TableHead className="hidden sm:table-cell">Data de Fim</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-center">Ações Principais</TableHead>
+                    <TableHead className="text-right">Outras Ações</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -283,6 +284,30 @@ function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDe
                             </TableCell>
                             <TableCell className="hidden sm:table-cell">
                                 <FormattedDate dateString={champ.dataFim as unknown as string} />
+                            </TableCell>
+                             <TableCell className="text-center">
+                                {champ.status === 'ativo' && (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                             <Button variant="default" size="sm">
+                                                <Award className="mr-2 h-4 w-4" />
+                                                Finalizar
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-amber-500" />Finalizar "{champ.nome}"?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Esta ação é irreversível. O campeonato será movido para os arquivados, e o banner de campeão será gerado (se ativado).
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleFinalize(champ)}>Sim, finalizar</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                )}
                             </TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
@@ -297,28 +322,6 @@ function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDe
                                             <Pencil className="mr-2 h-4 w-4" />
                                             Editar
                                         </DropdownMenuItem>
-                                        {champ.status === 'ativo' && (
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <DropdownMenuItem>
-                                                        <Award className="mr-2 h-4 w-4" />
-                                                        Finalizar Campeonato
-                                                    </DropdownMenuItem>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-amber-500" />Finalizar "{champ.nome}"?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Esta ação é irreversível. O campeonato será movido para os arquivados, e o banner de campeão será gerado (se ativado).
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleFinalize(champ)}>Sim, finalizar</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        )}
                                         <DropdownMenuSeparator />
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild>
@@ -347,7 +350,7 @@ function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDe
                     ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="h-24 text-center">
+                        <TableCell colSpan={5} className="h-24 text-center">
                             Nenhum campeonato encontrado.
                         </TableCell>
                     </TableRow>
@@ -356,5 +359,3 @@ function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDe
         </Table>
     )
 }
-
-    
