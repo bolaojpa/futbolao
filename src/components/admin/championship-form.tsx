@@ -43,7 +43,6 @@ import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { mockUsers } from '@/lib/data';
 import { getTeams, getUsers } from '@/lib/firebase/firestore';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -306,32 +305,12 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const handleFormSubmit = (data: ChampionshipFormValues) => {
     const finalData = {
       id: championship?.id,
-      nome: data.nome,
-      iconUrl: data.iconUrl,
+      ...data,
       dataInicio: data.dataInicio.toISOString(),
       dataFim: data.dataFim.toISOString(),
-      tipoCampeonato: data.tipoCampeonato,
-      modoEquipes: data.modoEquipes,
-      teamIds: data.teamIds,
-      participantes: data.participantes,
       formatoFases: data.tipoCampeonato === 'liga' ? 'rodadas' : data.formatoFases,
       rodadas: data.tipoCampeonato === 'liga' ? data.rodadas : (data.formatoFases === 'rodadas' ? data.rodadas : undefined),
       fases: data.formatoFases === 'fases' ? data.fases : undefined,
-      pontuacao: {
-        tradicional: data.pontuacao.tradicional,
-        combo: data.pontuacao.combo,
-      },
-      banner: { 
-        ativo: data.banner.ativo,
-        campeonatoLogoUrl: data.banner.campeonatoLogoUrl,
-        backgroundUrl: data.banner.backgroundUrl,
-        displayMode: data.banner.displayMode,
-       },
-       championPredictionSettings: {
-        active: data.championPredictionSettings.active,
-        numberOfPicks: data.championPredictionSettings.numberOfPicks || 3,
-       },
-       finalRanking: data.finalRanking,
     };
     onSubmit(finalData);
     setIsOpen(false);
@@ -1126,3 +1105,5 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   </>
   );
 }
+
+    
