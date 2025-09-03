@@ -15,15 +15,13 @@ export default function FamePage() {
                 </div>
             </div>
 
-            <div>
-                 {mockHallOfFame.length > 0 ? (
-                    <HallOfFameCarousel banners={mockHallOfFame} />
-                ) : (
-                    <div className="text-center text-muted-foreground py-10">
-                        <p>O Hall da Fama ainda está sendo construído. Volte em breve!</p>
-                    </div>
-                )}
-            </div>
+            {mockHallOfFame.length > 0 ? (
+                <HallOfFameCarousel banners={mockHallOfFame} />
+            ) : (
+                <div className="text-center text-muted-foreground py-10">
+                    <p>O Hall da Fama ainda está sendo construído. Volte em breve!</p>
+                </div>
+            )}
         </div>
     );
 }

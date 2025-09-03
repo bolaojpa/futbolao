@@ -4,7 +4,6 @@
 import { HallOfFameCarousel } from '@/components/fame/hall-of-fame-carousel';
 import { mockHallOfFame } from '@/lib/data';
 import { ShieldCheck } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 
 export default function AdminFamePage() {
     return (
@@ -19,17 +18,13 @@ export default function AdminFamePage() {
                 </div>
             </div>
 
-            <Card>
-                <CardContent className="p-6">
-                    {mockHallOfFame.length > 0 ? (
-                        <HallOfFameCarousel banners={mockHallOfFame} />
-                    ) : (
-                        <div className="text-center text-muted-foreground py-10">
-                            <p>Nenhum banner encontrado. Crie campeonatos e ative a opção de banner para vê-los aqui.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            {mockHallOfFame.length > 0 ? (
+                <HallOfFameCarousel banners={mockHallOfFame} />
+            ) : (
+                <div className="text-center text-muted-foreground py-10">
+                    <p>Nenhum banner encontrado. Crie campeonatos e ative a opção de banner para vê-los aqui.</p>
+                </div>
+            )}
         </div>
     );
 }
