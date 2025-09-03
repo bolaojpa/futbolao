@@ -7,12 +7,12 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  "projectId": "futbolo-pro",
+  "appId": "1:870720922540:web:0d4bd6cbbb85a534469009",
+  "storageBucket": "futbolo-pro.appspot.com",
+  "apiKey": "AIzaSyA-VhQ-5H5HZCLmR3DxBasuV0UKmoPnWMU",
+  "authDomain": "futbolo-pro.firebaseapp.com",
+  "messagingSenderId": "870720922540"
 };
 
 // Initialize Firebase
