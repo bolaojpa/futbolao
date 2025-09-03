@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { mockUsers } from '@/lib/data';
 import { format } from 'date-fns';
@@ -45,6 +45,20 @@ const mockSupportMessages = [
 ];
 
 type SupportMessage = typeof mockSupportMessages[0];
+
+const FormattedDate = ({ date }: { date: Date }) => {
+    const [formattedDate, setFormattedDate] = useState('');
+  
+    useEffect(() => {
+        setFormattedDate(format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }));
+    }, [date]);
+  
+    if (!formattedDate) {
+      return null;
+    }
+  
+    return <>{formattedDate}</>;
+};
 
 export default function AdminSupportPage() {
     const [messages, setMessages] = useState(mockSupportMessages);
@@ -145,7 +159,7 @@ export default function AdminSupportPage() {
                                     </div>
                                 </div>
                                 <span className="text-sm text-muted-foreground">
-                                    {format(selectedMessage.createdAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                    <FormattedDate date={selectedMessage.createdAt} />
                                 </span>
                             </div>
                             <div className="p-6 flex-1 overflow-y-auto">
