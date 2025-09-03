@@ -33,7 +33,7 @@ import { Calendar } from '../ui/calendar';
 import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import type { Championship, Team, UserType } from '@/lib/data';
+import type { Championship, Team, UserType } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -43,7 +43,8 @@ import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { mockTeams, mockUsers } from '@/lib/data';
+import { mockUsers } from '@/lib/data';
+import { getTeams, getUsers } from '@/lib/firebase/firestore';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
@@ -132,7 +133,7 @@ const predefinedPhases = [
 interface ChampionshipFormProps {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
-    onSubmit: (data: Championship) => void;
+    onSubmit: (data: Omit<Championship, 'id' | 'status'> & { id?: string }) => void;
     championship: Championship | null;
     children: React.ReactNode;
 }
@@ -142,6 +143,17 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [teamSearch, setTeamSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  
+  useEffect(() => {
+    async function fetchData() {
+        const [teamsData, usersData] = await Promise.all([getTeams(), getUsers()]);
+        setAllTeams(teamsData);
+        setAllUsers(usersData);
+    }
+    fetchData();
+  }, []);
   
   const form = useForm<ChampionshipFormValues>({
     resolver: zodResolver(championshipFormSchema),
@@ -187,26 +199,26 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const teamOptionsForRanking = useMemo(() => {
     if (!selectedTeamIds) return [];
 
-    const participatingTeams = mockTeams.filter(team => selectedTeamIds.includes(team.id));
+    const participatingTeams = allTeams.filter(team => selectedTeamIds.includes(team.id));
     return participatingTeams.map(team => ({ label: team.name, value: team.name }));
-  }, [selectedTeamIds]);
+  }, [selectedTeamIds, allTeams]);
 
   const availableTeams = useMemo(() => {
-    return mockTeams
+    return allTeams
       .filter(team => {
         if (modoEquipes === 'mista') return true;
         return team.type === (modoEquipes === 'times' ? 'club' : 'national');
       })
       .filter(team => team.name.toLowerCase().includes(teamSearch.toLowerCase()))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [modoEquipes, teamSearch]);
+  }, [modoEquipes, teamSearch, allTeams]);
   
   const availableUsers = useMemo(() => {
-    return mockUsers
+    return allUsers
       .filter(user => user.status === 'ativo' && user.funcao !== 'admin')
       .filter(user => user.apelido.toLowerCase().includes(userSearch.toLowerCase()) || user.nome.toLowerCase().includes(userSearch.toLowerCase()))
       .sort((a, b) => a.apelido.localeCompare(b.apelido));
-  }, [userSearch]);
+  }, [userSearch, allUsers]);
 
   useEffect(() => {
     if (isOpen) {
@@ -292,9 +304,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   };
 
   const handleFormSubmit = (data: ChampionshipFormValues) => {
-    const finalData: Championship = {
-      ...championship, 
-      id: championship?.id || `champ_${new Date().getTime()}`,
+    const finalData = {
+      id: championship?.id,
       nome: data.nome,
       iconUrl: data.iconUrl,
       dataInicio: data.dataInicio.toISOString(),
@@ -321,7 +332,6 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         numberOfPicks: data.championPredictionSettings.numberOfPicks || 3,
        },
        finalRanking: data.finalRanking,
-       status: championship?.status || 'ativo',
     };
     onSubmit(finalData);
     setIsOpen(false);
