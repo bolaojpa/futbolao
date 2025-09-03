@@ -39,7 +39,8 @@ export const mockUser = {
     }
   ],
   championPicks: [
-    { championshipId: 'champ_1', teams: ['FC Bayern München', 'Liverpool FC'] }
+    { championshipId: 'champ_1', teams: ['FC Bayern München', 'Liverpool FC'] },
+    { championshipId: 'champ_3', teams: ['Brazil', 'Argentina', 'Uruguay'] },
   ]
 };
 
