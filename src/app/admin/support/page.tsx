@@ -130,7 +130,7 @@ export default function AdminSupportPage() {
                 </div>
 
                 {/* Conteúdo da Mensagem */}
-                <div className="w-full md:w-2/3 flex flex-col">
+                <div className="w-full md:w-2/3 flex flex-col min-w-0">
                     {selectedMessage && selectedMessageUser ? (
                         <>
                             <div className="p-4 border-b flex items-center justify-between">
@@ -149,7 +149,7 @@ export default function AdminSupportPage() {
                                 </span>
                             </div>
                             <div className="p-6 flex-1 overflow-y-auto">
-                                <p className="whitespace-pre-wrap">{selectedMessage.message}</p>
+                                <p className="whitespace-pre-wrap break-words">{selectedMessage.message}</p>
                             </div>
                             <div className="p-4 border-t bg-muted/50">
                                  <Button>
