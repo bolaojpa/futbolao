@@ -265,9 +265,7 @@ export function PredictionForm() {
                             const isEditing = !!lastUpdated[match.id];
                             const currentScore = scores[match.id] || { placarA: null, placarB: null };
                             const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
-                            const championship = mockChampionships.find(c => c.id === match.campeonatoId);
-                            const champPicksLocked = championship && isPast(parseISO(championship.dataInicio as string));
-
+                            
                             return (
                                 <Card 
                                     key={match.id} 
@@ -290,16 +288,6 @@ export function PredictionForm() {
                                     <CardHeader className='pb-2 pt-4 text-center'>
                                         <CardTitle className="text-base font-semibold flex items-center justify-center gap-2">
                                             {match.campeonato}
-                                            {champPicksLocked && (
-                                                <Tooltip>
-                                                    <TooltipTrigger>
-                                                        <Trophy className="h-4 w-4 text-amber-500" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Palpites de campeão definidos.</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            )}
                                         </CardTitle>
                                         <div className="text-xs text-muted-foreground">
                                             <UpcomingMatchDate matchDateString={match.data} />
