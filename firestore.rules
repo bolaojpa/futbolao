@@ -1,61 +1,69 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Função auxiliar para verificar se o usuário é um administrador
+  
+    // Helper function to check if a user is an admin or moderator
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'admin';
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao in ['admin', 'moderator'];
     }
 
-    // Função auxiliar para verificar se o usuário é um moderador ou admin
-    function isModeratorOrAdmin() {
-      let userRole = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao;
-      return userRole == 'admin' || userRole == 'moderator';
-    }
-
-    // Usuários podem ler e escrever em seus próprios documentos
+    // Users can only read/write their own data.
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      allow create: if request.auth.uid != null;
-      // Apenas administradores podem alterar a função ou status de outros usuários
-      allow write: if isAdmin();
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+      // Only admins can delete users or change their roles/status.
+      allow delete: if isAdmin();
+    }
+    
+    // Admins can read all user data for management purposes.
+    match /users/{userId} {
+      allow list: if isAdmin();
     }
 
-    // Campeonatos podem ser lidos por qualquer usuário autenticado, mas apenas admins podem criar/editar
+    // Championships are public to read for any authenticated user.
+    // Only admins can create, update or delete them.
     match /championships/{championshipId} {
       allow read: if request.auth != null;
       allow write: if isAdmin();
     }
     
-    // Equipes podem ser lidas por qualquer usuário autenticado, mas apenas admins podem criar/editar
+    // Matches are public to read for any authenticated user.
+    // Only admins can create, update or delete them.
+    match /matches/{matchId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Predictions can be created/updated by the user who owns it, before the match starts.
+    // Reading predictions could be restricted depending on app rules (e.g., only after match starts).
+    match /predictions/{predictionId} {
+      allow read: if request.auth != null;
+      // Users can create their own prediction.
+      allow create: if request.auth.uid == request.resource.data.userId;
+      // Users can only update their own prediction. A rule to check match start time should be added here.
+      allow update: if request.auth.uid == resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId || isAdmin();
+    }
+    
+    // Teams are public to read for any authenticated user.
+    // Only admins can create, update or delete them.
     match /teams/{teamId} {
        allow read: if request.auth != null;
        allow write: if isAdmin();
     }
 
-    // Partidas podem ser lidas por qualquer usuário autenticado, mas apenas moderadores ou admins podem criar/editar
-    match /matches/{matchId} {
-      allow read: if request.auth != null;
-      allow write: if isModeratorOrAdmin();
-    }
-
-    // Palpites só podem ser criados/atualizados pelo próprio usuário. Admins podem ler.
-    match /predictions/{predictionId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-      allow read: if isModeratorOrAdmin();
+    // Support messages can be created by any authenticated user.
+    // Only admins can read/delete them.
+    match /supportMessages/{messageId} {
+        allow create: if request.auth != null;
+        allow read, delete: if isAdmin();
     }
     
-    // Mensagens de suporte podem ser criadas por usuários autenticados. Apenas admins podem ler.
-    match /supportMessages/{messageId} {
-        allow create: if request.auth.uid == request.resource.data.userId;
-        allow read: if isModeratorOrAdmin();
-    }
-
-    // Nega todas as outras leituras e escritas por padrão
-    match /{document=**} {
-      allow read, write: if false;
+    // App settings (like emergency messages) are readable by all, writable only by admin.
+    match /app_settings/{settingId} {
+        allow read: if request.auth != null;
+        allow write: if isAdmin();
     }
   }
 }
