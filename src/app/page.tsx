@@ -6,15 +6,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, Shield } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -60,23 +61,35 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRedirectBasedOnUser = async (user: any) => {
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (userDoc.exists()) {
-        const userData = userDoc.data();
-        if (userData.funcao === 'admin' || userData.funcao === 'moderator') {
-            router.push('/admin');
-        } else if (userData.status === 'pendente') {
-            router.push('/pending-approval');
-        } else if (userData.status === 'bloqueado') {
-            router.push('/account-blocked');
-        } else {
-            router.push('/dashboard');
-        }
-    } else {
-        // Edge case: user exists in Auth but not in Firestore.
-        // Could be a new user from Google sign-in. Let's assume they are a user for now.
-         router.push('/dashboard');
+  const handleRedirectBasedOnUser = async (user: FirebaseUser) => {
+    const userDocRef = doc(db, "users", user.uid);
+    try {
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.funcao === 'admin' || userData.funcao === 'moderator') {
+              router.push('/admin');
+          } else if (userData.status === 'pendente') {
+              router.push('/pending-approval');
+          } else if (userData.status === 'bloqueado') {
+              router.push('/account-blocked');
+          } else {
+              router.push('/dashboard');
+          }
+      } else {
+          // Edge case: User authenticated but no document in Firestore (e.g., first Google sign-in)
+          // Default redirect, assuming a new user will have a 'pendente' status created at signup.
+          // If they slip through, they land on dashboard, but security rules should protect data.
+           router.push('/dashboard');
+      }
+    } catch (error) {
+       console.error("Error fetching user data for redirect:", error);
+       toast({
+            variant: "destructive",
+            title: "Erro de Redirecionamento",
+            description: "Não foi possível buscar seus dados. Redirecionando para o dashboard.",
+        });
+       router.push('/dashboard'); // Fallback redirect
     }
   };
 
@@ -114,6 +127,13 @@ export default function LoginPage() {
     }
   };
 
+  // Simulação de login de admin para facilitar o desenvolvimento
+  const handleAdminLogin = async () => {
+      // Em um ambiente real, esta lógica não existiria ou seria protegida.
+      // Aqui, apenas redirecionamos para a área de admin.
+      router.push('/admin');
+  };
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
        <div className="flex flex-col items-center justify-center text-center mb-8">
@@ -146,6 +166,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
               <div className="relative">
@@ -157,16 +178,17 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
               <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                      <Checkbox id="remember-me" />
+                      <Checkbox id="remember-me" disabled={isLoading} />
                       <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                           Mantenha-me conectado
                       </Label>
                   </div>
-                  <Link href="/forgot-password" passHref>
+                  <Link href="/forgot-password" passHref className={isLoading ? 'pointer-events-none' : ''}>
                       <span className="text-sm font-semibold text-primary hover:underline">
                           Esqueceu a senha?
                       </span>
@@ -178,13 +200,9 @@ export default function LoginPage() {
               <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
                   {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
-              <Button type="button" className="w-full" variant="secondary" onClick={() => router.push('/admin')} disabled={isLoading}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Entrar como Admin
-              </Button>
             <div className="text-center text-sm">
               Não tem uma conta?{' '}
-              <Link href="/signup" className="font-semibold text-primary hover:underline">
+              <Link href="/signup" className={cn("font-semibold text-primary hover:underline", isLoading && "pointer-events-none")}>
                 Crie uma agora
               </Link>
             </div>
