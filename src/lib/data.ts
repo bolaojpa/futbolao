@@ -116,6 +116,12 @@ export type Championship = {
   };
 };
 
+// Helper para criar uma data futura para os mocks de campeonatos
+const futureChampionshipDate = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return date;
+}
 
 export const mockChampionships: Championship[] = [
   { 
@@ -176,6 +182,36 @@ export const mockChampionships: Championship[] = [
     championPredictionSettings: {
         active: false,
         numberOfPicks: 5,
+    }
+  },
+  { 
+    id: 'champ_3', 
+    nome: 'Copa América 2025 (Simulação)',
+    iconUrl: 'https://upload.wikimedia.org/wikipedia/pt/2/25/Copa_Am%C3%A9rica_2024.png',
+    dataInicio: futureChampionshipDate(30), 
+    dataFim: futureChampionshipDate(60), 
+    status: 'ativo',
+    tipoCampeonato: 'copa',
+    modoEquipes: 'selecao',
+    participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5', 'user_6', 'user_7', 'user_8'],
+    teamIds: ['760', '770', '759', '762'],
+    formatoFases: 'fases',
+    fases: [
+        { nome: 'Fase de Grupos', idaEVolta: false, rodadas: 3 },
+        { nome: 'Quartas de Final', idaEVolta: false },
+        { nome: 'Semifinal', idaEVolta: false },
+        { nome: 'Final', idaEVolta: false },
+    ],
+    pontuacao: {
+      tradicional: { ativo: true, exato: 12, situacao: 6 },
+    },
+    banner: {
+      ativo: true,
+      displayMode: 'photo_and_names',
+    },
+    championPredictionSettings: {
+        active: true,
+        numberOfPicks: 4,
     }
   },
 ];
@@ -487,4 +523,6 @@ export const mockTeams: Team[] = [
     { id: '66', name: 'Manchester United FC', crestUrl: 'https://crests.football-data.org/66.svg', type: 'club' },
     { id: '770', name: 'England', crestUrl: 'https://crests.football-data.org/770.svg', type: 'national' },
     { id: '760', name: 'Brazil', crestUrl: 'https://crests.football-data.org/760.svg', type: 'national' },
+    { id: '759', name: 'Argentina', crestUrl: 'https://crests.football-data.org/759.svg', type: 'national' },
+    { id: '762', name: 'Uruguay', crestUrl: 'https://crests.football-data.org/762.svg', type: 'national' },
 ];
