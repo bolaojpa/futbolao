@@ -147,7 +147,7 @@ export default function AdminSupportPage() {
                 <div className="w-full md:w-2/3 flex flex-col min-w-0">
                     {selectedMessage && selectedMessageUser ? (
                         <>
-                            <div className="p-4 border-b flex items-center justify-between">
+                            <div className="p-4 border-b flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-3">
                                     <Avatar>
                                         <AvatarImage src={selectedMessageUser.fotoPerfil} alt={selectedMessageUser.apelido} />
