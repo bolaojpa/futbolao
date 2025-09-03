@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { mockChampionships, mockTeams } from '@/lib/data';
 import { isFuture, parseISO } from 'date-fns';
-import { Trophy, Save, Info } from 'lucide-react';
+import { Trophy, Save, Info, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Label } from '@/components/ui/label';
@@ -17,7 +17,6 @@ import { Separator } from '../ui/separator';
 export function ChampionPrediction() {
     const { toast } = useToast();
     
-    // Filtra campeonatos que permitem palpite de campeão e ainda não começaram
     const availableChampionships = useMemo(() => {
         return mockChampionships.filter(champ => 
             champ.championPredictionSettings?.active && 
@@ -25,8 +24,8 @@ export function ChampionPrediction() {
         );
     }, []);
 
-    // Estado para guardar os palpites do usuário para cada campeonato
     const [predictions, setPredictions] = useState<Record<string, string[]>>({});
+    const [savedPicks, setSavedPicks] = useState<Record<string, boolean>>({});
 
     const handlePredictionChange = (championshipId: string, index: number, value: string) => {
         setPredictions(prev => {
@@ -55,28 +54,16 @@ export function ChampionPrediction() {
     };
 
     const handleSave = (championshipId: string, championshipName: string) => {
-        // Lógica de salvamento simulada
         console.log(`Salvando palpites para ${championshipName}:`, predictions[championshipId]);
         toast({
             title: "Palpites Salvos!",
             description: `Seus palpites de campeão para "${championshipName}" foram salvos com sucesso.`,
         });
+        setSavedPicks(prev => ({...prev, [championshipId]: true}));
     };
 
     if (availableChampionships.length === 0) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Trophy className="text-amber-500" />
-                        Palpites de Campeão
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-center text-muted-foreground py-4">Não há campeonatos abertos para palpites de campeão no momento.</p>
-                </CardContent>
-            </Card>
-        );
+        return null; // Não renderiza nada se não houver campeonatos elegíveis
     }
 
     return (
@@ -84,6 +71,7 @@ export function ChampionPrediction() {
             {availableChampionships.map(champ => {
                 const numberOfPicks = champ.championPredictionSettings?.numberOfPicks || 1;
                 const picksArray = Array.from({ length: numberOfPicks });
+                const arePicksMade = predictions[champ.id]?.every(p => p && p.length > 0) && predictions[champ.id]?.length === numberOfPicks;
 
                 return (
                     <Card key={champ.id}>
@@ -93,7 +81,10 @@ export function ChampionPrediction() {
                                     <Image src={champ.iconUrl} alt={champ.nome} width={40} height={40} />
                                 )}
                                 <div className="flex-1">
-                                    <CardTitle>{champ.nome}</CardTitle>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Trophy className="text-amber-500" />
+                                        Palpite de Campeão: {champ.nome}
+                                    </CardTitle>
                                     <CardDescription>
                                         Faça seus palpites para o ranking final. Os palpites serão bloqueados após o início do campeonato.
                                     </CardDescription>
@@ -121,11 +112,17 @@ export function ChampionPrediction() {
                                 <p>Você pode alterar seus palpites a qualquer momento antes do início da primeira partida do campeonato.</p>
                             </div>
                         </CardContent>
-                        <CardFooter>
-                            <Button onClick={() => handleSave(champ.id, champ.nome)}>
+                        <CardFooter className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <Button onClick={() => handleSave(champ.id, champ.nome)} disabled={!arePicksMade}>
                                 <Save className="mr-2 h-4 w-4" />
-                                Salvar Palpites para este Campeonato
+                                Salvar Palpites
                             </Button>
+                            {savedPicks[champ.id] && (
+                                <div className="flex items-center gap-2 text-sm text-green-600 animate-in fade-in">
+                                    <CheckCircle className="h-4 w-4" />
+                                    <p>Seus palpites para este campeonato foram salvos!</p>
+                                </div>
+                            )}
                         </CardFooter>
                     </Card>
                 );
