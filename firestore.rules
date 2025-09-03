@@ -1,0 +1,61 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Função auxiliar para verificar se o usuário é um administrador
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'admin';
+    }
+
+    // Função auxiliar para verificar se o usuário é um moderador ou admin
+    function isModeratorOrAdmin() {
+      let userRole = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao;
+      return userRole == 'admin' || userRole == 'moderator';
+    }
+
+    // Usuários podem ler e escrever em seus próprios documentos
+    match /users/{userId} {
+      allow read, update: if request.auth.uid == userId;
+      allow create: if request.auth.uid != null;
+      // Apenas administradores podem alterar a função ou status de outros usuários
+      allow write: if isAdmin();
+    }
+
+    // Campeonatos podem ser lidos por qualquer usuário autenticado, mas apenas admins podem criar/editar
+    match /championships/{championshipId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    // Equipes podem ser lidas por qualquer usuário autenticado, mas apenas admins podem criar/editar
+    match /teams/{teamId} {
+       allow read: if request.auth != null;
+       allow write: if isAdmin();
+    }
+
+    // Partidas podem ser lidas por qualquer usuário autenticado, mas apenas moderadores ou admins podem criar/editar
+    match /matches/{matchId} {
+      allow read: if request.auth != null;
+      allow write: if isModeratorOrAdmin();
+    }
+
+    // Palpites só podem ser criados/atualizados pelo próprio usuário. Admins podem ler.
+    match /predictions/{predictionId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+      allow read: if isModeratorOrAdmin();
+    }
+    
+    // Mensagens de suporte podem ser criadas por usuários autenticados. Apenas admins podem ler.
+    match /supportMessages/{messageId} {
+        allow create: if request.auth.uid == request.resource.data.userId;
+        allow read: if isModeratorOrAdmin();
+    }
+
+    // Nega todas as outras leituras e escritas por padrão
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
