@@ -16,7 +16,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { mockUser, mockMatches, mockPredictions, mockUsers, mockChampionships } from '@/lib/data';
+import { mockUser, mockMatches, mockPredictions, mockUsers, mockChampionships, mockTeams } from '@/lib/data';
 import { format, parseISO, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard } from 'lucide-react';
@@ -87,7 +87,7 @@ export default function DashboardPage() {
     if (a.pontos !== b.pontos) return b.pontos - a.pontos;
     if (a.exatos !== b.exatos) return b.exatos - b.exatos;
     if (a.tempoMedio !== b.tempoMedio) return a.tempoMedio - b.tempoMedio;
-    return new Date(a.dataCadastro).getTime() - new Date(a.dataCadastro).getTime();
+    return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
   });
   const leader = sortedUsers[0];
   const secondPlace = sortedUsers[1];
@@ -284,6 +284,10 @@ export default function DashboardPage() {
                                     {prediction.outrosPalpites.map((p, i) => {
                                         const otherUser = mockUsers.find(u => u.id === p.userId);
                                         if (!otherUser) return null;
+
+                                        const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                        const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+
                                         return (
                                         <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
                                             <div className="w-1/3 text-left">
@@ -295,7 +299,36 @@ export default function DashboardPage() {
                                                         </Avatar>
                                                         <StatusIndicator status={otherUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                                     </div>
-                                                    <span className="font-bold group-hover:underline">{p.apelido}:</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-bold group-hover:underline">{p.apelido}:</span>
+                                                        {chosenTeams.length > 0 && (
+                                                            <>
+                                                                <div className="hidden sm:flex items-center gap-1">
+                                                                    {chosenTeams.map(team => (
+                                                                        <Tooltip key={team.id}>
+                                                                            <TooltipTrigger>
+                                                                                 <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="rounded-full" />
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                        </Tooltip>
+                                                                    ))}
+                                                                </div>
+                                                                <div className="flex sm:hidden">
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger>
+                                                                            <Trophy className="h-4 w-4 text-amber-500" />
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent>
+                                                                            <p className='font-semibold'>Palpites de Campeão:</p>
+                                                                            <ul className='list-disc list-inside'>
+                                                                                {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
+                                                                            </ul>
+                                                                        </TooltipContent>
+                                                                    </Tooltip>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </Link>
                                             </div>
                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
@@ -487,6 +520,10 @@ export default function DashboardPage() {
                                     {prediction.outrosPalpites.map((p, i) => {
                                         const otherUser = mockUsers.find(u => u.id === p.userId);
                                         if (!otherUser) return null;
+
+                                        const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                        const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+
                                         return (
                                         <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
                                             <div className="w-1/3 text-left">
@@ -498,7 +535,36 @@ export default function DashboardPage() {
                                                     </Avatar>
                                                     <StatusIndicator status={otherUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                                 </div>
-                                                <span className="font-bold group-hover:underline">{p.apelido}:</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="font-bold group-hover:underline">{p.apelido}:</span>
+                                                    {chosenTeams.length > 0 && (
+                                                        <>
+                                                            <div className="hidden sm:flex items-center gap-1">
+                                                                {chosenTeams.map(team => (
+                                                                    <Tooltip key={team.id}>
+                                                                        <TooltipTrigger>
+                                                                             <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="rounded-full" />
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                    </Tooltip>
+                                                                ))}
+                                                            </div>
+                                                            <div className="flex sm:hidden">
+                                                                <Tooltip>
+                                                                    <TooltipTrigger>
+                                                                        <Trophy className="h-4 w-4 text-amber-500" />
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        <p className='font-semibold'>Palpites de Campeão:</p>
+                                                                        <ul className='list-disc list-inside'>
+                                                                            {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
+                                                                        </ul>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </Link>
                                             </div>
                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>

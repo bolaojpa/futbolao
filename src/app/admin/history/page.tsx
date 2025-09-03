@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mockAllMatches, mockPredictions, mockChampionships, mockUsers } from '@/lib/data';
+import { mockAllMatches, mockPredictions, mockChampionships, mockUsers, mockTeams } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle } from 'lucide-react';
@@ -27,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 
 type FilterType = 'all' | 'exact' | 'situation' | 'miss';
@@ -179,6 +181,7 @@ export default function AdminHistoryPage() {
       </div>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <TooltipProvider>
         <div className="w-full space-y-4">
           {Object.keys(paginatedItems).length > 0 ? (
             Object.entries(paginatedItems).map(([phase, matches]) => (
@@ -262,6 +265,10 @@ export default function AdminHistoryPage() {
                                     {allPredictionsForMatch.map((p, i) => {
                                       const user = mockUsers.find(u => u.id === p.userId);
                                       if (!user) return null;
+                                      
+                                      const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                      const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+
                                       return (
                                       <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
                                         <div className="w-1/3 text-left flex items-center gap-2 group">
@@ -272,7 +279,36 @@ export default function AdminHistoryPage() {
                                               </Avatar>
                                               <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                           </div>
-                                          <span className="font-bold">{user.apelido}:</span>
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="font-bold">{user.apelido}:</span>
+                                            {chosenTeams.length > 0 && (
+                                                <>
+                                                    <div className="hidden sm:flex items-center gap-1">
+                                                        {chosenTeams.map(team => (
+                                                            <Tooltip key={team.id}>
+                                                                <TooltipTrigger>
+                                                                     <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="rounded-full" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                            </Tooltip>
+                                                        ))}
+                                                    </div>
+                                                    <div className="flex sm:hidden">
+                                                        <Tooltip>
+                                                            <TooltipTrigger>
+                                                                <Trophy className="h-4 w-4 text-amber-500" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p className='font-semibold'>Palpites de Campeão:</p>
+                                                                <ul className='list-disc list-inside'>
+                                                                    {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
+                                                                </ul>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                </>
+                                            )}
+                                          </div>
                                         </div>
                                         <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                         <div className="w-1/3 text-right">
@@ -303,6 +339,7 @@ export default function AdminHistoryPage() {
               </Card>
           )}
         </div>
+        </TooltipProvider>
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Editar Placar Final</DialogTitle>

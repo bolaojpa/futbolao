@@ -11,10 +11,10 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mockMatches, mockPredictions, mockUser, mockChampionships, mockUsers } from '@/lib/data';
+import { mockMatches, mockPredictions, mockUser, mockChampionships, mockUsers, mockTeams } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, History, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, History, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,6 +23,8 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 type FilterType = 'all' | 'exact' | 'situation' | 'miss';
 const ITEMS_PER_PAGE = 5;
@@ -217,6 +219,7 @@ export default function HistoryPage() {
           </Select>
       </div>
 
+    <TooltipProvider>
       <div className="w-full space-y-4">
         {Object.keys(paginatedItems).length > 0 ? (
           Object.entries(paginatedItems).map(([phase, matches]) => (
@@ -282,6 +285,10 @@ export default function HistoryPage() {
                               {prediction.outrosPalpites.map((p, i) => {
                                 const otherUser = mockUsers.find(u => u.id === p.userId);
                                 if (!otherUser) return null;
+                                
+                                const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+
                                 return (
                                 <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
                                   <div className="w-1/3 text-left">
@@ -293,7 +300,36 @@ export default function HistoryPage() {
                                         </Avatar>
                                         <StatusIndicator status={otherUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                       </div>
-                                      <span className="font-bold group-hover:underline">{p.apelido}:</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-bold group-hover:underline">{p.apelido}:</span>
+                                         {chosenTeams.length > 0 && (
+                                            <>
+                                                <div className="hidden sm:flex items-center gap-1">
+                                                    {chosenTeams.map(team => (
+                                                        <Tooltip key={team.id}>
+                                                            <TooltipTrigger>
+                                                                 <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="rounded-full" />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                        </Tooltip>
+                                                    ))}
+                                                </div>
+                                                <div className="flex sm:hidden">
+                                                    <Tooltip>
+                                                        <TooltipTrigger>
+                                                            <Trophy className="h-4 w-4 text-amber-500" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p className='font-semibold'>Palpites de Campeão:</p>
+                                                            <ul className='list-disc list-inside'>
+                                                                {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
+                                                            </ul>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                            </>
+                                        )}
+                                      </div>
                                     </Link>
                                   </div>
                                   <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpite.replace(/\s/g, '')}</span>
@@ -322,6 +358,7 @@ export default function HistoryPage() {
             </Card>
         )}
       </div>
+      </TooltipProvider>
 
        {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 mt-8">

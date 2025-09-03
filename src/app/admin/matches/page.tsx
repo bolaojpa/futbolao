@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -9,10 +10,10 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockAllMatches, mockPredictions, mockChampionships, mockUsers } from '@/lib/data';
+import { mockAllMatches, mockPredictions, mockChampionships, mockUsers, mockTeams } from '@/lib/data';
 import { format, parseISO, differenceInHours, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown } from 'lucide-react';
+import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -186,7 +187,7 @@ export default function AdminMatchesPage() {
         championshipId={editingMatch ? editingMatch.campeonatoId : selectedChampionship}
       />
 
-
+      <TooltipProvider>
       <div className="w-full space-y-4">
         {paginatedMatches.length > 0 ? (
           paginatedMatches.map((match) => {
@@ -296,18 +297,51 @@ export default function AdminMatchesPage() {
                                 {allPredictionsForMatch.map((p, i) => {
                                     const user = mockUsers.find(u => u.id === p.userId);
                                     if (!user) return null;
+                                    
+                                    const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                    const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+
                                     return (
                                     <li key={i} className={cn("flex justify-between items-center p-4 border-t")}>
-                                    <div className="w-1/3 text-left flex items-center gap-2 group">
-                                        <div className="relative">
-                                            <Avatar className="w-8 h-8">
-                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                            <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                            </Avatar>
-                                            <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                        <div className="w-1/3 text-left flex items-center gap-2 group">
+                                            <div className="relative">
+                                                <Avatar className="w-8 h-8">
+                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                </Avatar>
+                                                <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="font-bold">{user.apelido}:</span>
+                                                {chosenTeams.length > 0 && (
+                                                    <>
+                                                        <div className="hidden sm:flex items-center gap-1">
+                                                            {chosenTeams.map(team => (
+                                                                <Tooltip key={team.id}>
+                                                                    <TooltipTrigger>
+                                                                         <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="rounded-full" />
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                </Tooltip>
+                                                            ))}
+                                                        </div>
+                                                        <div className="flex sm:hidden">
+                                                            <Tooltip>
+                                                                <TooltipTrigger>
+                                                                    <Trophy className="h-4 w-4 text-amber-500" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p className='font-semibold'>Palpites de Campeão:</p>
+                                                                    <ul className='list-disc list-inside'>
+                                                                        {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
+                                                                    </ul>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                        <span className="font-bold">{user.apelido}:</span>
-                                    </div>
                                     <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                     <div className="w-1/3 text-right">
                                     </div>
@@ -334,6 +368,7 @@ export default function AdminMatchesPage() {
             </Card>
         )}
       </div>
+      </TooltipProvider>
 
        {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 mt-8">

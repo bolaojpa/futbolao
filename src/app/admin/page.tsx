@@ -4,10 +4,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { mockAllMatches, Match, mockUsers, mockPredictions, mockChampionships, mockLogs, mockNotifications } from '@/lib/data';
+import { mockAllMatches, Match, mockUsers, mockPredictions, mockChampionships, mockLogs, mockNotifications, mockTeams } from '@/lib/data';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown } from 'lucide-react';
+import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -283,25 +283,56 @@ export default function AdminDashboardPage() {
                                                         if (!user || !match.maxPontos) return null;
                                                         
                                                         const simulatedPoints = calculateSimulatedPoints(match, p.palpiteUsuario.placarA, p.palpiteUsuario.placarB);
+                                                        const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                                        const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
 
                                                         return (
                                                         <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedPoints, match.maxPontos))}>
-                                                        <div className="w-1/3 text-left flex items-center gap-2 group">
-                                                            <div className="relative">
-                                                                <Avatar className="w-8 h-8">
-                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                                                </Avatar>
-                                                                <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                                            <div className="w-1/3 text-left flex items-center gap-2 group">
+                                                                <div className="relative">
+                                                                    <Avatar className="w-8 h-8">
+                                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="font-bold">{user.apelido}:</span>
+                                                                    {chosenTeams.length > 0 && (
+                                                                        <>
+                                                                            <div className="hidden sm:flex items-center gap-1">
+                                                                                {chosenTeams.map(team => (
+                                                                                    <Tooltip key={team.id}>
+                                                                                        <TooltipTrigger>
+                                                                                             <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="rounded-full" />
+                                                                                        </TooltipTrigger>
+                                                                                        <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                                    </Tooltip>
+                                                                                ))}
+                                                                            </div>
+                                                                            <div className="flex sm:hidden">
+                                                                                <Tooltip>
+                                                                                    <TooltipTrigger>
+                                                                                        <Trophy className="h-4 w-4 text-amber-500" />
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent>
+                                                                                        <p className='font-semibold'>Palpites de Campeão:</p>
+                                                                                        <ul className='list-disc list-inside'>
+                                                                                            {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
+                                                                                        </ul>
+                                                                                    </TooltipContent>
+                                                                                </Tooltip>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                            <span className="font-bold">{user.apelido}:</span>
-                                                        </div>
-                                                        <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
-                                                        <div className="w-1/3 text-right">
-                                                            <Badge variant={getPointsBadgeVariant(simulatedPoints, match.maxPontos)} className='whitespace-nowrap'>
-                                                            {simulatedPoints} pts
-                                                            </Badge>
-                                                        </div>
+                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                            <div className="w-1/3 text-right">
+                                                                <Badge variant={getPointsBadgeVariant(simulatedPoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                                {simulatedPoints} pts
+                                                                </Badge>
+                                                            </div>
                                                         </li>
                                                     )})}
                                                     </ul>
