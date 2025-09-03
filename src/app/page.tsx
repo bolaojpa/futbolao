@@ -9,6 +9,13 @@ import { Separator } from '@/components/ui/separator';
 import { Mail, Lock, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
@@ -47,6 +54,66 @@ function AppLogo() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRedirectBasedOnUser = async (user: any) => {
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.funcao === 'admin' || userData.funcao === 'moderator') {
+            router.push('/admin');
+        } else if (userData.status === 'pendente') {
+            router.push('/pending-approval');
+        } else if (userData.status === 'bloqueado') {
+            router.push('/account-blocked');
+        } else {
+            router.push('/dashboard');
+        }
+    } else {
+        // Edge case: user exists in Auth but not in Firestore.
+        // Could be a new user from Google sign-in. Let's assume they are a user for now.
+         router.push('/dashboard');
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        await handleRedirectBasedOnUser(userCredential.user);
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Erro de Login",
+            description: "Email ou senha inválidos. Por favor, tente novamente.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        await handleRedirectBasedOnUser(result.user);
+    } catch (error: any) {
+         toast({
+            variant: "destructive",
+            title: "Erro ao logar com Google",
+            description: "Não foi possível fazer login com o Google. Tente novamente.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
        <div className="flex flex-col items-center justify-center text-center mb-8">
@@ -58,59 +125,71 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-headline">Acessar sua conta</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-             <Button variant="outline" className="w-full">
-              <GoogleIcon className="mr-2 h-4 w-4" />
-              Continuar com Google
-            </Button>
-            <div className="flex items-center space-x-2">
-                <Separator className="flex-1" />
-                <span className="px-2 text-xs text-muted-foreground">OU</span>
-                <Separator className="flex-1" />
+        <form onSubmit={handleEmailLogin}>
+          <CardContent>
+            <div className="space-y-4">
+              <Button variant="outline" className="w-full" type="button" onClick={handleGoogleLogin} disabled={isLoading}>
+                <GoogleIcon className="mr-2 h-4 w-4" />
+                Continuar com Google
+              </Button>
+              <div className="flex items-center space-x-2">
+                  <Separator className="flex-1" />
+                  <span className="px-2 text-xs text-muted-foreground">OU</span>
+                  <Separator className="flex-1" />
+              </div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                  type="email" 
+                  placeholder="seu@email.com" 
+                  className="pl-10" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                  type="password" 
+                  placeholder="Sua senha" 
+                  className="pl-10" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                      <Checkbox id="remember-me" />
+                      <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Mantenha-me conectado
+                      </Label>
+                  </div>
+                  <Link href="/forgot-password" passHref>
+                      <span className="text-sm font-semibold text-primary hover:underline">
+                          Esqueceu a senha?
+                      </span>
+                  </Link>
+              </div>
             </div>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input type="email" placeholder="seu@email.com" className="pl-10" />
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
+                  {isLoading ? 'Entrando...' : 'Entrar'}
+              </Button>
+              <Button type="button" className="w-full" variant="secondary" onClick={() => router.push('/admin')} disabled={isLoading}>
+                  <Shield className="mr-2 h-4 w-4" />
+                  Entrar como Admin
+              </Button>
+            <div className="text-center text-sm">
+              Não tem uma conta?{' '}
+              <Link href="/signup" className="font-semibold text-primary hover:underline">
+                Crie uma agora
+              </Link>
             </div>
-            <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input type="password" placeholder="Sua senha" className="pl-10" />
-            </div>
-             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="remember-me" />
-                    <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Mantenha-me conectado
-                    </Label>
-                </div>
-                <Link href="/forgot-password" passHref>
-                    <span className="text-sm font-semibold text-primary hover:underline">
-                        Esqueceu a senha?
-                    </span>
-                </Link>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                    <Link href="/dashboard">Entrar como Usuário</Link>
-                </Button>
-                 <Button asChild className="w-full" variant="secondary">
-                    <Link href="/admin">
-                        <Shield className="mr-2 h-4 w-4" />
-                        Entrar como Admin
-                    </Link>
-                </Button>
-            </div>
-          <div className="text-center text-sm">
-            Não tem uma conta?{' '}
-            <Link href="/signup" className="font-semibold text-primary hover:underline">
-              Crie uma agora
-            </Link>
-          </div>
-        </CardFooter>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );

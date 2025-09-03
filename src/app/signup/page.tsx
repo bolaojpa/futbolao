@@ -8,6 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Mail, Lock, User, AtSign } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
@@ -27,6 +34,90 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export default function SignupPage() {
+    const router = useRouter();
+    const { toast } = useToast();
+    const [nome, setNome] = useState('');
+    const [apelido, setApelido] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSignup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (password !== confirmPassword) {
+            toast({
+                variant: "destructive",
+                title: "Erro de Cadastro",
+                description: "As senhas não coincidem.",
+            });
+            return;
+        }
+        setIsLoading(true);
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Store user info in Firestore
+            await setDoc(doc(db, "users", user.uid), {
+                nome,
+                apelido,
+                email: user.email,
+                fotoPerfil: user.photoURL || `https://picsum.photos/100/100?text=${apelido.charAt(0)}`,
+                status: 'pendente',
+                funcao: 'usuario',
+                dataCadastro: serverTimestamp(),
+            });
+            
+            router.push('/pending-approval');
+
+        } catch (error: any) {
+            let description = "Ocorreu um erro durante o cadastro. Tente novamente.";
+            if (error.code === 'auth/email-already-in-use') {
+                description = "Este endereço de e-mail já está em uso.";
+            } else if (error.code === 'auth/weak-password') {
+                description = "A senha é muito fraca. Tente uma senha com pelo menos 6 caracteres.";
+            }
+            toast({
+                variant: "destructive",
+                title: "Erro de Cadastro",
+                description: description,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleSignup = async () => {
+        setIsLoading(true);
+        const provider = new GoogleAuthProvider();
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+             await setDoc(doc(db, "users", user.uid), {
+                nome: user.displayName,
+                apelido: user.displayName?.split(' ')[0] || user.email, // Use first name as nickname
+                email: user.email,
+                fotoPerfil: user.photoURL,
+                status: 'pendente',
+                funcao: 'usuario',
+                dataCadastro: serverTimestamp(),
+            }, { merge: true }); // Merge to not overwrite existing data if user logs in again
+
+            router.push('/pending-approval');
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Erro ao cadastrar com Google",
+                description: "Não foi possível criar a conta com o Google. Tente novamente.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md shadow-2xl">
@@ -34,50 +125,52 @@ export default function SignupPage() {
           <CardTitle className="text-3xl font-headline">Crie sua conta</CardTitle>
           <CardDescription>Junte-se ao FutBolão Pro e comece a palpitar!</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Button variant="outline" className="w-full">
-                <GoogleIcon className="mr-2 h-4 w-4" />
-                Continuar com Google
-            </Button>
-            <div className="flex items-center space-x-2">
-                <Separator className="flex-1" />
-                <span className="px-2 text-xs text-muted-foreground">OU</span>
-                <Separator className="flex-1" />
+        <form onSubmit={handleSignup}>
+          <CardContent>
+            <div className="space-y-4">
+              <Button variant="outline" className="w-full" type="button" onClick={handleGoogleSignup} disabled={isLoading}>
+                  <GoogleIcon className="mr-2 h-4 w-4" />
+                  Continuar com Google
+              </Button>
+              <div className="flex items-center space-x-2">
+                  <Separator className="flex-1" />
+                  <span className="px-2 text-xs text-muted-foreground">OU</span>
+                  <Separator className="flex-1" />
+              </div>
+              <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input type="text" placeholder="Nome completo" className="pl-10" required value={nome} onChange={(e) => setNome(e.target.value)} />
+              </div>
+              <div className="relative">
+                  <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input type="text" placeholder="Apelido (como aparecerá no ranking)" className="pl-10" value={apelido} onChange={(e) => setApelido(e.target.value)} />
+              </div>
+              <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input type="email" placeholder="seu@email.com" className="pl-10" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input type="password" placeholder="Crie uma senha forte" className="pl-10" required value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+              <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input type="password" placeholder="Confirme sua senha" className="pl-10" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              </div>
             </div>
-            <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="text" placeholder="Nome completo" className="pl-10" required />
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
+                  {isLoading ? 'Criando conta...' : 'Criar Conta'}
+              </Button>
+            <div className="text-center text-sm">
+              Já tem uma conta?{' '}
+              <Link href="/" className="font-semibold text-primary hover:underline">
+                Faça login
+              </Link>
             </div>
-            <div className="relative">
-                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="text" placeholder="Apelido (como aparecerá no ranking)" className="pl-10" />
-            </div>
-            <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="email" placeholder="seu@email.com" className="pl-10" required />
-            </div>
-            <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="password" placeholder="Crie uma senha forte" className="pl-10" required />
-            </div>
-            <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="password" placeholder="Confirme sua senha" className="pl-10" required />
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-            <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Link href="/pending-approval">Criar Conta</Link>
-            </Button>
-          <div className="text-center text-sm">
-            Já tem uma conta?{' '}
-            <Link href="/" className="font-semibold text-primary hover:underline">
-              Faça login
-            </Link>
-          </div>
-        </CardFooter>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );
