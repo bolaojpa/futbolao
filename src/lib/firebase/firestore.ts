@@ -9,8 +9,9 @@ import {
   deleteDoc,
   query,
   where,
+  serverTimestamp,
 } from 'firebase/firestore';
-import type { UserType, Team } from '../types';
+import type { UserType, Team, Championship } from '../types';
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -90,4 +91,46 @@ export async function deleteTeams(teamIds: string[]): Promise<void> {
     });
 
     await batch.commit();
+}
+
+/**
+ * Fetches all championships from the Firestore 'championships' collection.
+ */
+export async function getChampionships(): Promise<Championship[]> {
+    const championshipsCollection = collection(db, 'championships');
+    const championshipSnapshot = await getDocs(championshipsCollection);
+    const championshipList = championshipSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
+    return championshipList;
+}
+
+/**
+ * Adds a new championship to the Firestore 'championships' collection.
+ * @param championshipData - The data for the new championship.
+ */
+export async function addChampionship(championshipData: Omit<Championship, 'id'>): Promise<Championship> {
+    const championshipsCollection = collection(db, 'championships');
+    const docRef = await addDoc(championshipsCollection, {
+        ...championshipData,
+        createdAt: serverTimestamp() 
+    });
+    return { id: docRef.id, ...championshipData };
+}
+
+/**
+ * Updates an existing championship in Firestore.
+ * @param championshipId - The ID of the championship to update.
+ * @param championshipData - An object containing the fields to update.
+ */
+export async function updateChampionship(championshipId: string, championshipData: Partial<Championship>): Promise<void> {
+    const championshipDocRef = doc(db, 'championships', championshipId);
+    await updateDoc(championshipDocRef, championshipData);
+}
+
+/**
+ * Deletes a championship from Firestore.
+ * @param championshipId - The ID of the championship to delete.
+ */
+export async function deleteChampionship(championshipId: string): Promise<void> {
+    const championshipDocRef = doc(db, 'championships', championshipId);
+    await deleteDoc(championshipDocRef);
 }
