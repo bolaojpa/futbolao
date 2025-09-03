@@ -127,13 +127,6 @@ export default function LoginPage() {
     }
   };
 
-  // Simulação de login de admin para facilitar o desenvolvimento
-  const handleAdminLogin = async () => {
-      // Em um ambiente real, esta lógica não existiria ou seria protegida.
-      // Aqui, apenas redirecionamos para a área de admin.
-      router.push('/admin');
-  };
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
        <div className="flex flex-col items-center justify-center text-center mb-8">

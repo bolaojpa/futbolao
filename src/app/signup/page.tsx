@@ -60,6 +60,7 @@ export default function SignupPage() {
 
             // Store user info in Firestore
             await setDoc(doc(db, "users", user.uid), {
+                id: user.uid,
                 nome,
                 apelido,
                 email: user.email,
@@ -96,6 +97,7 @@ export default function SignupPage() {
             const user = result.user;
 
              await setDoc(doc(db, "users", user.uid), {
+                id: user.uid,
                 nome: user.displayName,
                 apelido: user.displayName?.split(' ')[0] || user.email, // Use first name as nickname
                 email: user.email,
