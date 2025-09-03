@@ -17,18 +17,29 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, Settings, LifeBuoy, Circle } from 'lucide-react';
-import { mockUser, type UserType } from '@/lib/data';
 import Link from 'next/link';
 import { StatusIndicator } from './status-indicator';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '../ui/skeleton';
 
 export function UserNav() {
-  const { nome, email, apelido, fotoPerfil } = mockUser;
+  const { user, loading } = useAuth();
+  // Em um app real, isso seria gerenciado por um estado global (Context/Zustand) e salvo no DB
+  const [currentStatus, setCurrentStatus] = useState<UserType['presenceStatus']>('Disponível');
+
+  if (loading) {
+    return <Skeleton className="h-9 w-9 rounded-full" />;
+  }
+
+  if (!user) {
+    return null; // Ou um botão de Login
+  }
+  
+  const { apelido, email, fotoPerfil } = user;
   const fallbackInitials = apelido.substring(0, 2).toUpperCase();
 
-  // Em um app real, isso seria gerenciado por um estado global (Context/Zustand)
-  const [currentStatus, setCurrentStatus] = useState<UserType['presenceStatus']>(mockUser.presenceStatus);
 
   const statuses: UserType['presenceStatus'][] = ["Disponível", "Ausente", "Ocupado", "Não perturbe", "Offline"];
   

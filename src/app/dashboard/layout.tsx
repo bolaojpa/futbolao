@@ -7,7 +7,6 @@ import { EmergencyMessageModal } from '@/components/shared/emergency-message-mod
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useState, useEffect } from 'react';
 import { AuthProvider } from '@/hooks/use-auth';
-import { mockEmergencyMessage } from '@/lib/data'; // We'll keep this for now
 
 export default function DashboardLayout({
   children,
@@ -16,16 +15,12 @@ export default function DashboardLayout({
 }) {
   const [emergencyMessage, setEmergencyMessage] = useState<{ title: string; message: string; } | null>(null);
 
-  // This logic will be updated later to fetch from Firestore
+  // Esta lógica será atualizada posteriormente para buscar do Firestore
   useEffect(() => {
-    if (mockEmergencyMessage.active && mockEmergencyMessage.type === 'urgent') {
-        // Here we would check if the current user is in `targetUserIds`
-        // For now, we show to all for demonstration
-        setEmergencyMessage({
-            title: mockEmergencyMessage.title,
-            message: mockEmergencyMessage.message,
-        });
-    }
+    // Exemplo de como poderia funcionar no futuro
+    // if (fetchedMessage.active && isUserInTarget(fetchedMessage.targetUserIds)) {
+    //   setEmergencyMessage(fetchedMessage);
+    // }
   }, []);
 
   const handleCloseEmergencyModal = () => {
