@@ -30,11 +30,10 @@ export function ChampionPrediction() {
 
         mockChampionships.forEach(champ => {
             const hasPrediction = mockUser.championPicks?.some(p => p.championshipId === champ.id);
-            const isPredictionActive = champ.championPredictionSettings?.active;
-            if (!isPredictionActive) return;
-
-            const startDate = typeof champ.dataInicio === 'string' ? champ.dataInicio : champ.dataInicio.toISOString();
-            const isPredictionOpen = isFuture(parseISO(startDate));
+            if (!champ.championPredictionSettings?.active) return;
+            
+            const startDateString = typeof champ.dataInicio === 'string' ? champ.dataInicio : champ.dataInicio.toISOString();
+            const isPredictionOpen = isFuture(parseISO(startDateString));
 
             if (isPredictionOpen) {
                 open.push(champ);
@@ -132,7 +131,7 @@ export function ChampionPrediction() {
                                         <AccordionTrigger>
                                             <div className="flex items-center gap-3 flex-1">
                                                 {champ.iconUrl && (
-                                                    <Image src={champ.iconUrl} alt={champ.nome} width={24} height={24} />
+                                                    <Image src={champ.iconUrl} alt="" width={24} height={24} />
                                                 )}
                                                 <span className="font-semibold">{champ.nome}</span>
                                             </div>
@@ -192,7 +191,7 @@ export function ChampionPrediction() {
                                 return (
                                     <div key={champ.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
                                         <div className="flex items-center gap-2">
-                                            {champ.iconUrl && <Image src={champ.iconUrl} alt={champ.nome} width={20} height={20} />}
+                                            {champ.iconUrl && <Image src={champ.iconUrl} alt="" width={20} height={20} />}
                                             <span className="font-semibold text-sm">{champ.nome}:</span>
                                         </div>
                                         <div className="flex items-center gap-2">
