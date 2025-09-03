@@ -368,11 +368,6 @@ export default function DashboardPage() {
                 const championship = mockChampionships.find(c => c.id === match.campeonatoId);
                 const displayStatus = getMatchDisplayStatus(match.data, match.status);
                 
-                const predictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
-                const participants = championship?.participantes || [];
-                const missingPredictionsCount = participants.filter(pId => !predictionsForMatch.some(pred => pred.userId === pId)).length;
-                const hasMissingPredictions = displayStatus === 'Hoje' && missingPredictionsCount > 0;
-
                 return (
                     <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
                     <Card className={cn(
@@ -388,18 +383,6 @@ export default function DashboardPage() {
                                 </TooltipTrigger>
                                 <TooltipContent side="top">
                                     <p>Seu palpite é necessário! Esta partida começa em breve.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        )}
-                        {hasMissingPredictions && (
-                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className="absolute top-2 right-2 z-10">
-                                        <Users className="h-5 w-5 text-blue-500" />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">
-                                    <p>Aguardando palpites de {missingPredictionsCount} jogador(es).</p>
                                 </TooltipContent>
                             </Tooltip>
                         )}
@@ -590,3 +573,5 @@ export default function DashboardPage() {
     </TooltipProvider>
   );
 }
+
+    
