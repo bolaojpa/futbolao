@@ -104,7 +104,7 @@ export default function LeaderboardPage() {
     return null;
   };
   
-  const getPositionVariation = (variation: 'up' | 'down' | 'stable') => {
+  const getPositionVariation = (variation?: 'up' | 'down' | 'stable') => {
     switch (variation) {
       case 'up':
         return {
@@ -119,6 +119,7 @@ export default function LeaderboardPage() {
           colorClass: 'text-destructive',
         };
       case 'stable':
+      default:
         return {
           icon: <Minus className="w-4 h-4 text-primary" />,
           tooltip: 'Posição estável',
@@ -231,7 +232,7 @@ export default function LeaderboardPage() {
               <TableBody>
                 {sortedTableUsers.map((user, index) => {
                   const rank = index + 1;
-                  const variation = getPositionVariation(user.posicaoVariacao as 'up' | 'down' | 'stable');
+                  const variation = getPositionVariation(user.posicaoVariacao);
                   return (
                       <TableRow 
                         key={user.id} 
@@ -285,3 +286,4 @@ export default function LeaderboardPage() {
     </TooltipProvider>
   );
 }
+
