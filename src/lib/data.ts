@@ -188,8 +188,8 @@ export const mockChampionships: Championship[] = [
     id: 'champ_3', 
     nome: 'Copa América 2025 (Simulação)',
     iconUrl: 'https://upload.wikimedia.org/wikipedia/pt/2/25/Copa_Am%C3%A9rica_2024.png',
-    dataInicio: futureChampionshipDate(30), 
-    dataFim: futureChampionshipDate(60), 
+    dataInicio: futureChampionshipDate(30).toISOString(), 
+    dataFim: futureChampionshipDate(60).toISOString(), 
     status: 'ativo',
     tipoCampeonato: 'copa',
     modoEquipes: 'selecao',
@@ -526,3 +526,5 @@ export const mockTeams: Team[] = [
     { id: '759', name: 'Argentina', crestUrl: 'https://crests.football-data.org/759.svg', type: 'national' },
     { id: '762', name: 'Uruguay', crestUrl: 'https://crests.football-data.org/762.svg', type: 'national' },
 ];
+
+    

@@ -18,10 +18,12 @@ export function ChampionPrediction() {
     const { toast } = useToast();
     
     const availableChampionships = useMemo(() => {
-        return mockChampionships.filter(champ => 
-            champ.championPredictionSettings?.active && 
-            isFuture(parseISO(champ.dataInicio as string))
-        );
+        return mockChampionships.filter(champ => {
+            const startDate = typeof champ.dataInicio === 'string' 
+                ? champ.dataInicio 
+                : champ.dataInicio.toISOString();
+            return champ.championPredictionSettings?.active && isFuture(parseISO(startDate));
+        });
     }, []);
 
     const [predictions, setPredictions] = useState<Record<string, string[]>>({});
@@ -130,3 +132,5 @@ export function ChampionPrediction() {
         </div>
     );
 }
+
+    
