@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -13,18 +13,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { fetchTeamsFromApi } from './actions';
-import { mockTeams, Team } from '@/lib/data';
+import type { Team } from '@/lib/types';
+import { getTeams, addTeam, deleteTeams } from '@/lib/firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export default function AdminTeamsPage() {
     const { toast } = useToast();
-    const [teams, setTeams] = useState<Team[]>(mockTeams);
+    const [teams, setTeams] = useState<Team[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetching, setIsFetching] = useState(true);
     const [competitionCode, setCompetitionCode] = useState('');
     const [manualTeamName, setManualTeamName] = useState('');
     const [manualTeamCrest, setManualTeamCrest] = useState('');
     const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
+
+    const fetchTeams = async () => {
+        setIsFetching(true);
+        try {
+            const fetchedTeams = await getTeams();
+            setTeams(fetchedTeams);
+        } catch (error) {
+            toast({ title: "Erro ao buscar equipes", description: "Não foi possível carregar a lista de equipes do banco de dados.", variant: "destructive" });
+        } finally {
+            setIsFetching(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTeams();
+    }, []);
 
     const handleFetchTeams = async (type: 'club' | 'national') => {
         if (!competitionCode) {
@@ -33,45 +51,55 @@ export default function AdminTeamsPage() {
         }
         setIsLoading(true);
         const result = await fetchTeamsFromApi(competitionCode);
-        setIsLoading(false);
-
+        
         if (result.error) {
             toast({ title: "Erro ao Importar", description: result.error, variant: "destructive" });
+            setIsLoading(false);
         } else if (result.teams) {
             const newTeams = result.teams.map(team => ({
-                id: team.id.toString(),
                 name: team.name,
                 crestUrl: team.crestUrl,
                 type: type,
             }));
-            // Evita duplicados
-            const uniqueNewTeams = newTeams.filter(nt => !teams.some(et => et.id === nt.id));
-            setTeams(prev => [...prev, ...uniqueNewTeams]);
-            toast({ title: "Importação Concluída!", description: `${uniqueNewTeams.length} novas equipes foram adicionadas com sucesso.` });
-            setCompetitionCode('');
+
+            // Adiciona as equipes ao Firestore uma a uma
+            try {
+                for (const teamData of newTeams) {
+                    // Evita duplicados pelo nome
+                    if (!teams.some(et => et.name === teamData.name)) {
+                       await addTeam(teamData);
+                    }
+                }
+                await fetchTeams(); // Re-fetch para atualizar a lista
+                toast({ title: "Importação Concluída!", description: `${newTeams.length} equipes foram processadas.` });
+            } catch (error) {
+                toast({ title: "Erro ao Salvar Equipes", description: "Não foi possível salvar as equipes no banco de dados.", variant: "destructive" });
+            } finally {
+                setCompetitionCode('');
+                 setIsLoading(false);
+            }
         }
     };
 
-    const handleAddManualTeam = (type: 'club' | 'national') => {
+    const handleAddManualTeam = async (type: 'club' | 'national') => {
         if (!manualTeamName || !manualTeamCrest) {
             toast({ title: "Dados Incompletos", description: "Preencha o nome e a URL do escudo.", variant: "destructive" });
             return;
         }
-        const newTeam: Team = {
-            id: `manual_${new Date().getTime()}`,
+        const newTeam: Omit<Team, 'id'> = {
             name: manualTeamName,
             crestUrl: manualTeamCrest,
             type: type,
         };
-        setTeams(prev => [newTeam, ...prev]);
-        toast({ title: "Equipe Adicionada!", description: `A equipe "${manualTeamName}" foi adicionada com sucesso.` });
-        setManualTeamName('');
-        setManualTeamCrest('');
-    };
-
-    const handleDeleteTeam = (teamId: string) => {
-        setTeams(prev => prev.filter(t => t.id !== teamId));
-        toast({ title: "Equipe Removida", description: "A equipe foi removida da sua lista.", variant: "destructive" });
+        try {
+            await addTeam(newTeam);
+            await fetchTeams();
+            toast({ title: "Equipe Adicionada!", description: `A equipe "${manualTeamName}" foi adicionada com sucesso.` });
+            setManualTeamName('');
+            setManualTeamCrest('');
+        } catch (error) {
+            toast({ title: "Erro ao Adicionar Equipe", description: "Não foi possível salvar a equipe.", variant: "destructive" });
+        }
     };
     
     const handleSelectTeam = (teamId: string) => {
@@ -99,13 +127,23 @@ export default function AdminTeamsPage() {
         }
     };
 
-    const handleDeleteSelected = () => {
-        setTeams(prev => prev.filter(team => !selectedTeams.has(team.id)));
-        toast({
-            title: "Equipes Removidas",
-            description: `${selectedTeams.size} equipe(s) foram removidas permanentemente.`,
-        });
-        setSelectedTeams(new Set());
+    const handleDeleteSelected = async () => {
+        const teamIdsToDelete = Array.from(selectedTeams);
+        try {
+            await deleteTeams(teamIdsToDelete);
+            await fetchTeams();
+            toast({
+                title: "Equipes Removidas",
+                description: `${selectedTeams.size} equipe(s) foram removidas permanentemente.`,
+            });
+            setSelectedTeams(new Set());
+        } catch (error) {
+             toast({
+                title: "Erro ao remover equipes",
+                description: "Não foi possível remover as equipes selecionadas.",
+                variant: "destructive",
+            });
+        }
     };
 
     const renderTeamTable = (type: 'club' | 'national') => {
@@ -159,11 +197,16 @@ export default function AdminTeamsPage() {
                                 </TableHead>
                                 <TableHead className="w-[80px]">Escudo</TableHead>
                                 <TableHead>Nome da Equipe</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredTeams.length > 0 ? (
+                            {isFetching ? (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="h-24 text-center">
+                                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                                    </TableCell>
+                                </TableRow>
+                            ) : filteredTeams.length > 0 ? (
                                 filteredTeams.map(team => (
                                     <TableRow key={team.id} data-state={selectedTeams.has(team.id) ? "selected" : ""}>
                                         <TableCell>
@@ -177,32 +220,11 @@ export default function AdminTeamsPage() {
                                             <Image src={team.crestUrl} alt={`Escudo do ${team.name}`} width={40} height={40} className="rounded-sm object-contain" />
                                         </TableCell>
                                         <TableCell className="font-medium">{team.name}</TableCell>
-                                        <TableCell className="text-right">
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Esta ação removerá a equipe "{team.name}" da sua lista. Partidas já criadas com esta equipe não serão afetadas, mas ela não estará disponível para novas partidas.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteTeam(team.id)}>Sim, excluir</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
+                                    <TableCell colSpan={3} className="h-24 text-center">
                                         Nenhuma equipe encontrada.
                                     </TableCell>
                                 </TableRow>

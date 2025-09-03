@@ -5,8 +5,12 @@ import {
   doc,
   updateDoc,
   writeBatch,
+  addDoc,
+  deleteDoc,
+  query,
+  where,
 } from 'firebase/firestore';
-import type { UserType } from '../types';
+import type { UserType, Team } from '../types';
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -48,6 +52,41 @@ export async function deleteUsers(userIds: string[]): Promise<void> {
     userIds.forEach(userId => {
         const userDocRef = doc(db, 'users', userId);
         batch.delete(userDocRef);
+    });
+
+    await batch.commit();
+}
+
+/**
+ * Fetches all teams from the Firestore 'teams' collection.
+ */
+export async function getTeams(): Promise<Team[]> {
+  const teamsCollection = collection(db, 'teams');
+  const teamSnapshot = await getDocs(teamsCollection);
+  const teamList = teamSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Team));
+  return teamList;
+}
+
+/**
+ * Adds a new team to the Firestore 'teams' collection.
+ * @param teamData - The data for the new team.
+ */
+export async function addTeam(teamData: Omit<Team, 'id'>): Promise<Team> {
+  const teamsCollection = collection(db, 'teams');
+  const docRef = await addDoc(teamsCollection, teamData);
+  return { id: docRef.id, ...teamData };
+}
+
+/**
+ * Deletes multiple teams from Firestore in a single batch operation.
+ * @param teamIds - An array of team IDs to delete.
+ */
+export async function deleteTeams(teamIds: string[]): Promise<void> {
+    const batch = writeBatch(db);
+
+    teamIds.forEach(teamId => {
+        const teamDocRef = doc(db, 'teams', teamId);
+        batch.delete(teamDocRef);
     });
 
     await batch.commit();
