@@ -120,7 +120,7 @@ export default function AdminSupportPage() {
                                          {!msg.isRead && (
                                             <div className="w-2.5 h-2.5 rounded-full bg-primary mt-1.5 shrink-0" title="Não lida"></div>
                                         )}
-                                        <div className={cn("flex-1", msg.isRead ? "pl-5" : "")}>
+                                        <div className={cn("flex-1 min-w-0", msg.isRead ? "pl-5" : "")}>
                                             <div className="flex justify-between items-center">
                                                 <span className="font-semibold">{user.apelido}</span>
                                                 <span className="text-xs text-muted-foreground">
