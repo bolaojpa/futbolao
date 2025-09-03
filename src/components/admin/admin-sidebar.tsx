@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Send,
   BarChart3,
+  LifeBuoy,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -51,6 +52,7 @@ export function AdminSidebar() {
   
   const bottomMenuItems = [
       { href: '/admin/settings', label: 'Configurações', icon: Settings },
+      { href: '/admin/support', label: 'Suporte', icon: LifeBuoy },
   ]
 
   return (
