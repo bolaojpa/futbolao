@@ -20,6 +20,7 @@ import {
   User,
   LifeBuoy,
   ShieldCheck,
+  BookOpen,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -38,6 +39,7 @@ export function AppSidebar() {
     { href: '/dashboard/leaderboard', label: 'Ranking', icon: Trophy },
     { href: '/dashboard/fame', label: 'Hall da Fama', icon: ShieldCheck },
     { href: '/dashboard/history', label: 'Histórico', icon: History },
+    { href: '/dashboard/rules', label: 'Regras', icon: BookOpen },
   ];
   
   const bottomMenuItems = [
