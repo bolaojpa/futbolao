@@ -163,7 +163,7 @@ export default function AdminSupportPage() {
                                 </span>
                             </div>
                             <div className="p-6 flex-1 overflow-y-auto">
-                                <p className="whitespace-pre-wrap break-words">{selectedMessage.message}</p>
+                                <p className="whitespace-pre-wrap break-words max-w-prose">{selectedMessage.message}</p>
                             </div>
                             <div className="p-4 border-t bg-muted/50">
                                  <Button>
