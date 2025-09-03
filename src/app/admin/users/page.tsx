@@ -1,10 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockUsers, UserType } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail } from 'lucide-react';
@@ -20,7 +18,9 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
+import type { UserType } from '@/lib/types';
+import { getUsers, updateUserStatus, updateUserRole, deleteUsers } from '@/lib/firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -36,15 +36,28 @@ const roleConfig = {
     admin: { label: 'Admin', icon: ShieldX },
 }
 
-const FormattedDate = ({ dateString }: { dateString: string }) => {
+const FormattedDate = ({ dateValue }: { dateValue: string | Date | Timestamp }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
-      setFormattedDate(format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR }));
-    }, [dateString]);
+        let date: Date;
+        if (dateValue instanceof Timestamp) {
+            date = dateValue.toDate();
+        } else if (typeof dateValue === 'string') {
+            date = new Date(dateValue);
+        } else {
+            date = dateValue;
+        }
+
+        if (date && !isNaN(date.getTime())) {
+            setFormattedDate(format(date, "dd/MM/yyyy", { locale: ptBR }));
+        } else {
+            setFormattedDate("Data inválida");
+        }
+    }, [dateValue]);
   
     if (!formattedDate) {
-      return null; 
+      return <>Carregando...</>; 
     }
   
     return <>{formattedDate}</>;
@@ -52,27 +65,67 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
 
 export default function AdminUsersPage() {
     const { toast } = useToast();
-    const [users, setUsers] = useState<UserType[]>(mockUsers);
+    const [users, setUsers] = useState<UserType[]>([]);
+    const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('all');
     const [filterRole, setFilterRole] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
-    const handleStatusChange = (userId: string, newStatus: UserType['status']) => {
-        setUsers(prev => prev.map(user => user.id === userId ? { ...user, status: newStatus } : user));
-        toast({
-            title: "Status do Usuário Alterado",
-            description: `O status do usuário foi alterado para ${statusConfig[newStatus].label}.`,
-        });
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            const fetchedUsers = await getUsers();
+            setUsers(fetchedUsers);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            toast({
+                title: "Erro ao buscar usuários",
+                description: "Não foi possível carregar a lista de usuários do banco de dados.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleRoleChange = (userId: string, newRole: UserType['funcao']) => {
-        setUsers(prev => prev.map(user => user.id === userId ? { ...user, funcao: newRole } : user));
-        toast({
-            title: "Função do Usuário Alterada",
-            description: `O usuário agora tem a função de ${roleConfig[newRole].label}.`,
-        });
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const handleStatusChange = async (userId: string, newStatus: UserType['status']) => {
+        try {
+            await updateUserStatus(userId, newStatus);
+            await fetchUsers(); // Re-fetch para atualizar a UI
+            toast({
+                title: "Status do Usuário Alterado",
+                description: `O status do usuário foi alterado para ${statusConfig[newStatus].label}.`,
+            });
+        } catch (error) {
+             toast({
+                title: "Erro ao alterar status",
+                description: "Não foi possível atualizar o status do usuário.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleRoleChange = async (userId: string, newRole: UserType['funcao']) => {
+        try {
+            await updateUserRole(userId, newRole);
+            await fetchUsers(); // Re-fetch para atualizar a UI
+            toast({
+                title: "Função do Usuário Alterada",
+                description: `O usuário agora tem a função de ${roleConfig[newRole].label}.`,
+            });
+        } catch (error) {
+             toast({
+                title: "Erro ao alterar função",
+                description: "Não foi possível atualizar a função do usuário.",
+                variant: "destructive",
+            });
+        }
     }
 
     const filteredUsers = useMemo(() => {
@@ -83,7 +136,11 @@ export default function AdminUsersPage() {
                                 user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 user.apelido.toLowerCase().includes(searchTerm.toLowerCase());
             return statusMatch && roleMatch && searchMatch;
-        }).sort((a, b) => new Date(b.dataCadastro).getTime() - new Date(a.dataCadastro).getTime());
+        }).sort((a, b) => {
+             const dateA = a.dataCadastro instanceof Timestamp ? a.dataCadastro.toMillis() : new Date(a.dataCadastro).getTime();
+             const dateB = b.dataCadastro instanceof Timestamp ? b.dataCadastro.toMillis() : new Date(b.dataCadastro).getTime();
+             return dateB - dateA;
+        });
     }, [filterStatus, filterRole, searchTerm, users]);
 
     const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
@@ -116,13 +173,23 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleDeleteSelected = () => {
-        setUsers(prev => prev.filter(user => !selectedUsers.has(user.id)));
-        toast({
-            title: "Usuários Removidos",
-            description: `${selectedUsers.size} usuário(s) foram removidos permanentemente.`,
-        });
-        setSelectedUsers(new Set());
+    const handleDeleteSelected = async () => {
+        const userIdsToDelete = Array.from(selectedUsers);
+        try {
+            await deleteUsers(userIdsToDelete);
+            await fetchUsers(); // Re-fetch
+            toast({
+                title: "Usuários Removidos",
+                description: `${selectedUsers.size} usuário(s) foram removidos permanentemente.`,
+            });
+            setSelectedUsers(new Set());
+        } catch (error) {
+             toast({
+                title: "Erro ao remover usuários",
+                description: "Não foi possível remover os usuários selecionados.",
+                variant: "destructive",
+            });
+        }
     };
 
     return (
@@ -157,7 +224,7 @@ export default function AdminUsersPage() {
                                         <AlertDialogHeader>
                                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            Esta ação removerá permanentemente os {selectedUsers.size} usuário(s) selecionado(s). Esta ação não pode ser desfeita.
+                                            Esta ação removerá permanentemente os {selectedUsers.size} usuário(s) selecionado(s) do banco de dados. Esta ação não pode ser desfeita.
                                         </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -225,7 +292,15 @@ export default function AdminUsersPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedUsers.length > 0 ? (
+                                {loading ? (
+                                     Array.from({ length: 5 }).map((_, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell colSpan={6}>
+                                                <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : paginatedUsers.length > 0 ? (
                                     paginatedUsers.map(user => {
                                         const RoleIcon = roleConfig[user.funcao].icon;
                                         return (
@@ -270,7 +345,7 @@ export default function AdminUsersPage() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="hidden md:table-cell">
-                                                    <FormattedDate dateString={user.dataCadastro} />
+                                                    <FormattedDate dateValue={user.dataCadastro} />
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Badge variant="secondary" className="font-normal">
