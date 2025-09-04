@@ -28,14 +28,15 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save } from 'lucide-react';
+import { CalendarIcon, Save, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, setHours, setMinutes } from 'date-fns';
-import type { Match, Team } from '@/lib/data';
-import { useEffect, useMemo } from 'react';
-import { mockChampionships, mockTeams } from '@/lib/data';
+import type { Match, Team, Championship } from '@/lib/types';
+import { useEffect, useMemo, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Combobox } from '../ui/combobox';
+import { useToast } from '@/hooks/use-toast';
+import { addMatch, updateMatch } from '@/lib/firebase/firestore';
 
 
 const matchFormSchema = z.object({
@@ -54,13 +55,18 @@ type MatchFormValues = z.infer<typeof matchFormSchema>;
 interface MatchFormProps {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
-    onSubmit: (data: Match) => void;
+    onSubmitSuccess: () => void;
     match: Match | null;
     championshipId: string;
+    championships: Championship[];
+    teams: Team[];
 }
 
 
-export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }: MatchFormProps) {
+export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, championshipId, championships, teams }: MatchFormProps) {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+
     const form = useForm<MatchFormValues>({
         resolver: zodResolver(matchFormSchema),
         defaultValues: {
@@ -72,8 +78,8 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
     });
 
     const selectedChampionship = useMemo(() => {
-        return mockChampionships.find(c => c.id === championshipId);
-    }, [championshipId]);
+        return championships.find(c => c.id === championshipId);
+    }, [championshipId, championships]);
 
     const availablePhases = useMemo(() => {
         if (!selectedChampionship) return [];
@@ -93,11 +99,11 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
         if (!selectedChampionship || !selectedChampionship.teamIds) return [];
         
         const participatingTeams: Team[] = selectedChampionship.teamIds
-            .map(id => mockTeams.find(team => team.id === id))
+            .map(id => teams.find(team => team.id === id))
             .filter((team): team is Team => !!team);
 
         return participatingTeams.map(team => ({ label: team.name, value: team.name }));
-    }, [selectedChampionship]);
+    }, [selectedChampionship, teams]);
 
 
     useEffect(() => {
@@ -123,7 +129,8 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
         }
     }, [isOpen, match, form]);
 
-    const handleFormSubmit = (data: MatchFormValues) => {
+    const handleFormSubmit = async (data: MatchFormValues) => {
+        setIsLoading(true);
         const [hours, minutes] = data.horario.split(':').map(Number);
         const combinedDate = setMinutes(setHours(data.data, hours), minutes);
 
@@ -136,20 +143,32 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
         if (selectedChampionship.pontuacao.combo?.ativo) {
             maxScore += (selectedChampionship.pontuacao.combo.gols ?? 0) + (selectedChampionship.pontuacao.combo.placar ?? 0);
         }
-
-        const finalData: Match = {
-          id: match?.id || `match_${new Date().getTime()}`,
-          timeA: data.timeA,
-          timeB: data.timeB,
-          fase: data.fase,
-          data: combinedDate.toISOString(),
-          status: 'Agendado',
-          campeonato: selectedChampionship.nome,
-          campeonatoId: selectedChampionship.id,
-          maxPontos: maxScore,
+        
+        const matchData: Omit<Match, 'id'> = {
+            timeA: data.timeA,
+            timeB: data.timeB,
+            fase: data.fase,
+            data: combinedDate.toISOString(),
+            status: 'Agendado',
+            campeonato: selectedChampionship.nome,
+            campeonatoId: selectedChampionship.id,
+            maxPontos: maxScore,
         };
-        onSubmit(finalData);
-        setIsOpen(false);
+
+        try {
+            if (match) {
+                await updateMatch(match.id, matchData);
+                toast({ title: "Partida Atualizada!", description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.` });
+            } else {
+                await addMatch(matchData);
+                toast({ title: "Partida Criada!", description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.` });
+            }
+            onSubmitSuccess();
+        } catch (error) {
+            toast({ title: "Erro ao salvar partida", variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const title = match ? "Editar Partida" : "Adicionar Nova Partida";
@@ -280,9 +299,9 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
                             />
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                            <Button type="submit">
-                                <Save className="mr-2 h-4 w-4" />
+                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>Cancelar</Button>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 {buttonText}
                             </Button>
                         </DialogFooter>

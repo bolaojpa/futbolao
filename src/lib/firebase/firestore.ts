@@ -10,6 +10,7 @@ import {
   query,
   where,
   serverTimestamp,
+  orderBy,
 } from 'firebase/firestore';
 import type { UserType, Team, Championship, Match } from '../types';
 
@@ -63,7 +64,8 @@ export async function deleteUsers(userIds: string[]): Promise<void> {
  */
 export async function getTeams(): Promise<Team[]> {
   const teamsCollection = collection(db, 'teams');
-  const teamSnapshot = await getDocs(teamsCollection);
+  const q = query(teamsCollection, orderBy('name', 'asc'));
+  const teamSnapshot = await getDocs(q);
   const teamList = teamSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Team));
   return teamList;
 }
@@ -94,14 +96,17 @@ export async function deleteTeams(teamIds: string[]): Promise<void> {
 }
 
 /**
- * Fetches all championships from the Firestore 'championships' collection.
+ * Fetches all championships from the Firestore 'championships' collection,
+ * sorted by creation date (newest first).
  */
 export async function getChampionships(): Promise<Championship[]> {
     const championshipsCollection = collection(db, 'championships');
-    const championshipSnapshot = await getDocs(championshipsCollection);
+    const q = query(championshipsCollection, orderBy('createdAt', 'desc'));
+    const championshipSnapshot = await getDocs(q);
     const championshipList = championshipSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
     return championshipList;
 }
+
 
 /**
  * Adds a new championship to the Firestore 'championships' collection.
@@ -122,7 +127,7 @@ export async function addChampionship(championshipData: Omit<Championship, 'id' 
  * @param championshipId - The ID of the championship to update.
  * @param championshipData - An object containing the fields to update.
  */
-export async function updateChampionship(championshipId: string, championshipData: Partial<Championship>): Promise<void> {
+export async function updateChampionship(championshipId: string, championshipData: Partial<Omit<Championship, 'id'>>): Promise<void> {
     const championshipDocRef = doc(db, 'championships', championshipId);
     await updateDoc(championshipDocRef, championshipData);
 }
@@ -142,7 +147,8 @@ export async function deleteChampionship(championshipId: string): Promise<void> 
  */
 export async function getMatches(): Promise<Match[]> {
   const matchesCollection = collection(db, 'matches');
-  const matchSnapshot = await getDocs(matchesCollection);
+  const q = query(matchesCollection, orderBy('data', 'asc'));
+  const matchSnapshot = await getDocs(q);
   const matchList = matchSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
   return matchList;
 }

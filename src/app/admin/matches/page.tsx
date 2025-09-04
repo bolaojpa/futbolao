@@ -10,7 +10,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockAllMatches, mockPredictions, mockChampionships, mockUsers, mockTeams } from '@/lib/data';
 import { format, parseISO, differenceInHours, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown, Trophy } from 'lucide-react';
@@ -23,11 +22,12 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Button } from '@/components/ui/button';
 import { Countdown } from '@/components/shared/countdown';
 import { MatchForm } from '@/components/admin/match-form';
-import type { Match } from '@/lib/data';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import type { Match, Championship, Team, UserType } from '@/lib/types';
+import { getChampionships, getMatches, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -68,19 +68,48 @@ export default function AdminMatchesPage() {
   const { toast } = useToast();
 
   const championshipIdFromQuery = searchParams.get('championshipId');
-  const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || 'all');
+  
+  const [championships, setChampionships] = useState<Championship[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+
+  const [selectedChampionship, setSelectedChampionship] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isClient, setIsClient] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
-  const [matches, setMatches] = useState<Match[]>(mockAllMatches);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [championshipsData, matchesData, teamsData, usersData] = await Promise.all([
+        getChampionships(),
+        getMatches(),
+        getTeams(),
+        getUsers(),
+      ]);
+      setChampionships(championshipsData);
+      setMatches(matchesData);
+      setTeams(teamsData);
+      setUsers(usersData);
+      if (championshipIdFromQuery) {
+        setSelectedChampionship(championshipIdFromQuery);
+      } else if (championshipsData.length > 0) {
+        setSelectedChampionship(championshipsData[0].id); // Default to the most recent one
+      }
+    } catch (error) {
+      toast({ title: 'Erro ao carregar dados', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-      setIsClient(true);
-  }, [])
+    fetchData();
+  }, []);
   
   const sortedMatches = useMemo(() => {
-    if (!isClient) return [];
     return [...matches]
       .filter(match => {
         const isScheduled = match.status === 'Agendado';
@@ -88,7 +117,7 @@ export default function AdminMatchesPage() {
         return isScheduled && isChampionshipMatch;
       })
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-  }, [selectedChampionship, matches, isClient]);
+  }, [selectedChampionship, matches]);
 
 
   const handleFilterChange = (value: string) => {
@@ -109,28 +138,22 @@ export default function AdminMatchesPage() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (matchId: string) => {
-    setMatches(prev => prev.filter(m => m.id !== matchId));
-    toast({
-        title: "Partida Excluída",
-        description: "A partida foi removida com sucesso.",
-    });
+  const handleDelete = async (matchId: string) => {
+    try {
+      await deleteMatch(matchId);
+      await fetchData();
+      toast({
+          title: "Partida Excluída",
+          description: "A partida foi removida com sucesso.",
+      });
+    } catch(err) {
+       toast({ title: 'Erro ao excluir partida', variant: 'destructive' });
+    }
   };
 
-  const handleFormSubmit = (data: Match) => {
-    if (editingMatch) {
-        setMatches(prev => prev.map(m => m.id === data.id ? data : m));
-        toast({
-            title: "Partida Atualizada",
-            description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.`,
-        });
-    } else {
-        setMatches(prev => [...prev, { ...data, id: `match_${new Date().getTime()}` }]);
-        toast({
-            title: "Partida Criada!",
-            description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.`,
-        });
-    }
+  const handleFormSubmit = async () => {
+    await fetchData();
+    setIsFormOpen(false);
   };
 
 
@@ -143,7 +166,7 @@ export default function AdminMatchesPage() {
 
   const totalPages = Math.ceil(sortedMatches.length / ITEMS_PER_PAGE);
   
-    if (!isClient) {
+  if (isLoading) {
     return <div className="p-8"><div className="h-40 w-full bg-muted rounded-lg animate-pulse" /></div>
   }
 
@@ -166,7 +189,7 @@ export default function AdminMatchesPage() {
               </SelectTrigger>
               <SelectContent>
                   <SelectItem value="all">Todos os Campeonatos</SelectItem>
-                  {mockChampionships.map(champ => (
+                  {championships.map(champ => (
                       <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
                   ))}
               </SelectContent>
@@ -182,26 +205,31 @@ export default function AdminMatchesPage() {
       <MatchForm 
         isOpen={isFormOpen} 
         setIsOpen={setIsFormOpen}
-        onSubmit={handleFormSubmit}
+        onSubmitSuccess={handleFormSubmit}
         match={editingMatch}
         championshipId={editingMatch ? editingMatch.campeonatoId : selectedChampionship}
+        championships={championships}
+        teams={teams}
       />
 
       <TooltipProvider>
       <div className="w-full space-y-4">
         {paginatedMatches.length > 0 ? (
           paginatedMatches.map((match) => {
-            const allPredictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
-            const championship = mockChampionships.find(c => c.id === match.campeonatoId);
+            const championship = championships.find(c => c.id === match.campeonatoId);
             const participants = championship?.participantes || [];
             const totalParticipants = participants.length;
             
-            const predictedUserIds = new Set(allPredictionsForMatch.map(p => p.userId));
+            // Simulação de palpites
+            const allPredictionsForMatch = users.slice(0, Math.floor(Math.random() * users.length));
+            const predictedUserIds = new Set(allPredictionsForMatch.map(p => p.id));
             const missingUsers = participants
-                .map(pId => mockUsers.find(u => u.id === pId))
+                .map(pId => users.find(u => u.id === pId))
                 .filter(u => u && !predictedUserIds.has(u.id));
-
             const hasMissingPredictions = missingUsers.length > 0;
+
+            const teamA = teams.find(t => t.name === match.timeA);
+            const teamB = teams.find(t => t.name === match.timeB);
 
             return (
               <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -222,7 +250,7 @@ export default function AdminMatchesPage() {
                                         Editar
                                     </DropdownMenuItem>
                                     <AlertDialogTrigger asChild>
-                                        <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => e.preventDefault()}>
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             Excluir
                                         </DropdownMenuItem>
@@ -252,18 +280,18 @@ export default function AdminMatchesPage() {
                         <div className="flex items-center justify-center w-full">
                             <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                 <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Escudo ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
                             </div>
                              <div className="flex items-center justify-center text-muted-foreground mx-4">
                                 <Swords className="h-6 w-6" />
                             </div>
                             <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Escudo ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
                                 <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                             </div>
                         </div>
                         <div className='flex flex-col items-center justify-center mt-2 gap-2'>
-                           {isClient ? <UpcomingMatchDate matchDateString={match.data} /> : <div className="h-4 w-24 bg-muted rounded-md animate-pulse"></div>}
+                           <UpcomingMatchDate matchDateString={match.data} />
                         </div>
                       </div>
                     </div>
@@ -294,13 +322,7 @@ export default function AdminMatchesPage() {
                             </div>
                             {allPredictionsForMatch.length > 0 ? (
                                 <ul className="text-sm">
-                                {allPredictionsForMatch.map((p, i) => {
-                                    const user = mockUsers.find(u => u.id === p.userId);
-                                    if (!user) return null;
-                                    
-                                    const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                    const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
-
+                                {allPredictionsForMatch.map((user, i) => {
                                     return (
                                     <li key={i} className={cn("flex justify-between items-center p-4 border-t")}>
                                         <div className="w-1/3 text-left flex items-center gap-2 group">
@@ -313,36 +335,9 @@ export default function AdminMatchesPage() {
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <span className="font-bold">{user.apelido}:</span>
-                                                {chosenTeams.length > 0 && (
-                                                    <>
-                                                        <div className="hidden sm:flex items-center gap-1">
-                                                            {chosenTeams.map(team => (
-                                                                <Tooltip key={team.id}>
-                                                                    <TooltipTrigger>
-                                                                         <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="rounded-full" />
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                </Tooltip>
-                                                            ))}
-                                                        </div>
-                                                        <div className="flex sm:hidden">
-                                                            <Tooltip>
-                                                                <TooltipTrigger>
-                                                                    <Trophy className="h-4 w-4 text-amber-500" />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <p className='font-semibold'>Palpites de Campeão:</p>
-                                                                    <ul className='list-disc list-inside'>
-                                                                        {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
-                                                                    </ul>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </div>
-                                                    </>
-                                                )}
                                             </div>
                                         </div>
-                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{Math.floor(Math.random() * 4)}-{Math.floor(Math.random() * 4)}</span>
                                     <div className="w-1/3 text-right">
                                     </div>
                                     </li>
