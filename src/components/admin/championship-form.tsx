@@ -307,11 +307,11 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const handleFormSubmit = (data: ChampionshipFormValues) => {
     const finalData = {
       ...data,
-      formatoFases: data.tipoCampeonato === 'liga' ? 'rodadas' : data.formatoFases,
-      rodadas: data.tipoCampeonato === 'liga' ? data.rodadas : (data.formatoFases === 'rodadas' ? data.rodadas : undefined),
-      fases: data.formatoFases === 'fases' ? data.fases : undefined,
+      formatoFases: data.tipoCampeonato === 'liga' ? undefined : data.formatoFases,
+      rodadas: (data.tipoCampeonato === 'liga' || data.formatoFases === 'rodadas') ? data.rodadas : undefined,
+      fases: (data.tipoCampeonato !== 'liga' && data.formatoFases === 'fases') ? data.fases : undefined,
     };
-    onSubmit(finalData);
+    onSubmit(finalData as Omit<Championship, 'status'>);
     setIsOpen(false);
   };
   
