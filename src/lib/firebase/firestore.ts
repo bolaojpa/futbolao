@@ -11,7 +11,7 @@ import {
   where,
   serverTimestamp,
 } from 'firebase/firestore';
-import type { UserType, Team, Championship } from '../types';
+import type { UserType, Team, Championship, Match } from '../types';
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -107,13 +107,14 @@ export async function getChampionships(): Promise<Championship[]> {
  * Adds a new championship to the Firestore 'championships' collection.
  * @param championshipData - The data for the new championship.
  */
-export async function addChampionship(championshipData: Omit<Championship, 'id'>): Promise<Championship> {
+export async function addChampionship(championshipData: Omit<Championship, 'id' | 'status'>): Promise<Championship> {
     const championshipsCollection = collection(db, 'championships');
     const docRef = await addDoc(championshipsCollection, {
         ...championshipData,
+        status: 'ativo',
         createdAt: serverTimestamp() 
     });
-    return { id: docRef.id, ...championshipData };
+    return { id: docRef.id, ...championshipData, status: 'ativo' };
 }
 
 /**
@@ -133,4 +134,47 @@ export async function updateChampionship(championshipId: string, championshipDat
 export async function deleteChampionship(championshipId: string): Promise<void> {
     const championshipDocRef = doc(db, 'championships', championshipId);
     await deleteDoc(championshipDocRef);
+}
+
+
+/**
+ * Fetches all matches from the Firestore 'matches' collection.
+ */
+export async function getMatches(): Promise<Match[]> {
+  const matchesCollection = collection(db, 'matches');
+  const matchSnapshot = await getDocs(matchesCollection);
+  const matchList = matchSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+  return matchList;
+}
+
+/**
+ * Adds a new match to the Firestore 'matches' collection.
+ * @param matchData - The data for the new match.
+ */
+export async function addMatch(matchData: Omit<Match, 'id'>): Promise<Match> {
+  const matchesCollection = collection(db, 'matches');
+  const docRef = await addDoc(matchesCollection, {
+    ...matchData,
+    createdAt: serverTimestamp(),
+  });
+  return { id: docRef.id, ...matchData };
+}
+
+/**
+ * Updates an existing match in Firestore.
+ * @param matchId - The ID of the match to update.
+ * @param matchData - An object containing the fields to update.
+ */
+export async function updateMatch(matchId: string, matchData: Partial<Match>): Promise<void> {
+  const matchDocRef = doc(db, 'matches', matchId);
+  await updateDoc(matchDocRef, matchData);
+}
+
+/**
+ * Deletes a match from Firestore.
+ * @param matchId - The ID of the match to delete.
+ */
+export async function deleteMatch(matchId: string): Promise<void> {
+  const matchDocRef = doc(db, 'matches', matchId);
+  await deleteDoc(matchDocRef);
 }

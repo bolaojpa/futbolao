@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 
 export interface UserType {
     id: string;
@@ -13,7 +14,7 @@ export interface UserType {
     situacoes: number;
     tempoMedio: number;
     posicaoVariacao?: 'up' | 'down' | 'stable';
-    dataCadastro: string;
+    dataCadastro: string | Timestamp;
     ultimaAtividade: string;
     ultimoLogin: string;
     presenceStatus: 'Disponível' | 'Ausente' | 'Ocupado' | 'Não perturbe' | 'Offline';
@@ -44,6 +45,7 @@ export interface Match {
     fase: string;
     maxPontos?: number;
     iconUrl?: string;
+    createdAt?: Timestamp;
 }
 
 export interface Prediction {
@@ -92,6 +94,7 @@ export interface Championship {
         pos4?: string;
         pos5?: string;
     };
+    createdAt?: Timestamp;
 }
 
 export interface Team {
