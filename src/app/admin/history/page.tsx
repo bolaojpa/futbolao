@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mockAllMatches, mockPredictions, mockChampionships, mockUsers, mockTeams } from '@/lib/data';
+import { mockPredictions, mockUsers, mockTeams } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle } from 'lucide-react';
@@ -29,11 +29,12 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import type { Match, Championship, Team, UserType } from '@/lib/types';
+import { getChampionships, getMatches, updateMatch, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
 
 
 type FilterType = 'all' | 'exact' | 'situation' | 'miss';
 const ITEMS_PER_PAGE = 10;
-type Match = typeof mockAllMatches[0];
 
 // Componente para evitar erro de hidratação com datas
 const FormattedDate = ({ dateString }: { dateString: string }) => {
@@ -57,16 +58,54 @@ export default function AdminHistoryPage() {
   const { toast } = useToast();
 
   const championshipIdFromQuery = searchParams.get('championshipId');
-  const [matches, setMatches] = useState<Match[]>(mockAllMatches);
-  const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
+  
+  const [championships, setChampionships] = useState<Championship[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+  
+  const [selectedChampionship, setSelectedChampionship] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editingScore, setEditingScore] = useState<{ placarA: string, placarB: string }>({ placarA: '0', placarB: '0' });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+        const [championshipsData, matchesData, teamsData, usersData] = await Promise.all([
+            getChampionships(),
+            getMatches(),
+            getTeams(),
+            getUsers(),
+        ]);
+        setChampionships(championshipsData);
+        setMatches(matchesData);
+        setTeams(teamsData);
+        setUsers(usersData);
+        
+        if (championshipIdFromQuery) {
+            setSelectedChampionship(championshipIdFromQuery);
+        } else if (championshipsData.length > 0) {
+            setSelectedChampionship(championshipsData[0].id);
+        } else {
+            setSelectedChampionship('all');
+        }
+
+    } catch (error) {
+        toast({ title: 'Erro ao carregar dados', variant: 'destructive' });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
   
   const filteredMatches = useMemo(() => [...matches]
-    .filter(match => match.status === 'Finalizado' && match.campeonatoId === selectedChampionship)
+    .filter(match => match.status === 'Finalizado' && (selectedChampionship === 'all' || match.campeonatoId === selectedChampionship))
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()), [selectedChampionship, matches]);
 
 
@@ -92,30 +131,37 @@ export default function AdminHistoryPage() {
     setEditingScore(prev => ({ ...prev, [team]: numericValue }));
   };
   
-  const handleSaveScore = () => {
+  const handleSaveScore = async () => {
     if (!editingMatch) return;
 
-    setMatches(prevMatches => 
-      prevMatches.map(m => 
-        m.id === editingMatch.id 
-          ? { ...m, placarA: Number(editingScore.placarA), placarB: Number(editingScore.placarB) }
-          : m
-      )
-    );
-    toast({
-        title: "Placar Atualizado",
-        description: `O placar de ${editingMatch.timeA} vs ${editingMatch.timeB} foi alterado.`,
-    });
-    setIsEditModalOpen(false); // Fecha o modal
+    try {
+      await updateMatch(editingMatch.id, {
+        placarA: Number(editingScore.placarA),
+        placarB: Number(editingScore.placarB),
+      });
+      await fetchData();
+      toast({
+          title: "Placar Atualizado",
+          description: `O placar de ${editingMatch.timeA} vs ${editingMatch.timeB} foi alterado.`,
+      });
+      setIsEditModalOpen(false); // Fecha o modal
+    } catch (error) {
+        toast({ title: 'Erro ao salvar o placar', variant: 'destructive' });
+    }
   };
 
-  const handleDelete = (matchId: string) => {
-    setMatches(prev => prev.filter(m => m.id !== matchId));
-    toast({
-        title: "Partida Excluída",
-        description: "A partida e seus palpites foram removidos.",
-        variant: "destructive",
-    });
+  const handleDelete = async (matchId: string, matchName: string) => {
+    try {
+        await deleteMatch(matchId);
+        await fetchData();
+        toast({
+            title: "Partida Excluída",
+            description: `A partida "${matchName}" e seus palpites foram removidos.`,
+            variant: "destructive",
+        });
+    } catch (error) {
+         toast({ title: 'Erro ao excluir a partida', variant: 'destructive' });
+    }
   };
 
 
@@ -173,7 +219,8 @@ export default function AdminHistoryPage() {
                   <SelectValue placeholder="Filtrar por campeonato" />
               </SelectTrigger>
               <SelectContent>
-                  {mockChampionships.map(champ => (
+                  <SelectItem value="all">Todos os Campeonatos</SelectItem>
+                  {championships.map(champ => (
                       <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
                   ))}
               </SelectContent>
@@ -183,16 +230,19 @@ export default function AdminHistoryPage() {
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
       <TooltipProvider>
         <div className="w-full space-y-4">
-          {Object.keys(paginatedItems).length > 0 ? (
+          {isLoading ? (
+            <Card><CardContent className="p-6 h-40 animate-pulse bg-muted/50"></CardContent></Card>
+          ) : Object.keys(paginatedItems).length > 0 ? (
             Object.entries(paginatedItems).map(([phase, matches]) => (
               <div key={phase} className="space-y-4">
                 <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
                 {matches.map((match) => {
-                  // Pegar todos os palpites para esta partida
-                  const allPredictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
+                  const allPredictionsForMatch = mockPredictions.filter(p => p.matchId === 'match_6'); // Mock
                   if (!match.maxPontos) return null;
 
                   const maxPointsForMatch = match.maxPontos;
+                  const teamA = teams.find(t => t.name === match.timeA);
+                  const teamB = teams.find(t => t.name === match.timeB);
 
                   return (
                     <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -213,7 +263,7 @@ export default function AdminHistoryPage() {
                                               Editar Placar
                                           </DropdownMenuItem>
                                           <AlertDialogTrigger asChild>
-                                              <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                              <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => e.preventDefault()}>
                                                   <Trash2 className="mr-2 h-4 w-4" />
                                                   Excluir Partida
                                               </DropdownMenuItem>
@@ -229,7 +279,7 @@ export default function AdminHistoryPage() {
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
                                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                          <AlertDialogAction onClick={() => handleDelete(match.id)} className="bg-destructive hover:bg-destructive/90">Sim, excluir partida</AlertDialogAction>
+                                          <AlertDialogAction onClick={() => handleDelete(match.id, `${match.timeA} vs ${match.timeB}`)} className="bg-destructive hover:bg-destructive/90">Sim, excluir partida</AlertDialogAction>
                                       </AlertDialogFooter>
                                   </AlertDialogContent>
                               </AlertDialog>
@@ -241,9 +291,9 @@ export default function AdminHistoryPage() {
                                   {match.timeA}
                                 </div>
                                 <div className="flex items-center justify-center gap-3 md:gap-4">
-                                  <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                  <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeA}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                   <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                  <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                  <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeB}`} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                 </div>
                                 <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                   {match.timeB}
@@ -258,12 +308,12 @@ export default function AdminHistoryPage() {
                           <AccordionContent>
                             <div className="bg-background/80 border-t">
                               <div className="text-center py-2">
-                                <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
+                                <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários (Dados de Exemplo)</h4>
                               </div>
                               {allPredictionsForMatch.length > 0 ? (
                                   <ul className="text-sm">
                                     {allPredictionsForMatch.map((p, i) => {
-                                      const user = mockUsers.find(u => u.id === p.userId);
+                                      const user = users.find(u => u.id === p.userId);
                                       if (!user) return null;
                                       
                                       const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
