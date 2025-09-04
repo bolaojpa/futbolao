@@ -11,8 +11,10 @@ import {
   where,
   serverTimestamp,
   orderBy,
+  limit,
+  getDoc,
 } from 'firebase/firestore';
-import type { UserType, Team, Championship, Match } from '../types';
+import type { UserType, Team, Championship, Match, Prediction } from '../types';
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -183,4 +185,62 @@ export async function updateMatch(matchId: string, matchData: Partial<Match>): P
 export async function deleteMatch(matchId: string): Promise<void> {
   const matchDocRef = doc(db, 'matches', matchId);
   await deleteDoc(matchDocRef);
+}
+
+
+// PREDICTION FUNCTIONS
+
+/**
+ * Fetches all predictions for a given match.
+ * @param matchId The ID of the match.
+ */
+export async function getPredictionsForMatch(matchId: string): Promise<Prediction[]> {
+  const q = query(collection(db, 'predictions'), where('matchId', '==', matchId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+}
+
+/**
+ * Fetches all predictions for a given user.
+ * @param userId The ID of the user.
+ */
+export async function getPredictionsForUser(userId: string): Promise<Prediction[]> {
+  const q = query(collection(db, 'predictions'), where('userId', '==', userId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+}
+
+/**
+ * Adds or updates a user's prediction for a specific match.
+ * If a prediction already exists, it will be updated. Otherwise, a new one is created.
+ * @param predictionData The prediction data.
+ */
+export async function addOrUpdatePrediction(predictionData: Omit<Prediction, 'id' | 'createdAt' | 'updatedAt'>) {
+    const predictionsRef = collection(db, 'predictions');
+    const q = query(
+        predictionsRef,
+        where('userId', '==', predictionData.userId),
+        where('matchId', '==', predictionData.matchId),
+        limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+    const now = serverTimestamp();
+
+    if (snapshot.empty) {
+        // Add new prediction
+        await addDoc(predictionsRef, {
+            ...predictionData,
+            createdAt: now,
+            updatedAt: now,
+        });
+    } else {
+        // Update existing prediction
+        const docId = snapshot.docs[0].id;
+        const docRef = doc(db, 'predictions', docId);
+        await updateDoc(docRef, {
+            ...predictionData,
+            updatedAt: now,
+        });
+    }
 }

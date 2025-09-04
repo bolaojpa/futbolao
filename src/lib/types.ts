@@ -57,6 +57,8 @@ export interface Prediction {
       placarB: number;
     };
     pontos: number;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
 }
 
 export interface Championship {
