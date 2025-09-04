@@ -35,7 +35,6 @@ import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship, Team, UserType } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
@@ -60,6 +59,7 @@ type Fase = {
 }
 
 const championshipFormSchema = z.object({
+  id: z.string().optional(),
   nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }).max(50, "O nome não pode ter mais de 50 caracteres."),
   iconUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
   dataInicio: z.date({ required_error: "A data de início é obrigatória." }),
@@ -132,7 +132,7 @@ const predefinedPhases = [
 interface ChampionshipFormProps {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
-    onSubmit: (data: Omit<Championship, 'id' | 'status'> & { id?: string }) => void;
+    onSubmit: (data: Omit<Championship, 'status'>) => void;
     championship: Championship | null;
     children: React.ReactNode;
 }
@@ -222,6 +222,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   useEffect(() => {
     if (isOpen) {
         const defaultData = {
+            id: undefined,
             nome: '',
             iconUrl: '',
             tipoCampeonato: 'liga' as const,
@@ -253,6 +254,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         if (championship) {
             form.reset({
                 ...defaultData,
+                id: championship.id,
                 nome: championship.nome,
                 iconUrl: championship.iconUrl || '',
                 dataInicio: typeof championship.dataInicio === 'string' ? parseISO(championship.dataInicio) : championship.dataInicio,
@@ -304,10 +306,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
   const handleFormSubmit = (data: ChampionshipFormValues) => {
     const finalData = {
-      id: championship?.id,
       ...data,
-      dataInicio: data.dataInicio.toISOString(),
-      dataFim: data.dataFim.toISOString(),
       formatoFases: data.tipoCampeonato === 'liga' ? 'rodadas' : data.formatoFases,
       rodadas: data.tipoCampeonato === 'liga' ? data.rodadas : (data.formatoFases === 'rodadas' ? data.rodadas : undefined),
       fases: data.formatoFases === 'fases' ? data.fases : undefined,

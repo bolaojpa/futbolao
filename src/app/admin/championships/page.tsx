@@ -153,18 +153,24 @@ export default function AdminChampionshipsPage() {
     };
 
 
-    const handleFormSubmit = async (data: Omit<Championship, 'id' | 'status'> & { id?: string }) => {
+    const handleFormSubmit = async (data: Omit<Championship, 'status'>) => {
         try {
+            const dataToSave = {
+                ...data,
+                dataInicio: data.dataInicio.toISOString(),
+                dataFim: data.dataFim.toISOString(),
+            };
+
             if (data.id) {
-                // Lógica de Edição
-                await updateChampionship(data.id, data);
+                const { id, ...updateData } = dataToSave;
+                await updateChampionship(id, updateData);
                 toast({
                     title: "Campeonato Atualizado",
                     description: `O campeonato "${data.nome}" foi atualizado.`,
                 });
             } else {
-                // Lógica de Criação
-                await addChampionship({ ...data, status: 'ativo' });
+                const { id, ...createData } = dataToSave;
+                await addChampionship({ ...createData, status: 'ativo' });
                 toast({
                     title: "Campeonato Criado!",
                     description: `O campeonato "${data.nome}" foi adicionado.`,
@@ -172,7 +178,8 @@ export default function AdminChampionshipsPage() {
             }
             await fetchChampionships();
         } catch (error) {
-            toast({ title: `Erro ao salvar campeonato`, variant: 'destructive' });
+            console.error("Error saving championship: ", error);
+            toast({ title: `Erro ao salvar campeonato`, description: "Verifique o console para mais detalhes.", variant: 'destructive' });
         }
     };
 
