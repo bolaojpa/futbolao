@@ -155,14 +155,27 @@ export default function AdminChampionshipsPage() {
 
     const handleFormSubmit = async (data: Omit<Championship, 'status'>) => {
         try {
-            const dataToSave: any = {
+            // Prepara os dados para salvar, convertendo as datas
+            const dataToSave: Partial<Championship> = {
                 ...data,
                 dataInicio: (data.dataInicio as Date).toISOString(),
                 dataFim: (data.dataFim as Date).toISOString(),
             };
 
-            // Remove o ID do objeto para evitar que seja salvo como um campo no documento
+            // Remove campos condicionais que podem ser 'undefined'
+            if (data.tipoCampeonato === 'liga') {
+                delete dataToSave.formatoFases;
+                delete dataToSave.fases;
+            } else {
+                if (data.formatoFases === 'rodadas') {
+                    delete dataToSave.fases;
+                } else {
+                    delete dataToSave.rodadas;
+                }
+            }
+
             if (data.id) {
+                // Atualiza um campeonato existente
                 const { id, ...updateData } = dataToSave;
                 await updateChampionship(id, updateData);
                 toast({
@@ -170,8 +183,9 @@ export default function AdminChampionshipsPage() {
                     description: `O campeonato "${data.nome}" foi atualizado.`,
                 });
             } else {
+                // Cria um novo campeonato
                 const { id, ...createData } = dataToSave;
-                await addChampionship({ ...createData, status: 'ativo' });
+                await addChampionship({ ...createData, status: 'ativo' } as Omit<Championship, 'id'>);
                 toast({
                     title: "Campeonato Criado!",
                     description: `O campeonato "${data.nome}" foi adicionado.`,
