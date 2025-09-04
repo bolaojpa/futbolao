@@ -305,12 +305,19 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   };
 
   const handleFormSubmit = (data: ChampionshipFormValues) => {
-    const finalData = {
-      ...data,
-      formatoFases: data.tipoCampeonato === 'liga' ? undefined : data.formatoFases,
-      rodadas: (data.tipoCampeonato === 'liga' || data.formatoFases === 'rodadas') ? data.rodadas : undefined,
-      fases: (data.tipoCampeonato !== 'liga' && data.formatoFases === 'fases') ? data.fases : undefined,
-    };
+    const finalData = { ...data };
+
+    if (finalData.tipoCampeonato === 'liga') {
+      finalData.formatoFases = undefined;
+      finalData.fases = undefined;
+    } else { // copa ou avulso
+        if(finalData.formatoFases === 'rodadas') {
+            finalData.fases = undefined;
+        } else { // formato 'fases'
+            finalData.rodadas = undefined;
+        }
+    }
+    
     onSubmit(finalData as Omit<Championship, 'status'>);
     setIsOpen(false);
   };

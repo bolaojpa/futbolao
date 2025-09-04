@@ -155,12 +155,13 @@ export default function AdminChampionshipsPage() {
 
     const handleFormSubmit = async (data: Omit<Championship, 'status'>) => {
         try {
-            const dataToSave = {
+            const dataToSave: any = {
                 ...data,
-                dataInicio: data.dataInicio.toISOString(),
-                dataFim: data.dataFim.toISOString(),
+                dataInicio: (data.dataInicio as Date).toISOString(),
+                dataFim: (data.dataFim as Date).toISOString(),
             };
 
+            // Remove o ID do objeto para evitar que seja salvo como um campo no documento
             if (data.id) {
                 const { id, ...updateData } = dataToSave;
                 await updateChampionship(id, updateData);
