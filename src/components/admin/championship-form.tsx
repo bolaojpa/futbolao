@@ -476,24 +476,20 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             control={form.control}
                             name="tipoCampeonato"
                             render={({ field }) => (
-                                <FormItem className="space-y-3">
+                                <FormItem>
                                 <FormLabel>Tipo do Campeonato</FormLabel>
-                                <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="liga" /></FormControl>
-                                            <FormLabel className="font-normal">Liga (Pontos Corridos)</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="copa" /></FormControl>
-                                            <FormLabel className="font-normal">Copa (Mata-mata)</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="avulso" /></FormControl>
-                                            <FormLabel className="font-normal">Jogos Avulsos (Amistosos)</FormLabel>
-                                        </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
+                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o tipo do campeonato" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="liga">Liga (Pontos Corridos)</SelectItem>
+                                        <SelectItem value="copa">Copa (Mata-mata)</SelectItem>
+                                        <SelectItem value="avulso">Jogos Avulsos (Amistosos)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <FormMessage />
                                 </FormItem>
                             )}
@@ -502,24 +498,20 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             control={form.control}
                             name="modoEquipes"
                             render={({ field }) => (
-                                <FormItem className="space-y-3">
+                                <FormItem>
                                 <FormLabel>Modo de Equipes</FormLabel>
-                                <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="times" /></FormControl>
-                                            <FormLabel className="font-normal">Times (Clubes)</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="selecao" /></FormControl>
-                                            <FormLabel className="font-normal">Seleções Nacionais</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="mista" /></FormControl>
-                                            <FormLabel className="font-normal">Mista (Clubes e Seleções)</FormLabel>
-                                        </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o modo de equipes" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="times">Times (Clubes)</SelectItem>
+                                        <SelectItem value="selecao">Seleções Nacionais</SelectItem>
+                                        <SelectItem value="mista">Mista (Clubes e Seleções)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <FormMessage />
                                 </FormItem>
                             )}
@@ -547,20 +539,19 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                     control={form.control}
                                     name="formatoFases"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-2">
+                                        <FormItem>
                                         <FormLabel>Estrutura do Campeonato</FormLabel>
-                                        <FormControl>
-                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl><RadioGroupItem value="fases" /></FormControl>
-                                                    <FormLabel className="font-normal">Baseado em Fases (Mata-mata)</FormLabel>
-                                                </FormItem>
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl><RadioGroupItem value="rodadas" /></FormControl>
-                                                    <FormLabel className="font-normal">Baseado em Rodadas</FormLabel>
-                                                </FormItem>
-                                            </RadioGroup>
-                                        </FormControl>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione a estrutura" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="fases">Baseado em Fases (Mata-mata)</SelectItem>
+                                                <SelectItem value="rodadas">Baseado em Rodadas</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                         </FormItem>
                                     )}
@@ -955,25 +946,19 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                         control={form.control}
                                         name="banner.displayMode"
                                         render={({ field }) => (
-                                            <FormItem className="space-y-2">
+                                            <FormItem>
                                                 <FormLabel>Modo de Exibição do Banner</FormLabel>
-                                                <FormControl>
-                                                    <RadioGroup 
-                                                        onValueChange={field.onChange} 
-                                                        defaultValue={field.value}
-                                                        className="flex flex-col space-y-1"
-                                                        disabled={!isBannerActive}
-                                                    >
-                                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                                            <FormControl><RadioGroupItem value="photo_and_names" /></FormControl>
-                                                            <FormLabel className="font-normal">Foto e Nomes</FormLabel>
-                                                        </FormItem>
-                                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                                            <FormControl><RadioGroupItem value="names_only" /></FormControl>
-                                                            <FormLabel className="font-normal">Apenas Nomes</FormLabel>
-                                                        </FormItem>
-                                                    </RadioGroup>
-                                                </FormControl>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isBannerActive}>
+                                                    <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Selecione o modo de exibição" />
+                                                    </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="photo_and_names">Foto e Nomes</SelectItem>
+                                                        <SelectItem value="names_only">Apenas Nomes</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -1105,5 +1090,3 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   </>
   );
 }
-
-    
