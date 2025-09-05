@@ -186,6 +186,30 @@ export default function DashboardPage() {
         if (pontos > 0) return 'default';
         return 'destructive';
     };
+
+    const calculateLivePoints = (match: Match, prediction: Prediction): number => {
+        if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+        
+        const championship = allChampionships.find(c => c.id === match.campeonatoId);
+        if (!championship) return 0;
+
+        const { placarA: liveA, placarB: liveB } = match;
+        const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+        const pontuacao = championship.pontuacao.tradicional;
+
+        if (guessA === liveA && guessB === liveB) {
+            return pontuacao.exato; 
+        }
+
+        const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
+        const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+
+        if (liveWinner === guessWinner) {
+            return pontuacao.situacao;
+        }
+
+        return 0;
+    };
     
     const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
         const matchDate = parseISO(matchDateString);
@@ -285,13 +309,15 @@ export default function DashboardPage() {
                                 {liveMatches.map((match) => {
                                     const prediction = userPredictions.find(p => p.matchId === match.id);
                                     if (!prediction) return null;
+
+                                    const livePoints = calculateLivePoints(match, prediction);
                                     const teamA = allTeams.find(t => t.name === match.timeA);
                                     const teamB = allTeams.find(t => t.name === match.timeB);
 
                                     return (
                                         <Accordion type="single" collapsible className="w-full" key={match.id}>
                                             <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
-                                                <Card className='border-accent/50'>
+                                                <Card className={cn('border-accent/50', getPredictionStatusClass(livePoints, match.maxPontos))}>
                                                     <AccordionTrigger className="p-4 hover:no-underline">
                                                         <div className="flex flex-col items-center justify-center w-full">
                                                             <div className="flex items-center justify-center w-full">
@@ -313,7 +339,7 @@ export default function DashboardPage() {
                                                         </div>
                                                     </AccordionTrigger>
                                                     <AccordionContent>
-                                                        <div className="p-4 border-t">
+                                                         <div className={cn("p-4 border-t", getPredictionStatusClass(livePoints, match.maxPontos))}>
                                                             <div className="flex justify-between items-center w-full">
                                                                 <div className="w-1/3 text-left flex items-center gap-2">
                                                                     <Avatar className="w-8 h-8">
@@ -324,6 +350,9 @@ export default function DashboardPage() {
                                                                 </div>
                                                                 <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                                                 <div className="w-1/3 text-right">
+                                                                    <Badge variant={getPointsBadgeVariant(livePoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                                        {livePoints} pts
+                                                                    </Badge>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -498,4 +527,3 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
-
