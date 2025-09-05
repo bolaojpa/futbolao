@@ -13,6 +13,7 @@ import {
   orderBy,
   limit,
   getDoc,
+  increment,
 } from 'firebase/firestore';
 import type { UserType, Team, Championship, Match, Prediction } from '../types';
 
@@ -60,6 +61,29 @@ export async function deleteUsers(userIds: string[]): Promise<void> {
 
     await batch.commit();
 }
+
+
+/**
+ * Updates a user's stats (points, exacts, situations) after a match is finalized.
+ * @param userId The ID of the user to update.
+ * @param points The points to add.
+ * @param isExactHit Whether the user got an exact hit.
+ * @param isSituationHit Whether the user got a situation hit.
+ */
+export async function updateUserStatsAfterMatch(userId: string, points: number, isExactHit: boolean, isSituationHit: boolean) {
+    const userRef = doc(db, 'users', userId);
+    const updates: { [key: string]: any } = {
+        pontos: increment(points)
+    };
+    if (isExactHit) {
+        updates.exatos = increment(1);
+    }
+    if (isSituationHit) {
+        updates.situacoes = increment(1);
+    }
+    await updateDoc(userRef, updates);
+}
+
 
 /**
  * Fetches all teams from the Firestore 'teams' collection.
@@ -261,3 +285,5 @@ export async function addToastNotification(userId: string, title: string, messag
     createdAt: serverTimestamp(),
   });
 }
+
+    

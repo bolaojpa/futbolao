@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
-import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification } from '@/lib/firebase/firestore';
+import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
 import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -139,15 +139,41 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const calculateFinalPoints = (match: Match, prediction: Prediction): { pontos: number, exato: boolean, situacao: boolean } => {
+        const { placarA: finalA, placarB: finalB } = match;
+        const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+        const championship = allChampionships.find(c => c.id === match.campeonatoId);
+        const pontuacao = championship?.pontuacao.tradicional;
+
+        if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) return { pontos: 0, exato: false, situacao: false };
+        
+        if (guessA === finalA && guessB === finalB) {
+            return { pontos: pontuacao.exato, exato: true, situacao: true }; // Acerto em cheio
+        }
+
+        const finalWinner = finalA > finalB ? 'A' : finalA < finalB ? 'B' : 'E';
+        const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+
+        if (finalWinner === guessWinner) {
+            return { pontos: pontuacao.situacao, exato: false, situacao: true }; // Acertou vencedor/empate
+        }
+        
+        return { pontos: 0, exato: false, situacao: false }; // Errou tudo
+    };
+
     const handleFinalizeMatch = async (match: Match) => {
        const currentScore = scores[match.id];
         if (currentScore.placarA === '' || currentScore.placarB === '') return;
 
+        const finalScoreA = Number(currentScore.placarA);
+        const finalScoreB = Number(currentScore.placarB);
+        const matchWithFinalScore = { ...match, placarA: finalScoreA, placarB: finalScoreB };
+
         try {
             await updateMatch(match.id, { 
                 status: 'Finalizado',
-                placarA: Number(currentScore.placarA),
-                placarB: Number(currentScore.placarB)
+                placarA: finalScoreA,
+                placarB: finalScoreB
             });
             
             // Re-fetch matches to update the UI
@@ -156,30 +182,34 @@ export default function AdminDashboardPage() {
 
             toast({
                 title: "Partida Finalizada!",
-                description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada e movida para o histórico.`,
+                description: `A partida ${match.timeA} vs ${match.timeB} foi movida para o histórico. Consolidando pontos...`,
             });
             
-            // Disparo da notificação de IA para usuários
-            if (enableAiNotifications) {
-                const predictionsForMatch = liveMatchesWithPredictions.find(m => m.id === match.id)?.predictions ?? [];
-                
-                for (const prediction of predictionsForMatch) {
-                    const user = allUsers.find(u => u.id === prediction.userId);
-                    if (!user || !user.pontos) continue;
+            const predictionsForMatch = liveMatchesWithPredictions.find(m => m.id === match.id)?.predictions ?? [];
+            
+            // Atualizar pontuações e perfis de usuário
+            for (const prediction of predictionsForMatch) {
+                 const { pontos, exato, situacao } = calculateFinalPoints(matchWithFinalScore, prediction);
+                 
+                 // Atualiza o documento de palpite com os pontos finais
+                 if (prediction.id) {
+                     await updateDoc(doc(db, 'predictions', prediction.id), { pontos });
+                 }
 
-                    const championship = allChampionships.find(c => c.id === match.campeonatoId);
-                    const pontuacao = championship?.pontuacao.tradicional;
-                    if (!pontuacao) continue;
+                 // Atualiza o perfil do usuário
+                 await updateUserStatsAfterMatch(prediction.userId, pontos, exato, situacao);
 
-                    const pointsGained = calculateSimulatedPoints(match, prediction.palpiteUsuario.placarA, prediction.palpiteUsuario.placarB);
+                // Disparo da notificação de IA para usuários
+                const user = allUsers.find(u => u.id === prediction.userId);
+                if (enableAiNotifications && user) {
                     
                     // Simular mudança no ranking
                     const oldPosition = allUsers.findIndex(u => u.id === user.id) + 1;
-                    const newPosition = pointsGained > 5 ? oldPosition - 1 : oldPosition;
+                    const newPosition = pontos > 5 ? oldPosition - 1 : oldPosition;
                     
                     const notificationData = {
                         apelido: user.apelido,
-                        pontosGanhos: pointsGained,
+                        pontosGanhos: pontos,
                         posicaoAnterior: oldPosition,
                         novaPosicao: newPosition > 0 ? newPosition : 1,
                         nomePartida: `${match.timeA} vs ${match.timeB}`
@@ -201,6 +231,9 @@ export default function AdminDashboardPage() {
                     });
                 }
             }
+             // Re-fetch users to reflect new scores
+            const updatedUsers = await getUsers();
+            setAllUsers(updatedUsers);
 
         } catch (error) {
              toast({ title: 'Erro ao finalizar a partida', variant: 'destructive' });
@@ -419,3 +452,5 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
+    
