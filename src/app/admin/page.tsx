@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
-import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch } from '@/lib/firebase/firestore';
+import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
 import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -187,15 +187,8 @@ export default function AdminDashboardPage() {
 
                     // Gera notificação com IA (não bloqueia a UI)
                     generatePerformanceUpdate(notificationData).then(result => {
-                        mockNotifications.unshift({
-                            id: `notif_${new Date().getTime()}_${user.id}`,
-                            title: result.titulo,
-                            message: result.mensagem,
-                            read: false,
-                            createdAt: new Date(),
-                            href: `/dashboard/leaderboard`
-                        });
-
+                        addToastNotification(user.id, result.titulo, result.mensagem);
+                        
                         mockLogs.unshift({
                             id: `log_${new Date().getTime()}`,
                             timestamp: new Date().toISOString(),
