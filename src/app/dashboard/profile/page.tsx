@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import type React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isPast, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { Honorifics } from '@/components/shared/honorifics';
@@ -24,11 +24,11 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { HonorificsExplanationModal } from '@/components/profile/honorifics-explanation-modal';
-import type { UserType, Championship, Match } from '@/lib/types';
+import type { UserType, Championship, Match, Prediction } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getChampionships, getMatches } from '@/lib/firebase/firestore';
+import { getChampionships, getMatches, getPredictionsForUser } from '@/lib/firebase/firestore';
 
 const TimeAgo = ({ dateString }: { dateString: string }) => {
     const [timeAgo, setTimeAgo] = useState('');
@@ -74,9 +74,11 @@ export default function ProfilePage() {
   const { user: authUser, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const userIdFromQuery = searchParams.get('userId');
+  
   const [userToDisplay, setUserToDisplay] = useState<UserType | null>(null);
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
 
   const userId = userIdFromQuery || authUser?.id;
@@ -84,17 +86,27 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!userId) return;
-
     setLoading(true);
     
-    // Fetch static data
-    Promise.all([getChampionships(), getMatches()]).then(([champs, matchData]) => {
-      setChampionships(champs);
-      setMatches(matchData);
-    });
+    const fetchStaticData = async () => {
+        try {
+            const [champs, matchData, preds] = await Promise.all([
+                getChampionships(), 
+                getMatches(),
+                getPredictionsForUser(userId) // Only fetch predictions for the displayed user
+            ]);
+            setChampionships(champs);
+            setMatches(matchData);
+            setAllPredictions(preds);
+        } catch (error) {
+            console.error("Failed to fetch static data for profile", error);
+        }
+    };
+    
+    fetchStaticData();
 
     // Listen for real-time user updates
-    const unsub = onSnapshot(doc(db, "users", userId), (doc) => {
+    const unsubUser = onSnapshot(doc(db, "users", userId), (doc) => {
       if (doc.exists()) {
         setUserToDisplay({ id: doc.id, ...doc.data() } as UserType);
       } else {
@@ -103,7 +115,7 @@ export default function ProfilePage() {
       setLoading(false);
     });
 
-    return () => unsub();
+    return () => unsubUser();
   }, [userId]);
   
   const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | undefined>(undefined);
@@ -115,23 +127,58 @@ export default function ProfilePage() {
     }
   }, [championships, selectedChampionshipId]);
 
+  const liveMatches = useMemo(() => {
+    return matches.filter(match => 
+        match.status !== 'Finalizado' && 
+        match.status !== 'Cancelado' &&
+        isPast(parseISO(match.data))
+    );
+  }, [matches]);
+
+  const calculateLivePoints = (match: Match, prediction: Prediction): number => {
+    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+    
+    const championship = championships.find(c => c.id === match.campeonatoId);
+    if (!championship) return 0;
+
+    const { placarA: liveA, placarB: liveB } = match;
+    const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+    const pontuacao = championship.pontuacao.tradicional;
+
+    if (guessA === liveA && guessB === liveB) return pontuacao.exato; 
+    const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
+    const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+    if (liveWinner === guessWinner) return pontuacao.situacao;
+
+    return 0;
+  };
 
   const selectedChampionshipStats = useMemo(() => {
     if (!userToDisplay || !selectedChampionshipId) {
-        return {
-            pontos: 0,
-            acertosExatos: 0,
-            acertosSituacao: 0,
-            maiorSequencia: 0,
-        };
+        return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, maiorSequencia: 0 };
     };
-    return userToDisplay.championshipStats?.find(stat => stat.championshipId === selectedChampionshipId) || {
-        pontos: 0,
-        acertosExatos: 0,
-        acertosSituacao: 0,
-        maiorSequencia: 0,
+
+    const baseStats = userToDisplay.championshipStats?.find(stat => stat.championshipId === selectedChampionshipId) || {
+        pontos: 0, acertosExatos: 0, acertosSituacao: 0, maiorSequencia: 0
     };
-  }, [userToDisplay, selectedChampionshipId]);
+
+    let livePoints = 0;
+    liveMatches.forEach(match => {
+        if(match.campeonatoId === selectedChampionshipId) {
+            const prediction = allPredictions.find(p => p.matchId === match.id);
+            if (prediction) {
+                livePoints += calculateLivePoints(match, prediction);
+            }
+        }
+    });
+
+    return {
+        pontos: baseStats.pontos + livePoints,
+        acertosExatos: baseStats.acertosExatos,
+        acertosSituacao: baseStats.acertosSituacao,
+        maiorSequencia: baseStats.maiorSequencia,
+    };
+  }, [userToDisplay, selectedChampionshipId, liveMatches, allPredictions, championships]);
 
   const lastGuessMatch = useMemo(() => {
       if (!userToDisplay?.ultimoPalpite?.matchId) return null;
@@ -277,7 +324,7 @@ export default function ProfilePage() {
                             </Select>
                         </div>
                     </div>
-                    {selectedChampionshipStats ? (
+                    {userToDisplay.championshipStats.some(s => s.championshipId === selectedChampionshipId) ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
                     </div>

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -29,9 +28,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { useAuth } from '@/hooks/use-auth';
-import type { UserType, Championship } from '@/lib/types';
-import { getChampionships } from '@/lib/firebase/firestore';
-import { onSnapshot, collection } from 'firebase/firestore';
+import type { UserType, Championship, Match, Prediction } from '@/lib/types';
+import { getChampionships, getMatches, getPredictionsForUser } from '@/lib/firebase/firestore';
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
+import { isPast, parseISO } from 'date-fns';
 import { db } from '@/lib/firebase';
 
 
@@ -44,6 +44,8 @@ export default function LeaderboardPage() {
 
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  const [liveMatches, setLiveMatches] = useState<Match[]>([]);
+  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   const [sortType, setSortType] = useState<SortType>('default');
@@ -72,28 +74,83 @@ export default function LeaderboardPage() {
       setAllUsers(usersData);
       setLoadingData(false);
     });
+    
+    const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
+        const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+        const live = matchesData.filter(match => 
+            match.status !== 'Finalizado' && 
+            match.status !== 'Cancelado' &&
+            isPast(parseISO(match.data))
+        );
+        setLiveMatches(live);
+    });
+
+    const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
+        const predictionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+        setAllPredictions(predictionsData);
+    });
 
     return () => {
       unsubUsers();
+      unsubMatches();
+      unsubPredictions();
     };
   }, [championshipIdFromQuery]);
 
-  const usersWithStatsForChampionship = useMemo(() => {
+  const calculateLivePoints = (match: Match, prediction: Prediction): number => {
+    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+    
+    const championship = championships.find(c => c.id === match.campeonatoId);
+    if (!championship) return 0;
+
+    const { placarA: liveA, placarB: liveB } = match;
+    const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+    const pontuacao = championship.pontuacao.tradicional;
+
+    if (guessA === liveA && guessB === liveB) {
+        return pontuacao.exato; 
+    }
+
+    const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
+    const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+
+    if (liveWinner === guessWinner) {
+        return pontuacao.situacao;
+    }
+
+    return 0;
+  };
+
+  const usersWithLiveScore = useMemo(() => {
     if (!selectedChampionship) return allUsers.map(u => ({ ...u, pontos: 0, exatos: 0, situacoes: 0}));
 
     return allUsers.map(user => {
-      const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
+        const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
+        const basePoints = stats?.pontos ?? 0;
+        const baseExatos = stats?.acertosExatos ?? 0;
+        const baseSituacoes = stats?.acertosSituacao ?? 0;
+      
+        let livePoints = 0;
+        liveMatches.forEach(match => {
+            if(match.campeonatoId === selectedChampionship) {
+                const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
+                if (prediction) {
+                    livePoints += calculateLivePoints(match, prediction);
+                }
+            }
+        });
+      
       return {
         ...user,
-        pontos: stats?.pontos ?? 0,
-        exatos: stats?.acertosExatos ?? 0,
-        situacoes: stats?.acertosSituacao ?? 0,
+        pontos: basePoints + livePoints,
+        exatos: baseExatos,
+        situacoes: baseSituacoes,
       }
     });
-  }, [allUsers, selectedChampionship]);
+  }, [allUsers, selectedChampionship, liveMatches, allPredictions, championships]);
   
   const sortedTableUsers = useMemo(() => {
-    return [...usersWithStatsForChampionship].sort((a, b) => {
+    return [...usersWithLiveScore].sort((a, b) => {
         switch (sortType) {
           case 'exact':
               if (a.exatos !== b.exatos) return b.exatos - a.exatos;
@@ -111,7 +168,7 @@ export default function LeaderboardPage() {
         const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateA - dateB;
     });
-  }, [usersWithStatsForChampionship, sortType]);
+  }, [usersWithLiveScore, sortType]);
 
 
   const getSortColumn = () => {
