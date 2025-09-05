@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import type React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatDistanceToNow, isPast, parseISO } from 'date-fns';
+import { format, formatDistanceToNow, isPast, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Link from 'next/link';
 import { Honorifics } from '@/components/shared/honorifics';
@@ -26,17 +26,34 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 import { HonorificsExplanationModal } from '@/components/profile/honorifics-explanation-modal';
 import type { UserType, Championship, Match, Prediction } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, onSnapshot, collection } from 'firebase/firestore';
+import { doc, onSnapshot, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getChampionships, getMatches, getPredictionsForUser } from '@/lib/firebase/firestore';
 
-const TimeAgo = ({ dateString }: { dateString: string }) => {
+const TimeAgo = ({ dateValue }: { dateValue: string | Date | Timestamp | undefined }) => {
     const [timeAgo, setTimeAgo] = useState('');
     useEffect(() => {
-        if (dateString) {
-            setTimeAgo(formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: ptBR }))
+        if (!dateValue) {
+            setTimeAgo("nunca");
+            return;
+        };
+
+        let date: Date;
+        if (dateValue instanceof Timestamp) {
+            date = dateValue.toDate();
+        } else if (typeof dateValue === 'string') {
+            date = new Date(dateValue);
+        } else {
+            date = dateValue;
         }
-    }, [dateString]);
+
+        if (date && !isNaN(date.getTime())) {
+            setTimeAgo(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+        } else {
+            setTimeAgo("data inválida")
+        }
+    }, [dateValue]);
+
     if (!timeAgo) return null;
     return <>{timeAgo}</>;
 };
@@ -93,7 +110,7 @@ export default function ProfilePage() {
             const [champs, matchData, preds] = await Promise.all([
                 getChampionships(), 
                 getMatches(),
-                getPredictionsForUser(userId) // Only fetch predictions for the displayed user
+                getPredictionsForUser(userId)
             ]);
             setChampionships(champs);
             setMatches(matchData);
@@ -105,7 +122,6 @@ export default function ProfilePage() {
     
     fetchStaticData();
 
-    // Listen for real-time user updates
     const unsubUser = onSnapshot(doc(db, "users", userId), (doc) => {
       if (doc.exists()) {
         setUserToDisplay({ id: doc.id, ...doc.data() } as UserType);
@@ -280,13 +296,13 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <LogIn className="w-4 h-4" />
                                 <span>
-                                    Último login: {ultimoLogin && <TimeAgo dateString={ultimoLogin} />}
+                                    Último login: <TimeAgo dateValue={ultimoLogin} />
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Clock className="w-4 h-4" />
                                 <span>
-                                    Última atividade: {ultimaAtividade && <TimeAgo dateString={ultimaAtividade} />}
+                                    Última atividade: <TimeAgo dateValue={ultimaAtividade} />
                                 </span>
                             </div>
                             {lastGuessMatch && (
@@ -324,7 +340,7 @@ export default function ProfilePage() {
                             </Select>
                         </div>
                     </div>
-                    {userToDisplay.championshipStats.some(s => s.championshipId === selectedChampionshipId) ? (
+                    {(userToDisplay.championshipStats && userToDisplay.championshipStats.some(s => s.championshipId === selectedChampionshipId)) ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
                     </div>

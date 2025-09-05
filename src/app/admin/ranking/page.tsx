@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -28,8 +27,9 @@ import { Honorifics } from '@/components/shared/honorifics';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { StatusIndicator } from '@/components/shared/status-indicator';
-import { getChampionships, getUsers } from '@/lib/firebase/firestore';
-
+import { getChampionships } from '@/lib/firebase/firestore';
+import { onSnapshot, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function AdminRankingPage() {
   const searchParams = useSearchParams();
@@ -38,44 +38,45 @@ export default function AdminRankingPage() {
   type SortType = 'default' | 'exact' | 'situation';
 
   const [sortType, setSortType] = useState<SortType>('default');
-  const [selectedChampionship, setSelectedChampionship] = useState<string | null>(null);
-  const [users, setUsers] = useState<UserType[]>([]);
+  const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | null>(null);
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchChampionships() {
         setLoading(true);
         try {
-            const [usersData, championshipsData] = await Promise.all([
-                getUsers(),
-                getChampionships()
-            ]);
-            setUsers(usersData);
+            const championshipsData = await getChampionships();
             setChampionships(championshipsData);
             
             if (championshipIdFromQuery) {
-                setSelectedChampionship(championshipIdFromQuery);
+                setSelectedChampionshipId(championshipIdFromQuery);
             } else if (championshipsData.length > 0) {
-                // Prioritize an active championship
                 const activeChampionship = championshipsData.find(c => c.status === 'ativo');
-                setSelectedChampionship(activeChampionship ? activeChampionship.id : championshipsData[0].id);
+                setSelectedChampionshipId(activeChampionship ? activeChampionship.id : championshipsData[0].id);
             }
         } catch (error) {
-            console.error("Failed to fetch ranking data:", error);
-        } finally {
-            setLoading(false);
+            console.error("Failed to fetch championships:", error);
         }
     }
-    fetchData();
+    fetchChampionships();
+    
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+        const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType));
+        setAllUsers(usersData);
+        setLoading(false);
+    });
+
+    return () => unsubUsers();
   }, [championshipIdFromQuery]);
   
 
   const usersWithStatsForChampionship = useMemo(() => {
-    if (!selectedChampionship) return users;
+    if (!selectedChampionshipId) return [];
 
-    return users.map(user => {
-      const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
+    return allUsers.map(user => {
+      const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
       return {
         ...user,
         pontos: stats?.pontos ?? 0,
@@ -83,10 +84,9 @@ export default function AdminRankingPage() {
         situacoes: stats?.acertosSituacao ?? 0,
       }
     });
-  }, [users, selectedChampionship]);
+  }, [allUsers, selectedChampionshipId]);
 
 
-  // Lista para a tabela (ordenada pelo filtro)
   const sortedTableUsers = useMemo(() => {
       return [...usersWithStatsForChampionship].sort((a, b) => {
         switch (sortType) {
@@ -102,7 +102,6 @@ export default function AdminRankingPage() {
                 if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
                 break;
         }
-        // Critério final de desempate para todos os casos
         const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
         const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateA - dateB;
@@ -181,7 +180,7 @@ export default function AdminRankingPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <h3 className="text-xl font-bold font-headline">Classificação Geral</h3>
             <div className="flex gap-2 w-full md:w-auto">
-                 <Select value={selectedChampionship || ''} onValueChange={(v) => setSelectedChampionship(v)}>
+                 <Select value={selectedChampionshipId || ''} onValueChange={(v) => setSelectedChampionshipId(v)}>
                     <SelectTrigger className="w-full md:w-[280px]">
                         <SelectValue placeholder="Filtrar por campeonato" />
                     </SelectTrigger>
