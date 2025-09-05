@@ -43,6 +43,7 @@ export default function DashboardPage() {
     const [allTeams, setAllTeams] = useState<Team[]>([]);
     const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
     const [loadingData, setLoadingData] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -73,6 +74,14 @@ export default function DashboardPage() {
         }
     }, [user, authLoading]);
 
+    // This effect updates the current time every second to re-evaluate match statuses.
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setCurrentTime(new Date());
+      }, 1000); // Update every second
+      return () => clearInterval(timer);
+    }, []);
+
     // Scroll to match if hash is present
     useEffect(() => {
         if (window.location.hash) {
@@ -90,14 +99,14 @@ export default function DashboardPage() {
         return allMatches
             .filter(match => match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data))))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches]);
+    }, [allMatches, currentTime]);
 
     const upcomingMatches = useMemo(() => {
         return allMatches
             .filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
             .slice(0, 6); // Limit to 6 upcoming matches on dashboard
-    }, [allMatches]);
+    }, [allMatches, currentTime]);
 
     const recentMatches = useMemo(() => {
         return allMatches
@@ -111,14 +120,16 @@ export default function DashboardPage() {
         return [...allUsers].sort((a, b) => {
             if (a.pontos !== b.pontos) return b.pontos - a.pontos;
             if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-            return new Date(a.dataCadastro as string).getTime() - new Date(b.dataCadastro as string).getTime();
+            const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
+            const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
+            return dateA - dateB;
         });
     }, [allUsers]);
 
     const leader = sortedUsers[0];
     const secondPlace = sortedUsers[1];
     
-    // Condição para exibir o card de líder
+    // Condition to show the leader card
     const showLeaderCard = leader && leader.pontos > 0;
 
     const getLeaderMessage = () => {

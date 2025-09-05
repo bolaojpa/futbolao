@@ -63,6 +63,7 @@ export function PredictionForm() {
     const [allTeams, setAllTeams] = useState<Team[]>([]);
     const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
     const [loadingData, setLoadingData] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     const [aiModalState, setAiModalState] = useState<{ open: boolean; suggestion: string | null; match: Match | null }>({ open: false, suggestion: null, match: null });
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
@@ -71,11 +72,18 @@ export function PredictionForm() {
     
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
 
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     const displayedMatches = useMemo(() => {
          return allMatches.filter(match => 
             match.status === 'Agendado' && !isPast(parseISO(match.data))
         ).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches]);
+    }, [allMatches, currentTime]);
 
 
     useEffect(() => {
@@ -134,15 +142,17 @@ export function PredictionForm() {
             }, 500); 
         }
 
-        const unsubscribes = displayedMatches.map(match => {
-            const docRef = doc(db, 'matches', match.id);
-            return onSnapshot(docRef, (doc) => {
-                if (doc.exists()) {
-                    const updatedMatch = { id: doc.id, ...doc.data() } as Match;
-                    setAllMatches(prev => prev.map(m => m.id === updatedMatch.id ? updatedMatch : m));
-                }
+        const unsubscribes = allMatches
+            .filter(match => match.status === 'Agendado')
+            .map(match => {
+                const docRef = doc(db, 'matches', match.id);
+                return onSnapshot(docRef, (doc) => {
+                    if (doc.exists()) {
+                        const updatedMatch = { id: doc.id, ...doc.data() } as Match;
+                        setAllMatches(prev => prev.map(m => m.id === updatedMatch.id ? updatedMatch : m));
+                    }
+                });
             });
-        });
 
         return () => unsubscribes.forEach(unsub => unsub());
 
@@ -270,7 +280,15 @@ export function PredictionForm() {
       };
 
     const groupedMatches = useMemo(() => {
-        return displayedMatches.reduce((acc, match) => {
+        const matchesToDisplay = allMatches.filter(match => {
+            if (match.status !== 'Agendado') return false;
+            // Show the match if it's in the future OR if it's locked (even if time has passed)
+            // so the user can see their locked-in bet.
+            if (match.predictionsLocked) return true;
+            return !isPast(parseISO(match.data));
+        }).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
+        return matchesToDisplay.reduce((acc, match) => {
             const phase = match.fase || 'Próximas Partidas';
             if (!acc[phase]) {
                 acc[phase] = [];
@@ -278,7 +296,7 @@ export function PredictionForm() {
             acc[phase].push(match);
             return acc;
         }, {} as Record<string, Match[]>);
-    }, [displayedMatches]);
+    }, [allMatches, currentTime]);
 
 
     if (authLoading || loadingData) {
@@ -296,7 +314,7 @@ export function PredictionForm() {
         </div>
     }
 
-    if (displayedMatches.length === 0) {
+    if (Object.keys(groupedMatches).length === 0) {
         return (
              <Card>
                 <CardContent className="p-6 text-center">
@@ -318,14 +336,14 @@ export function PredictionForm() {
                             const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
                             const teamA = allTeams.find(t => t.name === match.timeA);
                             const teamB = allTeams.find(t => t.name === match.timeB);
-                            const isLocked = match.predictionsLocked;
+                            const isLocked = match.predictionsLocked || isPast(parseISO(match.data));
                             
                             return (
                                 <Card 
                                     key={match.id} 
                                     id={match.id} 
                                     ref={(el) => matchRefs.current[match.id] = el}
-                                    className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse", isLocked && "bg-muted/30")}
+                                    className={cn("relative overflow-hidden scroll-mt-20", needsAttention && !isLocked && "border-accent animate-pulse", isLocked && "bg-muted/30")}
                                 >
                                     {needsAttention && !isLocked && (
                                         <Tooltip>
