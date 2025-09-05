@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -17,6 +18,8 @@ export default function AdminSettingsPage() {
 
     const handleSaveSettings = () => {
         // Em uma aplicação real, estes dados seriam salvos no Firestore
+        // e recuperados no início do ciclo de vida do aplicativo.
+        // Por agora, apenas simulamos a ação de salvar.
         console.log({
             allowRegistrations,
             enablePerformanceNotifications,

@@ -20,7 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-update';
-import { mockLogs, mockNotifications } from '@/lib/data'; // Keep for AI simulation
+import { mockLogs, mockNotifications, mockUser } from '@/lib/data';
 
 interface MatchWithPredictions extends Match {
     predictions: Prediction[];
@@ -36,6 +36,8 @@ export default function AdminDashboardPage() {
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [isLoading, setIsLoading] = useState(true);
+    // Simula a busca da configuração do admin
+    const [enableAiNotifications, setEnableAiNotifications] = useState(true);
 
     const { toast } = useToast();
 
@@ -147,7 +149,7 @@ export default function AdminDashboardPage() {
                 placarA: Number(currentScore.placarA),
                 placarB: Number(currentScore.placarB)
             });
-
+            
             // Re-fetch matches to update the UI
             const updatedMatches = await getMatches();
             setAllMatches(updatedMatches);
@@ -157,54 +159,54 @@ export default function AdminDashboardPage() {
                 description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada e movida para o histórico.`,
             });
             
-            // Simulação do disparo da notificação de IA para usuários
-            const predictionsForMatch = liveMatchesWithPredictions.find(m => m.id === match.id)?.predictions ?? [];
-            
-            for (const prediction of predictionsForMatch) {
-                const user = allUsers.find(u => u.id === prediction.userId);
-                if (!user || !user.pontos) continue;
-
-                const championship = allChampionships.find(c => c.id === match.campeonatoId);
-                const pontuacao = championship?.pontuacao.tradicional;
-
-                if (!pontuacao) continue;
-
-                const simulatedPoints = calculateSimulatedPoints(match, prediction.palpiteUsuario.placarA, prediction.palpiteUsuario.placarB);
+            // Disparo da notificação de IA para usuários
+            if (enableAiNotifications) {
+                const predictionsForMatch = liveMatchesWithPredictions.find(m => m.id === match.id)?.predictions ?? [];
                 
-                // Simular mudança no ranking
-                const oldPosition = allUsers.findIndex(u => u.id === user.id) + 1;
-                const newPosition = simulatedPoints > 5 ? oldPosition - 1 : oldPosition;
-                
-                const notificationData = {
-                    apelido: user.apelido,
-                    pontosGanhos: simulatedPoints,
-                    posicaoAnterior: oldPosition,
-                    novaPosicao: newPosition > 0 ? newPosition : 1,
-                    nomePartida: `${match.timeA} vs ${match.timeB}`
-                };
+                for (const prediction of predictionsForMatch) {
+                    const user = allUsers.find(u => u.id === prediction.userId);
+                    if (!user || !user.pontos) continue;
 
-                // Gera notificação com IA (não bloqueia a UI)
-                generatePerformanceUpdate(notificationData).then(result => {
-                    mockNotifications.unshift({
-                        id: `notif_${new Date().getTime()}`,
-                        title: result.titulo,
-                        message: result.mensagem,
-                        read: false,
-                        createdAt: new Date(),
-                        href: `/dashboard/leaderboard`
-                    });
+                    const championship = allChampionships.find(c => c.id === match.campeonatoId);
+                    const pontuacao = championship?.pontuacao.tradicional;
+                    if (!pontuacao) continue;
 
-                    // Adiciona log da notificação de IA
-                    mockLogs.unshift({
-                        id: `log_${new Date().getTime()}`,
-                        timestamp: new Date().toISOString(),
-                        actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' },
-                        action: 'ai_notification',
-                        details: { title: result.titulo, message: result.mensagem, target: user.apelido }
+                    const pointsGained = calculateSimulatedPoints(match, prediction.palpiteUsuario.placarA, prediction.palpiteUsuario.placarB);
+                    
+                    // Simular mudança no ranking
+                    const oldPosition = allUsers.findIndex(u => u.id === user.id) + 1;
+                    const newPosition = pointsGained > 5 ? oldPosition - 1 : oldPosition;
+                    
+                    const notificationData = {
+                        apelido: user.apelido,
+                        pontosGanhos: pointsGained,
+                        posicaoAnterior: oldPosition,
+                        novaPosicao: newPosition > 0 ? newPosition : 1,
+                        nomePartida: `${match.timeA} vs ${match.timeB}`
+                    };
+
+                    // Gera notificação com IA (não bloqueia a UI)
+                    generatePerformanceUpdate(notificationData).then(result => {
+                        mockNotifications.unshift({
+                            id: `notif_${new Date().getTime()}_${user.id}`,
+                            title: result.titulo,
+                            message: result.mensagem,
+                            read: false,
+                            createdAt: new Date(),
+                            href: `/dashboard/leaderboard`
+                        });
+
+                        mockLogs.unshift({
+                            id: `log_${new Date().getTime()}`,
+                            timestamp: new Date().toISOString(),
+                            actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' },
+                            action: 'ai_notification',
+                            details: { title: result.titulo, message: result.mensagem, target: user.apelido }
+                        });
+                    }).catch(err => {
+                        console.error("Falha ao gerar notificação de IA para", user.apelido, err);
                     });
-                }).catch(err => {
-                    console.error("Falha ao gerar notificação de IA para", user.apelido, err);
-                });
+                }
             }
 
         } catch (error) {
