@@ -18,53 +18,80 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { mockUsers, mockUser, mockChampionships, UserType } from '@/lib/data';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3 } from 'lucide-react';
+import type { UserType, Championship } from '@/lib/types';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Honorifics } from '@/components/shared/honorifics';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { StatusIndicator } from '@/components/shared/status-indicator';
+import { getChampionships, getUsers } from '@/lib/firebase/firestore';
 
 
 export default function AdminRankingPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
+  
   type SortType = 'default' | 'exact' | 'situation';
 
   const [sortType, setSortType] = useState<SortType>('default');
-  const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
+  const [selectedChampionship, setSelectedChampionship] = useState<string | null>(null);
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [championships, setChampionships] = useState<Championship[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sincroniza o estado com o parâmetro da URL
   useEffect(() => {
-    if (championshipIdFromQuery) {
-      setSelectedChampionship(championshipIdFromQuery);
+    async function fetchData() {
+        setLoading(true);
+        try {
+            const [usersData, championshipsData] = await Promise.all([
+                getUsers(),
+                getChampionships()
+            ]);
+            setUsers(usersData);
+            setChampionships(championshipsData);
+            
+            if (championshipIdFromQuery) {
+                setSelectedChampionship(championshipIdFromQuery);
+            } else if (championshipsData.length > 0) {
+                setSelectedChampionship(championshipsData[0].id);
+            }
+        } catch (error) {
+            console.error("Failed to fetch ranking data:", error);
+        } finally {
+            setLoading(false);
+        }
     }
+    fetchData();
   }, [championshipIdFromQuery]);
   
 
   // Lista para a tabela (ordenada pelo filtro)
-  const sortedTableUsers = [...mockUsers].sort((a, b) => {
-      switch (sortType) {
-        case 'exact':
-            if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-            break;
-        case 'situation':
-            if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-            break;
-        default:
-            // Regra Padrão
-            if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-            if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-            if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-            break;
-      }
-      // Critério final de desempate para todos os casos
-      return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
-  });
+  const sortedTableUsers = useMemo(() => {
+      if (!users) return [];
+      return [...users].sort((a, b) => {
+        switch (sortType) {
+            case 'exact':
+                if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+                break;
+            case 'situation':
+                if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+                break;
+            default:
+                if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+                if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+                if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+                break;
+        }
+        // Critério final de desempate para todos os casos
+        const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
+        const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
+        return dateA - dateB;
+    })
+  }, [users, sortType]);
 
   const getSortColumn = () => {
     switch (sortType) {
@@ -120,6 +147,9 @@ export default function AdminRankingPage() {
     }
   };
 
+  if (loading) {
+      return <div className="p-8 flex justify-center items-center h-full"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  }
 
   return (
     <TooltipProvider>
@@ -135,12 +165,12 @@ export default function AdminRankingPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <h3 className="text-xl font-bold font-headline">Classificação Geral</h3>
             <div className="flex gap-2 w-full md:w-auto">
-                 <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                 <Select value={selectedChampionship || ''} onValueChange={(v) => setSelectedChampionship(v)}>
                     <SelectTrigger className="w-full md:w-[280px]">
                         <SelectValue placeholder="Filtrar por campeonato" />
                     </SelectTrigger>
                     <SelectContent>
-                        {mockChampionships.map(champ => (
+                        {championships.map(champ => (
                             <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
                         ))}
                     </SelectContent>
@@ -172,7 +202,7 @@ export default function AdminRankingPage() {
                     {sortType === 'default' ? 'Buchas' : 'Pontos'}
                   </TableHead>
                    <TableHead className="text-right hidden md:table-cell">
-                    {sortType === 'situation' ? 'Buchas' : 'Pontos'}
+                    {sortType === 'situation' ? 'Buchas' : 'Situação'}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -204,7 +234,7 @@ export default function AdminRankingPage() {
                             <Link href={`/admin/users?userId=${user.id}`} className="flex items-center gap-3 group">
                                 <div className="relative">
                                     <Avatar className="w-9 h-9">
-                                      <AvatarImage src={`https://picsum.photos/100/100?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                                      <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
                                       <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                     </Avatar>
                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
@@ -232,3 +262,4 @@ export default function AdminRankingPage() {
     </TooltipProvider>
   );
 }
+
