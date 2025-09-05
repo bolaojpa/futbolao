@@ -26,8 +26,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { Match, Championship, Team, UserType } from '@/lib/types';
-import { getChampionships, getMatches, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
+import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
+import { getChampionships, getMatches, deleteMatch, getTeams, getUsers, getPredictionsForMatch } from '@/lib/firebase/firestore';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -61,6 +61,10 @@ const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => 
     return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
 };
 
+interface MatchWithPredictions extends Match {
+    predictions: Prediction[];
+}
+
 export default function AdminMatchesPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -70,7 +74,7 @@ export default function AdminMatchesPage() {
   const championshipIdFromQuery = searchParams.get('championshipId');
   
   const [championships, setChampionships] = useState<Championship[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] = useState<MatchWithPredictions[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
 
@@ -89,10 +93,22 @@ export default function AdminMatchesPage() {
         getTeams(),
         getUsers(),
       ]);
+
+      const scheduledMatches = matchesData.filter(m => m.status === 'Agendado');
+
+      // Anexar predições a cada partida agendada
+      const matchesWithPredictions: MatchWithPredictions[] = await Promise.all(
+        scheduledMatches.map(async (match) => {
+          const predictions = await getPredictionsForMatch(match.id);
+          return { ...match, predictions };
+        })
+      );
+      
       setChampionships(championshipsData);
-      setMatches(matchesData);
+      setMatches(matchesWithPredictions);
       setTeams(teamsData);
       setUsers(usersData);
+      
       if (championshipIdFromQuery) {
         setSelectedChampionship(championshipIdFromQuery);
       } else if (championshipsData.length > 0) {
@@ -112,9 +128,8 @@ export default function AdminMatchesPage() {
   const sortedMatches = useMemo(() => {
     return [...matches]
       .filter(match => {
-        const isScheduled = match.status === 'Agendado';
         const isChampionshipMatch = selectedChampionship === 'all' || match.campeonatoId === selectedChampionship;
-        return isScheduled && isChampionshipMatch;
+        return isChampionshipMatch;
       })
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
   }, [selectedChampionship, matches]);
@@ -220,9 +235,7 @@ export default function AdminMatchesPage() {
             const participants = championship?.participantes || [];
             const totalParticipants = participants.length;
             
-            // Simulação de palpites
-            const allPredictionsForMatch = users.slice(0, Math.floor(Math.random() * users.length));
-            const predictedUserIds = new Set(allPredictionsForMatch.map(p => p.id));
+            const predictedUserIds = new Set(match.predictions.map(p => p.userId));
             const missingUsers = participants
                 .map(pId => users.find(u => u.id === pId))
                 .filter(u => u && !predictedUserIds.has(u.id));
@@ -234,7 +247,7 @@ export default function AdminMatchesPage() {
             return (
               <Accordion type="single" collapsible className="w-full" key={match.id}>
                 <AccordionItem value={match.id} className="border-0">
-                  <Card className={cn("relative", hasMissingPredictions && "animate-border-pulse border-blue-500/50")}>
+                  <Card className={cn("relative", hasMissingPredictions && differenceInHours(parseISO(match.data), new Date()) < 48 && "animate-border-pulse border-blue-500/50")}>
                      <div className="absolute top-2 right-2 z-10">
                         <AlertDialog>
                             <DropdownMenu>
@@ -306,7 +319,7 @@ export default function AdminMatchesPage() {
                                         <TooltipTrigger asChild>
                                             <h4 className={cn("font-semibold flex items-center justify-center gap-2", hasMissingPredictions && "cursor-help")}>
                                                 <Users className="w-4 h-4" /> 
-                                                Palpites dos Usuários ({allPredictionsForMatch.length}/{totalParticipants})
+                                                Palpites dos Usuários ({match.predictions.length}/{totalParticipants})
                                             </h4>
                                         </TooltipTrigger>
                                         {hasMissingPredictions && (
@@ -320,11 +333,13 @@ export default function AdminMatchesPage() {
                                     </Tooltip>
                                 </TooltipProvider>
                             </div>
-                            {allPredictionsForMatch.length > 0 ? (
+                            {match.predictions.length > 0 ? (
                                 <ul className="text-sm">
-                                {allPredictionsForMatch.map((user, i) => {
+                                {match.predictions.map((prediction, i) => {
+                                    const user = users.find(u => u.id === prediction.userId);
+                                    if (!user) return null;
                                     return (
-                                    <li key={i} className={cn("flex justify-between items-center p-4 border-t")}>
+                                    <li key={i} className="flex justify-between items-center p-4 border-t">
                                         <div className="w-1/3 text-left flex items-center gap-2 group">
                                             <div className="relative">
                                                 <Avatar className="w-8 h-8">
@@ -337,8 +352,9 @@ export default function AdminMatchesPage() {
                                                 <span className="font-bold">{user.apelido}:</span>
                                             </div>
                                         </div>
-                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{Math.floor(Math.random() * 4)}-{Math.floor(Math.random() * 4)}</span>
+                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                     <div className="w-1/3 text-right">
+                                        {/* A pontuação só é exibida no histórico */}
                                     </div>
                                     </li>
                                 )})}
@@ -391,3 +407,4 @@ export default function AdminMatchesPage() {
     </div>
   );
 }
+
