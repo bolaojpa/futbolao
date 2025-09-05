@@ -195,7 +195,7 @@ export default function AdminDashboardPage() {
                  }
 
                  // Atualiza o perfil do usuário
-                 await updateUserStatsAfterMatch(prediction.userId, pontos, exato, situacao);
+                 await updateUserStatsAfterMatch(prediction.userId, match.campeonatoId, pontos, exato, situacao);
 
                 // Disparo da notificação de IA para usuários
                 const user = allUsers.find(u => u.id === prediction.userId);

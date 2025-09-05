@@ -1,3 +1,4 @@
+
 import { db } from '../firebase';
 import {
   collection,
@@ -14,6 +15,7 @@ import {
   limit,
   getDoc,
   increment,
+  runTransaction,
 } from 'firebase/firestore';
 import type { UserType, Team, Championship, Match, Prediction } from '../types';
 
@@ -64,24 +66,61 @@ export async function deleteUsers(userIds: string[]): Promise<void> {
 
 
 /**
- * Updates a user's stats (points, exacts, situations) after a match is finalized.
+ * Updates a user's stats for a specific championship after a match is finalized.
+ * This function handles creating the stats object if it doesn't exist.
  * @param userId The ID of the user to update.
+ * @param championshipId The ID of the championship.
  * @param points The points to add.
  * @param isExactHit Whether the user got an exact hit.
  * @param isSituationHit Whether the user got a situation hit.
  */
-export async function updateUserStatsAfterMatch(userId: string, points: number, isExactHit: boolean, isSituationHit: boolean) {
+export async function updateUserStatsAfterMatch(userId: string, championshipId: string, points: number, isExactHit: boolean, isSituationHit: boolean) {
     const userRef = doc(db, 'users', userId);
-    const updates: { [key: string]: any } = {
-        pontos: increment(points)
-    };
-    if (isExactHit) {
-        updates.exatos = increment(1);
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw "Document does not exist!";
+            }
+
+            const userData = userDoc.data() as UserType;
+            let champStats = userData.championshipStats || [];
+            let statsIndex = champStats.findIndex(s => s.championshipId === championshipId);
+
+            if (statsIndex === -1) {
+                // If no stats for this championship, create a new entry
+                champStats.push({
+                    championshipId: championshipId,
+                    pontos: 0,
+                    acertosExatos: 0,
+                    acertosSituacao: 0,
+                    maiorSequencia: 0, // A lógica de sequência precisa ser mais complexa
+                });
+                statsIndex = champStats.length - 1;
+            }
+
+            // Update the values
+            const updatedStats = { ...champStats[statsIndex] };
+            updatedStats.pontos += points;
+            if (isExactHit) {
+                updatedStats.acertosExatos += 1;
+            }
+            if (isSituationHit) {
+                updatedStats.acertosSituacao += 1;
+            }
+
+            champStats[statsIndex] = updatedStats;
+            
+            // Update the entire array in the user document
+            transaction.update(userRef, { 
+                championshipStats: champStats,
+                totalJogos: increment(1) // Increment total games played
+            });
+        });
+    } catch (e) {
+        console.error("Transaction failed: ", e);
     }
-    if (isSituationHit) {
-        updates.situacoes = increment(1);
-    }
-    await updateDoc(userRef, updates);
 }
 
 
@@ -127,12 +166,10 @@ export async function deleteTeams(teamIds: string[]): Promise<void> {
  */
 export async function getChampionships(): Promise<Championship[]> {
     const championshipsCollection = collection(db, 'championships');
-    // It's better to sort by a consistent field like createdAt if available.
-    // Sorting by name might be inconsistent depending on the use case.
-    const q = query(championshipsCollection, orderBy('createdAt', 'desc'));
+    const q = query(championshipsCollection);
     const championshipSnapshot = await getDocs(q);
     const championshipList = championshipSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
-    return championshipList;
+    return championshipList.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
 }
 
 
