@@ -149,7 +149,7 @@ export default function DashboardPage() {
     const leader = sortedUsers[0];
     const secondPlace = sortedUsers[1];
     
-    const showLeaderCard = leader && leader.pontos > 0;
+    const showLeaderCard = leader && recentMatches.length > 0;
 
     const getLeaderMessage = () => {
         if (!leader || !secondPlace) return "Líder do ranking!";
