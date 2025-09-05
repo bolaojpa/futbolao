@@ -80,9 +80,15 @@ export function PredictionForm() {
     }, []);
 
     const displayedMatches = useMemo(() => {
-         return allMatches.filter(match => 
-            match.status === 'Agendado' && !isPast(parseISO(match.data))
-        ).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+        // Exibe uma partida nesta tela SE E SOMENTE SE:
+        // 1. O status for 'Agendado'
+        // 2. A data/hora do jogo ainda não passou
+        return allMatches
+            .filter(match => {
+                if (match.status !== 'Agendado') return false;
+                return !isPast(parseISO(match.data));
+            })
+            .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
     }, [allMatches, currentTime]);
 
 
@@ -280,15 +286,7 @@ export function PredictionForm() {
       };
 
     const groupedMatches = useMemo(() => {
-        const matchesToDisplay = allMatches.filter(match => {
-            if (match.status !== 'Agendado') return false;
-            // Show the match if it's in the future OR if it's locked (even if time has passed)
-            // so the user can see their locked-in bet.
-            if (match.predictionsLocked) return true;
-            return !isPast(parseISO(match.data));
-        }).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-
-        return matchesToDisplay.reduce((acc, match) => {
+        return displayedMatches.reduce((acc, match) => {
             const phase = match.fase || 'Próximas Partidas';
             if (!acc[phase]) {
                 acc[phase] = [];
@@ -296,7 +294,7 @@ export function PredictionForm() {
             acc[phase].push(match);
             return acc;
         }, {} as Record<string, Match[]>);
-    }, [allMatches, currentTime]);
+    }, [displayedMatches]);
 
 
     if (authLoading || loadingData) {
