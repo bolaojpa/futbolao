@@ -159,41 +159,43 @@ export default function DashboardPage() {
     const sortedUsers = useMemo(() => {
         if (allUsers.length === 0) return [];
         
-        const calculateLivePointsForUser = (userId: string) => {
-            let totalLivePoints = 0;
+        const usersWithLivePoints = allUsers.map(u => {
+            const activeChampionship = allChampionships.find(c => c.status === 'ativo');
+            const baseStats = u.championshipStats?.find(s => s.championshipId === activeChampionship?.id);
+            const basePoints = baseStats?.pontos ?? 0;
+            const baseExatos = baseStats?.acertosExatos ?? 0;
+            
+            let livePoints = 0;
             liveMatches.forEach(match => {
-                const prediction = userPredictions.find(p => p.matchId === match.id && p.userId === userId);
-                if (prediction) {
-                    totalLivePoints += calculateLivePoints(match, prediction);
+                if(match.campeonatoId === activeChampionship?.id) {
+                    const prediction = userPredictions.find(p => p.matchId === match.id && p.userId === u.id);
+                    if (prediction) {
+                        livePoints += calculateLivePoints(match, prediction);
+                    }
                 }
             });
-            return totalLivePoints;
-        };
-
-        const usersWithLivePoints = allUsers.map(u => {
-            const livePoints = calculateLivePointsForUser(u.id);
-            return { ...u, livePoints: livePoints, totalPoints: (u.pontos || 0) + livePoints };
+            return { ...u, pontos: basePoints + livePoints, exatos: baseExatos };
         });
 
         return [...usersWithLivePoints].sort((a, b) => {
-            if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
+            if (a.pontos !== b.pontos) return b.pontos - a.pontos;
             if (a.exatos !== b.exatos) return b.exatos - a.exatos;
             const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
             const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
             return dateA - dateB;
         });
-    }, [allUsers, liveMatches, userPredictions, allChampionships]);
+    }, [allUsers, allChampionships, liveMatches, userPredictions]);
 
 
-    const leader = sortedUsers[0] as (UserType & { totalPoints?: number }) | undefined;
-    const secondPlace = sortedUsers[1] as (UserType & { totalPoints?: number }) | undefined;
+    const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
+    const secondPlace = sortedUsers[1] as (UserType & { pontos: number }) | undefined;
     
-    const showLeaderCard = leader && (leader.totalPoints !== undefined && leader.totalPoints >= 0);
+    const showLeaderCard = leader && leader.pontos >= 0;
 
 
     const getLeaderMessage = () => {
         if (!leader || !secondPlace) return "Líder do ranking!";
-        const pointsDifference = (leader.totalPoints ?? leader.pontos) - (secondPlace.totalPoints ?? secondPlace.pontos);
+        const pointsDifference = leader.pontos - secondPlace.pontos;
         if (pointsDifference > 10) {
             return "Líder isolado!";
         }
@@ -302,7 +304,7 @@ export default function DashboardPage() {
                                             <CardTitle className="text-xl font-headline text-primary">
                                             <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
                                             </CardTitle>
-                                            {leader && <p className="text-xl font-headline">{leader.totalPoints ?? leader.pontos} pts</p>}
+                                            {leader && <p className="text-xl font-headline">{leader.pontos} pts</p>}
                                         </div>
                                         <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
                                     </div>

@@ -117,8 +117,20 @@ export default function ProfilePage() {
 
 
   const selectedChampionshipStats = useMemo(() => {
-    if (!userToDisplay || !selectedChampionshipId) return null;
-    return userToDisplay.championshipStats?.find(stat => stat.championshipId === selectedChampionshipId) || null;
+    if (!userToDisplay || !selectedChampionshipId) {
+        return {
+            pontos: 0,
+            acertosExatos: 0,
+            acertosSituacao: 0,
+            maiorSequencia: 0,
+        };
+    };
+    return userToDisplay.championshipStats?.find(stat => stat.championshipId === selectedChampionshipId) || {
+        pontos: 0,
+        acertosExatos: 0,
+        acertosSituacao: 0,
+        maiorSequencia: 0,
+    };
   }, [userToDisplay, selectedChampionshipId]);
 
   const lastGuessMatch = useMemo(() => {
@@ -167,12 +179,12 @@ export default function ProfilePage() {
     { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Total de Palpites", value: totalJogos || 0, description: "Palpites enviados em todos os tempos" },
   ];
 
-  const championshipSpecificStats = selectedChampionshipStats ? [
+  const championshipSpecificStats = [
     { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Pontos", value: selectedChampionshipStats.pontos, description: "Total de pontos no campeonato", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}`},
     { icon: <Target className="h-4 w-4 text-muted-foreground" />, title: "Acertos Exatos", value: selectedChampionshipStats.acertosExatos, description: "Placares cravados", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`},
     { icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />, title: "Acertos de Situação", value: selectedChampionshipStats.acertosSituacao, description: "Vencedor/empate corretos", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=situation`},
     { icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />, title: "Maior Sequência de Acertos", value: selectedChampionshipStats.maiorSequencia, description: "Sequência de placares exatos"},
-  ] : [];
+  ];
 
   return (
     <TooltipProvider>

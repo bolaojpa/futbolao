@@ -79,7 +79,7 @@ export default function LeaderboardPage() {
   }, [championshipIdFromQuery]);
 
   const usersWithStatsForChampionship = useMemo(() => {
-    if (!selectedChampionship) return allUsers;
+    if (!selectedChampionship) return allUsers.map(u => ({ ...u, pontos: 0, exatos: 0, situacoes: 0}));
 
     return allUsers.map(user => {
       const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
