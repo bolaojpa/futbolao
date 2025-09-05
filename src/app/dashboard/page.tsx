@@ -132,30 +132,52 @@ export default function DashboardPage() {
             .slice(0, 3);
     }, [allMatches]);
 
+    const calculateLivePointsForUser = (userId: string) => {
+        let totalLivePoints = 0;
+        liveMatches.forEach(match => {
+            const prediction = userPredictions.find(p => p.matchId === match.id && p.userId === userId);
+            if (prediction) {
+                totalLivePoints += calculateLivePoints(match, prediction);
+            }
+        });
+        return totalLivePoints;
+    };
+    
     const sortedUsers = useMemo(() => {
         if (allUsers.length === 0) return [];
-        return [...allUsers].sort((a, b) => {
-            if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+
+        const usersWithLivePoints = allUsers.map(u => {
+            const livePoints = calculateLivePointsForUser(u.id);
+            return { ...u, livePoints: livePoints, totalPoints: u.pontos + livePoints };
+        });
+
+        return [...usersWithLivePoints].sort((a, b) => {
+            if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
             if (a.exatos !== b.exatos) return b.exatos - a.exatos;
             const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
             const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
             return dateA - dateB;
         });
-    }, [allUsers]);
+    }, [allUsers, liveMatches, userPredictions]);
 
-    const leader = sortedUsers[0];
-    const secondPlace = sortedUsers[1];
+
+    const leader = sortedUsers[0] as (UserType & { totalPoints?: number }) | undefined;
+    const secondPlace = sortedUsers[1] as (UserType & { totalPoints?: number }) | undefined;
     
-    const showLeaderCard = leader && recentMatches.length > 0;
+    const showLeaderCard = leader && (liveMatches.length > 0 || recentMatches.length > 0);
+
 
     const getLeaderMessage = () => {
         if (!leader || !secondPlace) return "Líder do ranking!";
-        const pointsDifference = leader.pontos - secondPlace.pontos;
+        const pointsDifference = (leader.totalPoints || leader.pontos) - (secondPlace.totalPoints || secondPlace.pontos);
         if (pointsDifference > 10) {
             return "Líder isolado!";
         }
-        if (pointsDifference <= 3) {
+        if (pointsDifference <= 3 && pointsDifference > 0) {
             return "Disputa acirrada pela ponta!";
+        }
+        if (pointsDifference === 0) {
+            return "Empatado na liderança!"
         }
         return "O alvo de todos!";
     };
@@ -280,7 +302,7 @@ export default function DashboardPage() {
                                             <CardTitle className="text-xl font-headline text-primary">
                                             <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
                                             </CardTitle>
-                                            <p className="text-xl font-headline">{leader.pontos} pts</p>
+                                            <p className="text-xl font-headline">{(leader.totalPoints ?? leader.pontos)} pts</p>
                                         </div>
                                         <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
                                     </div>
