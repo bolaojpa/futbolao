@@ -10,9 +10,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
-import { format, parseISO, differenceInHours, isToday } from 'date-fns';
+import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown, Trophy } from 'lucide-react';
+import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown, Trophy, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,11 +28,22 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
 import { getChampionships, getMatches, deleteMatch, getTeams, getUsers, getPredictionsForMatch } from '@/lib/firebase/firestore';
+import { Badge } from '@/components/ui/badge';
 
 const ITEMS_PER_PAGE = 10;
 
 const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
     const matchDate = parseISO(matchDateString);
+    
+    if (isPast(matchDate)) {
+        return (
+             <Badge variant='destructive' className='animate-pulse'>
+                <Zap className="w-3 h-3 mr-1.5" />
+                Ao Vivo
+            </Badge>
+        )
+    }
+
     const now = new Date();
     const hoursDiff = differenceInHours(matchDate, now);
 
