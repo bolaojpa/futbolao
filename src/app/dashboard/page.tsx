@@ -172,7 +172,7 @@ export default function DashboardPage() {
 
         const usersWithLivePoints = allUsers.map(u => {
             const livePoints = calculateLivePointsForUser(u.id);
-            return { ...u, livePoints: livePoints, totalPoints: u.pontos + livePoints };
+            return { ...u, livePoints: livePoints, totalPoints: (u.pontos || 0) + livePoints };
         });
 
         return [...usersWithLivePoints].sort((a, b) => {
@@ -188,12 +188,12 @@ export default function DashboardPage() {
     const leader = sortedUsers[0] as (UserType & { totalPoints?: number }) | undefined;
     const secondPlace = sortedUsers[1] as (UserType & { totalPoints?: number }) | undefined;
     
-    const showLeaderCard = leader && (liveMatches.length > 0 || recentMatches.length > 0 || leader.pontos > 0 || leader.totalPoints > 0);
+    const showLeaderCard = leader && (liveMatches.length > 0 || recentMatches.length > 0 || (leader.totalPoints !== undefined && leader.totalPoints >= 0));
 
 
     const getLeaderMessage = () => {
         if (!leader || !secondPlace) return "Líder do ranking!";
-        const pointsDifference = (leader.totalPoints || leader.pontos) - (secondPlace.totalPoints || secondPlace.pontos);
+        const pointsDifference = (leader.totalPoints ?? leader.pontos) - (secondPlace.totalPoints ?? secondPlace.pontos);
         if (pointsDifference > 10) {
             return "Líder isolado!";
         }
@@ -302,7 +302,7 @@ export default function DashboardPage() {
                                             <CardTitle className="text-xl font-headline text-primary">
                                             <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
                                             </CardTitle>
-                                            <p className="text-xl font-headline">{(leader.totalPoints ?? leader.pontos)} pts</p>
+                                            {leader && <p className="text-xl font-headline">{(leader.totalPoints ?? leader.pontos)} pts</p>}
                                         </div>
                                         <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
                                     </div>
