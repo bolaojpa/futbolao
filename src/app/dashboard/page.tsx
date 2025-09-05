@@ -45,15 +45,15 @@ export default function DashboardPage() {
     const [allTeams, setAllTeams] = useState<Team[]>([]);
     const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
     const [loadingData, setLoadingData] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
     
     // This effect ensures that the component re-renders to check match statuses in real-time.
-    const [, setCurrentTime] = useState(new Date());
      useEffect(() => {
       const timer = setInterval(() => {
         setCurrentTime(new Date());
-      }, 1000 * 30); // Update every 30 seconds is enough to check status
+      }, 1000); // Update every second for real-time countdown effect
       return () => clearInterval(timer);
     }, []);
 
@@ -119,14 +119,14 @@ export default function DashboardPage() {
         return allMatches
             .filter(match => match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data))))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches]);
+    }, [allMatches, currentTime]);
 
     const upcomingMatches = useMemo(() => {
         return allMatches
             .filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
             .slice(0, 6); // Limit to 6 upcoming matches on dashboard
-    }, [allMatches]);
+    }, [allMatches, currentTime]);
 
     const recentMatches = useMemo(() => {
         return allMatches
