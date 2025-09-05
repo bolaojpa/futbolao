@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
                 };
                 return acc;
             }, {} as Record<string, { placarA: string; placarB: string; }>);
-            setScores(prevScores => ({ ...prevScores, ...initialScores }));
+            setScores(prevScores => ({ ...initialScores, ...prevScores }));
         };
 
         updateLiveMatches();
@@ -145,8 +145,9 @@ export default function AdminDashboardPage() {
 
         if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) return { pontos: 0, exato: false, situacao: false };
         
-        if (guessA === finalA && guessB === finalB) {
-            return { pontos: pontuacao.exato, exato: true, situacao: true }; // Acerto em cheio
+        const acertouPlacar = guessA === finalA && guessB === finalB;
+        if (acertouPlacar) {
+            return { pontos: pontuacao.exato, exato: true, situacao: false }; // Acerto em cheio, não é situação
         }
 
         const finalWinner = finalA > finalB ? 'A' : finalA < finalB ? 'B' : 'E';
