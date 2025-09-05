@@ -155,20 +155,20 @@ export default function DashboardPage() {
 
         return 0;
     };
-
-    const calculateLivePointsForUser = (userId: string) => {
-        let totalLivePoints = 0;
-        liveMatches.forEach(match => {
-            const prediction = userPredictions.find(p => p.matchId === match.id && p.userId === userId);
-            if (prediction) {
-                totalLivePoints += calculateLivePoints(match, prediction);
-            }
-        });
-        return totalLivePoints;
-    };
     
     const sortedUsers = useMemo(() => {
         if (allUsers.length === 0) return [];
+        
+        const calculateLivePointsForUser = (userId: string) => {
+            let totalLivePoints = 0;
+            liveMatches.forEach(match => {
+                const prediction = userPredictions.find(p => p.matchId === match.id && p.userId === userId);
+                if (prediction) {
+                    totalLivePoints += calculateLivePoints(match, prediction);
+                }
+            });
+            return totalLivePoints;
+        };
 
         const usersWithLivePoints = allUsers.map(u => {
             const livePoints = calculateLivePointsForUser(u.id);
@@ -182,7 +182,7 @@ export default function DashboardPage() {
             const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
             return dateA - dateB;
         });
-    }, [allUsers, liveMatches, userPredictions]);
+    }, [allUsers, liveMatches, userPredictions, allChampionships]);
 
 
     const leader = sortedUsers[0] as (UserType & { totalPoints?: number }) | undefined;
@@ -302,7 +302,7 @@ export default function DashboardPage() {
                                             <CardTitle className="text-xl font-headline text-primary">
                                             <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
                                             </CardTitle>
-                                            {leader && <p className="text-xl font-headline">{(leader.totalPoints ?? leader.pontos)} pts</p>}
+                                            {leader && <p className="text-xl font-headline">{leader.totalPoints ?? leader.pontos} pts</p>}
                                         </div>
                                         <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
                                     </div>

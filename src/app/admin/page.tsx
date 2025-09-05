@@ -85,18 +85,15 @@ export default function AdminDashboardPage() {
             
             setLiveMatchesWithPredictions(matchesWithPredictions);
 
-            setScores(prevScores => {
-                const newScores = {...prevScores};
-                live.forEach(match => {
-                    if (!newScores[match.id]) {
-                        newScores[match.id] = { 
-                            placarA: match.placarA?.toString() ?? '0', 
-                            placarB: match.placarB?.toString() ?? '0' 
-                        };
-                    }
-                });
-                return newScores;
-            });
+            // Initialize scores for live matches
+            const initialScores = live.reduce((acc, match) => {
+                acc[match.id] = { 
+                    placarA: match.placarA?.toString() ?? '0', 
+                    placarB: match.placarB?.toString() ?? '0' 
+                };
+                return acc;
+            }, {} as Record<string, { placarA: string; placarB: string; }>);
+            setScores(prevScores => ({ ...prevScores, ...initialScores }));
         };
 
         updateLiveMatches();
