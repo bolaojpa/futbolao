@@ -135,7 +135,7 @@ export default function AdminMatchesPage() {
 
   // Real-time listeners
   useEffect(() => {
-      const qMatches = query(collection(db, 'matches'), where('status', '!=', 'Finalizado'), where('status', '!=', 'Cancelado'));
+      const qMatches = query(collection(db, 'matches'), where('status', 'in', ['Agendado', 'Ao Vivo']));
       const unsubMatches = onSnapshot(qMatches, (snapshot) => {
           const matchesData: Match[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
           setAllMatches(matchesData);
@@ -437,5 +437,3 @@ export default function AdminMatchesPage() {
     </div>
   );
 }
-
-    
