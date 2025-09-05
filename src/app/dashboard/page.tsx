@@ -132,6 +132,30 @@ export default function DashboardPage() {
             .slice(0, 3);
     }, [allMatches]);
 
+    const calculateLivePoints = (match: Match, prediction: Prediction): number => {
+        if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+        
+        const championship = allChampionships.find(c => c.id === match.campeonatoId);
+        if (!championship) return 0;
+
+        const { placarA: liveA, placarB: liveB } = match;
+        const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+        const pontuacao = championship.pontuacao.tradicional;
+
+        if (guessA === liveA && guessB === liveB) {
+            return pontuacao.exato; 
+        }
+
+        const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
+        const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+
+        if (liveWinner === guessWinner) {
+            return pontuacao.situacao;
+        }
+
+        return 0;
+    };
+
     const calculateLivePointsForUser = (userId: string) => {
         let totalLivePoints = 0;
         liveMatches.forEach(match => {
@@ -164,7 +188,7 @@ export default function DashboardPage() {
     const leader = sortedUsers[0] as (UserType & { totalPoints?: number }) | undefined;
     const secondPlace = sortedUsers[1] as (UserType & { totalPoints?: number }) | undefined;
     
-    const showLeaderCard = leader && (liveMatches.length > 0 || recentMatches.length > 0);
+    const showLeaderCard = leader && (liveMatches.length > 0 || recentMatches.length > 0 || leader.pontos > 0 || leader.totalPoints > 0);
 
 
     const getLeaderMessage = () => {
@@ -207,30 +231,6 @@ export default function DashboardPage() {
         if (pontos === maxPontos && maxPontos > 0) return 'success';
         if (pontos > 0) return 'default';
         return 'destructive';
-    };
-
-    const calculateLivePoints = (match: Match, prediction: Prediction): number => {
-        if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
-        
-        const championship = allChampionships.find(c => c.id === match.campeonatoId);
-        if (!championship) return 0;
-
-        const { placarA: liveA, placarB: liveB } = match;
-        const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-        const pontuacao = championship.pontuacao.tradicional;
-
-        if (guessA === liveA && guessB === liveB) {
-            return pontuacao.exato; 
-        }
-
-        const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
-        const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
-
-        if (liveWinner === guessWinner) {
-            return pontuacao.situacao;
-        }
-
-        return 0;
     };
     
     const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
