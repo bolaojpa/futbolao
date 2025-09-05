@@ -66,10 +66,8 @@ export function PredictionForm() {
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
     
-    // Estado para controlar as partidas visíveis
     const [displayedMatches, setDisplayedMatches] = useState<Match[]>([]);
     
-    // Armazena as referências dos cards para a rolagem
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
 
 
@@ -118,7 +116,6 @@ export function PredictionForm() {
 
         fetchData();
 
-        // Lógica para rolar para o card do jogo
         if (window.location.hash) {
             const matchId = window.location.hash.substring(1);
             setTimeout(() => { 
@@ -133,12 +130,11 @@ export function PredictionForm() {
             }, 500); 
         }
 
-        // Lógica para remover cards de jogos que já começaram
         const interval = setInterval(() => {
             setDisplayedMatches(prevMatches => 
                 prevMatches.filter(match => !isPast(parseISO(match.data)) && !match.predictionsLocked)
             );
-        }, 1000); 
+        }, 1000 * 30); // Check every 30 seconds
 
         return () => clearInterval(interval);
 
@@ -157,8 +153,10 @@ export function PredictionForm() {
     const handlePredictionSubmit = async (match: Match) => {
         if (!user) return;
 
-        // Simula a verificação do servidor
-        if (isPast(parseISO(match.data)) || match.predictionsLocked) {
+        const liveMatch = await getDoc(doc(db, 'matches', match.id));
+        const liveMatchData = liveMatch.data() as Match;
+
+        if (isPast(parseISO(liveMatchData.data)) || liveMatchData.predictionsLocked) {
             toast({
                 title: "Tempo Esgotado!",
                 description: "Esta partida já começou ou está bloqueada para palpites.",
@@ -197,7 +195,6 @@ export function PredictionForm() {
     const handleAiSuggestion = async (match: Match) => {
         setLoadingAi(prev => ({ ...prev, [match.id]: true }));
         
-        // Simulação de dados para a IA, pois ainda não temos palpites de outros usuários no DB
         const mockPredictionsForAI = [
             { userId: 'user_2', prediction: 'Time A vence por 2 a 1.' },
             { userId: 'user_3', prediction: 'Empate em 1 a 1.' },
