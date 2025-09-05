@@ -5,12 +5,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { mockMatches, mockUser, mockPredictions, mockChampionships } from '@/lib/data';
 import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Trophy } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
+import { getAiSuggestion, savePrediction } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
@@ -18,8 +17,9 @@ import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
-
-type Match = typeof mockMatches.upcoming[0];
+import type { Match, Prediction } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { getMatches, getPredictionsForUser } from '@/lib/firebase/firestore';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -55,11 +55,16 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
 export function PredictionForm() {
     const { toast } = useToast();
     const router = useRouter();
+    const { user, loading: authLoading } = useAuth();
+
+    const [allMatches, setAllMatches] = useState<Match[]>([]);
+    const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
+    const [loadingData, setLoadingData] = useState(true);
+
     const [aiModalState, setAiModalState] = useState<{ open: boolean; suggestion: string | null; match: Match | null }>({ open: false, suggestion: null, match: null });
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
-    const [isClient, setIsClient] = useState(false);
     
     // Estado para controlar as partidas visíveis
     const [displayedMatches, setDisplayedMatches] = useState<Match[]>([]);
@@ -69,26 +74,54 @@ export function PredictionForm() {
 
 
     useEffect(() => {
-        setIsClient(true);
-        const initialUpdates: Record<string, Date | null> = {};
-        const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
-        
-        const openMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)));
-        setDisplayedMatches(openMatches);
+        if (authLoading) return;
+        if (!user) {
+            router.push('/');
+            return;
+        }
 
-        mockPredictions.forEach(p => {
-            if (p.userId === mockUser.id && openMatches.some(m => m.id === p.matchId)) {
-                 initialUpdates[p.matchId] = new Date(); 
-                 initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
+        async function fetchData() {
+            setLoadingData(true);
+            try {
+                const [matchesData, predictionsData] = await Promise.all([
+                    getMatches(),
+                    getPredictionsForUser(user!.id)
+                ]);
+
+                setAllMatches(matchesData);
+                setUserPredictions(predictionsData);
+
+                const openMatches = matchesData.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)));
+                setDisplayedMatches(openMatches);
+
+                const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
+                const initialUpdates: Record<string, Date | null> = {};
+
+                predictionsData.forEach(p => {
+                    if (openMatches.some(m => m.id === p.matchId)) {
+                        initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
+                        if (p.updatedAt) {
+                           initialUpdates[p.matchId] = p.updatedAt.toDate();
+                        }
+                    }
+                });
+
+                setScores(initialScores);
+                setLastUpdated(initialUpdates);
+
+            } catch (error) {
+                toast({ title: "Erro ao buscar dados", description: "Não foi possível carregar as partidas e palpites.", variant: "destructive" });
+            } finally {
+                setLoadingData(false);
             }
-        });
-        setLastUpdated(initialUpdates);
-        setScores(initialScores);
+        }
+
+        fetchData();
 
         // Lógica para rolar para o card do jogo
         if (window.location.hash) {
             const matchId = window.location.hash.substring(1);
-            setTimeout(() => { // Timeout para garantir que o elemento esteja renderizado
+            setTimeout(() => { 
                 const element = matchRefs.current[matchId];
                 if (element) {
                     element.scrollIntoView({
@@ -97,7 +130,7 @@ export function PredictionForm() {
                         inline: 'nearest'
                     });
                 }
-            }, 100);
+            }, 500); 
         }
 
         // Lógica para remover cards de jogos que já começaram
@@ -105,11 +138,11 @@ export function PredictionForm() {
             setDisplayedMatches(prevMatches => 
                 prevMatches.filter(match => !isPast(parseISO(match.data)))
             );
-        }, 1000); // Verifica a cada segundo
+        }, 1000); 
 
-        return () => clearInterval(interval); // Limpa o intervalo quando o componente desmonta
+        return () => clearInterval(interval);
 
-    }, []);
+    }, [authLoading, user, router, toast]);
 
     const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: number) => {
         setScores(prev => ({
@@ -121,7 +154,9 @@ export function PredictionForm() {
         }));
     };
 
-    const handlePredictionSubmit = (match: Match) => {
+    const handlePredictionSubmit = async (match: Match) => {
+        if (!user) return;
+
         // Simula a verificação do servidor
         if (isPast(parseISO(match.data))) {
             toast({
@@ -129,26 +164,41 @@ export function PredictionForm() {
                 description: "Esta partida já começou e não pode mais receber palpites.",
                 variant: "destructive",
             });
-            // Remove o card da UI e redireciona
             setDisplayedMatches(prev => prev.filter(m => m.id !== match.id));
             router.push('/dashboard');
             return;
         }
 
-        const isEditing = !!lastUpdated[match.id];
+        const currentScore = scores[match.id];
+        if (currentScore.placarA === null || currentScore.placarB === null) return;
         
-        toast({
-            title: `Palpite ${isEditing ? 'Alterado' : 'Enviado'}!`,
-            description: `Seu palpite foi ${isEditing ? 'atualizado' : 'registrado'} com sucesso. Boa sorte!`,
-            variant: "default",
-        });
+        const isEditing = !!lastUpdated[match.id];
 
-        setLastUpdated(prev => ({ ...prev, [match.id]: new Date() }));
+        try {
+            await savePrediction({
+                matchId: match.id,
+                userId: user.id,
+                palpiteUsuario: {
+                    placarA: currentScore.placarA,
+                    placarB: currentScore.placarB,
+                }
+            });
+
+            toast({
+                title: `Palpite ${isEditing ? 'Alterado' : 'Enviado'}!`,
+                description: `Seu palpite foi ${isEditing ? 'atualizado' : 'registrado'} com sucesso. Boa sorte!`,
+                variant: "default",
+            });
+            setLastUpdated(prev => ({ ...prev, [match.id]: new Date() }));
+        } catch (error) {
+            toast({ title: "Erro ao salvar palpite", description: "Não foi possível salvar seu palpite. Tente novamente.", variant: "destructive" });
+        }
     };
 
     const handleAiSuggestion = async (match: Match) => {
         setLoadingAi(prev => ({ ...prev, [match.id]: true }));
         
+        // Simulação de dados para a IA, pois ainda não temos palpites de outros usuários no DB
         const mockPredictionsForAI = [
             { userId: 'user_2', prediction: 'Time A vence por 2 a 1.' },
             { userId: 'user_3', prediction: 'Empate em 1 a 1.' },
@@ -186,9 +236,6 @@ export function PredictionForm() {
     };
     
     const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
-        if (!isClient) {
-          return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>Carregando...</div>;
-        }
         const matchDate = parseISO(matchDateString);
         const now = new Date();
         const hoursDiff = differenceInHours(matchDate, now);
@@ -230,7 +277,7 @@ export function PredictionForm() {
     }, [displayedMatches]);
 
 
-    if (!isClient) {
+    if (authLoading || loadingData) {
         return <div className="space-y-6">
             {[1, 2, 3].map(i => (
                 <Card key={i}>
@@ -264,7 +311,7 @@ export function PredictionForm() {
                         {matches.map((match) => {
                             const isEditing = !!lastUpdated[match.id];
                             const currentScore = scores[match.id] || { placarA: null, placarB: null };
-                            const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
+                            const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
                             
                             return (
                                 <Card 
@@ -330,7 +377,7 @@ export function PredictionForm() {
                                         <div className='text-center h-4 mb-2'>
                                             {lastUpdated[match.id] && (
                                                 <p className="text-xs text-muted-foreground">
-                                                    {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                                    {isEditing ? `Alterado em ${format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}` : ''}
                                                 </p>
                                             )}
                                         </div>
