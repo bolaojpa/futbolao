@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion, savePrediction } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
@@ -22,6 +21,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getMatches, getPredictionsForUser, getTeams } from '@/lib/firebase/firestore';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Badge } from '../ui/badge';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -73,9 +73,7 @@ export function PredictionForm() {
 
     const displayedMatches = useMemo(() => {
          return allMatches.filter(match => 
-            match.status === 'Agendado' && 
-            !isPast(parseISO(match.data)) && 
-            !match.predictionsLocked
+            match.status === 'Agendado' && !isPast(parseISO(match.data))
         ).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
     }, [allMatches]);
 
@@ -136,7 +134,7 @@ export function PredictionForm() {
             }, 500); 
         }
 
-        const unsubscribes = allMatches.map(match => {
+        const unsubscribes = displayedMatches.map(match => {
             const docRef = doc(db, 'matches', match.id);
             return onSnapshot(docRef, (doc) => {
                 if (doc.exists()) {
@@ -320,15 +318,16 @@ export function PredictionForm() {
                             const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
                             const teamA = allTeams.find(t => t.name === match.timeA);
                             const teamB = allTeams.find(t => t.name === match.timeB);
+                            const isLocked = match.predictionsLocked;
                             
                             return (
                                 <Card 
                                     key={match.id} 
                                     id={match.id} 
                                     ref={(el) => matchRefs.current[match.id] = el}
-                                    className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse")}
+                                    className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse", isLocked && "bg-muted/30")}
                                 >
-                                    {needsAttention && (
+                                    {needsAttention && !isLocked && (
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <div className="absolute top-2 left-2 z-10">
@@ -363,9 +362,21 @@ export function PredictionForm() {
                                             </div>
 
                                             <div className="flex items-center justify-center gap-2">
-                                                <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
-                                                <span className="font-bold text-muted-foreground text-lg">x</span>
-                                                <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
+                                                {isLocked ? (
+                                                    <div className="flex items-center justify-center w-44 h-12 text-center text-2xl font-bold bg-muted/50 rounded-md">
+                                                        {currentScore.placarA !== null ? (
+                                                            <span>{currentScore.placarA} - {currentScore.placarB}</span>
+                                                        ) : (
+                                                            <Lock className="h-6 w-6 text-muted-foreground" />
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
+                                                        <span className="font-bold text-muted-foreground text-lg">x</span>
+                                                        <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
+                                                    </>
+                                                )}
                                             </div>
                                             
                                             <div className='flex-1 flex flex-row items-center justify-start gap-3'>
@@ -383,31 +394,35 @@ export function PredictionForm() {
                                     </CardContent>
                                     <CardFooter className="flex flex-col gap-2 p-4">
                                         <div className='text-center h-4 mb-2'>
-                                            {lastUpdated[match.id] && (
+                                             {isLocked ? (
+                                                <Badge variant="destructive">Palpites Encerrados</Badge>
+                                             ) : lastUpdated[match.id] && (
                                                 <p className="text-xs text-muted-foreground">
                                                     {isEditing ? `Alterado em ${format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}` : ''}
                                                 </p>
                                             )}
                                         </div>
-                                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                            <Button 
-                                                variant="outline" 
-                                                onClick={() => handleAiSuggestion(match)} 
-                                                disabled={loadingAi[match.id]}
-                                                className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                            >
-                                                {loadingAi[match.id] ? (
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <BrainCircuit className="mr-2 h-4 w-4" />
-                                                )}
-                                                Consultar IA
-                                            </Button>
-                                            <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
-                                                <Save className="mr-2 h-4 w-4" />
-                                                {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
-                                            </Button>
-                                        </div>
+                                        {!isLocked && (
+                                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                                <Button 
+                                                    variant="outline" 
+                                                    onClick={() => handleAiSuggestion(match)} 
+                                                    disabled={loadingAi[match.id]}
+                                                    className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                                >
+                                                    {loadingAi[match.id] ? (
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <BrainCircuit className="mr-2 h-4 w-4" />
+                                                    )}
+                                                    Consultar IA
+                                                </Button>
+                                                <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
+                                                    <Save className="mr-2 h-4 w-4" />
+                                                    {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
+                                                </Button>
+                                            </div>
+                                        )}
                                     </CardFooter>
                                 </Card>
                             );
@@ -440,4 +455,3 @@ export function PredictionForm() {
     );
 }
 
-    
