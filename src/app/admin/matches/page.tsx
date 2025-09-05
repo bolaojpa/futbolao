@@ -29,13 +29,27 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
 import { getChampionships, getMatches, deleteMatch, getTeams, getUsers, getPredictionsForMatch } from '@/lib/firebase/firestore';
 import { Badge } from '@/components/ui/badge';
+import { onSnapshot, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const ITEMS_PER_PAGE = 10;
 
 const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
+    const [isPastState, setIsPastState] = useState(isPast(parseISO(matchDateString)));
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const past = isPast(parseISO(matchDateString));
+            if (past !== isPastState) {
+                setIsPastState(past);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [matchDateString, isPastState]);
+
     const matchDate = parseISO(matchDateString);
     
-    if (isPast(matchDate)) {
+    if (isPastState) {
         return (
              <Badge variant='destructive' className='animate-pulse'>
                 <Zap className="w-3 h-3 mr-1.5" />
@@ -95,47 +109,49 @@ export default function AdminMatchesPage() {
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [championshipsData, matchesData, teamsData, usersData] = await Promise.all([
-        getChampionships(),
-        getMatches(),
-        getTeams(),
-        getUsers(),
-      ]);
-
-      const scheduledMatches = matchesData.filter(m => m.status === 'Agendado');
-
-      // Anexar predições a cada partida agendada
-      const matchesWithPredictions: MatchWithPredictions[] = await Promise.all(
-        scheduledMatches.map(async (match) => {
-          const predictions = await getPredictionsForMatch(match.id);
-          return { ...match, predictions };
-        })
-      );
-      
-      setChampionships(championshipsData);
-      setMatches(matchesWithPredictions);
-      setTeams(teamsData);
-      setUsers(usersData);
-      
-      if (championshipIdFromQuery) {
-        setSelectedChampionship(championshipIdFromQuery);
-      } else if (championshipsData.length > 0) {
-        setSelectedChampionship(championshipsData[0].id); // Default to the most recent one
-      }
-    } catch (error) {
-      toast({ title: 'Erro ao carregar dados', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+      setIsLoading(true);
+      const fetchData = async () => {
+          try {
+              const [championshipsData, teamsData, usersData] = await Promise.all([
+                  getChampionships(),
+                  getTeams(),
+                  getUsers(),
+              ]);
+              setChampionships(championshipsData);
+              setTeams(teamsData);
+              setUsers(usersData);
+              if (championshipIdFromQuery) {
+                  setSelectedChampionship(championshipIdFromQuery);
+              } else if (championshipsData.length > 0) {
+                  setSelectedChampionship(championshipsData[0].id);
+              }
+          } catch (error) {
+              toast({ title: 'Erro ao carregar dados iniciais', variant: 'destructive' });
+          } finally {
+              setIsLoading(false);
+          }
+      };
+      fetchData();
+  }, [championshipIdFromQuery, toast]);
 
   useEffect(() => {
-    fetchData();
+      const unsub = onSnapshot(collection(db, 'matches'), async (snapshot) => {
+          const matchesData: Match[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+          const scheduledMatches = matchesData.filter(m => m.status === 'Agendado');
+
+          const matchesWithPredictions: MatchWithPredictions[] = await Promise.all(
+              scheduledMatches.map(async (match) => {
+                  const predictions = await getPredictionsForMatch(match.id);
+                  return { ...match, predictions };
+              })
+          );
+          setMatches(matchesWithPredictions);
+      });
+
+      return () => unsub();
   }, []);
-  
+
   const sortedMatches = useMemo(() => {
     return [...matches]
       .filter(match => {
@@ -167,7 +183,7 @@ export default function AdminMatchesPage() {
   const handleDelete = async (matchId: string) => {
     try {
       await deleteMatch(matchId);
-      await fetchData();
+      // O listener do onSnapshot atualizará a UI automaticamente.
       toast({
           title: "Partida Excluída",
           description: "A partida foi removida com sucesso.",
@@ -178,7 +194,7 @@ export default function AdminMatchesPage() {
   };
 
   const handleFormSubmit = async () => {
-    await fetchData();
+    // O listener do onSnapshot tratará de atualizar a UI, não precisa de fetch manual.
     setIsFormOpen(false);
   };
 
@@ -418,4 +434,3 @@ export default function AdminMatchesPage() {
     </div>
   );
 }
-

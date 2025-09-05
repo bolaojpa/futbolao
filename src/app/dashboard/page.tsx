@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -33,7 +34,8 @@ import { useAuth } from '@/hooks/use-auth';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
 import { getMatches, getPredictionsForUser, getUsers, getChampionships, getTeams } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { onSnapshot, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
@@ -43,23 +45,30 @@ export default function DashboardPage() {
     const [allTeams, setAllTeams] = useState<Team[]>([]);
     const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
     const [loadingData, setLoadingData] = useState(true);
-    const [currentTime, setCurrentTime] = useState(new Date());
 
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
+    
+    // This effect ensures that the component re-renders to check match statuses in real-time.
+    const [, setCurrentTime] = useState(new Date());
+     useEffect(() => {
+      const timer = setInterval(() => {
+        setCurrentTime(new Date());
+      }, 1000 * 30); // Update every 30 seconds is enough to check status
+      return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         if (!authLoading && user) {
             const fetchData = async () => {
                 setLoadingData(true);
                 try {
-                    const [matchesData, usersData, predictionsData, championshipsData, teamsData] = await Promise.all([
-                        getMatches(),
+                    // Fetch static data once
+                    const [usersData, predictionsData, championshipsData, teamsData] = await Promise.all([
                         getUsers(),
                         getPredictionsForUser(user.id),
                         getChampionships(),
                         getTeams(),
                     ]);
-                    setAllMatches(matchesData);
                     setAllUsers(usersData);
                     setUserPredictions(predictionsData);
                     setAllChampionships(championshipsData);
@@ -71,16 +80,27 @@ export default function DashboardPage() {
                 }
             };
             fetchData();
+            
+            // Set up real-time listener for matches
+            const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
+                const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+                setAllMatches(matchesData);
+            });
+            
+            // Set up real-time listener for user's predictions
+            const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
+                 const predictionsData = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() } as Prediction))
+                    .filter(p => p.userId === user.id);
+                 setUserPredictions(predictionsData);
+            });
+
+            return () => {
+                unsubMatches();
+                unsubPredictions();
+            };
         }
     }, [user, authLoading]);
-
-    // This effect updates the current time every second to re-evaluate match statuses.
-    useEffect(() => {
-      const timer = setInterval(() => {
-        setCurrentTime(new Date());
-      }, 1000); // Update every second
-      return () => clearInterval(timer);
-    }, []);
 
     // Scroll to match if hash is present
     useEffect(() => {
@@ -99,14 +119,14 @@ export default function DashboardPage() {
         return allMatches
             .filter(match => match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data))))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches, currentTime]);
+    }, [allMatches]);
 
     const upcomingMatches = useMemo(() => {
         return allMatches
             .filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
             .slice(0, 6); // Limit to 6 upcoming matches on dashboard
-    }, [allMatches, currentTime]);
+    }, [allMatches]);
 
     const recentMatches = useMemo(() => {
         return allMatches
@@ -129,7 +149,6 @@ export default function DashboardPage() {
     const leader = sortedUsers[0];
     const secondPlace = sortedUsers[1];
     
-    // Condition to show the leader card
     const showLeaderCard = leader && leader.pontos > 0;
 
     const getLeaderMessage = () => {

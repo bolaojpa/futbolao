@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -19,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import type { Match, Prediction, Team } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { getMatches, getPredictionsForUser, getTeams } from '@/lib/firebase/firestore';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Badge } from '../ui/badge';
 
@@ -75,21 +76,19 @@ export function PredictionForm() {
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
-        }, 1000);
+        }, 1000); // Check every second for real-time updates
         return () => clearInterval(timer);
     }, []);
 
     const displayedMatches = useMemo(() => {
-        // Exibe uma partida nesta tela SE E SOMENTE SE:
-        // 1. O status for 'Agendado'
-        // 2. A data/hora do jogo ainda não passou
+        // A partida aparece aqui SE E SOMENTE SE o status for 'Agendado' E o jogo ainda não começou.
         return allMatches
             .filter(match => {
                 if (match.status !== 'Agendado') return false;
                 return !isPast(parseISO(match.data));
             })
             .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches, currentTime]);
+    }, [allMatches, currentTime]); // Depende do currentTime para reavaliar
 
 
     useEffect(() => {
@@ -99,40 +98,43 @@ export function PredictionForm() {
             return;
         }
 
-        async function fetchData() {
+        async function fetchInitialData() {
             setLoadingData(true);
             try {
-                const [matchesData, predictionsData, teamsData] = await Promise.all([
-                    getMatches(),
-                    getPredictionsForUser(user!.id),
-                    getTeams()
-                ]);
-
-                setAllMatches(matchesData);
-                setUserPredictions(predictionsData);
+                // Teams are static enough to be fetched once.
+                const teamsData = await getTeams();
                 setAllTeams(teamsData);
 
-                const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
-                const initialUpdates: Record<string, Date | null> = {};
-
-                predictionsData.forEach(p => {
-                    initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
-                    if (p.updatedAt) {
-                        initialUpdates[p.matchId] = p.updatedAt.toDate();
-                    }
-                });
-
-                setScores(initialScores);
-                setLastUpdated(initialUpdates);
-
             } catch (error) {
-                toast({ title: "Erro ao buscar dados", description: "Não foi possível carregar as partidas e palpites.", variant: "destructive" });
+                toast({ title: "Erro ao buscar equipes", description: "Não foi possível carregar a lista de equipes.", variant: "destructive" });
             } finally {
                 setLoadingData(false);
             }
         }
+        fetchInitialData();
+        
+        // Listen to matches and predictions in real-time
+        const unsubMatches = onSnapshot(collection(db, 'matches'), (snapshot) => {
+            const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+            setAllMatches(matchesData);
+        });
 
-        fetchData();
+        const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
+            const predictionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction)).filter(p => p.userId === user.id);
+            setUserPredictions(predictionsData);
+
+            // Update local state based on Firestore predictions
+            const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
+            const initialUpdates: Record<string, Date | null> = {};
+            predictionsData.forEach(p => {
+                initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
+                if (p.updatedAt) {
+                    initialUpdates[p.matchId] = p.updatedAt.toDate();
+                }
+            });
+            setScores(prev => ({ ...prev, ...initialScores }));
+            setLastUpdated(prev => ({ ...prev, ...initialUpdates }));
+        });
 
         if (window.location.hash) {
             const matchId = window.location.hash.substring(1);
@@ -148,19 +150,10 @@ export function PredictionForm() {
             }, 500); 
         }
 
-        const unsubscribes = allMatches
-            .filter(match => match.status === 'Agendado')
-            .map(match => {
-                const docRef = doc(db, 'matches', match.id);
-                return onSnapshot(docRef, (doc) => {
-                    if (doc.exists()) {
-                        const updatedMatch = { id: doc.id, ...doc.data() } as Match;
-                        setAllMatches(prev => prev.map(m => m.id === updatedMatch.id ? updatedMatch : m));
-                    }
-                });
-            });
-
-        return () => unsubscribes.forEach(unsub => unsub());
+        return () => {
+            unsubMatches();
+            unsubPredictions();
+        };
 
     }, [authLoading, user, router, toast]);
 
@@ -210,7 +203,7 @@ export function PredictionForm() {
                 description: `Seu palpite foi ${isEditing ? 'atualizado' : 'registrado'} com sucesso. Boa sorte!`,
                 variant: "default",
             });
-            setLastUpdated(prev => ({ ...prev, [match.id]: new Date() }));
+            // Firestore listener will update the 'lastUpdated' state implicitly.
         } catch (error) {
             toast({ title: "Erro ao salvar palpite", description: "Não foi possível salvar seu palpite. Tente novamente.", variant: "destructive" });
         }
@@ -219,6 +212,8 @@ export function PredictionForm() {
     const handleAiSuggestion = async (match: Match) => {
         setLoadingAi(prev => ({ ...prev, [match.id]: true }));
         
+        // Simulação de busca de palpites de outros usuários.
+        // Em um app real, isso poderia buscar de um subconjunto de palpites públicos.
         const mockPredictionsForAI = [
             { userId: 'user_2', prediction: 'Time A vence por 2 a 1.' },
             { userId: 'user_3', prediction: 'Empate em 1 a 1.' },
@@ -329,8 +324,9 @@ export function PredictionForm() {
                      <div key={phase} className="space-y-4">
                         <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
                         {matches.map((match) => {
-                            const isEditing = !!lastUpdated[match.id];
-                            const currentScore = scores[match.id] || { placarA: null, placarB: null };
+                            const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                            const isEditing = !!userPrediction;
+                            const currentScore = scores[match.id] || { placarA: userPrediction?.palpiteUsuario.placarA ?? null, placarB: userPrediction?.palpiteUsuario.placarB ?? null };
                             const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
                             const teamA = allTeams.find(t => t.name === match.timeA);
                             const teamB = allTeams.find(t => t.name === match.timeB);
@@ -414,7 +410,7 @@ export function PredictionForm() {
                                                 <Badge variant="destructive">Palpites Encerrados</Badge>
                                              ) : lastUpdated[match.id] && (
                                                 <p className="text-xs text-muted-foreground">
-                                                    {isEditing ? `Alterado em ${format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}` : ''}
+                                                    {`Alterado em ${format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}`}
                                                 </p>
                                             )}
                                         </div>
