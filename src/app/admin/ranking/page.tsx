@@ -114,17 +114,17 @@ export default function AdminRankingPage() {
       case 'exact':
         return {
           header: 'Buchas',
-          accessor: (user: UserType) => user.exatos,
+          accessor: (user: UserType & { exatos: number }) => user.exatos,
         };
       case 'situation':
         return {
           header: 'Situação',
-          accessor: (user: UserType) => user.situacoes,
+          accessor: (user: UserType & { situacoes: number }) => user.situacoes,
         };
       default:
         return {
           header: 'Pontos',
-          accessor: (user: UserType) => user.pontos,
+          accessor: (user: UserType & { pontos: number }) => user.pontos,
         };
     }
   };
@@ -260,7 +260,7 @@ export default function AdminRankingPage() {
                                 {getMedalIcon(rank)}
                             </Link>
                         </TableCell>
-                        <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user)}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user as any)}</TableCell>
                         <TableCell className="text-right hidden md:table-cell">
                           {sortType === 'default' ? user.exatos : user.pontos}
                         </TableCell>
@@ -278,4 +278,3 @@ export default function AdminRankingPage() {
     </TooltipProvider>
   );
 }
-

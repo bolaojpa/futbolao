@@ -29,11 +29,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { useAuth } from '@/hooks/use-auth';
-import type { UserType, Championship, Match, Prediction, Team } from '@/lib/types';
-import { getChampionships, getMatches, getPredictionsForUser, getUsers, getTeams } from '@/lib/firebase/firestore';
+import type { UserType, Championship } from '@/lib/types';
+import { getChampionships } from '@/lib/firebase/firestore';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { parseISO, isPast } from 'date-fns';
 
 
 export default function LeaderboardPage() {
@@ -118,11 +117,11 @@ export default function LeaderboardPage() {
   const getSortColumn = () => {
     switch (sortType) {
       case 'exact':
-        return { header: 'Buchas', accessor: (user: UserType) => user.exatos };
+        return { header: 'Buchas', accessor: (user: UserType & { exatos: number }) => user.exatos };
       case 'situation':
-        return { header: 'Situação', accessor: (user: UserType) => user.situacoes };
+        return { header: 'Situação', accessor: (user: UserType & { situacoes: number }) => user.situacoes };
       default:
-        return { header: 'Pontos', accessor: (user: UserType) => user.pontos };
+        return { header: 'Pontos', accessor: (user: UserType & { pontos: number }) => user.pontos };
     }
   };
 
