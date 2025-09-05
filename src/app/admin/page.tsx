@@ -4,9 +4,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { mockAllMatches, Match, mockUsers, mockPredictions, mockChampionships, mockLogs, mockNotifications, mockTeams } from '@/lib/data';
+import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
+import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,27 +20,68 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-update';
+import { mockLogs, mockNotifications } from '@/lib/data'; // Keep for AI simulation
+
+interface MatchWithPredictions extends Match {
+    predictions: Prediction[];
+}
+
 
 export default function AdminDashboardPage() {
-    const [liveMatches, setLiveMatches] = useState<Match[]>([]);
-    const [allMatches, setAllMatches] = useState<Match[]>(mockAllMatches);
+    const [allMatches, setAllMatches] = useState<Match[]>([]);
+    const [liveMatchesWithPredictions, setLiveMatchesWithPredictions] = useState<MatchWithPredictions[]>([]);
+    const [allUsers, setAllUsers] = useState<UserType[]>([]);
+    const [allChampionships, setAllChampionships] = useState<Championship[]>([]);
+    const [allTeams, setAllTeams] = useState<Team[]>([]);
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
+    const [isLoading, setIsLoading] = useState(true);
 
     const { toast } = useToast();
 
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [matchesData, usersData, championshipsData, teamsData] = await Promise.all([
+                getMatches(),
+                getUsers(),
+                getChampionships(),
+                getTeams(),
+            ]);
+
+            setAllMatches(matchesData);
+            setAllUsers(usersData);
+            setAllChampionships(championshipsData);
+            setAllTeams(teamsData);
+
+        } catch (error) {
+            toast({ title: 'Erro ao carregar dados', variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
     useEffect(() => {
-        const updateLiveMatches = () => {
-            const now = new Date();
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        const updateLiveMatches = async () => {
             const live = allMatches.filter(match => 
                 match.status !== 'Finalizado' && 
                 match.status !== 'Cancelado' &&
                 isPast(parseISO(match.data))
+            ).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
+            const matchesWithPredictions: MatchWithPredictions[] = await Promise.all(
+                live.map(async (match) => {
+                    const predictions = await getPredictionsForMatch(match.id);
+                    return { ...match, predictions };
+                })
             );
+            
+            setLiveMatchesWithPredictions(matchesWithPredictions);
 
-            setLiveMatches(live.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()));
-
-            // Inicializa placares
             setScores(prevScores => {
                 const newScores = {...prevScores};
                 live.forEach(match => {
@@ -56,101 +97,118 @@ export default function AdminDashboardPage() {
         };
 
         updateLiveMatches();
-        const interval = setInterval(updateLiveMatches, 5000); 
+        const interval = setInterval(updateLiveMatches, 30000); 
 
         return () => clearInterval(interval);
     }, [allMatches]);
     
 
     const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: string) => {
+        const numericValue = value.replace(/[^0-9]/g, '');
         setScores(prev => ({
             ...prev,
             [matchId]: {
                 ...(prev[matchId] || { placarA: '', placarB: '' }),
-                [team]: value,
+                [team]: numericValue,
             },
         }));
     };
 
-    const updateMatchDataInMock = (matchId: string, statusChange?: Match['status']) => {
+    const handleScoreSave = async (matchId: string) => {
         const currentScore = scores[matchId];
         if (!currentScore) return;
 
         const numScoreA = currentScore.placarA === '' ? null : Number(currentScore.placarA);
         const numScoreB = currentScore.placarB === '' ? null : Number(currentScore.placarB);
-        
-        setAllMatches(prev => prev.map(m => 
-            m.id === matchId 
-            ? { 
-                ...m, 
+
+        try {
+            await updateMatch(matchId, {
                 placarA: numScoreA, 
                 placarB: numScoreB, 
-                status: statusChange ?? 'Ao Vivo'
-              } 
-            : m
-        ));
-
-        setLastUpdated(prev => ({ ...prev, [matchId]: new Date() }));
-    };
-
-    const handleScoreSave = (match: Match) => {
-        updateMatchDataInMock(match.id);
-        toast({
-            title: "Placar Salvo!",
-            description: `O placar de ${match.timeA} vs ${match.timeB} foi salvo temporariamente.`,
-        });
+                status: 'Ao Vivo'
+            });
+            setLastUpdated(prev => ({ ...prev, [matchId]: new Date() }));
+            toast({
+                title: "Placar Salvo!",
+                description: `O placar da partida foi salvo temporariamente.`,
+            });
+        } catch (error) {
+            toast({ title: 'Erro ao salvar o placar', variant: 'destructive' });
+        }
     };
 
     const handleFinalizeMatch = async (match: Match) => {
-        updateMatchDataInMock(match.id, 'Finalizado');
-        toast({
-            title: "Partida Finalizada!",
-            description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada e movida para o histórico.`,
-        });
-        
-        // Simulação do disparo da notificação de IA para usuários
-        const predictionsForMatch = mockPredictions.filter(p => p.matchId === match.id);
-        
-        for (const prediction of predictionsForMatch) {
-            const user = mockUsers.find(u => u.id === prediction.userId);
-            if (!user || !user.pontos) continue;
+       const currentScore = scores[match.id];
+        if (currentScore.placarA === '' || currentScore.placarB === '') return;
 
-            const simulatedPoints = calculateSimulatedPoints(match, prediction.palpiteUsuario.placarA, prediction.palpiteUsuario.placarB);
-            
-            // Simular mudança no ranking
-            const oldPosition = mockUsers.findIndex(u => u.id === user.id) + 1;
-            const newPosition = simulatedPoints > 5 ? oldPosition - 1 : oldPosition;
-            
-            const notificationData = {
-                apelido: user.apelido,
-                pontosGanhos: simulatedPoints,
-                posicaoAnterior: oldPosition,
-                novaPosicao: newPosition > 0 ? newPosition : 1,
-                nomePartida: `${match.timeA} vs ${match.timeB}`
-            };
-
-            // Gera notificação com IA (não bloqueia a UI)
-            generatePerformanceUpdate(notificationData).then(result => {
-                mockNotifications.unshift({
-                    id: `notif_${new Date().getTime()}`,
-                    title: result.titulo,
-                    message: result.mensagem,
-                    read: false,
-                    createdAt: new Date(),
-                    href: `/dashboard/leaderboard`
-                });
-
-                // Adiciona log da notificação de IA
-                mockLogs.unshift({
-                    id: `log_${new Date().getTime()}`,
-                    timestamp: new Date().toISOString(),
-                    actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' },
-                    action: 'ai_notification',
-                    details: { title: result.titulo, message: result.mensagem, target: user.apelido }
-                });
-            }).catch(err => {
-                console.error("Falha ao gerar notificação de IA para", user.apelido, err);
+        try {
+            await updateMatch(match.id, { 
+                status: 'Finalizado',
+                placarA: Number(currentScore.placarA),
+                placarB: Number(currentScore.placarB)
             });
+
+            // Re-fetch matches to update the UI
+            const updatedMatches = await getMatches();
+            setAllMatches(updatedMatches);
+
+            toast({
+                title: "Partida Finalizada!",
+                description: `A partida ${match.timeA} vs ${match.timeB} foi marcada como finalizada e movida para o histórico.`,
+            });
+            
+            // Simulação do disparo da notificação de IA para usuários
+            const predictionsForMatch = liveMatchesWithPredictions.find(m => m.id === match.id)?.predictions ?? [];
+            
+            for (const prediction of predictionsForMatch) {
+                const user = allUsers.find(u => u.id === prediction.userId);
+                if (!user || !user.pontos) continue;
+
+                const championship = allChampionships.find(c => c.id === match.campeonatoId);
+                const pontuacao = championship?.pontuacao.tradicional;
+
+                if (!pontuacao) continue;
+
+                const simulatedPoints = calculateSimulatedPoints(match, prediction.palpiteUsuario.placarA, prediction.palpiteUsuario.placarB);
+                
+                // Simular mudança no ranking
+                const oldPosition = allUsers.findIndex(u => u.id === user.id) + 1;
+                const newPosition = simulatedPoints > 5 ? oldPosition - 1 : oldPosition;
+                
+                const notificationData = {
+                    apelido: user.apelido,
+                    pontosGanhos: simulatedPoints,
+                    posicaoAnterior: oldPosition,
+                    novaPosicao: newPosition > 0 ? newPosition : 1,
+                    nomePartida: `${match.timeA} vs ${match.timeB}`
+                };
+
+                // Gera notificação com IA (não bloqueia a UI)
+                generatePerformanceUpdate(notificationData).then(result => {
+                    mockNotifications.unshift({
+                        id: `notif_${new Date().getTime()}`,
+                        title: result.titulo,
+                        message: result.mensagem,
+                        read: false,
+                        createdAt: new Date(),
+                        href: `/dashboard/leaderboard`
+                    });
+
+                    // Adiciona log da notificação de IA
+                    mockLogs.unshift({
+                        id: `log_${new Date().getTime()}`,
+                        timestamp: new Date().toISOString(),
+                        actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' },
+                        action: 'ai_notification',
+                        details: { title: result.titulo, message: result.mensagem, target: user.apelido }
+                    });
+                }).catch(err => {
+                    console.error("Falha ao gerar notificação de IA para", user.apelido, err);
+                });
+            }
+
+        } catch (error) {
+             toast({ title: 'Erro ao finalizar a partida', variant: 'destructive' });
         }
     };
     
@@ -166,23 +224,25 @@ export default function AdminDashboardPage() {
         return 'destructive';
     };
 
-    // Lógica para calcular pontos simulados
     const calculateSimulatedPoints = (match: Match, palpitePlacarA: number, palpitePlacarB: number): number => {
         const liveScore = scores[match.id];
         if (!liveScore || liveScore.placarA === '' || liveScore.placarB === '') return 0;
         
         const livePlacarA = Number(liveScore.placarA);
         const livePlacarB = Number(liveScore.placarB);
-        const maxPontos = match.maxPontos ?? 10;
+        
+        const championship = allChampionships.find(c => c.id === match.campeonatoId);
+        const pontuacao = championship?.pontuacao.tradicional;
+        if (!pontuacao) return 0;
         
         const acertouPlacar = palpitePlacarA === livePlacarA && palpitePlacarB === livePlacarB;
-        if (acertouPlacar) return maxPontos;
+        if (acertouPlacar) return pontuacao.exato;
 
         const liveVencedor = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
         const palpiteVencedor = palpitePlacarA > palpitePlacarB ? 'A' : palpitePlacarA < palpitePlacarB ? 'B' : 'E';
 
         if (liveVencedor === palpiteVencedor) {
-            return maxPontos / 2; // Exemplo: metade dos pontos por acertar a situação
+            return pontuacao.situacao;
         }
 
         return 0;
@@ -203,14 +263,20 @@ export default function AdminDashboardPage() {
                 <section>
                     <div className="flex items-center gap-2 mb-4">
                          <Zap className="w-6 h-6 text-destructive animate-pulse" />
-                        <h2 className="text-2xl font-bold font-headline">Acontecendo Agora ({liveMatches.length})</h2>
+                        <h2 className="text-2xl font-bold font-headline">Acontecendo Agora ({liveMatchesWithPredictions.length})</h2>
                     </div>
-                    {liveMatches.length > 0 ? (
+                    {isLoading ? (
+                         <div className="space-y-4">
+                            <div className="h-40 w-full bg-muted rounded-lg animate-pulse" />
+                            <div className="h-40 w-full bg-muted rounded-lg animate-pulse" />
+                         </div>
+                    ) : liveMatchesWithPredictions.length > 0 ? (
                         <div className="space-y-4">
-                            {liveMatches.map(match => {
-                                const score = scores[match.id] || { placarA: '', placarB: '' };
-                                const hasChanged = score.placarA !== (match.placarA?.toString() ?? '0') || score.placarB !== (match.placarB?.toString() ?? '0');
-                                const championship = mockChampionships.find(c => c.id === match.campeonatoId);
+                            {liveMatchesWithPredictions.map(match => {
+                                const score = scores[match.id] || { placarA: '0', placarB: '0' };
+                                const championship = allChampionships.find(c => c.id === match.campeonatoId);
+                                const teamA = allTeams.find(t => t.name === match.timeA);
+                                const teamB = allTeams.find(t => t.name === match.timeB);
 
                                 return (
                                 <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -225,7 +291,7 @@ export default function AdminDashboardPage() {
                                                     <div className="flex items-center justify-around w-full">
                                                         <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                                             <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                            <Image src="https://picsum.photos/128/128" alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                                         </div>
                                                         <div className="flex items-center justify-center gap-2 mx-2">
                                                             <Input 
@@ -245,14 +311,14 @@ export default function AdminDashboardPage() {
                                                             />
                                                         </div>
                                                         <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                            <Image src="https://picsum.photos/128/128" alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
                                                             <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-col items-center gap-4">
                                                          <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
                                                         <div className="flex flex-row gap-2 items-center">
-                                                            <Button onClick={() => handleScoreSave(match)} disabled={!hasChanged} size="sm" variant="secondary">
+                                                            <Button onClick={() => handleScoreSave(match.id)} size="sm" variant="secondary">
                                                                 <Save className="h-4 w-4 md:mr-2" />
                                                                 <span className="hidden md:inline">Salvar Placar</span>
                                                             </Button>
@@ -278,16 +344,18 @@ export default function AdminDashboardPage() {
                                                     <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                     </div>
                                                     <ul className="text-sm max-h-[40vh] overflow-y-auto">
-                                                    {mockPredictions.filter(p => p.matchId === match.id).map((p, i) => {
-                                                        const user = mockUsers.find(u => u.id === p.userId);
-                                                        if (!user || !match.maxPontos) return null;
+                                                    {match.predictions.map((p, i) => {
+                                                        const user = allUsers.find(u => u.id === p.userId);
+                                                        if (!user) return null;
                                                         
                                                         const simulatedPoints = calculateSimulatedPoints(match, p.palpiteUsuario.placarA, p.palpiteUsuario.placarB);
                                                         const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                        const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+                                                        const chosenTeams = champPicks ? allTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+                                                        const pontuacao = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional;
+                                                        const maxPontos = pontuacao?.exato ?? 0;
 
                                                         return (
-                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedPoints, match.maxPontos))}>
+                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedPoints, maxPontos))}>
                                                             <div className="w-1/3 text-left flex items-center gap-2 group">
                                                                 <div className="relative">
                                                                     <Avatar className="w-8 h-8">
@@ -329,7 +397,7 @@ export default function AdminDashboardPage() {
                                                             </div>
                                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                             <div className="w-1/3 text-right">
-                                                                <Badge variant={getPointsBadgeVariant(simulatedPoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                                <Badge variant={getPointsBadgeVariant(simulatedPoints, maxPontos)} className='whitespace-nowrap'>
                                                                 {simulatedPoints} pts
                                                                 </Badge>
                                                             </div>
@@ -357,3 +425,4 @@ export default function AdminDashboardPage() {
     );
 }
 
+    
