@@ -57,7 +57,9 @@ export default function AdminRankingPage() {
             if (championshipIdFromQuery) {
                 setSelectedChampionship(championshipIdFromQuery);
             } else if (championshipsData.length > 0) {
-                setSelectedChampionship(championshipsData[0].id);
+                // Prioritize an active championship
+                const activeChampionship = championshipsData.find(c => c.status === 'ativo');
+                setSelectedChampionship(activeChampionship ? activeChampionship.id : championshipsData[0].id);
             }
         } catch (error) {
             console.error("Failed to fetch ranking data:", error);
@@ -69,10 +71,24 @@ export default function AdminRankingPage() {
   }, [championshipIdFromQuery]);
   
 
+  const usersWithStatsForChampionship = useMemo(() => {
+    if (!selectedChampionship) return users;
+
+    return users.map(user => {
+      const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
+      return {
+        ...user,
+        pontos: stats?.pontos ?? 0,
+        exatos: stats?.acertosExatos ?? 0,
+        situacoes: stats?.acertosSituacao ?? 0,
+      }
+    });
+  }, [users, selectedChampionship]);
+
+
   // Lista para a tabela (ordenada pelo filtro)
   const sortedTableUsers = useMemo(() => {
-      if (!users) return [];
-      return [...users].sort((a, b) => {
+      return [...usersWithStatsForChampionship].sort((a, b) => {
         switch (sortType) {
             case 'exact':
                 if (a.exatos !== b.exatos) return b.exatos - a.exatos;
@@ -91,7 +107,7 @@ export default function AdminRankingPage() {
         const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateA - dateB;
     })
-  }, [users, sortType]);
+  }, [usersWithStatsForChampionship, sortType]);
 
   const getSortColumn = () => {
     switch (sortType) {

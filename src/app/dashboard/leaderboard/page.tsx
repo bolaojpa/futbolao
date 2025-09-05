@@ -44,7 +44,6 @@ export default function LeaderboardPage() {
   type SortType = 'default' | 'exact' | 'situation';
 
   const [championships, setChampionships] = useState<Championship[]>([]);
-  const [allMatches, setAllMatches] = useState<Match[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -59,7 +58,8 @@ export default function LeaderboardPage() {
         if (championshipIdFromQuery) {
           setSelectedChampionship(championshipIdFromQuery);
         } else if (champs.length > 0) {
-          setSelectedChampionship(champs[0].id);
+          const activeChampionship = champs.find(c => c.status === 'ativo');
+          setSelectedChampionship(activeChampionship ? activeChampionship.id : champs[0].id);
         }
       } catch (error) {
         console.error("Failed to fetch championships", error);
@@ -68,10 +68,6 @@ export default function LeaderboardPage() {
     fetchInitialStaticData();
 
     // Set up real-time listeners
-    const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
-      const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-      setAllMatches(matchesData);
-    });
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
       const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType));
       setAllUsers(usersData);
@@ -79,60 +75,26 @@ export default function LeaderboardPage() {
     });
 
     return () => {
-      unsubMatches();
       unsubUsers();
     };
   }, [championshipIdFromQuery]);
 
-  const liveMatches = useMemo(() => {
-    return allMatches.filter(match => match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data))));
-  }, [allMatches]);
+  const usersWithStatsForChampionship = useMemo(() => {
+    if (!selectedChampionship) return allUsers;
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): number => {
-    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
-
-    const championship = championships.find(c => c.id === match.campeonatoId);
-    if (!championship) return 0;
-
-    const { placarA: liveA, placarB: liveB } = match;
-    const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-    const pontuacao = championship.pontuacao.tradicional;
-
-    if (guessA === liveA && guessB === liveB) return pontuacao.exato;
-    const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
-    const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
-    if (liveWinner === guessWinner) return pontuacao.situacao;
-    return 0;
-  };
-
-  const usersWithLivePoints = useMemo(() => {
-      return allUsers.map(u => {
-          let livePoints = 0;
-          // This part is tricky without fetching all predictions. We'll simplify for now.
-          // For a full implementation, we'd need all predictions.
-          // Let's assume we can fetch them or pass them down.
-          // For this example, we'll keep it simple and just use the base points.
-          // A full solution would require fetching all predictions and calculating live points here.
-          const totalPoints = u.pontos; 
-          return { ...u, totalPoints };
-      });
-  }, [allUsers, liveMatches, championships]);
-
-
-  const sortedUsers = useMemo(() => {
-    return [...usersWithLivePoints].sort((a, b) => {
-      // Regra Padrão
-      if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
-      if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-      if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-      const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
-      const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
-      return dateA - dateB;
+    return allUsers.map(user => {
+      const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
+      return {
+        ...user,
+        pontos: stats?.pontos ?? 0,
+        exatos: stats?.acertosExatos ?? 0,
+        situacoes: stats?.acertosSituacao ?? 0,
+      }
     });
-  }, [usersWithLivePoints]);
+  }, [allUsers, selectedChampionship]);
   
   const sortedTableUsers = useMemo(() => {
-    return [...usersWithLivePoints].sort((a, b) => {
+    return [...usersWithStatsForChampionship].sort((a, b) => {
         switch (sortType) {
           case 'exact':
               if (a.exatos !== b.exatos) return b.exatos - a.exatos;
@@ -141,7 +103,7 @@ export default function LeaderboardPage() {
               if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
               break;
           default:
-              if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
+              if (a.pontos !== b.pontos) return b.pontos - a.pontos;
               if (a.exatos !== b.exatos) return b.exatos - a.exatos;
               if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
               break;
@@ -150,7 +112,7 @@ export default function LeaderboardPage() {
         const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateA - dateB;
     });
-  }, [usersWithLivePoints, sortType]);
+  }, [usersWithStatsForChampionship, sortType]);
 
 
   const getSortColumn = () => {
@@ -160,7 +122,7 @@ export default function LeaderboardPage() {
       case 'situation':
         return { header: 'Situação', accessor: (user: UserType) => user.situacoes };
       default:
-        return { header: 'Pontos', accessor: (user: UserType & {totalPoints: number}) => user.totalPoints };
+        return { header: 'Pontos', accessor: (user: UserType) => user.pontos };
     }
   };
 
@@ -212,7 +174,7 @@ export default function LeaderboardPage() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-8">
-          {sortedUsers.slice(0, 3).map((user, index) => (
+          {sortedTableUsers.slice(0, 3).map((user, index) => (
               <Card key={user.id} className={cn(
                   "relative overflow-hidden",
                   index === 1 && "md:order-1",
@@ -238,7 +200,7 @@ export default function LeaderboardPage() {
                             {user.apelido}
                         </Link>
                       </CardTitle>
-                      <CardDescription className="text-lg font-bold text-primary">{(user as any).totalPoints} pts</CardDescription>
+                      <CardDescription className="text-lg font-bold text-primary">{user.pontos} pts</CardDescription>
                   </CardHeader>
                   <CardContent>
                       <div className="flex justify-center text-3xl">
@@ -280,7 +242,7 @@ export default function LeaderboardPage() {
                     {sortType === 'default' ? 'Buchas' : 'Pontos'}
                   </TableHead>
                    <TableHead className="text-right hidden md:table-cell">
-                    {sortType === 'situation' ? 'Situação' : 'Pontos'}
+                    {sortType === 'situation' ? 'Buchas' : 'Situação'}
                   </TableHead>
                 </TableRow>
               </TableHeader>
