@@ -127,6 +127,8 @@ export async function deleteTeams(teamIds: string[]): Promise<void> {
  */
 export async function getChampionships(): Promise<Championship[]> {
     const championshipsCollection = collection(db, 'championships');
+    // It's better to sort by a consistent field like createdAt if available.
+    // Sorting by name might be inconsistent depending on the use case.
     const q = query(championshipsCollection, orderBy('createdAt', 'desc'));
     const championshipSnapshot = await getDocs(q);
     const championshipList = championshipSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
@@ -285,5 +287,3 @@ export async function addToastNotification(userId: string, title: string, messag
     createdAt: serverTimestamp(),
   });
 }
-
-    

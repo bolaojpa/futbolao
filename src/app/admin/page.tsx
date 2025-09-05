@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
 import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch } from '@/lib/firebase/firestore';
@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-update';
-import { mockLogs, mockNotifications, mockUser } from '@/lib/data';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -220,14 +219,6 @@ export default function AdminDashboardPage() {
                     // Gera notificação com IA (não bloqueia a UI)
                     generatePerformanceUpdate(notificationData).then(result => {
                         addToastNotification(user.id, result.titulo, result.mensagem);
-                        
-                        mockLogs.unshift({
-                            id: `log_${new Date().getTime()}`,
-                            timestamp: new Date().toISOString(),
-                            actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' },
-                            action: 'ai_notification',
-                            details: { title: result.titulo, message: result.mensagem, target: user.apelido }
-                        });
                     }).catch(err => {
                         console.error("Falha ao gerar notificação de IA para", user.apelido, err);
                     });
