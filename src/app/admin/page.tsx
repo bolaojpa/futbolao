@@ -21,6 +21,8 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-update';
 import { mockLogs, mockNotifications, mockUser } from '@/lib/data';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface MatchWithPredictions extends Match {
     predictions: Prediction[];
@@ -452,5 +454,3 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
-
-    
