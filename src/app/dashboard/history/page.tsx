@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -26,6 +25,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { Match, Prediction, Championship, UserType, Team } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { getChampionships, getMatches, getPredictionsForUser, getUsers, getTeams } from '@/lib/firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 
 type FilterType = 'all' | 'exact' | 'situation' | 'miss';
@@ -144,8 +145,9 @@ export default function HistoryPage() {
         if (!championshipMatch) return false;
 
         // Depois, pelo tipo de acerto
-        const prediction = match.prediction;
-        const maxPontos = match.maxPontos ?? 0;
+        const prediction = match.prediction!;
+        const champ = championships.find(c => c.id === match.campeonatoId);
+        const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
 
         switch (filterType) {
             case 'exact':
@@ -159,7 +161,7 @@ export default function HistoryPage() {
                 return true;
         }
     })
-    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()), [selectedChampionship, filterType, matchesWithUserPrediction]);
+    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()), [selectedChampionship, filterType, matchesWithUserPrediction, championships]);
 
 
   useEffect(() => {
@@ -298,7 +300,8 @@ export default function HistoryPage() {
                 const prediction = match.prediction!;
                 const teamA = allTeams.find(t => t.name === match.timeA);
                 const teamB = allTeams.find(t => t.name === match.timeB);
-                const maxPointsForMatch = match.maxPontos ?? 0;
+                const champ = championships.find(c => c.id === match.campeonatoId);
+                const maxPointsForMatch = champ?.pontuacao.tradicional.exato ?? 0;
 
                 return (
                   <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -357,9 +360,10 @@ export default function HistoryPage() {
                                 
                                 const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                 const chosenTeams = champPicks ? allTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+                                const otherMaxPoints = championships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
 
                                 return (
-                                <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
+                                <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, otherMaxPoints))}>
                                   <div className="w-1/3 text-left">
                                       <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
                                       <div className="relative">
@@ -403,7 +407,7 @@ export default function HistoryPage() {
                                   </div>
                                   <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                   <div className="w-1/3 text-right">
-                                    <Badge variant={getPointsBadgeVariant(p.pontos, maxPointsForMatch)} className='whitespace-nowrap'>
+                                    <Badge variant={getPointsBadgeVariant(p.pontos, otherMaxPoints)} className='whitespace-nowrap'>
                                       {p.pontos} pts
                                     </Badge>
                                   </div>
