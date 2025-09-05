@@ -32,7 +32,7 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/use-auth';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
-import { getMatches, getPredictionsForUser, getUsers, getChampionships, getTeams } from '@/lib/firebase/firestore';
+import { getChampionships, getTeams } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -49,45 +49,41 @@ export default function DashboardPage() {
 
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
     
-    // This effect ensures that the component re-renders to check match statuses in real-time.
      useEffect(() => {
       const timer = setInterval(() => {
         setCurrentTime(new Date());
-      }, 1000); // Update every second for real-time countdown effect
+      }, 1000); 
       return () => clearInterval(timer);
     }, []);
 
     useEffect(() => {
         if (!authLoading && user) {
-            const fetchData = async () => {
+            const fetchInitialData = async () => {
                 setLoadingData(true);
                 try {
-                    // Fetch static data once
-                    const [usersData, predictionsData, championshipsData, teamsData] = await Promise.all([
-                        getUsers(),
-                        getPredictionsForUser(user.id),
+                    const [championshipsData, teamsData] = await Promise.all([
                         getChampionships(),
                         getTeams(),
                     ]);
-                    setAllUsers(usersData);
-                    setUserPredictions(predictionsData);
                     setAllChampionships(championshipsData);
                     setAllTeams(teamsData);
                 } catch (error) {
-                    console.error("Failed to fetch dashboard data:", error);
+                    console.error("Failed to fetch initial dashboard data:", error);
                 } finally {
                     setLoadingData(false);
                 }
             };
-            fetchData();
+            fetchInitialData();
             
-            // Set up real-time listener for matches
+            // Set up real-time listeners
             const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
                 const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
                 setAllMatches(matchesData);
             });
-            
-            // Set up real-time listener for user's predictions
+            const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+                const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType));
+                setAllUsers(usersData);
+            });
             const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
                  const predictionsData = snapshot.docs
                     .map(doc => ({ id: doc.id, ...doc.data() } as Prediction))
@@ -97,6 +93,7 @@ export default function DashboardPage() {
 
             return () => {
                 unsubMatches();
+                unsubUsers();
                 unsubPredictions();
             };
         }
@@ -125,14 +122,14 @@ export default function DashboardPage() {
         return allMatches
             .filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
-            .slice(0, 6); // Limit to 6 upcoming matches on dashboard
+            .slice(0, 6); 
     }, [allMatches, currentTime]);
 
     const recentMatches = useMemo(() => {
         return allMatches
             .filter(match => match.status === 'Finalizado')
             .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
-            .slice(0, 3); // Limit to 3 recent matches
+            .slice(0, 3);
     }, [allMatches]);
 
     const sortedUsers = useMemo(() => {
