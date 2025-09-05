@@ -103,7 +103,7 @@ export default function AdminMatchesPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
 
    useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Check every minute
     return () => clearInterval(timer);
   }, []);
 
@@ -135,7 +135,7 @@ export default function AdminMatchesPage() {
 
   // Real-time listeners
   useEffect(() => {
-      const qMatches = query(collection(db, 'matches'), where('status', '==', 'Agendado'));
+      const qMatches = query(collection(db, 'matches'), where('status', '!=', 'Finalizado'), where('status', '!=', 'Cancelado'));
       const unsubMatches = onSnapshot(qMatches, (snapshot) => {
           const matchesData: Match[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
           setAllMatches(matchesData);
@@ -162,12 +162,9 @@ export default function AdminMatchesPage() {
 
   const sortedMatches = useMemo(() => {
     return [...matchesWithPredictions]
-      .filter(match => {
-        const isChampionshipMatch = selectedChampionship === 'all' || match.campeonatoId === selectedChampionship;
-        return isChampionshipMatch && !isPast(parseISO(match.data));
-      })
+      .filter(match => selectedChampionship === 'all' || match.campeonatoId === selectedChampionship)
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-  }, [selectedChampionship, matchesWithPredictions, currentTime]);
+  }, [selectedChampionship, matchesWithPredictions]);
 
 
   const handleFilterChange = (value: string) => {
@@ -440,3 +437,5 @@ export default function AdminMatchesPage() {
     </div>
   );
 }
+
+    
