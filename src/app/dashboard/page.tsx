@@ -188,7 +188,7 @@ export default function DashboardPage() {
     const leader = sortedUsers[0] as (UserType & { totalPoints?: number }) | undefined;
     const secondPlace = sortedUsers[1] as (UserType & { totalPoints?: number }) | undefined;
     
-    const showLeaderCard = leader && (liveMatches.length > 0 || recentMatches.length > 0 || (leader.totalPoints !== undefined && leader.totalPoints >= 0));
+    const showLeaderCard = leader && (leader.totalPoints !== undefined && leader.totalPoints >= 0);
 
 
     const getLeaderMessage = () => {
