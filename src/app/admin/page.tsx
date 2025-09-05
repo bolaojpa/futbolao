@@ -20,7 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-update';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface MatchWithPredictions extends Match {
@@ -147,14 +147,14 @@ export default function AdminDashboardPage() {
         
         const acertouPlacar = guessA === finalA && guessB === finalB;
         if (acertouPlacar) {
-            return { pontos: pontuacao.exato, exato: true, situacao: false }; // Acerto em cheio, não é situação
+            return { pontos: pontuacao.exato, exato: true, situacao: false }; 
         }
 
         const finalWinner = finalA > finalB ? 'A' : finalA < finalB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
 
         if (finalWinner === guessWinner) {
-            return { pontos: pontuacao.situacao, exato: false, situacao: true }; // Acertou vencedor/empate
+            return { pontos: pontuacao.situacao, exato: false, situacao: true };
         }
         
         return { pontos: 0, exato: false, situacao: false }; // Errou tudo
@@ -166,7 +166,6 @@ export default function AdminDashboardPage() {
 
         const finalScoreA = Number(currentScore.placarA);
         const finalScoreB = Number(currentScore.placarB);
-        const matchWithFinalScore = { ...match, placarA: finalScoreA, placarB: finalScoreB };
 
         try {
             await updateMatch(match.id, { 
@@ -175,7 +174,6 @@ export default function AdminDashboardPage() {
                 placarB: finalScoreB
             });
             
-            // Re-fetch matches to update the UI
             const updatedMatches = await getMatches();
             setAllMatches(updatedMatches);
 
@@ -184,25 +182,29 @@ export default function AdminDashboardPage() {
                 description: `A partida ${match.timeA} vs ${match.timeB} foi movida para o histórico. Consolidando pontos...`,
             });
             
-            const predictionsForMatch = liveMatchesWithPredictions.find(m => m.id === match.id)?.predictions ?? [];
-            
-            // Atualizar pontuações e perfis de usuário
-            for (const prediction of predictionsForMatch) {
-                 const { pontos, exato, situacao } = calculateFinalPoints(matchWithFinalScore, prediction);
-                 
-                 // Atualiza o documento de palpite com os pontos finais
-                 if (prediction.id) {
-                     await updateDoc(doc(db, 'predictions', prediction.id), { pontos });
-                 }
+            const championship = allChampionships.find(c => c.id === match.campeonatoId);
+            if (!championship) {
+                throw new Error("Campeonato não encontrado para a partida.");
+            }
 
-                 // Atualiza o perfil do usuário
-                 await updateUserStatsAfterMatch(prediction.userId, match.campeonatoId, pontos, exato, situacao);
+            const qMatches = query(collection(db, 'matches'), where('campeonatoId', '==', championship.id), where('status', '==', 'Finalizado'));
+            const qPredictions = query(collection(db, 'predictions'), where('campeonatoId', '==', championship.id));
 
-                // Disparo da notificação de IA para usuários
+            const [matchesSnapshot, predictionsSnapshot] = await Promise.all([getDocs(qMatches), getDocs(qPredictions)]);
+            const allFinalizedMatchesInChamp = matchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+            const allPredictionsInChamp = predictionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+
+            for (const user of allUsers) {
+                if (championship.participantes.includes(user.id)) {
+                     await updateUserStatsAfterMatch(user.id, championship.id, allPredictionsInChamp, allFinalizedMatchesInChamp, championship);
+                }
+            }
+
+            const predictionsForThisMatch = await getPredictionsForMatch(match.id);
+            for (const prediction of predictionsForThisMatch) {
                 const user = allUsers.find(u => u.id === prediction.userId);
-                if (enableAiNotifications && user) {
-                    
-                    // Simular mudança no ranking
+                 if (enableAiNotifications && user) {
+                    const { pontos } = calculateFinalPoints({ ...match, placarA: finalScoreA, placarB: finalScoreB }, prediction);
                     const oldPosition = allUsers.findIndex(u => u.id === user.id) + 1;
                     const newPosition = pontos > 5 ? oldPosition - 1 : oldPosition;
                     
@@ -214,7 +216,6 @@ export default function AdminDashboardPage() {
                         nomePartida: `${match.timeA} vs ${match.timeB}`
                     };
 
-                    // Gera notificação com IA (não bloqueia a UI)
                     generatePerformanceUpdate(notificationData).then(result => {
                         addToastNotification(user.id, result.titulo, result.mensagem);
                     }).catch(err => {
@@ -222,7 +223,7 @@ export default function AdminDashboardPage() {
                     });
                 }
             }
-             // Re-fetch users to reflect new scores
+
             const updatedUsers = await getUsers();
             setAllUsers(updatedUsers);
 
@@ -443,3 +444,5 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
+    

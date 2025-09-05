@@ -67,14 +67,20 @@ export async function deleteUsers(userIds: string[]): Promise<void> {
 
 /**
  * Updates a user's stats for a specific championship after a match is finalized.
- * This function handles creating the stats object if it doesn't exist.
+ * This function handles creating the stats object if it doesn't exist and recalculates stats.
  * @param userId The ID of the user to update.
  * @param championshipId The ID of the championship.
- * @param points The points to add.
- * @param isExactHit Whether the user got an exact hit.
- * @param isSituationHit Whether the user got a situation hit.
+ * @param allPredictionsInChamp All predictions for the championship to recalculate stats.
+ * @param allMatchesInChamp All finalized matches in the championship.
+ * @param championship The championship object for scoring rules.
  */
-export async function updateUserStatsAfterMatch(userId: string, championshipId: string, points: number, isExactHit: boolean, isSituationHit: boolean) {
+export async function updateUserStatsAfterMatch(
+    userId: string, 
+    championshipId: string, 
+    allPredictionsInChamp: Prediction[],
+    allMatchesInChamp: Match[],
+    championship: Championship
+) {
     const userRef = doc(db, 'users', userId);
 
     try {
@@ -85,37 +91,51 @@ export async function updateUserStatsAfterMatch(userId: string, championshipId: 
             }
 
             const userData = userDoc.data() as UserType;
+            const userPredictionsForChamp = allPredictionsInChamp.filter(p => p.userId === userId);
+            
+            let totalPoints = 0;
+            let totalExacts = 0;
+            let totalSituations = 0;
+
+            const pontuacao = championship.pontuacao.tradicional;
+
+            for (const p of userPredictionsForChamp) {
+                const match = allMatchesInChamp.find(m => m.id === p.matchId);
+                if (match && match.placarA != null && match.placarB != null) {
+                    const acertouPlacar = p.palpiteUsuario.placarA === match.placarA && p.palpiteUsuario.placarB === match.placarB;
+                    const finalWinner = match.placarA > match.placarB ? 'A' : match.placarA < match.placarB ? 'B' : 'E';
+                    const guessWinner = p.palpiteUsuario.placarA > p.palpiteUsuario.placarB ? 'A' : p.palpiteUsuario.placarA < p.palpiteUsuario.placarB ? 'B' : 'E';
+
+                    if (acertouPlacar) {
+                        totalPoints += pontuacao.exato;
+                        totalExacts += 1;
+                    } else if (finalWinner === guessWinner) {
+                        totalPoints += pontuacao.situacao;
+                        totalSituations += 1;
+                    }
+                }
+            }
+
             let champStats = userData.championshipStats || [];
             let statsIndex = champStats.findIndex(s => s.championshipId === championshipId);
 
+            const newStats = {
+                championshipId: championshipId,
+                pontos: totalPoints,
+                acertosExatos: totalExacts,
+                acertosSituacao: totalSituations,
+                maiorSequencia: 0, // A lógica de sequência precisa ser implementada
+            };
+
             if (statsIndex === -1) {
-                // If no stats for this championship, create a new entry
-                champStats.push({
-                    championshipId: championshipId,
-                    pontos: 0,
-                    acertosExatos: 0,
-                    acertosSituacao: 0,
-                    maiorSequencia: 0, // A lógica de sequência precisa ser mais complexa
-                });
-                statsIndex = champStats.length - 1;
+                champStats.push(newStats);
+            } else {
+                champStats[statsIndex] = newStats;
             }
-
-            // Update the values
-            const updatedStats = { ...champStats[statsIndex] };
-            updatedStats.pontos += points;
-            if (isExactHit) {
-                updatedStats.acertosExatos += 1;
-            }
-            if (isSituationHit) {
-                updatedStats.acertosSituacao += 1;
-            }
-
-            champStats[statsIndex] = updatedStats;
             
-            // Update the entire array in the user document
             transaction.update(userRef, { 
                 championshipStats: champStats,
-                totalJogos: increment(1) // Increment total games played
+                totalJogos: userPredictionsForChamp.length,
             });
         });
     } catch (e) {
@@ -169,7 +189,7 @@ export async function getChampionships(): Promise<Championship[]> {
     const q = query(championshipsCollection);
     const championshipSnapshot = await getDocs(q);
     const championshipList = championshipSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
-    return championshipList.sort((a, b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0));
+    return championshipList.sort((a, b) => ((b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0)));
 }
 
 
@@ -324,3 +344,5 @@ export async function addToastNotification(userId: string, title: string, messag
     createdAt: serverTimestamp(),
   });
 }
+
+    

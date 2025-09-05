@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { UserType, Championship } from '@/lib/types';
+import type { UserType, Championship, Match, Prediction } from '@/lib/types';
 import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -30,6 +30,7 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 import { getChampionships } from '@/lib/firebase/firestore';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { isPast, parseISO } from 'date-fns';
 
 export default function AdminRankingPage() {
   const searchParams = useSearchParams();
@@ -41,6 +42,8 @@ export default function AdminRankingPage() {
   const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [championships, setChampionships] = useState<Championship[]>([]);
+  const [liveMatches, setLiveMatches] = useState<Match[]>([]);
+  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,23 +71,77 @@ export default function AdminRankingPage() {
         setLoading(false);
     });
 
-    return () => unsubUsers();
-  }, [championshipIdFromQuery]);
-  
+    const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
+        const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+        const live = matchesData.filter(match => 
+            match.status !== 'Finalizado' && 
+            match.status !== 'Cancelado' &&
+            isPast(parseISO(match.data))
+        );
+        setLiveMatches(live);
+    });
 
+    const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
+        const predictionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+        setAllPredictions(predictionsData);
+    });
+
+    return () => {
+        unsubUsers();
+        unsubMatches();
+        unsubPredictions();
+    };
+  }, [championshipIdFromQuery]);
+
+  const calculateLivePoints = (match: Match, prediction: Prediction): number => {
+    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+    
+    const championship = championships.find(c => c.id === match.campeonatoId);
+    if (!championship) return 0;
+
+    const { placarA: liveA, placarB: liveB } = match;
+    const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+    const pontuacao = championship.pontuacao.tradicional;
+
+    if (guessA === liveA && guessB === liveB) {
+        return pontuacao.exato; 
+    }
+
+    const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
+    const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+
+    if (liveWinner === guessWinner) {
+        return pontuacao.situacao;
+    }
+
+    return 0;
+  };
+  
   const usersWithStatsForChampionship = useMemo(() => {
     if (!selectedChampionshipId) return [];
 
     return allUsers.map(user => {
       const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
+      const basePoints = stats?.pontos ?? 0;
+
+      let livePoints = 0;
+        liveMatches.forEach(match => {
+            if(match.campeonatoId === selectedChampionshipId) {
+                const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
+                if (prediction) {
+                    livePoints += calculateLivePoints(match, prediction);
+                }
+            }
+        });
+
       return {
         ...user,
-        pontos: stats?.pontos ?? 0,
+        pontos: basePoints + livePoints,
         exatos: stats?.acertosExatos ?? 0,
         situacoes: stats?.acertosSituacao ?? 0,
       }
     });
-  }, [allUsers, selectedChampionshipId]);
+  }, [allUsers, selectedChampionshipId, liveMatches, allPredictions, championships]);
 
 
   const sortedTableUsers = useMemo(() => {
@@ -113,17 +170,17 @@ export default function AdminRankingPage() {
       case 'exact':
         return {
           header: 'Buchas',
-          accessor: (user: UserType & { exatos: number }) => user.exatos,
+          accessor: (user: { exatos: number }) => user.exatos,
         };
       case 'situation':
         return {
           header: 'Situação',
-          accessor: (user: UserType & { situacoes: number }) => user.situacoes,
+          accessor: (user: { situacoes: number }) => user.situacoes,
         };
       default:
         return {
           header: 'Pontos',
-          accessor: (user: UserType & { pontos: number }) => user.pontos,
+          accessor: (user: { pontos: number }) => user.pontos,
         };
     }
   };
@@ -277,3 +334,5 @@ export default function AdminRankingPage() {
     </TooltipProvider>
   );
 }
+
+    
