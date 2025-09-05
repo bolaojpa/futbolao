@@ -69,16 +69,14 @@ export async function deleteUsers(userIds: string[]): Promise<void> {
  * Updates a user's stats for a specific championship after a match is finalized.
  * This function handles creating the stats object if it doesn't exist and recalculates stats.
  * @param userId The ID of the user to update.
- * @param championshipId The ID of the championship.
- * @param allPredictionsInChamp All predictions for the championship to recalculate stats.
- * @param allMatchesInChamp All finalized matches in the championship.
+ * @param finalizedMatch The match that was just finalized.
+ * @param userPrediction The user's prediction for the finalized match.
  * @param championship The championship object for scoring rules.
  */
 export async function updateUserStatsAfterMatch(
     userId: string, 
-    championshipId: string, 
-    allPredictionsInChamp: Prediction[],
-    allMatchesInChamp: Match[],
+    finalizedMatch: Match,
+    userPrediction: Prediction,
     championship: Championship
 ) {
     const userRef = doc(db, 'users', userId);
@@ -91,51 +89,54 @@ export async function updateUserStatsAfterMatch(
             }
 
             const userData = userDoc.data() as UserType;
-            const userPredictionsForChamp = allPredictionsInChamp.filter(p => p.userId === userId);
-            
-            let totalPoints = 0;
-            let totalExacts = 0;
-            let totalSituations = 0;
-
             const pontuacao = championship.pontuacao.tradicional;
 
-            for (const p of userPredictionsForChamp) {
-                const match = allMatchesInChamp.find(m => m.id === p.matchId);
-                if (match && match.placarA != null && match.placarB != null) {
-                    const acertouPlacar = p.palpiteUsuario.placarA === match.placarA && p.palpiteUsuario.placarB === match.placarB;
-                    const finalWinner = match.placarA > match.placarB ? 'A' : match.placarA < match.placarB ? 'B' : 'E';
-                    const guessWinner = p.palpiteUsuario.placarA > p.palpiteUsuario.placarB ? 'A' : p.palpiteUsuario.placarA < p.palpiteUsuario.placarB ? 'B' : 'E';
+            let pontosGanhos = 0;
+            let acertosExatosGanhos = 0;
+            let acertosSituacaoGanhos = 0;
 
-                    if (acertouPlacar) {
-                        totalPoints += pontuacao.exato;
-                        totalExacts += 1;
-                    } else if (finalWinner === guessWinner) {
-                        totalPoints += pontuacao.situacao;
-                        totalSituations += 1;
-                    }
-                }
+            const acertouPlacar = userPrediction.palpiteUsuario.placarA === finalizedMatch.placarA && userPrediction.palpiteUsuario.placarB === finalizedMatch.placarB;
+            const finalWinner = finalizedMatch.placarA! > finalizedMatch.placarB! ? 'A' : finalizedMatch.placarA! < finalizedMatch.placarB! ? 'B' : 'E';
+            const guessWinner = userPrediction.palpiteUsuario.placarA > userPrediction.palpiteUsuario.placarB ? 'A' : userPrediction.palpiteUsuario.placarA < userPrediction.palpiteUsuario.placarB ? 'B' : 'E';
+            
+            if (acertouPlacar) {
+                pontosGanhos = pontuacao.exato;
+                acertosExatosGanhos = 1;
+            } else if (finalWinner === guessWinner) {
+                pontosGanhos = pontuacao.situacao;
+                acertosSituacaoGanhos = 1;
             }
 
-            let champStats = userData.championshipStats || [];
-            let statsIndex = champStats.findIndex(s => s.championshipId === championshipId);
+            // Atualiza o documento de palpite com os pontos ganhos
+            const predictionRef = doc(db, 'predictions', userPrediction.id!);
+            transaction.update(predictionRef, { pontos: pontosGanhos });
 
-            const newStats = {
-                championshipId: championshipId,
-                pontos: totalPoints,
-                acertosExatos: totalExacts,
-                acertosSituacao: totalSituations,
-                maiorSequencia: 0, // A lógica de sequência precisa ser implementada
-            };
+
+            let champStats = [...(userData.championshipStats || [])];
+            let statsIndex = champStats.findIndex(s => s.championshipId === championship.id);
 
             if (statsIndex === -1) {
+                // Se não existem stats para este campeonato, cria um novo registro
+                const newStats = {
+                    championshipId: championship.id,
+                    pontos: pontosGanhos,
+                    acertosExatos: acertosExatosGanhos,
+                    acertosSituacao: acertosSituacaoGanhos,
+                    maiorSequencia: 0, // Lógica de sequência a ser implementada
+                };
                 champStats.push(newStats);
             } else {
-                champStats[statsIndex] = newStats;
+                // Se já existem, incrementa os valores
+                const existingStats = champStats[statsIndex];
+                existingStats.pontos += pontosGanhos;
+                existingStats.acertosExatos += acertosExatosGanhos;
+                existingStats.acertosSituacao += acertosSituacaoGanhos;
+                // Lógica para maiorSequencia precisaria ser mais elaborada
             }
             
             transaction.update(userRef, { 
                 championshipStats: champStats,
-                totalJogos: userPredictionsForChamp.length,
+                totalJogos: increment(1), // Incrementa o total de jogos
             });
         });
     } catch (e) {
@@ -344,5 +345,3 @@ export async function addToastNotification(userId: string, title: string, messag
     createdAt: serverTimestamp(),
   });
 }
-
-    

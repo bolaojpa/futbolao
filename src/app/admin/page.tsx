@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const calculateFinalPoints = (match: Match, prediction: Prediction): { pontos: number, exato: boolean, situacao: boolean } => {
+    const calculatePointsForSingleMatch = (match: Match, prediction: Prediction): { pontos: number, exato: boolean, situacao: boolean } => {
         const { placarA: finalA, placarB: finalB } = match;
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
@@ -160,20 +160,27 @@ export default function AdminDashboardPage() {
         return { pontos: 0, exato: false, situacao: false }; // Errou tudo
     };
 
-    const handleFinalizeMatch = async (match: Match) => {
+
+    const handleFinalizeMatch = async (match: MatchWithPredictions) => {
        const currentScore = scores[match.id];
-        if (currentScore.placarA === '' || currentScore.placarB === '') return;
+        if (currentScore.placarA === '' || currentScore.placarB === '') {
+            toast({ title: "Placar inválido", description: "O placar não pode estar em branco.", variant: "destructive"});
+            return;
+        };
 
         const finalScoreA = Number(currentScore.placarA);
         const finalScoreB = Number(currentScore.placarB);
+        const finalizedMatch = { ...match, status: 'Finalizado', placarA: finalScoreA, placarB: finalScoreB } as const;
 
         try {
+            // 1. Atualiza o status da partida para Finalizado
             await updateMatch(match.id, { 
                 status: 'Finalizado',
                 placarA: finalScoreA,
                 placarB: finalScoreB
             });
             
+            // Refresca a lista de partidas localmente para UI
             const updatedMatches = await getMatches();
             setAllMatches(updatedMatches);
 
@@ -186,49 +193,43 @@ export default function AdminDashboardPage() {
             if (!championship) {
                 throw new Error("Campeonato não encontrado para a partida.");
             }
-
-            const qMatches = query(collection(db, 'matches'), where('campeonatoId', '==', championship.id), where('status', '==', 'Finalizado'));
-            const qPredictions = query(collection(db, 'predictions'), where('campeonatoId', '==', championship.id));
-
-            const [matchesSnapshot, predictionsSnapshot] = await Promise.all([getDocs(qMatches), getDocs(qPredictions)]);
-            const allFinalizedMatchesInChamp = matchesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-            const allPredictionsInChamp = predictionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
-
-            for (const user of allUsers) {
-                if (championship.participantes.includes(user.id)) {
-                     await updateUserStatsAfterMatch(user.id, championship.id, allPredictionsInChamp, allFinalizedMatchesInChamp, championship);
-                }
-            }
-
-            const predictionsForThisMatch = await getPredictionsForMatch(match.id);
-            for (const prediction of predictionsForThisMatch) {
+            
+            // 2. Itera sobre cada palpite da partida finalizada para atualizar os stats de cada usuário
+            for (const prediction of match.predictions) {
                 const user = allUsers.find(u => u.id === prediction.userId);
-                 if (enableAiNotifications && user) {
-                    const { pontos } = calculateFinalPoints({ ...match, placarA: finalScoreA, placarB: finalScoreB }, prediction);
-                    const oldPosition = allUsers.findIndex(u => u.id === user.id) + 1;
-                    const newPosition = pontos > 5 ? oldPosition - 1 : oldPosition;
-                    
-                    const notificationData = {
-                        apelido: user.apelido,
-                        pontosGanhos: pontos,
-                        posicaoAnterior: oldPosition,
-                        novaPosicao: newPosition > 0 ? newPosition : 1,
-                        nomePartida: `${match.timeA} vs ${match.timeB}`
-                    };
+                if (user) {
+                     await updateUserStatsAfterMatch(user.id, finalizedMatch, prediction, championship);
 
-                    generatePerformanceUpdate(notificationData).then(result => {
-                        addToastNotification(user.id, result.titulo, result.mensagem);
-                    }).catch(err => {
-                        console.error("Falha ao gerar notificação de IA para", user.apelido, err);
-                    });
+                    // 3. (Opcional) Envia notificação por IA
+                    if (enableAiNotifications) {
+                        const { pontos } = calculatePointsForSingleMatch(finalizedMatch, prediction);
+                        const oldPosition = allUsers.findIndex(u => u.id === user.id) + 1;
+                        const newPosition = pontos > 5 ? oldPosition - 1 : oldPosition;
+                        
+                        const notificationData = {
+                            apelido: user.apelido,
+                            pontosGanhos: pontos,
+                            posicaoAnterior: oldPosition,
+                            novaPosicao: newPosition > 0 ? newPosition : 1,
+                            nomePartida: `${match.timeA} vs ${match.timeB}`
+                        };
+
+                        generatePerformanceUpdate(notificationData).then(result => {
+                            addToastNotification(user.id, result.titulo, result.mensagem);
+                        }).catch(err => {
+                            console.error("Falha ao gerar notificação de IA para", user.apelido, err);
+                        });
+                    }
                 }
             }
 
+            // 4. Busca os usuários atualizados para refletir no ranking
             const updatedUsers = await getUsers();
             setAllUsers(updatedUsers);
 
         } catch (error) {
-             toast({ title: 'Erro ao finalizar a partida', variant: 'destructive' });
+             console.error("Erro ao finalizar partida: ", error);
+             toast({ title: 'Erro ao finalizar a partida', variant: 'destructive', description: "Verifique o console para mais detalhes." });
         }
     };
     
@@ -444,5 +445,3 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
-
-    
