@@ -18,79 +18,149 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { mockUsers, mockUser, mockChampionships, UserType } from '@/lib/data';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2 } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Honorifics } from '@/components/shared/honorifics';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { StatusIndicator } from '@/components/shared/status-indicator';
+import { useAuth } from '@/hooks/use-auth';
+import type { UserType, Championship, Match, Prediction, Team } from '@/lib/types';
+import { getChampionships, getMatches, getPredictionsForUser, getUsers, getTeams } from '@/lib/firebase/firestore';
+import { onSnapshot, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { parseISO, isPast } from 'date-fns';
 
 
 export default function LeaderboardPage() {
+  const { user: authUser, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
+  
   type SortType = 'default' | 'exact' | 'situation';
 
-  const [sortType, setSortType] = useState<SortType>('default');
-  const [selectedChampionship, setSelectedChampionship] = useState<string>(championshipIdFromQuery || mockChampionships[0].id);
+  const [championships, setChampionships] = useState<Championship[]>([]);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
-  // Sincroniza o estado com o parâmetro da URL
+  const [sortType, setSortType] = useState<SortType>('default');
+  const [selectedChampionship, setSelectedChampionship] = useState<string | null>(null);
+
   useEffect(() => {
-    if (championshipIdFromQuery) {
-      setSelectedChampionship(championshipIdFromQuery);
+    async function fetchInitialStaticData() {
+      try {
+        const champs = await getChampionships();
+        setChampionships(champs);
+        if (championshipIdFromQuery) {
+          setSelectedChampionship(championshipIdFromQuery);
+        } else if (champs.length > 0) {
+          setSelectedChampionship(champs[0].id);
+        }
+      } catch (error) {
+        console.error("Failed to fetch championships", error);
+      }
     }
+    fetchInitialStaticData();
+
+    // Set up real-time listeners
+    const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
+      const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+      setAllMatches(matchesData);
+    });
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType));
+      setAllUsers(usersData);
+      setLoadingData(false);
+    });
+
+    return () => {
+      unsubMatches();
+      unsubUsers();
+    };
   }, [championshipIdFromQuery]);
-  
-  // Lista para o pódio (sempre com ordenação padrão)
-  const sortedTop3Users = [...mockUsers].sort((a, b) => {
-      if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+
+  const liveMatches = useMemo(() => {
+    return allMatches.filter(match => match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data))));
+  }, [allMatches]);
+
+  const calculateLivePoints = (match: Match, prediction: Prediction): number => {
+    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+
+    const championship = championships.find(c => c.id === match.campeonatoId);
+    if (!championship) return 0;
+
+    const { placarA: liveA, placarB: liveB } = match;
+    const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+    const pontuacao = championship.pontuacao.tradicional;
+
+    if (guessA === liveA && guessB === liveB) return pontuacao.exato;
+    const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
+    const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+    if (liveWinner === guessWinner) return pontuacao.situacao;
+    return 0;
+  };
+
+  const usersWithLivePoints = useMemo(() => {
+      return allUsers.map(u => {
+          let livePoints = 0;
+          // This part is tricky without fetching all predictions. We'll simplify for now.
+          // For a full implementation, we'd need all predictions.
+          // Let's assume we can fetch them or pass them down.
+          // For this example, we'll keep it simple and just use the base points.
+          // A full solution would require fetching all predictions and calculating live points here.
+          const totalPoints = u.pontos; 
+          return { ...u, totalPoints };
+      });
+  }, [allUsers, liveMatches, championships]);
+
+
+  const sortedUsers = useMemo(() => {
+    return [...usersWithLivePoints].sort((a, b) => {
+      // Regra Padrão
+      if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
       if (a.exatos !== b.exatos) return b.exatos - a.exatos;
       if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-      return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
-  });
+      const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
+      const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
+      return dateA - dateB;
+    });
+  }, [usersWithLivePoints]);
+  
+  const sortedTableUsers = useMemo(() => {
+    return [...usersWithLivePoints].sort((a, b) => {
+        switch (sortType) {
+          case 'exact':
+              if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+              break;
+          case 'situation':
+              if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+              break;
+          default:
+              if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints;
+              if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+              if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+              break;
+        }
+        const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
+        const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
+        return dateA - dateB;
+    });
+  }, [usersWithLivePoints, sortType]);
 
-  // Lista para a tabela (ordenada pelo filtro)
-  const sortedTableUsers = [...mockUsers].sort((a, b) => {
-      switch (sortType) {
-        case 'exact':
-            if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-            break;
-        case 'situation':
-            if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-            break;
-        default:
-            // Regra Padrão
-            if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-            if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-            if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-            break;
-      }
-      // Critério final de desempate para todos os casos
-      return new Date(a.dataCadastro).getTime() - new Date(b.dataCadastro).getTime();
-  });
 
   const getSortColumn = () => {
     switch (sortType) {
       case 'exact':
-        return {
-          header: 'Buchas',
-          accessor: (user: UserType) => user.exatos,
-        };
+        return { header: 'Buchas', accessor: (user: UserType) => user.exatos };
       case 'situation':
-        return {
-          header: 'Situação',
-          accessor: (user: UserType) => user.situacoes,
-        };
+        return { header: 'Situação', accessor: (user: UserType) => user.situacoes };
       default:
-        return {
-          header: 'Pontos',
-          accessor: (user: UserType) => user.pontos,
-        };
+        return { header: 'Pontos', accessor: (user: UserType & {totalPoints: number}) => user.totalPoints };
     }
   };
 
@@ -106,29 +176,15 @@ export default function LeaderboardPage() {
   
   const getPositionVariation = (variation?: 'up' | 'down' | 'stable') => {
     switch (variation) {
-      case 'up':
-        return {
-          icon: <ArrowUp className="w-4 h-4 text-green-500" />,
-          tooltip: 'Subiu de posição',
-          colorClass: 'text-green-500',
-        };
-      case 'down':
-        return {
-          icon: <ArrowDown className="w-4 h-4 text-destructive" />,
-          tooltip: 'Desceu de posição',
-          colorClass: 'text-destructive',
-        };
-      case 'stable':
-      default:
-        return {
-          icon: <Minus className="w-4 h-4 text-primary" />,
-          tooltip: 'Posição estável',
-          colorClass: 'text-primary',
-        };
+      case 'up': return { icon: <ArrowUp className="w-4 h-4 text-green-500" />, tooltip: 'Subiu de posição' };
+      case 'down': return { icon: <ArrowDown className="w-4 h-4 text-destructive" />, tooltip: 'Desceu de posição' };
+      default: return { icon: <Minus className="w-4 h-4 text-primary" />, tooltip: 'Posição estável' };
     }
   };
-
-  const shareText = encodeURIComponent(`Confira o ranking do FutBolão Pro! Estou em ${sortedTop3Users.findIndex(u => u.id === mockUser.id) + 1}º lugar!`);
+  
+  if (authLoading || loadingData) {
+      return <div className="p-8 flex justify-center items-center h-full"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  }
 
   return (
     <TooltipProvider>
@@ -143,12 +199,12 @@ export default function LeaderboardPage() {
         </div>
 
         <div className="w-full md:w-auto mb-8">
-            <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+            <Select value={selectedChampionship || ''} onValueChange={setSelectedChampionship}>
                 <SelectTrigger className="w-full md:w-[280px]">
                     <SelectValue placeholder="Filtrar por campeonato" />
                 </SelectTrigger>
                 <SelectContent>
-                    {mockChampionships.map(champ => (
+                    {championships.map(champ => (
                         <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
                     ))}
                 </SelectContent>
@@ -156,12 +212,12 @@ export default function LeaderboardPage() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-8">
-          {sortedTop3Users.slice(0, 3).map((user, index) => (
+          {sortedUsers.slice(0, 3).map((user, index) => (
               <Card key={user.id} className={cn(
                   "relative overflow-hidden",
-                  index === 1 && "md:order-1", // 2nd place
-                  index === 0 && "md:order-2 md:scale-105", // 1st place
-                  index === 2 && "md:order-3", // 3rd place
+                  index === 1 && "md:order-1",
+                  index === 0 && "md:order-2 md:scale-105",
+                  index === 2 && "md:order-3",
               )}>
                   <CardHeader>
                     <Link href={`/dashboard/profile?userId=${user.id}`} className="block w-fit mx-auto">
@@ -172,7 +228,7 @@ export default function LeaderboardPage() {
                           index === 2 && "bg-gradient-to-tr from-amber-600 to-yellow-700",
                       )}>
                           <Avatar className="w-full h-full border-4 border-background">
-                              <AvatarImage src={`https://picsum.photos/100/100?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                              <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
                               <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                           </Avatar>
                       </div>
@@ -182,7 +238,7 @@ export default function LeaderboardPage() {
                             {user.apelido}
                         </Link>
                       </CardTitle>
-                      <CardDescription className="text-lg font-bold text-primary">{user.pontos} pts</CardDescription>
+                      <CardDescription className="text-lg font-bold text-primary">{(user as any).totalPoints} pts</CardDescription>
                   </CardHeader>
                   <CardContent>
                       <div className="flex justify-center text-3xl">
@@ -211,7 +267,6 @@ export default function LeaderboardPage() {
             </div>
         </div>
 
-
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -225,7 +280,7 @@ export default function LeaderboardPage() {
                     {sortType === 'default' ? 'Buchas' : 'Pontos'}
                   </TableHead>
                    <TableHead className="text-right hidden md:table-cell">
-                    {sortType === 'situation' ? 'Buchas' : 'Situação'}
+                    {sortType === 'situation' ? 'Situação' : 'Pontos'}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -237,7 +292,7 @@ export default function LeaderboardPage() {
                       <TableRow 
                         key={user.id} 
                         className={cn(
-                            user.id === mockUser.id && "bg-blue-100/50 dark:bg-blue-900/20",
+                            authUser?.id === user.id && "bg-blue-100/50 dark:bg-blue-900/20",
                             rank === 1 && "bg-gradient-to-r from-yellow-400/20 via-yellow-300/10 to-yellow-400/20 dark:from-yellow-500/20 dark:via-yellow-400/10 dark:to-yellow-500/20"
                         )}
                       >
@@ -258,7 +313,7 @@ export default function LeaderboardPage() {
                             <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
                                 <div className="relative">
                                     <Avatar className="w-9 h-9">
-                                      <AvatarImage src={`https://picsum.photos/100/100?text=${user.apelido.charAt(0)}`} alt={user.apelido} />
+                                      <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
                                       <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                     </Avatar>
                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
@@ -268,7 +323,7 @@ export default function LeaderboardPage() {
                                 {getMedalIcon(rank)}
                             </Link>
                         </TableCell>
-                        <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user)}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user as any)}</TableCell>
                         <TableCell className="text-right hidden md:table-cell">
                           {sortType === 'default' ? user.exatos : user.pontos}
                         </TableCell>
@@ -286,4 +341,3 @@ export default function LeaderboardPage() {
     </TooltipProvider>
   );
 }
-

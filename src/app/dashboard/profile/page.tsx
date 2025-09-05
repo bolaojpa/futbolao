@@ -10,8 +10,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Users, LogIn, HelpCircle } from 'lucide-react';
-import { mockUser, mockUsers, mockChampionships, mockMatches, UserType } from '@/lib/data';
+import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Users, LogIn, HelpCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type React from 'react';
@@ -26,6 +25,11 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { HonorificsExplanationModal } from '@/components/profile/honorifics-explanation-modal';
+import type { UserType, Championship, Match, Prediction, Team } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { getChampionships, getMatches } from '@/lib/firebase/firestore';
 
 const TimeAgo = ({ dateString }: { dateString: string }) => {
     const [timeAgo, setTimeAgo] = useState('');
@@ -66,145 +70,106 @@ const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: R
 }
 
 export default function ProfilePage() {
+  const { user: authUser, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
-  const userId = searchParams.get('userId');
-  
-  const [isClient, setIsClient] = useState(false);
-  
-  useEffect(() => {
-    setIsClient(true)
-  }, []);
+  const userIdFromQuery = searchParams.get('userId');
+  const [userToDisplay, setUserToDisplay] = useState<UserType | null>(null);
+  const [championships, setChampionships] = useState<Championship[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const userToDisplay = useMemo(() => {
-    if (!userId || userId === mockUser.id) {
-        return mockUser;
-    }
-    return mockUsers.find(u => u.id === userId) || mockUser;
+  const userId = userIdFromQuery || authUser?.id;
+  const isOwnProfile = !userIdFromQuery || userIdFromQuery === authUser?.id;
+
+  useEffect(() => {
+    if (!userId) return;
+
+    setLoading(true);
+    
+    // Fetch static data
+    Promise.all([getChampionships(), getMatches()]).then(([champs, matchData]) => {
+      setChampionships(champs);
+      setMatches(matchData);
+    });
+
+    // Listen for real-time user updates
+    const unsub = onSnapshot(doc(db, "users", userId), (doc) => {
+      if (doc.exists()) {
+        setUserToDisplay({ id: doc.id, ...doc.data() } as UserType);
+      } else {
+        setUserToDisplay(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsub();
   }, [userId]);
   
-  const [selectedChampionship, setSelectedChampionship] = useState<string>(mockChampionships[0].id);
+  const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | undefined>(undefined);
 
-  const isOwnProfile = userToDisplay.id === mockUser.id;
+   useEffect(() => {
+    if (championships.length > 0 && !selectedChampionshipId) {
+      setSelectedChampionshipId(championships[0].id);
+    }
+  }, [championships, selectedChampionshipId]);
+
+
+  const selectedChampionshipStats = useMemo(() => {
+    if (!userToDisplay || !selectedChampionshipId) return null;
+    return userToDisplay.championshipStats?.find(stat => stat.championshipId === selectedChampionshipId) || null;
+  }, [userToDisplay, selectedChampionshipId]);
+
+  const lastGuessMatch = useMemo(() => {
+      if (!userToDisplay?.ultimoPalpite?.matchId) return null;
+      return matches.find(m => m.id === userToDisplay.ultimoPalpite.matchId);
+  }, [userToDisplay, matches]);
+
+
+  const getLastGuessLink = () => {
+    if (!lastGuessMatch) return '#';
+    const championshipForMatch = championships.find(c => c.id === lastGuessMatch.campeonatoId);
+
+    switch(lastGuessMatch.status) {
+      case 'Agendado': return `/dashboard/predictions#${lastGuessMatch.id}`;
+      case 'Ao Vivo': return `/dashboard#${lastGuessMatch.id}`;
+      case 'Finalizado':
+         if (championshipForMatch) {
+            return `/dashboard/history?championshipId=${championshipForMatch.id}&matchId=${lastGuessMatch.id}`;
+          }
+          return `/dashboard/history#${lastGuessMatch.id}`;
+      default: return '#';
+    }
+  };
+  
+  if (loading || authLoading) {
+      return <div className="p-8 flex justify-center items-center h-full"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  }
+  
+  if (!userToDisplay) {
+     return <div className="p-8 text-center">Usuário não encontrado.</div>;
+  }
 
   const { 
-    nome, 
-    apelido, 
-    fotoPerfil, 
-    urlImagemPersonalizada,
-    titulos, 
-    totalJogos, 
-    championshipStats,
-    timeCoracao,
-    ultimaAtividade,
-    ultimoLogin,
-    ultimoPalpite,
-    presenceStatus,
-  } = userToDisplay as typeof mockUser; // Cast to include all fields
+    nome, apelido, fotoPerfil, urlImagemPersonalizada, titulos, totalJogos, 
+    championshipStats, timeCoracao, ultimaAtividade, ultimoLogin, 
+    ultimoPalpite, presenceStatus 
+  } = userToDisplay;
   
   const displayName = apelido || nome;
   const displayImage = urlImagemPersonalizada || fotoPerfil;
   const fallbackInitials = displayName.substring(0, 2).toUpperCase();
 
-  const selectedChampionshipStats = championshipStats.find(stat => stat.championshipId === selectedChampionship);
-
-  const championshipLeaders = useMemo(() => {
-    const statsForChamp = mockUsers.map(u => u.championshipStats.find(cs => cs.championshipId === selectedChampionship)).filter(Boolean);
-
-    if (statsForChamp.length === 0) {
-      return { maxPoints: 0, maxExacts: 0, maxSituations: 0, maxStreak: 0 };
-    }
-
-    const maxPoints = Math.max(...statsForChamp.map(s => s!.pontos));
-    const maxExacts = Math.max(...statsForChamp.map(s => s!.acertosExatos));
-    const maxSituations = Math.max(...statsForChamp.map(s => s!.acertosSituacao));
-    const maxStreak = Math.max(...statsForChamp.map(s => s!.maiorSequencia));
-
-    return { maxPoints, maxExacts, maxSituations, maxStreak };
-  }, [selectedChampionship]);
-
-  const lastGuessMatch = [...mockMatches.upcoming, ...mockMatches.recent].find(m => m.id === ultimoPalpite.matchId);
-
-  const getLastGuessLink = () => {
-    if (!lastGuessMatch) return '#';
-
-    const championshipForMatch = mockChampionships.find(c => c.nome === lastGuessMatch.campeonato);
-
-    switch(lastGuessMatch.status) {
-      case 'Agendado':
-        return `/dashboard/predictions#${lastGuessMatch.id}`;
-      case 'Ao Vivo':
-        return `/dashboard#${lastGuessMatch.id}`;
-      case 'Finalizado':
-         if (championshipForMatch) {
-            return `/dashboard/history?championshipId=${championshipForMatch.id}&matchId=${lastGuessMatch.id}`;
-          }
-          return `/dashboard/history#${lastGuessMatch.id}`; // Fallback sem filtro
-      default:
-        return '#';
-    }
-  };
-  
-  if (!isClient) {
-      return <div className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <Card><CardContent className="p-6 h-40 animate-pulse bg-muted/50"></CardContent></Card>
-        <Card><CardContent className="p-6 h-24 animate-pulse bg-muted/50"></CardContent></Card>
-        <Card><CardContent className="p-6 h-24 animate-pulse bg-muted/50"></CardContent></Card>
-      </div>;
-  }
-
   const generalStats = [
-    { 
-        icon: <Trophy className="h-4 w-4 text-muted-foreground" />,
-        title: "Títulos Conquistados",
-        value: titulos,
-        description: "Total de campeonatos vencidos"
-    },
-    {
-      icon: <Users className="h-4 w-4 text-muted-foreground" />,
-      title: "Campeonatos Disputados",
-      value: championshipStats.length,
-      description: "Total de campeonatos que participou"
-    },
-    { 
-        icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />,
-        title: "Total de Palpites",
-        value: totalJogos,
-        description: "Palpites enviados em todos os tempos"
-    },
+    { icon: <Trophy className="h-4 w-4 text-muted-foreground" />, title: "Títulos Conquistados", value: titulos || 0, description: "Total de campeonatos vencidos" },
+    { icon: <Users className="h-4 w-4 text-muted-foreground" />, title: "Campeonatos Disputados", value: championshipStats?.length || 0, description: "Total de campeonatos que participou" },
+    { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Total de Palpites", value: totalJogos || 0, description: "Palpites enviados em todos os tempos" },
   ];
 
   const championshipSpecificStats = selectedChampionshipStats ? [
-    {
-      icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />,
-      title: "Pontos",
-      value: selectedChampionshipStats.pontos,
-      description: "Total de pontos no campeonato",
-      href: `/dashboard/leaderboard?championshipId=${selectedChampionship}`,
-      isLeader: selectedChampionshipStats.pontos === championshipLeaders.maxPoints && selectedChampionshipStats.pontos > 0,
-    },
-    {
-      icon: <Target className="h-4 w-4 text-muted-foreground" />,
-      title: "Acertos Exatos",
-      value: selectedChampionshipStats.acertosExatos,
-      description: "Placares cravados",
-      href: `/dashboard/history?championshipId=${selectedChampionship}&filterType=exact`,
-      isLeader: selectedChampionshipStats.acertosExatos === championshipLeaders.maxExacts && selectedChampionshipStats.acertosExatos > 0,
-    },
-    {
-      icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />,
-      title: "Acertos de Situação",
-      value: selectedChampionshipStats.acertosSituacao,
-      description: "Vencedor/empate corretos",
-      href: `/dashboard/history?championshipId=${selectedChampionship}&filterType=situation`,
-      isLeader: selectedChampionshipStats.acertosSituacao === championshipLeaders.maxSituations && selectedChampionshipStats.acertosSituacao > 0,
-    },
-    {
-      icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />,
-      title: "Maior Sequência de Acertos",
-      value: selectedChampionshipStats.maiorSequencia,
-      description: "Sequência de placares exatos",
-      isLeader: selectedChampionshipStats.maiorSequencia === championshipLeaders.maxStreak && selectedChampionshipStats.maiorSequencia > 0,
-    },
+    { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Pontos", value: selectedChampionshipStats.pontos, description: "Total de pontos no campeonato", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}`},
+    { icon: <Target className="h-4 w-4 text-muted-foreground" />, title: "Acertos Exatos", value: selectedChampionshipStats.acertosExatos, description: "Placares cravados", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`},
+    { icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />, title: "Acertos de Situação", value: selectedChampionshipStats.acertosSituacao, description: "Vencedor/empate corretos", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=situation`},
+    { icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />, title: "Maior Sequência de Acertos", value: selectedChampionshipStats.maiorSequencia, description: "Sequência de placares exatos"},
   ] : [];
 
   return (
@@ -253,13 +218,13 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <LogIn className="w-4 h-4" />
                             <span>
-                                Último login: <TimeAgo dateString={ultimoLogin} />
+                                Último login: {ultimoLogin && <TimeAgo dateString={ultimoLogin} />}
                             </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="w-4 h-4" />
                             <span>
-                                Última atividade: <TimeAgo dateString={ultimaAtividade} />
+                                Última atividade: {ultimaAtividade && <TimeAgo dateString={ultimaAtividade} />}
                             </span>
                         </div>
                         {lastGuessMatch && (
@@ -276,7 +241,7 @@ export default function ProfilePage() {
 
             <div>
                 <h2 className="text-2xl font-bold font-headline mb-4">Informações Gerais</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {generalStats.map(stat => <StatCard key={stat.title} {...stat} />)}
                 </div>
             </div>
@@ -285,12 +250,12 @@ export default function ProfilePage() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                     <h2 className="text-2xl font-bold font-headline">Estatísticas por Campeonato</h2>
                     <div className="w-full md:w-auto">
-                        <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                        <Select value={selectedChampionshipId} onValueChange={setSelectedChampionshipId}>
                             <SelectTrigger className="w-full md:w-[280px]">
                                 <SelectValue placeholder="Filtrar por campeonato" />
                             </SelectTrigger>
                             <SelectContent>
-                                {mockChampionships.map(champ => (
+                                {championships.map(champ => (
                                     <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -313,3 +278,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
