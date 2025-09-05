@@ -1,4 +1,3 @@
-
 import { addDays, subDays } from 'date-fns';
 
 export interface UserType {
@@ -504,6 +503,18 @@ export const mockPredictions: Prediction[] = [
     }
 ];
 
+// Função para gerar um hash simples de uma string
+const simpleHash = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0; // Converte para 32bit integer
+    }
+    return Math.abs(hash);
+};
+
+
 // Adiciona palpites para outros usuários para ter mais dados
 mockAllMatches.forEach(match => {
     mockUsers.forEach(user => {
@@ -516,15 +527,17 @@ mockAllMatches.forEach(match => {
              return;
         }
 
-        const palpiteA = Math.floor(Math.random() * 4);
-        const palpiteB = Math.floor(Math.random() * 3);
+        // Gera placares determinísticos baseados nos IDs
+        const palpiteA = (simpleHash(user.id) + simpleHash(match.id)) % 5; // Gera placar de 0 a 4
+        const palpiteB = (simpleHash(user.id) + simpleHash(match.id) + 1) % 4; // Gera placar de 0 a 3
+
         let pontos = 0;
         
-        if (match.status === 'Finalizado') {
+        if (match.status === 'Finalizado' && match.placarA !== null && match.placarB !== null && typeof match.placarA !== 'undefined' && typeof match.placarB !== 'undefined') {
             if (palpiteA === match.placarA && palpiteB === match.placarB) {
                 pontos = match.maxPontos || 10;
             } else {
-                const vencedorReal = match.placarA! > match.placarB! ? 'A' : match.placarA! < match.placarB! ? 'B' : 'E';
+                const vencedorReal = match.placarA > match.placarB ? 'A' : match.placarA < match.placarB ? 'B' : 'E';
                 const vencedorPalpite = palpiteA > palpiteB ? 'A' : palpiteA < palpiteB ? 'B' : 'E';
                 if (vencedorReal === vencedorPalpite) {
                     pontos = (match.maxPontos || 10) / 2;
@@ -535,12 +548,28 @@ mockAllMatches.forEach(match => {
         const outrosPalpites = mockUsers
             .filter(u => u.id !== user.id && u.funcao === 'usuario')
             .slice(0, 5)
-            .map(u => ({
-                userId: u.id,
-                apelido: u.apelido,
-                palpite: `${Math.floor(Math.random() * 3)} - ${Math.floor(Math.random() * 3)}`,
-                pontos: Math.random() > 0.5 ? 5 : 0
-            }));
+            .map(u => {
+                const outroPalpiteA = (simpleHash(u.id) + simpleHash(match.id)) % 5;
+                const outroPalpiteB = (simpleHash(u.id) + simpleHash(match.id) + 1) % 4;
+                let outrosPontos = 0;
+                if (match.status === 'Finalizado' && match.placarA !== null && match.placarB !== null && typeof match.placarA !== 'undefined' && typeof match.placarB !== 'undefined') {
+                    if (outroPalpiteA === match.placarA && outroPalpiteB === match.placarB) {
+                        outrosPontos = match.maxPontos || 10;
+                    } else {
+                        const vencedorReal = match.placarA > match.placarB ? 'A' : match.placarA < match.placarB ? 'B' : 'E';
+                        const vencedorPalpite = outroPalpiteA > outroPalpiteB ? 'A' : outroPalpiteA < outroPalpiteB ? 'B' : 'E';
+                        if (vencedorReal === vencedorPalpite) {
+                            outrosPontos = (match.maxPontos || 10) / 2;
+                        }
+                    }
+                }
+                return {
+                    userId: u.id,
+                    apelido: u.apelido,
+                    palpite: `${outroPalpiteA} - ${outroPalpiteB}`,
+                    pontos: outrosPontos
+                }
+            });
 
         mockPredictions.push({
             matchId: match.id,
