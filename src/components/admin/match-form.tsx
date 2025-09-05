@@ -28,15 +28,16 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Loader2 } from 'lucide-react';
+import { CalendarIcon, Save, Loader2, Lock, LockOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, parseISO, setHours, setMinutes } from 'date-fns';
+import { format, parseISO, setHours, setMinutes, isPast } from 'date-fns';
 import type { Match, Team, Championship } from '@/lib/types';
 import { useEffect, useMemo, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Combobox } from '../ui/combobox';
 import { useToast } from '@/hooks/use-toast';
 import { addMatch, updateMatch } from '@/lib/firebase/firestore';
+import { Switch } from '../ui/switch';
 
 
 const matchFormSchema = z.object({
@@ -45,6 +46,7 @@ const matchFormSchema = z.object({
   fase: z.string({ required_error: "É obrigatório selecionar uma fase ou rodada."}).min(1, { message: "É obrigatório selecionar uma fase ou rodada." }),
   data: z.date({ required_error: "A data da partida é obrigatória." }),
   horario: z.string({ required_error: "O horário da partida é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato de hora inválido."),
+  predictionsLocked: z.boolean().default(false),
 }).refine(data => data.timeA !== data.timeB, {
     message: "Os times A e B não podem ser iguais.",
     path: ["timeB"],
@@ -74,6 +76,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
             timeB: '',
             fase: '',
             horario: '16:00',
+            predictionsLocked: false,
         },
     });
 
@@ -116,6 +119,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
                     fase: match.fase,
                     data: matchDate,
                     horario: format(matchDate, 'HH:mm'),
+                    predictionsLocked: match.predictionsLocked || isPast(matchDate),
                 });
             } else {
                 form.reset({
@@ -124,6 +128,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
                     fase: '',
                     data: undefined,
                     horario: '16:00',
+                    predictionsLocked: false,
                 });
             }
         }
@@ -144,7 +149,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
             maxScore += (selectedChampionship.pontuacao.combo.gols ?? 0) + (selectedChampionship.pontuacao.combo.placar ?? 0);
         }
         
-        const matchData: Omit<Match, 'id'> = {
+        const matchData: Partial<Omit<Match, 'id'>> = {
             timeA: data.timeA,
             timeB: data.timeB,
             fase: data.fase,
@@ -153,6 +158,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
             campeonato: selectedChampionship.nome,
             campeonatoId: selectedChampionship.id,
             maxPontos: maxScore,
+            predictionsLocked: data.predictionsLocked,
         };
 
         try {
@@ -160,7 +166,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
                 await updateMatch(match.id, matchData);
                 toast({ title: "Partida Atualizada!", description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.` });
             } else {
-                await addMatch(matchData);
+                await addMatch(matchData as Omit<Match, 'id'>);
                 toast({ title: "Partida Criada!", description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.` });
             }
             onSubmitSuccess();
@@ -298,6 +304,31 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
                                 )}
                             />
                         </div>
+                        {match && (
+                            <FormField
+                                control={form.control}
+                                name="predictionsLocked"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base flex items-center gap-2">
+                                                {field.value ? <Lock /> : <LockOpen />}
+                                                Palpites Bloqueados
+                                            </FormLabel>
+                                            <p className="text-[0.8rem] text-muted-foreground">
+                                                Se ativado, impede que usuários façam ou alterem palpites para esta partida.
+                                            </p>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>Cancelar</Button>
                             <Button type="submit" disabled={isLoading}>

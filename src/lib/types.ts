@@ -46,6 +46,7 @@ export interface Match {
     maxPontos?: number;
     iconUrl?: string;
     createdAt?: Timestamp;
+    predictionsLocked?: boolean;
 }
 
 export interface Prediction {

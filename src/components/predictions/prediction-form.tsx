@@ -91,7 +91,7 @@ export function PredictionForm() {
                 setAllMatches(matchesData);
                 setUserPredictions(predictionsData);
 
-                const openMatches = matchesData.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)));
+                const openMatches = matchesData.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)) && !match.predictionsLocked);
                 setDisplayedMatches(openMatches);
 
                 const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
@@ -136,7 +136,7 @@ export function PredictionForm() {
         // Lógica para remover cards de jogos que já começaram
         const interval = setInterval(() => {
             setDisplayedMatches(prevMatches => 
-                prevMatches.filter(match => !isPast(parseISO(match.data)))
+                prevMatches.filter(match => !isPast(parseISO(match.data)) && !match.predictionsLocked)
             );
         }, 1000); 
 
@@ -158,14 +158,13 @@ export function PredictionForm() {
         if (!user) return;
 
         // Simula a verificação do servidor
-        if (isPast(parseISO(match.data))) {
+        if (isPast(parseISO(match.data)) || match.predictionsLocked) {
             toast({
                 title: "Tempo Esgotado!",
-                description: "Esta partida já começou e não pode mais receber palpites.",
+                description: "Esta partida já começou ou está bloqueada para palpites.",
                 variant: "destructive",
             });
             setDisplayedMatches(prev => prev.filter(m => m.id !== match.id));
-            router.push('/dashboard');
             return;
         }
 
