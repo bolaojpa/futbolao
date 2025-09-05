@@ -117,6 +117,9 @@ export default function DashboardPage() {
 
     const leader = sortedUsers[0];
     const secondPlace = sortedUsers[1];
+    
+    // Condição para exibir o card de líder
+    const showLeaderCard = leader && leader.pontos > 0;
 
     const getLeaderMessage = () => {
         if (!leader || !secondPlace) return "Líder do ranking!";
@@ -207,7 +210,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="space-y-8">
-                    {leader && (
+                    {showLeaderCard && (
                         <section>
                             <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
                                 <CardHeader className="flex flex-row items-center gap-4 p-4">
@@ -468,3 +471,5 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
+    

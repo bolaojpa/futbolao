@@ -17,9 +17,11 @@ import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
-import type { Match, Prediction } from '@/lib/types';
+import type { Match, Prediction, Team } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { getMatches, getPredictionsForUser } from '@/lib/firebase/firestore';
+import { getMatches, getPredictionsForUser, getTeams } from '@/lib/firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -58,6 +60,7 @@ export function PredictionForm() {
     const { user, loading: authLoading } = useAuth();
 
     const [allMatches, setAllMatches] = useState<Match[]>([]);
+    const [allTeams, setAllTeams] = useState<Team[]>([]);
     const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
     const [loadingData, setLoadingData] = useState(true);
 
@@ -66,9 +69,15 @@ export function PredictionForm() {
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
     
-    const [displayedMatches, setDisplayedMatches] = useState<Match[]>([]);
-    
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
+
+    const displayedMatches = useMemo(() => {
+         return allMatches.filter(match => 
+            match.status === 'Agendado' && 
+            !isPast(parseISO(match.data)) && 
+            !match.predictionsLocked
+        ).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    }, [allMatches]);
 
 
     useEffect(() => {
@@ -81,26 +90,23 @@ export function PredictionForm() {
         async function fetchData() {
             setLoadingData(true);
             try {
-                const [matchesData, predictionsData] = await Promise.all([
+                const [matchesData, predictionsData, teamsData] = await Promise.all([
                     getMatches(),
-                    getPredictionsForUser(user!.id)
+                    getPredictionsForUser(user!.id),
+                    getTeams()
                 ]);
 
                 setAllMatches(matchesData);
                 setUserPredictions(predictionsData);
-
-                const openMatches = matchesData.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)) && !match.predictionsLocked);
-                setDisplayedMatches(openMatches);
+                setAllTeams(teamsData);
 
                 const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
                 const initialUpdates: Record<string, Date | null> = {};
 
                 predictionsData.forEach(p => {
-                    if (openMatches.some(m => m.id === p.matchId)) {
-                        initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
-                        if (p.updatedAt) {
-                           initialUpdates[p.matchId] = p.updatedAt.toDate();
-                        }
+                    initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
+                    if (p.updatedAt) {
+                        initialUpdates[p.matchId] = p.updatedAt.toDate();
                     }
                 });
 
@@ -130,13 +136,17 @@ export function PredictionForm() {
             }, 500); 
         }
 
-        const interval = setInterval(() => {
-            setDisplayedMatches(prevMatches => 
-                prevMatches.filter(match => !isPast(parseISO(match.data)) && !match.predictionsLocked)
-            );
-        }, 1000 * 30); // Check every 30 seconds
+        const unsubscribes = allMatches.map(match => {
+            const docRef = doc(db, 'matches', match.id);
+            return onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    const updatedMatch = { id: doc.id, ...doc.data() } as Match;
+                    setAllMatches(prev => prev.map(m => m.id === updatedMatch.id ? updatedMatch : m));
+                }
+            });
+        });
 
-        return () => clearInterval(interval);
+        return () => unsubscribes.forEach(unsub => unsub());
 
     }, [authLoading, user, router, toast]);
 
@@ -162,7 +172,7 @@ export function PredictionForm() {
                 description: "Esta partida já começou ou está bloqueada para palpites.",
                 variant: "destructive",
             });
-            setDisplayedMatches(prev => prev.filter(m => m.id !== match.id));
+             setAllMatches(prev => prev.filter(m => m.id !== match.id));
             return;
         }
 
@@ -308,6 +318,8 @@ export function PredictionForm() {
                             const isEditing = !!lastUpdated[match.id];
                             const currentScore = scores[match.id] || { placarA: null, placarB: null };
                             const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
+                            const teamA = allTeams.find(t => t.name === match.timeA);
+                            const teamB = allTeams.find(t => t.name === match.timeB);
                             
                             return (
                                 <Card 
@@ -342,7 +354,7 @@ export function PredictionForm() {
                                                 <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
                                                         <p>{match.timeA}</p>
@@ -359,7 +371,7 @@ export function PredictionForm() {
                                             <div className='flex-1 flex flex-row items-center justify-start gap-3'>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
                                                         <p>{match.timeB}</p>
@@ -427,3 +439,5 @@ export function PredictionForm() {
         </TooltipProvider>
     );
 }
+
+    
