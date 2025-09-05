@@ -105,16 +105,18 @@ export default function AdminChampionshipsPage() {
     }
 
     const handleFinalize = async (championship: Championship) => {
-        // Validação: Verifica se a classificação final foi preenchida
-        const isRankingFilled = championship.finalRanking && Object.values(championship.finalRanking).some(v => !!v);
-        if (!isRankingFilled) {
-             toast({
-                title: "Finalização Pendente",
-                description: "É necessário definir a classificação final do campeonato antes de finalizá-lo. Edite o campeonato e preencha a seção de 'Classificação Final' na aba 'Banner'.",
-                variant: "destructive",
-                duration: 10000,
-            });
-            return;
+        // Validação: Verifica se a classificação final foi preenchida, APENAS se o banner estiver ativo
+        if (championship.banner.ativo) {
+            const isRankingFilled = championship.finalRanking && Object.values(championship.finalRanking).some(v => !!v);
+            if (!isRankingFilled) {
+                 toast({
+                    title: "Finalização Pendente",
+                    description: "Para gerar o banner, é necessário definir a classificação final do campeonato. Edite o campeonato e preencha a seção de 'Classificação Final' na aba 'Banner'.",
+                    variant: "destructive",
+                    duration: 10000,
+                });
+                return;
+            }
         }
 
         try {
