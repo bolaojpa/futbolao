@@ -27,29 +27,23 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
-import { getChampionships, getMatches, deleteMatch, getTeams, getUsers, getPredictionsForMatch } from '@/lib/firebase/firestore';
+import { getChampionships, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
 import { Badge } from '@/components/ui/badge';
-import { onSnapshot, collection } from 'firebase/firestore';
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const ITEMS_PER_PAGE = 10;
 
 const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
-    const [isPastState, setIsPastState] = useState(isPast(parseISO(matchDateString)));
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => setIsClient(true), []);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const past = isPast(parseISO(matchDateString));
-            if (past !== isPastState) {
-                setIsPastState(past);
-            }
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [matchDateString, isPastState]);
-
-    const matchDate = parseISO(matchDateString);
+    if (!isClient) {
+        return null;
+    }
     
-    if (isPastState) {
+    const matchDate = parseISO(matchDateString);
+    if (isPast(matchDate)) {
         return (
              <Badge variant='destructive' className='animate-pulse'>
                 <Zap className="w-3 h-3 mr-1.5" />
@@ -86,9 +80,6 @@ const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => 
     return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
 };
 
-interface MatchWithPredictions extends Match {
-    predictions: Prediction[];
-}
 
 export default function AdminMatchesPage() {
   const router = useRouter();
@@ -99,7 +90,8 @@ export default function AdminMatchesPage() {
   const championshipIdFromQuery = searchParams.get('championshipId');
   
   const [championships, setChampionships] = useState<Championship[]>([]);
-  const [matches, setMatches] = useState<MatchWithPredictions[]>([]);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
+  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
 
@@ -108,6 +100,12 @@ export default function AdminMatchesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+   useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
       setIsLoading(true);
@@ -135,31 +133,41 @@ export default function AdminMatchesPage() {
       fetchData();
   }, [championshipIdFromQuery, toast]);
 
+  // Real-time listeners
   useEffect(() => {
-      const unsub = onSnapshot(collection(db, 'matches'), async (snapshot) => {
+      const qMatches = query(collection(db, 'matches'), where('status', '==', 'Agendado'));
+      const unsubMatches = onSnapshot(qMatches, (snapshot) => {
           const matchesData: Match[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-          const scheduledMatches = matchesData.filter(m => m.status === 'Agendado');
-
-          const matchesWithPredictions: MatchWithPredictions[] = await Promise.all(
-              scheduledMatches.map(async (match) => {
-                  const predictions = await getPredictionsForMatch(match.id);
-                  return { ...match, predictions };
-              })
-          );
-          setMatches(matchesWithPredictions);
+          setAllMatches(matchesData);
       });
 
-      return () => unsub();
+      const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
+           const predictionsData: Prediction[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+           setAllPredictions(predictionsData);
+      });
+
+      return () => {
+        unsubMatches();
+        unsubPredictions();
+      };
   }, []);
 
+  const matchesWithPredictions = useMemo(() => {
+    return allMatches.map(match => ({
+      ...match,
+      predictions: allPredictions.filter(p => p.matchId === match.id)
+    }));
+  }, [allMatches, allPredictions]);
+
+
   const sortedMatches = useMemo(() => {
-    return [...matches]
+    return [...matchesWithPredictions]
       .filter(match => {
         const isChampionshipMatch = selectedChampionship === 'all' || match.campeonatoId === selectedChampionship;
-        return isChampionshipMatch;
+        return isChampionshipMatch && !isPast(parseISO(match.data));
       })
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-  }, [selectedChampionship, matches]);
+  }, [selectedChampionship, matchesWithPredictions, currentTime]);
 
 
   const handleFilterChange = (value: string) => {
@@ -183,7 +191,6 @@ export default function AdminMatchesPage() {
   const handleDelete = async (matchId: string) => {
     try {
       await deleteMatch(matchId);
-      // O listener do onSnapshot atualizará a UI automaticamente.
       toast({
           title: "Partida Excluída",
           description: "A partida foi removida com sucesso.",
@@ -194,7 +201,6 @@ export default function AdminMatchesPage() {
   };
 
   const handleFormSubmit = async () => {
-    // O listener do onSnapshot tratará de atualizar a UI, não precisa de fetch manual.
     setIsFormOpen(false);
   };
 

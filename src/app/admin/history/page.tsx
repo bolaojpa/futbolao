@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mockTeams } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle, Loader2 } from 'lucide-react';
@@ -101,7 +100,12 @@ export default function AdminHistoryPage() {
         if (championshipIdFromQuery) {
             setSelectedChampionship(championshipIdFromQuery);
         } else if (championshipsData.length > 0) {
-            setSelectedChampionship(championshipsData[0].id);
+            const activeChampionships = championshipsData.filter(c => c.status === 'ativo');
+            if (activeChampionships.length > 0) {
+                setSelectedChampionship(activeChampionships[0].id);
+            } else {
+                setSelectedChampionship('all');
+            }
         } else {
             setSelectedChampionship('all');
         }
@@ -347,7 +351,7 @@ export default function AdminHistoryPage() {
                                       
                                       const points = calculatePoints(match, p);
                                       const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                      const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+                                      const chosenTeams = champPicks ? teams.filter(t => champPicks.teams.includes(t.name)) : [];
 
                                       return (
                                       <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(points, maxPointsForMatch))}>
