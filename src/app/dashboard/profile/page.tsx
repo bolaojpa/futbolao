@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -25,16 +24,18 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { HonorificsExplanationModal } from '@/components/profile/honorifics-explanation-modal';
-import type { UserType, Championship, Match, Prediction, Team } from '@/lib/types';
+import type { UserType, Championship, Match } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getChampionships, getMatches } from '@/lib/firebase/firestore';
 
 const TimeAgo = ({ dateString }: { dateString: string }) => {
     const [timeAgo, setTimeAgo] = useState('');
     useEffect(() => {
-        setTimeAgo(formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: ptBR }))
+        if (dateString) {
+            setTimeAgo(formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: ptBR }))
+        }
     }, [dateString]);
     if (!timeAgo) return null;
     return <>{timeAgo}</>;
@@ -109,7 +110,8 @@ export default function ProfilePage() {
 
    useEffect(() => {
     if (championships.length > 0 && !selectedChampionshipId) {
-      setSelectedChampionshipId(championships[0].id);
+        const activeChampionship = championships.find(c => c.status === 'ativo');
+        setSelectedChampionshipId(activeChampionship ? activeChampionship.id : championships[0].id);
     }
   }, [championships, selectedChampionshipId]);
 
@@ -157,7 +159,7 @@ export default function ProfilePage() {
   
   const displayName = apelido || nome;
   const displayImage = urlImagemPersonalizada || fotoPerfil;
-  const fallbackInitials = displayName.substring(0, 2).toUpperCase();
+  const fallbackInitials = displayName ? displayName.substring(0, 2).toUpperCase() : '';
 
   const generalStats = [
     { icon: <Trophy className="h-4 w-4 text-muted-foreground" />, title: "Títulos Conquistados", value: titulos || 0, description: "Total de campeonatos vencidos" },
@@ -173,109 +175,110 @@ export default function ProfilePage() {
   ] : [];
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
-        <div className="space-y-8">
-            <Card>
-                <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div className="relative">
-                        <Avatar className="w-24 h-24 border-4 border-primary">
-                            <AvatarImage src={displayImage} alt={displayName} />
-                            <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
-                        </Avatar>
-                        <StatusIndicator status={presenceStatus} className="w-6 h-6 border-2 top-0 right-0" />
-                        <Honorifics count={titulos} variant="default"/>
-                         <HonorificsExplanationModal>
-                            <Button variant="outline" size="icon" className="absolute bottom-0 -right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm">
-                               <HelpCircle className="w-4 h-4" />
+    <TooltipProvider>
+        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
+            <div className="space-y-8">
+                <Card>
+                    <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                        <div className="relative">
+                            <Avatar className="w-24 h-24 border-4 border-primary">
+                                <AvatarImage src={displayImage} alt={displayName} />
+                                <AvatarFallback className="text-3xl">{fallbackInitials}</AvatarFallback>
+                            </Avatar>
+                            <StatusIndicator status={presenceStatus} className="w-6 h-6 border-2 top-0 right-0" />
+                            <Honorifics count={titulos || 0} variant="default"/>
+                            <HonorificsExplanationModal>
+                                <Button variant="outline" size="icon" className="absolute bottom-0 -right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm">
+                                <HelpCircle className="w-4 h-4" />
+                                </Button>
+                            </HonorificsExplanationModal>
+                        </div>
+                        <div className='flex-1 text-center md:text-left'>
+                            <h1 className="text-3xl font-bold font-headline">{displayName}</h1>
+                            <p className="text-muted-foreground text-lg">{nome}</p>
+                            <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
+                                {timeCoracao && (
+                                    <div className='flex items-center gap-2 text-muted-foreground'>
+                                        <Heart className='w-4 h-4 text-destructive/80 fill-destructive/50' />
+                                        <span>{timeCoracao}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        {isOwnProfile && (
+                            <Button asChild variant="outline">
+                            <Link href="/dashboard/profile/edit">
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar Perfil
+                            </Link>
                             </Button>
-                        </HonorificsExplanationModal>
+                        )}
                     </div>
-                    <div className='flex-1 text-center md:text-left'>
-                        <h1 className="text-3xl font-bold font-headline">{displayName}</h1>
-                        <p className="text-muted-foreground text-lg">{nome}</p>
-                        <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
-                            {timeCoracao && (
-                                <div className='flex items-center gap-2 text-muted-foreground'>
-                                    <Heart className='w-4 h-4 text-destructive/80 fill-destructive/50' />
-                                    <span>{timeCoracao}</span>
-                                </div>
+                    </CardContent>
+                    {isOwnProfile && (
+                        <CardFooter className="flex flex-col sm:flex-row flex-wrap items-start justify-start gap-x-6 gap-y-2 p-4 bg-muted/50 border-t">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <LogIn className="w-4 h-4" />
+                                <span>
+                                    Último login: {ultimoLogin && <TimeAgo dateString={ultimoLogin} />}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Clock className="w-4 h-4" />
+                                <span>
+                                    Última atividade: {ultimaAtividade && <TimeAgo dateString={ultimaAtividade} />}
+                                </span>
+                            </div>
+                            {lastGuessMatch && (
+                                <Link href={getLastGuessLink()} className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                                    <Goal className="w-4 h-4" />
+                                    <span>
+                                        Último palpite ({ultimoPalpite.palpite}): <strong className="group-hover:underline">{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
+                                    </span>
+                                </Link>
                             )}
+                        </CardFooter>
+                    )}
+                </Card>
+
+                <div>
+                    <h2 className="text-2xl font-bold font-headline mb-4">Informações Gerais</h2>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {generalStats.map(stat => <StatCard key={stat.title} {...stat} />)}
+                    </div>
+                </div>
+                
+                <div>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                        <h2 className="text-2xl font-bold font-headline">Estatísticas por Campeonato</h2>
+                        <div className="w-full md:w-auto">
+                            <Select value={selectedChampionshipId} onValueChange={setSelectedChampionshipId}>
+                                <SelectTrigger className="w-full md:w-[280px]">
+                                    <SelectValue placeholder="Filtrar por campeonato" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {championships.map(champ => (
+                                        <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
-                    {isOwnProfile && (
-                        <Button asChild variant="outline">
-                        <Link href="/dashboard/profile/edit">
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar Perfil
-                        </Link>
-                        </Button>
+                    {selectedChampionshipStats ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
+                    </div>
+                    ) : (
+                    <Card>
+                        <CardContent className="p-6 text-center">
+                        <p>Nenhuma estatística encontrada para este campeonato.</p>
+                        </CardContent>
+                    </Card>
                     )}
                 </div>
-                </CardContent>
-                {isOwnProfile && (
-                    <CardFooter className="flex flex-col sm:flex-row flex-wrap items-start justify-start gap-x-6 gap-y-2 p-4 bg-muted/50 border-t">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <LogIn className="w-4 h-4" />
-                            <span>
-                                Último login: {ultimoLogin && <TimeAgo dateString={ultimoLogin} />}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Clock className="w-4 h-4" />
-                            <span>
-                                Última atividade: {ultimaAtividade && <TimeAgo dateString={ultimaAtividade} />}
-                            </span>
-                        </div>
-                        {lastGuessMatch && (
-                            <Link href={getLastGuessLink()} className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                                <Goal className="w-4 h-4" />
-                                <span>
-                                    Último palpite ({ultimoPalpite.palpite}): <strong className="group-hover:underline">{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
-                                </span>
-                            </Link>
-                        )}
-                    </CardFooter>
-                )}
-            </Card>
-
-            <div>
-                <h2 className="text-2xl font-bold font-headline mb-4">Informações Gerais</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {generalStats.map(stat => <StatCard key={stat.title} {...stat} />)}
-                </div>
-            </div>
-            
-            <div>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                    <h2 className="text-2xl font-bold font-headline">Estatísticas por Campeonato</h2>
-                    <div className="w-full md:w-auto">
-                        <Select value={selectedChampionshipId} onValueChange={setSelectedChampionshipId}>
-                            <SelectTrigger className="w-full md:w-[280px]">
-                                <SelectValue placeholder="Filtrar por campeonato" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {championships.map(champ => (
-                                    <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                {selectedChampionshipStats ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
-                </div>
-                ) : (
-                <Card>
-                    <CardContent className="p-6 text-center">
-                    <p>Nenhuma estatística encontrada para este campeonato.</p>
-                    </CardContent>
-                </Card>
-                )}
             </div>
         </div>
-    </div>
+    </TooltipProvider>
   );
 }
-
