@@ -11,10 +11,10 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { mockPredictions, mockUsers, mockTeams } from '@/lib/data';
+import { mockTeams } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle } from 'lucide-react';
+import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,12 +29,15 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import type { Match, Championship, Team, UserType } from '@/lib/types';
-import { getChampionships, getMatches, updateMatch, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
+import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
+import { getChampionships, getMatches, updateMatch, deleteMatch, getTeams, getUsers, getPredictionsForMatch } from '@/lib/firebase/firestore';
 
 
-type FilterType = 'all' | 'exact' | 'situation' | 'miss';
 const ITEMS_PER_PAGE = 10;
+
+interface MatchWithPredictions extends Match {
+    predictions: Prediction[];
+}
 
 // Componente para evitar erro de hidratação com datas
 const FormattedDate = ({ dateString }: { dateString: string }) => {
@@ -60,7 +63,7 @@ export default function AdminHistoryPage() {
   const championshipIdFromQuery = searchParams.get('championshipId');
   
   const [championships, setChampionships] = useState<Championship[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] = useState<MatchWithPredictions[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
   
@@ -80,8 +83,18 @@ export default function AdminHistoryPage() {
             getTeams(),
             getUsers(),
         ]);
+        
+        const finalizedMatches = matchesData.filter(m => m.status === 'Finalizado');
+
+        const matchesWithPredictions: MatchWithPredictions[] = await Promise.all(
+            finalizedMatches.map(async (match) => {
+                const predictions = await getPredictionsForMatch(match.id);
+                return { ...match, predictions };
+            })
+        );
+        
         setChampionships(championshipsData);
-        setMatches(matchesData);
+        setMatches(matchesWithPredictions);
         setTeams(teamsData);
         setUsers(usersData);
         
@@ -105,7 +118,7 @@ export default function AdminHistoryPage() {
   }, []);
   
   const filteredMatches = useMemo(() => [...matches]
-    .filter(match => match.status === 'Finalizado' && (selectedChampionship === 'all' || match.campeonatoId === selectedChampionship))
+    .filter(match => (selectedChampionship === 'all' || match.campeonatoId === selectedChampionship))
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()), [selectedChampionship, matches]);
 
 
@@ -139,12 +152,12 @@ export default function AdminHistoryPage() {
         placarA: Number(editingScore.placarA),
         placarB: Number(editingScore.placarB),
       });
-      await fetchData();
+      await fetchData(); // Re-fetches all data, including recalculated points implicitly
       toast({
           title: "Placar Atualizado",
           description: `O placar de ${editingMatch.timeA} vs ${editingMatch.timeB} foi alterado.`,
       });
-      setIsEditModalOpen(false); // Fecha o modal
+      setIsEditModalOpen(false);
     } catch (error) {
         toast({ title: 'Erro ao salvar o placar', variant: 'destructive' });
     }
@@ -165,29 +178,46 @@ export default function AdminHistoryPage() {
   };
 
 
-  // Lógica de Paginação e Agrupamento
-  const groupedAndPaginatedMatches = useMemo(() => {
-    const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE); 
-    
-    const paginatedItems = filteredMatches.slice(
+  const calculatePoints = (match: Match, prediction: Prediction): number => {
+      const { placarA: finalA, placarB: finalB } = match;
+      const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+      const championship = championships.find(c => c.id === match.campeonatoId);
+      const pontuacao = championship?.pontuacao.tradicional;
+
+      if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) return 0;
+      
+      if (guessA === finalA && guessB === finalB) {
+          return pontuacao.exato; // Acerto em cheio
+      }
+
+      const finalWinner = finalA > finalB ? 'A' : finalA < finalB ? 'B' : 'E';
+      const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+
+      if (finalWinner === guessWinner) {
+          return pontuacao.situacao; // Acertou vencedor/empate
+      }
+      
+      return 0; // Errou tudo
+  };
+
+  const totalPages = Math.ceil(filteredMatches.length / ITEMS_PER_PAGE);
+  const paginatedMatches = useMemo(() => {
+    return filteredMatches.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
-    
-     const paginatedGrouped = paginatedItems.reduce((acc, match) => {
+  }, [filteredMatches, currentPage]);
+
+  const groupedAndPaginatedMatches = useMemo(() => {
+     return paginatedMatches.reduce((acc, match) => {
         const phase = match.fase || 'Resultados Gerais';
         if (!acc[phase]) {
             acc[phase] = [];
         }
         acc[phase].push(match);
         return acc;
-    }, {} as Record<string, Match[]>);
-
-    return { paginatedItems: paginatedGrouped, totalPages };
-  }, [filteredMatches, currentPage]);
-
-
-  const { paginatedItems, totalPages } = groupedAndPaginatedMatches;
+    }, {} as Record<string, MatchWithPredictions[]>);
+  }, [paginatedMatches]);
 
   const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
     if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40';
@@ -231,16 +261,15 @@ export default function AdminHistoryPage() {
       <TooltipProvider>
         <div className="w-full space-y-4">
           {isLoading ? (
-            <Card><CardContent className="p-6 h-40 animate-pulse bg-muted/50"></CardContent></Card>
-          ) : Object.keys(paginatedItems).length > 0 ? (
-            Object.entries(paginatedItems).map(([phase, matches]) => (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="w-8 h-8 animate-spin text-primary"/>
+            </div>
+          ) : Object.keys(groupedAndPaginatedMatches).length > 0 ? (
+            Object.entries(groupedAndPaginatedMatches).map(([phase, matches]) => (
               <div key={phase} className="space-y-4">
                 <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
                 {matches.map((match) => {
-                  const allPredictionsForMatch = mockPredictions.filter(p => p.matchId === 'match_6'); // Mock
-                  if (!match.maxPontos) return null;
-
-                  const maxPointsForMatch = match.maxPontos;
+                  const maxPointsForMatch = championships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
                   const teamA = teams.find(t => t.name === match.timeA);
                   const teamB = teams.find(t => t.name === match.timeB);
 
@@ -308,19 +337,20 @@ export default function AdminHistoryPage() {
                           <AccordionContent>
                             <div className="bg-background/80 border-t">
                               <div className="text-center py-2">
-                                <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários (Dados de Exemplo)</h4>
+                                <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                               </div>
-                              {allPredictionsForMatch.length > 0 ? (
+                              {match.predictions.length > 0 ? (
                                   <ul className="text-sm">
-                                    {allPredictionsForMatch.map((p, i) => {
+                                    {match.predictions.map((p, i) => {
                                       const user = users.find(u => u.id === p.userId);
                                       if (!user) return null;
                                       
+                                      const points = calculatePoints(match, p);
                                       const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                       const chosenTeams = champPicks ? mockTeams.filter(t => champPicks.teams.includes(t.name)) : [];
 
                                       return (
-                                      <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, maxPointsForMatch))}>
+                                      <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(points, maxPointsForMatch))}>
                                         <div className="w-1/3 text-left flex items-center gap-2 group">
                                           <div className="relative">
                                               <Avatar className="w-8 h-8">
@@ -362,8 +392,8 @@ export default function AdminHistoryPage() {
                                         </div>
                                         <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                         <div className="w-1/3 text-right">
-                                          <Badge variant={getPointsBadgeVariant(p.pontos, maxPointsForMatch)} className='whitespace-nowrap'>
-                                            {p.pontos} pts
+                                          <Badge variant={getPointsBadgeVariant(points, maxPointsForMatch)} className='whitespace-nowrap'>
+                                            {points} pts
                                           </Badge>
                                         </div>
                                       </li>
@@ -449,3 +479,4 @@ export default function AdminHistoryPage() {
     </div>
   );
 }
+
