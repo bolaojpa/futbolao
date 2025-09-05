@@ -454,4 +454,3 @@ export function PredictionForm() {
         </TooltipProvider>
     );
 }
-

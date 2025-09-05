@@ -88,7 +88,7 @@ export default function DashboardPage() {
 
     const liveMatches = useMemo(() => {
         return allMatches
-            .filter(match => match.status === 'Ao Vivo')
+            .filter(match => match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data))))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
     }, [allMatches]);
 
@@ -471,5 +471,3 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
-
-    
