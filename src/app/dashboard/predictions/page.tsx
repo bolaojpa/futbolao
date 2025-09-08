@@ -24,6 +24,7 @@ import { db } from '@/lib/firebase';
 import { Badge } from '@/components/ui/badge';
 import { ChampionPrediction } from '@/components/rules/champion-prediction';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -513,3 +514,4 @@ export default function PredictionsPage() {
         </div>
     );
 }
+
