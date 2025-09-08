@@ -28,7 +28,7 @@ import type { UserType, Championship, Match, Prediction } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, onSnapshot, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getChampionships, getMatches, getPredictionsForUser } from '@/lib/firebase/firestore';
+import { getChampionships } from '@/lib/firebase/firestore';
 
 const TimeAgo = ({ dateValue }: { dateValue: string | Date | Timestamp | undefined }) => {
     const [timeAgo, setTimeAgo] = useState('');
@@ -94,7 +94,7 @@ export default function ProfilePage() {
   
   const [userToDisplay, setUserToDisplay] = useState<UserType | null>(null);
   const [championships, setChampionships] = useState<Championship[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
   const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -107,14 +107,8 @@ export default function ProfilePage() {
     
     const fetchStaticData = async () => {
         try {
-            const [champs, matchData, preds] = await Promise.all([
-                getChampionships(), 
-                getMatches(),
-                getPredictionsForUser(userId)
-            ]);
+            const champs = await getChampionships();
             setChampionships(champs);
-            setMatches(matchData);
-            setAllPredictions(preds);
         } catch (error) {
             console.error("Failed to fetch static data for profile", error);
         }
@@ -130,8 +124,23 @@ export default function ProfilePage() {
       }
       setLoading(false);
     });
+    
+    const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
+        setAllMatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match)));
+    });
 
-    return () => unsubUser();
+    const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
+        const userPreds = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() as Prediction }))
+            .filter(p => p.userId === userId);
+        setAllPredictions(userPreds);
+    });
+
+    return () => {
+        unsubUser();
+        unsubMatches();
+        unsubPredictions();
+    };
   }, [userId]);
   
   const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | undefined>(undefined);
@@ -144,29 +153,38 @@ export default function ProfilePage() {
   }, [championships, selectedChampionshipId]);
 
   const liveMatches = useMemo(() => {
-    return matches.filter(match => 
+    return allMatches.filter(match => 
         match.status !== 'Finalizado' && 
         match.status !== 'Cancelado' &&
         isPast(parseISO(match.data))
     );
-  }, [matches]);
+  }, [allMatches]);
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): number => {
-    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number, exato: boolean, situacao: boolean } => {
+    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) {
+      return { pontos: 0, exato: false, situacao: false };
+    }
     
     const championship = championships.find(c => c.id === match.campeonatoId);
-    if (!championship) return 0;
+    if (!championship) return { pontos: 0, exato: false, situacao: false };
 
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const pontuacao = championship.pontuacao.tradicional;
+    
+    const acertouPlacarExato = guessA === liveA && guessB === liveB;
+    if (acertouPlacarExato) {
+        return { pontos: pontuacao.exato, exato: true, situacao: false }; 
+    }
 
-    if (guessA === liveA && guessB === liveB) return pontuacao.exato; 
     const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
     const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
-    if (liveWinner === guessWinner) return pontuacao.situacao;
 
-    return 0;
+    if (liveWinner === guessWinner) {
+        return { pontos: pontuacao.situacao, exato: false, situacao: true };
+    }
+
+    return { pontos: 0, exato: false, situacao: false };
   };
 
   const selectedChampionshipStats = useMemo(() => {
@@ -179,28 +197,33 @@ export default function ProfilePage() {
     };
 
     let livePoints = 0;
+    let liveExatos = 0;
+    let liveSituacao = 0;
+
     liveMatches.forEach(match => {
         if(match.campeonatoId === selectedChampionshipId) {
             const prediction = allPredictions.find(p => p.matchId === match.id);
             if (prediction) {
-                livePoints += calculateLivePoints(match, prediction);
+                const result = calculateLivePoints(match, prediction);
+                livePoints += result.pontos;
+                if (result.exato) liveExatos++;
+                if (result.situacao) liveSituacao++;
             }
         }
     });
 
     return {
         pontos: baseStats.pontos + livePoints,
-        acertosExatos: baseStats.acertosExatos,
-        acertosSituacao: baseStats.acertosSituacao,
-        maiorSequencia: baseStats.maiorSequencia,
+        acertosExatos: baseStats.acertosExatos + liveExatos,
+        acertosSituacao: baseStats.acertosSituacao + liveSituacao,
+        maiorSequencia: baseStats.maiorSequencia, // Live sequence tracking is complex, omitting for now
     };
   }, [userToDisplay, selectedChampionshipId, liveMatches, allPredictions, championships]);
 
   const lastGuessMatch = useMemo(() => {
       if (!userToDisplay?.ultimoPalpite?.matchId) return null;
-      return matches.find(m => m.id === userToDisplay.ultimoPalpite.matchId);
-  }, [userToDisplay, matches]);
-
+      return allMatches.find(m => m.id === userToDisplay.ultimoPalpite.matchId);
+  }, [userToDisplay, allMatches]);
 
   const getLastGuessLink = () => {
     if (!lastGuessMatch) return '#';
@@ -357,3 +380,5 @@ export default function ProfilePage() {
     </TooltipProvider>
   );
 }
+
+    
