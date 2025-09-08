@@ -237,11 +237,11 @@ export default function AdminDashboardPage() {
                             nomePartida: `${match.timeA} vs ${match.timeB}`
                         };
 
-                        generatePerformanceUpdate(notificationData).then(result => {
-                            addNotification(userAfter.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
-                        }).catch(err => {
-                            console.error("Falha ao gerar notificação de IA para", userAfter.apelido, err);
-                        });
+                        // generatePerformanceUpdate(notificationData).then(result => {
+                        //     addNotification(userAfter.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
+                        // }).catch(err => {
+                        //     console.error("Falha ao gerar notificação de IA para", userAfter.apelido, err);
+                        // });
                     }
                 }
             }
