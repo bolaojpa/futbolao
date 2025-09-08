@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [isLoading, setIsLoading] = useState(true);
-    // Simula a busca da configuração do admin
+    // Simula a busca da configuração do admin. Em um app real, isso viria do DB.
     const [enableAiNotifications, setEnableAiNotifications] = useState(true);
 
     const { toast } = useToast();
@@ -175,6 +175,9 @@ export default function AdminDashboardPage() {
         const finalizedMatch = { ...match, status: 'Finalizado', placarA: finalScoreA, placarB: finalScoreB } as const;
 
         try {
+             // 0. Captura o estado do ranking ANTES da atualização
+            const usersBeforeUpdate = [...allUsers];
+
             // 1. Atualiza o status da partida para Finalizado
             await updateMatch(match.id, { 
                 status: 'Finalizado',
@@ -202,33 +205,47 @@ export default function AdminDashboardPage() {
                 if (user) {
                      const result = calculatePointsForSingleMatch(finalizedMatch, prediction);
                      await updateUserStatsAfterMatch(user.id, championship.id, result.pontos, result.exato, result.situacao, prediction.id!);
+                }
+            }
 
-                    // 3. (Opcional) Envia notificação por IA
-                    if (enableAiNotifications) {
-                        const { pontos } = calculatePointsForSingleMatch(finalizedMatch, prediction);
-                        const oldPosition = allUsers.findIndex(u => u.id === user.id) + 1;
-                        const newPosition = pontos > 5 ? oldPosition - 1 : oldPosition;
+            // 3. Busca os usuários atualizados para refletir no ranking e enviar notificações
+            const usersAfterUpdate = await getUsers();
+            setAllUsers(usersAfterUpdate);
+
+             // 4. (Opcional) Envia notificação por IA
+            if (enableAiNotifications) {
+                for (const prediction of match.predictions) {
+                    const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
+                    const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
+
+                    if (userBefore && userAfter) {
+                        const pontosGanhos = calculatePointsForSingleMatch(finalizedMatch, prediction).pontos;
                         
+                        const getPosition = (userList: UserType[], userId: string, champId: string) => {
+                             const sorted = userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0))
+                             return sorted.findIndex(u => u.id === userId) + 1;
+                        }
+
+                        const oldPosition = getPosition(usersBeforeUpdate, userBefore.id, championship.id);
+                        const newPosition = getPosition(usersAfterUpdate, userAfter.id, championship.id);
+
                         const notificationData = {
-                            apelido: user.apelido,
-                            pontosGanhos: pontos,
-                            posicaoAnterior: oldPosition,
-                            novaPosicao: newPosition > 0 ? newPosition : 1,
+                            apelido: userAfter.apelido,
+                            pontosGanhos: pontosGanhos,
+                            posicaoAnterior: oldPosition > 0 ? oldPosition : usersBeforeUpdate.length,
+                            novaPosicao: newPosition > 0 ? newPosition : usersAfterUpdate.length,
                             nomePartida: `${match.timeA} vs ${match.timeB}`
                         };
 
                         generatePerformanceUpdate(notificationData).then(result => {
-                            addNotification(user.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
+                            addNotification(userAfter.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
                         }).catch(err => {
-                            console.error("Falha ao gerar notificação de IA para", user.apelido, err);
+                            console.error("Falha ao gerar notificação de IA para", userAfter.apelido, err);
                         });
                     }
                 }
             }
 
-            // 4. Busca os usuários atualizados para refletir no ranking
-            const updatedUsers = await getUsers();
-            setAllUsers(updatedUsers);
 
         } catch (error) {
              console.error("Erro ao finalizar partida: ", error);
