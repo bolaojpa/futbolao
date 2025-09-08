@@ -305,7 +305,7 @@ export default function AdminRankingPage() {
                           </Tooltip>
                         </TableCell>
                         <TableCell>
-                            <Link href={`/admin/users?userId=${user.id}`} className="flex items-center gap-3 group">
+                            <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
                                 <div className="relative">
                                     <Avatar className="w-9 h-9">
                                       <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
