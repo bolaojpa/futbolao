@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, CalendarCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion, savePrediction } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation';
 import type { Match, Prediction, Team, UserType } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { getPredictionsForMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
-import { doc, getDoc, onSnapshot, collection } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Badge } from '@/components/ui/badge';
 import { ChampionPrediction } from '@/components/rules/champion-prediction';
@@ -495,3 +495,4 @@ export default function PredictionsPage() {
         </div>
     );
 }
+
