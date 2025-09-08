@@ -190,7 +190,13 @@ export default function DashboardPage() {
     const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
     const secondPlace = sortedUsers[1] as (UserType & { pontos: number }) | undefined;
     
-    const showLeaderCard = leader && leader.pontos >= 0;
+    const activeChampionship = useMemo(() => allChampionships.find(c => c.status === 'ativo'), [allChampionships]);
+    const isUserInActiveChampionship = useMemo(() => {
+        if (!user || !activeChampionship) return false;
+        return activeChampionship.participantes.includes(user.id);
+    }, [user, activeChampionship]);
+
+    const showLeaderCard = leader && isUserInActiveChampionship;
 
 
     const getLeaderMessage = () => {
