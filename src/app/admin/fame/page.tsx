@@ -3,7 +3,8 @@
 
 import { HallOfFameCarousel } from '@/components/fame/hall-of-fame-carousel';
 import { mockHallOfFame } from '@/lib/data';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Trophy } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function AdminFamePage() {
     return (
@@ -21,9 +22,17 @@ export default function AdminFamePage() {
             {mockHallOfFame.length > 0 ? (
                 <HallOfFameCarousel banners={mockHallOfFame} />
             ) : (
-                <div className="text-center text-muted-foreground py-10">
-                    <p>Nenhum banner encontrado. Crie campeonatos e ative a opção de banner para vê-los aqui.</p>
-                </div>
+                <Card>
+                    <CardContent className="p-10 text-center">
+                        <div className="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
+                            <Trophy className="w-12 h-12 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-xl font-semibold">O Hall da Fama Aguarda Seus Campeões!</h3>
+                        <p className="text-muted-foreground mt-2">
+                           Quando campeonatos forem finalizados com a opção de banner ativada, <br/> os banners dos vencedores aparecerão aqui.
+                        </p>
+                    </CardContent>
+                </Card>
             )}
         </div>
     );

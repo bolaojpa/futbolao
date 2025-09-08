@@ -94,7 +94,8 @@ export default function NotificationsPage() {
                     ) : (
                         <div className="text-center py-10 text-muted-foreground">
                             <Inbox className="mx-auto h-12 w-12" />
-                            <p className="mt-4">Nenhuma notificação encontrada.</p>
+                            <h3 className="mt-4 font-semibold text-lg">Caixa de Entrada Vazia</h3>
+                            <p className="text-sm">Você não tem nenhuma notificação no momento.</p>
                         </div>
                     )}
                 </CardContent>

@@ -62,7 +62,7 @@ const FormattedDate = ({ date }: { date: Date }) => {
 
 export default function AdminSupportPage() {
     const [messages, setMessages] = useState(mockSupportMessages);
-    const [selectedMessage, setSelectedMessage] = useState<SupportMessage | null>(messages[0]);
+    const [selectedMessage, setSelectedMessage] = useState<SupportMessage | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredMessages = messages.filter(msg => {
@@ -77,6 +77,15 @@ export default function AdminSupportPage() {
         // Marca a mensagem como lida ao ser selecionada
         setMessages(prev => prev.map(m => m.id === message.id ? { ...m, isRead: true } : m));
     }
+    
+    useEffect(() => {
+        if (filteredMessages.length > 0 && !selectedMessage) {
+            setSelectedMessage(filteredMessages[0]);
+        }
+        if (filteredMessages.length === 0) {
+            setSelectedMessage(null);
+        }
+    }, [filteredMessages, selectedMessage]);
     
     const selectedMessageUser = mockUsers.find(u => u.id === selectedMessage?.userId);
 
@@ -137,7 +146,8 @@ export default function AdminSupportPage() {
                         }) : (
                              <div className="text-center text-muted-foreground py-10">
                                 <Inbox className="mx-auto h-10 w-10" />
-                                <p className="mt-4 text-sm">Nenhuma mensagem encontrada.</p>
+                                <p className="mt-4 text-sm font-semibold">Caixa de entrada limpa!</p>
+                                <p className="text-sm">Nenhuma mensagem encontrada.</p>
                             </div>
                         )}
                     </ul>
@@ -176,7 +186,8 @@ export default function AdminSupportPage() {
                         <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
                              <div>
                                 <Inbox className="mx-auto h-12 w-12" />
-                                <p className="mt-4">Selecione uma mensagem para ler.</p>
+                                <p className="mt-4 font-semibold">Selecione uma mensagem para ler.</p>
+                                <p className="text-sm">A caixa de entrada está vazia ou os filtros não retornaram resultados.</p>
                             </div>
                         </div>
                     )}

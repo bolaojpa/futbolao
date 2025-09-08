@@ -101,7 +101,17 @@ export function ChampionPrediction() {
     };
 
     if (openForPrediction.length === 0 && lockedPredictions.length === 0) {
-        return null; 
+        return (
+            <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                     <div className="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
+                        <Trophy className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Nenhum Palpite de Campeão Disponível</h3>
+                    <p className="text-sm">No momento, não há campeonatos aceitando palpites de longo prazo.</p>
+                </CardContent>
+            </Card>
+        );
     }
 
     return (

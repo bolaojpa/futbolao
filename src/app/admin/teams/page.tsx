@@ -225,7 +225,8 @@ export default function AdminTeamsPage() {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={3} className="h-24 text-center">
-                                        Nenhuma equipe encontrada.
+                                        <p className="font-semibold">Nenhuma equipe encontrada.</p>
+                                        <p className="text-sm text-muted-foreground">Adicione uma equipe manualmente ou importe de uma competição.</p>
                                     </TableCell>
                                 </TableRow>
                             )}

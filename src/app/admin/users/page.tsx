@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -442,7 +443,8 @@ export default function AdminUsersPage() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-24 text-center">
-                                            Nenhum usuário encontrado para os filtros selecionados.
+                                            <p className="font-semibold">Nenhum usuário encontrado.</p>
+                                            <p className="text-sm text-muted-foreground">Tente ajustar os filtros de busca.</p>
                                         </TableCell>
                                     </TableRow>
                                 )}

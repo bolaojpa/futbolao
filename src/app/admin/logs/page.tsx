@@ -296,7 +296,8 @@ export default function AdminLogsPage() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-24 text-center">
-                                            Nenhum registro encontrado para os filtros selecionados.
+                                            <p className="font-semibold">Nenhum registro encontrado.</p>
+                                            <p className="text-sm text-muted-foreground">Tente ajustar os filtros de busca.</p>
                                         </TableCell>
                                     </TableRow>
                                 )}
