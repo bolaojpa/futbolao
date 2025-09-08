@@ -1,4 +1,5 @@
 
+
 import { db } from '../firebase';
 import {
   collection,
@@ -210,12 +211,42 @@ export async function updateChampionship(championshipId: string, championshipDat
 }
 
 /**
- * Deletes a championship from Firestore.
+ * Deletes a championship and all of its associated matches and predictions from Firestore.
  * @param championshipId - The ID of the championship to delete.
  */
 export async function deleteChampionship(championshipId: string): Promise<void> {
+    const batch = writeBatch(db);
+    
+    // 1. Find all matches for the championship
+    const matchesRef = collection(db, 'matches');
+    const matchesQuery = query(matchesRef, where('campeonatoId', '==', championshipId));
+    const matchesSnapshot = await getDocs(matchesQuery);
+
+    const matchIds = matchesSnapshot.docs.map(d => d.id);
+
+    // 2. For each match, find and delete all associated predictions
+    if (matchIds.length > 0) {
+        for (const matchId of matchIds) {
+            const predictionsRef = collection(db, 'predictions');
+            const predictionsQuery = query(predictionsRef, where('matchId', '==', matchId));
+            const predictionsSnapshot = await getDocs(predictionsQuery);
+            predictionsSnapshot.forEach(predictionDoc => {
+                batch.delete(predictionDoc.ref);
+            });
+        }
+    }
+
+    // 3. Delete all matches for the championship
+    matchesSnapshot.forEach(matchDoc => {
+        batch.delete(matchDoc.ref);
+    });
+
+    // 4. Delete the championship document itself
     const championshipDocRef = doc(db, 'championships', championshipId);
-    await deleteDoc(championshipDocRef);
+    batch.delete(championshipDocRef);
+
+    // 5. Commit the batch
+    await batch.commit();
 }
 
 
