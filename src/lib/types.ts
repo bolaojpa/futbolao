@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from 'firebase/firestore';
 
 export interface UserType {
@@ -16,8 +17,8 @@ export interface UserType {
     ultimoLogin: string | Timestamp;
     presenceStatus: 'Disponível' | 'Ausente' | 'Ocupado' | 'Não perturbe' | 'Offline';
     ultimoPalpite?: { matchId: string; palpite: string };
-    titulos: number;
-    totalJogos: number;
+    titulos?: number;
+    totalJogos?: number;
     timeCoracao?: string;
     championPicks?: { championshipId: string, teams: string[] }[];
     championshipStats?: {

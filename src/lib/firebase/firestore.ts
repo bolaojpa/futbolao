@@ -114,10 +114,10 @@ export async function updateUserStatsAfterMatch(
             } else {
                 // Se já existem, incrementa os valores
                 const existingStats = champStats[statsIndex];
-                existingStats.pontos += pointsGanhos;
-                if (isAcertoExato) existingStats.acertosExatos += 1;
-                if (isAcertoSituacao) existingStats.acertosSituacao += 1;
-                if (!isAcertoExato && !isAcertoSituacao) existingStats.erros += 1;
+                existingStats.pontos = (existingStats.pontos || 0) + pointsGanhos;
+                if (isAcertoExato) existingStats.acertosExatos = (existingStats.acertosExatos || 0) + 1;
+                if (isAcertoSituacao) existingStats.acertosSituacao = (existingStats.acertosSituacao || 0) + 1;
+                if (!isAcertoExato && !isAcertoSituacao) existingStats.erros = (existingStats.erros || 0) + 1;
             }
             
             // 3. Atualiza o documento do usuário com os novos stats e incrementa o total de jogos

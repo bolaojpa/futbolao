@@ -216,10 +216,10 @@ export default function ProfilePage() {
     });
 
     return {
-        pontos: baseStats.pontos + livePoints,
-        acertosExatos: baseStats.acertosExatos + liveExatos,
-        acertosSituacao: baseStats.acertosSituacao + liveSituacao,
-        erros: (baseStats.erros || 0) + liveErros,
+        pontos: (baseStats?.pontos || 0) + livePoints,
+        acertosExatos: (baseStats?.acertosExatos || 0) + liveExatos,
+        acertosSituacao: (baseStats?.acertosSituacao || 0) + liveSituacao,
+        erros: (baseStats?.erros || 0) + liveErros,
     };
   }, [userToDisplay, selectedChampionshipId, liveMatches, userPredictions, championships]);
 
