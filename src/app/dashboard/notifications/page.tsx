@@ -1,8 +1,8 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { mockNotifications } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, CheckCheck, Inbox, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,6 +10,11 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/hooks/use-auth';
+import type { Notification } from '@/lib/types';
+import { onSnapshot, collection, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -30,11 +35,53 @@ const TimeAgo = ({ date }: { date: Date }) => {
 
 
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState(mockNotifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
 
-    const handleMarkAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({...n, read: true })));
+    useEffect(() => {
+        if (!user) return;
+
+        setLoading(true);
+        const q = query(
+            collection(db, 'notifications'), 
+            where('userId', '==', user.id),
+            orderBy('createdAt', 'desc')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetchedNotifications = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt.toDate() // Converte Timestamp para Date
+            } as Notification));
+            setNotifications(fetchedNotifications);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const handleMarkAllAsRead = async () => {
+        if (!user) return;
+
+        const unreadNotifs = notifications.filter(n => !n.read);
+        if (unreadNotifs.length === 0) return;
+
+        const batch = writeBatch(db);
+        unreadNotifs.forEach(notif => {
+            const notifRef = doc(db, 'notifications', notif.id);
+            batch.update(notifRef, { read: true });
+        });
+
+        try {
+            await batch.commit();
+            toast({ title: 'Tudo lido!', description: 'Todas as notificações foram marcadas como lidas.' });
+        } catch (error) {
+            toast({ title: 'Erro', description: 'Não foi possível marcar as notificações como lidas.', variant: 'destructive' });
+        }
     }
 
     // Lógica de Paginação
@@ -43,6 +90,8 @@ export default function NotificationsPage() {
       (currentPage - 1) * ITEMS_PER_PAGE,
       currentPage * ITEMS_PER_PAGE
     );
+    
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
@@ -59,19 +108,21 @@ export default function NotificationsPage() {
             <Card className="max-w-4xl">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Histórico</CardTitle>
-                     {notifications.some(n => !n.read) && (
+                     {unreadCount > 0 && (
                         <Button variant="outline" size="sm" onClick={handleMarkAllAsRead}>
                             <CheckCheck className="mr-2 h-4 w-4" />
-                            Marcar todas como lidas
+                            Marcar todas como lidas ({unreadCount})
                         </Button>
                     )}
                 </CardHeader>
                 <CardContent>
-                    {paginatedNotifications.length > 0 ? (
+                    {loading ? (
+                         <div className="text-center py-10 text-muted-foreground">Carregando...</div>
+                    ) : paginatedNotifications.length > 0 ? (
                         <ul className="space-y-2">
                             {paginatedNotifications.map(notification => (
                                 <li key={notification.id}>
-                                    <Link href={notification.href} className={cn(
+                                    <Link href={notification.href || '#'} className={cn(
                                         "block w-full p-4 border rounded-lg transition-colors hover:bg-muted/80",
                                         !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
                                     )}>

@@ -19,7 +19,7 @@ import {
   runTransaction,
   Timestamp,
 } from 'firebase/firestore';
-import type { UserType, Team, Championship, Match, Prediction } from '../types';
+import type { UserType, Team, Championship, Match, Prediction, Notification } from '../types';
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -389,6 +389,25 @@ export async function addToastNotification(userId: string, title: string, messag
     userId,
     title,
     message,
+    createdAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Adds a new persistent notification for a specific user.
+ * @param userId - The ID of the user to notify.
+ * @param title - The title of the notification.
+ * @param message - The message content of the notification.
+ * @param href - The URL the notification should link to.
+ */
+export async function addNotification(userId: string, title: string, message: string, href: string) {
+  const notificationCollection = collection(db, 'notifications');
+  await addDoc(notificationCollection, {
+    userId,
+    title,
+    message,
+    href,
+    read: false,
     createdAt: serverTimestamp(),
   });
 }

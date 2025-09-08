@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
-import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch } from '@/lib/firebase/firestore';
+import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addNotification, updateUserStatsAfterMatch } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
 import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -217,7 +218,7 @@ export default function AdminDashboardPage() {
                         };
 
                         generatePerformanceUpdate(notificationData).then(result => {
-                            addToastNotification(user.id, result.titulo, result.mensagem);
+                            addNotification(user.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
                         }).catch(err => {
                             console.error("Falha ao gerar notificação de IA para", user.apelido, err);
                         });
