@@ -16,6 +16,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { updateUserLastLogin } from '@/lib/firebase/firestore';
 
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -64,7 +65,9 @@ export default function LoginPage() {
   const handleRedirectBasedOnUser = async (user: FirebaseUser) => {
     const userDocRef = doc(db, "users", user.uid);
     try {
+      await updateUserLastLogin(user.uid); // Atualiza o último login
       const userDoc = await getDoc(userDocRef);
+      
       if (userDoc.exists()) {
           const userData = userDoc.data();
           if (userData.funcao === 'admin' || userData.funcao === 'moderator') {
@@ -77,9 +80,6 @@ export default function LoginPage() {
               router.push('/dashboard');
           }
       } else {
-          // Edge case: User authenticated but no document in Firestore (e.g., first Google sign-in)
-          // Default redirect, assuming a new user will have a 'pendente' status created at signup.
-          // If they slip through, they land on dashboard, but security rules should protect data.
            router.push('/dashboard');
       }
     } catch (error) {
@@ -89,7 +89,7 @@ export default function LoginPage() {
             title: "Erro de Redirecionamento",
             description: "Não foi possível buscar seus dados. Redirecionando para o dashboard.",
         });
-       router.push('/dashboard'); // Fallback redirect
+       router.push('/dashboard');
     }
   };
 

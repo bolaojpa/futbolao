@@ -392,3 +392,16 @@ export async function addToastNotification(userId: string, title: string, messag
     createdAt: serverTimestamp(),
   });
 }
+
+/**
+ * Updates a user's last login and last activity timestamps.
+ * @param userId - The ID of the user to update.
+ */
+export async function updateUserLastLogin(userId: string): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    const now = serverTimestamp();
+    await updateDoc(userDocRef, {
+        ultimoLogin: now,
+        ultimaAtividade: now, // Also update last activity on login
+    });
+}

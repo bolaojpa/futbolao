@@ -31,7 +31,7 @@ import { doc, onSnapshot, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getChampionships } from '@/lib/firebase/firestore';
 
-const TimeAgo = ({ dateValue }: { dateValue: string | Date | Timestamp | undefined }) => {
+const TimeAgo = ({ dateValue }: { dateValue: string | Date | Timestamp | undefined | null }) => {
     const [timeAgo, setTimeAgo] = useState('');
     useEffect(() => {
         if (!dateValue) {
