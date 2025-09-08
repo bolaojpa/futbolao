@@ -17,6 +17,7 @@ import {
   getDoc,
   increment,
   runTransaction,
+  Timestamp,
 } from 'firebase/firestore';
 import type { UserType, Team, Championship, Match, Prediction } from '../types';
 
@@ -98,28 +99,25 @@ export async function updateUserStatsAfterMatch(
             transaction.update(predictionRef, { pontos: pointsGanhos });
 
             const userData = userDoc.data() as UserType;
-
-            // 2. Garante que championshipStats exista
             let champStats = [...(userData.championshipStats || [])];
             let statsIndex = champStats.findIndex(s => s.championshipId === championshipId);
 
             if (statsIndex === -1) {
                 // Se não existem stats para este campeonato, cria um novo registro
-                const newStats = {
+                champStats.push({
                     championshipId: championshipId,
                     pontos: pointsGanhos,
                     acertosExatos: isAcertoExato ? 1 : 0,
                     acertosSituacao: isAcertoSituacao ? 1 : 0,
-                    maiorSequencia: isAcertoExato ? 1 : 0, // Inicia a sequência se acertar de primeira
-                };
-                champStats.push(newStats);
+                    erros: (isAcertoExato || isAcertoSituacao) ? 0 : 1,
+                });
             } else {
                 // Se já existem, incrementa os valores
                 const existingStats = champStats[statsIndex];
                 existingStats.pontos += pointsGanhos;
-                existingStats.acertosExatos += isAcertoExato ? 1 : 0;
-                existingStats.acertosSituacao += isAcertoSituacao ? 1 : 0;
-                // Lógica de sequência de acertos precisaria de mais contexto para ser implementada corretamente
+                if (isAcertoExato) existingStats.acertosExatos += 1;
+                if (isAcertoSituacao) existingStats.acertosSituacao += 1;
+                if (!isAcertoExato && !isAcertoSituacao) existingStats.erros += 1;
             }
             
             // 3. Atualiza o documento do usuário com os novos stats e incrementa o total de jogos
@@ -131,7 +129,6 @@ export async function updateUserStatsAfterMatch(
         });
     } catch (e) {
         console.error("User stats update transaction failed: ", e);
-        // Lançar o erro novamente para que o chamador saiba que a operação falhou
         throw e;
     }
 }
@@ -179,10 +176,18 @@ export async function deleteTeams(teamIds: string[]): Promise<void> {
  */
 export async function getChampionships(): Promise<Championship[]> {
     const championshipsCollection = collection(db, 'championships');
+    // Firestore não permite ordenar por um campo que não existe em todos os documentos (serverTimestamp)
+    // A ordenação será feita no cliente após a busca.
     const q = query(championshipsCollection);
     const championshipSnapshot = await getDocs(q);
     const championshipList = championshipSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
-    return championshipList.sort((a, b) => ((b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0)));
+    
+    // Ordena por data de criação, tratando casos onde o timestamp ainda não foi setado pelo servidor
+    return championshipList.sort((a, b) => {
+        const timeA = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : 0;
+        const timeB = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : 0;
+        return timeB - timeA;
+    });
 }
 
 
@@ -190,15 +195,17 @@ export async function getChampionships(): Promise<Championship[]> {
  * Adds a new championship to the Firestore 'championships' collection.
  * @param championshipData - The data for the new championship.
  */
-export async function addChampionship(championshipData: Omit<Championship, 'id' | 'status'>): Promise<Championship> {
+export async function addChampionship(championshipData: Omit<Championship, 'id' | 'status' | 'createdAt'>): Promise<Championship> {
     const championshipsCollection = collection(db, 'championships');
-    const docRef = await addDoc(championshipsCollection, {
+    const dataWithTimestamp = {
         ...championshipData,
-        status: 'ativo',
+        status: 'ativo' as const,
         createdAt: serverTimestamp() 
-    });
+    };
+    const docRef = await addDoc(championshipsCollection, dataWithTimestamp);
     return { id: docRef.id, ...championshipData, status: 'ativo' };
 }
+
 
 /**
  * Updates an existing championship in Firestore.
@@ -226,9 +233,12 @@ export async function deleteChampionship(championshipId: string): Promise<void> 
 
     // 2. For each match, find and delete all associated predictions
     if (matchIds.length > 0) {
-        for (const matchId of matchIds) {
+        // Firestore limita queries 'in' a 30 itens. Se houver mais, precisa de múltiplos batches.
+        const BATCH_SIZE = 30;
+        for (let i = 0; i < matchIds.length; i += BATCH_SIZE) {
+            const matchIdBatch = matchIds.slice(i, i + BATCH_SIZE);
             const predictionsRef = collection(db, 'predictions');
-            const predictionsQuery = query(predictionsRef, where('matchId', '==', matchId));
+            const predictionsQuery = query(predictionsRef, where('matchId', 'in', matchIdBatch));
             const predictionsSnapshot = await getDocs(predictionsQuery);
             predictionsSnapshot.forEach(predictionDoc => {
                 batch.delete(predictionDoc.ref);
@@ -345,7 +355,7 @@ export async function addOrUpdatePrediction(predictionData: Omit<Prediction, 'id
         const docId = snapshot.docs[0].id;
         const docRef = doc(db, 'predictions', docId);
         await updateDoc(docRef, {
-            ...predictionData,
+            palpiteUsuario: predictionData.palpiteUsuario,
             updatedAt: now,
         });
     }

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -9,7 +10,7 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Edit, Gamepad2, Percent, Target, TrendingUp, CheckCircle, Heart, Clock, Goal, Trophy, Users, LogIn, HelpCircle, Loader2 } from 'lucide-react';
+import { Edit, Gamepad2, Percent, Target, XCircle, CheckCircle, Heart, Clock, Goal, Trophy, Users, LogIn, HelpCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type React from 'react';
@@ -95,7 +96,7 @@ export default function ProfilePage() {
   const [userToDisplay, setUserToDisplay] = useState<UserType | null>(null);
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [allMatches, setAllMatches] = useState<Match[]>([]);
-  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
+  const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
 
   const userId = userIdFromQuery || authUser?.id;
@@ -133,7 +134,7 @@ export default function ProfilePage() {
         const userPreds = snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() as Prediction }))
             .filter(p => p.userId === userId);
-        setAllPredictions(userPreds);
+        setUserPredictions(userPreds);
     });
 
     return () => {
@@ -148,7 +149,7 @@ export default function ProfilePage() {
    useEffect(() => {
     if (championships.length > 0 && !selectedChampionshipId) {
         const activeChampionship = championships.find(c => c.status === 'ativo');
-        setSelectedChampionshipId(activeChampionship ? activeChampionship.id : championships[0].id);
+        setSelectedChampionshipId(activeChampionship ? activeChampionship.id : championships[0]?.id);
     }
   }, [championships, selectedChampionshipId]);
 
@@ -189,25 +190,27 @@ export default function ProfilePage() {
 
   const selectedChampionshipStats = useMemo(() => {
     if (!userToDisplay || !selectedChampionshipId) {
-        return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, maiorSequencia: 0 };
+        return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0 };
     };
 
     const baseStats = userToDisplay.championshipStats?.find(stat => stat.championshipId === selectedChampionshipId) || {
-        pontos: 0, acertosExatos: 0, acertosSituacao: 0, maiorSequencia: 0
+        pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0
     };
 
     let livePoints = 0;
     let liveExatos = 0;
     let liveSituacao = 0;
+    let liveErros = 0;
 
     liveMatches.forEach(match => {
         if(match.campeonatoId === selectedChampionshipId) {
-            const prediction = allPredictions.find(p => p.matchId === match.id);
+            const prediction = userPredictions.find(p => p.matchId === match.id);
             if (prediction) {
                 const result = calculateLivePoints(match, prediction);
                 livePoints += result.pontos;
                 if (result.exato) liveExatos++;
                 if (result.situacao) liveSituacao++;
+                if (result.pontos === 0) liveErros++;
             }
         }
     });
@@ -216,9 +219,9 @@ export default function ProfilePage() {
         pontos: baseStats.pontos + livePoints,
         acertosExatos: baseStats.acertosExatos + liveExatos,
         acertosSituacao: baseStats.acertosSituacao + liveSituacao,
-        maiorSequencia: baseStats.maiorSequencia, // Live sequence tracking is complex, omitting for now
+        erros: (baseStats.erros || 0) + liveErros,
     };
-  }, [userToDisplay, selectedChampionshipId, liveMatches, allPredictions, championships]);
+  }, [userToDisplay, selectedChampionshipId, liveMatches, userPredictions, championships]);
 
   const lastGuessMatch = useMemo(() => {
       if (!userToDisplay?.ultimoPalpite?.matchId) return null;
@@ -269,7 +272,7 @@ export default function ProfilePage() {
     { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Pontos", value: selectedChampionshipStats.pontos, description: "Total de pontos no campeonato", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}`},
     { icon: <Target className="h-4 w-4 text-muted-foreground" />, title: "Acertos Exatos", value: selectedChampionshipStats.acertosExatos, description: "Placares cravados", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`},
     { icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />, title: "Acertos de Situação", value: selectedChampionshipStats.acertosSituacao, description: "Vencedor/empate corretos", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=situation`},
-    { icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />, title: "Maior Sequência de Acertos", value: selectedChampionshipStats.maiorSequencia, description: "Sequência de placares exatos"},
+    { icon: <XCircle className="h-4 w-4 text-muted-foreground" />, title: "Erros", value: selectedChampionshipStats.erros, description: "Palpites sem pontuação"},
   ];
 
   return (
@@ -332,7 +335,7 @@ export default function ProfilePage() {
                                 <Link href={getLastGuessLink()} className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                                     <Goal className="w-4 h-4" />
                                     <span>
-                                        Último palpite ({ultimoPalpite.palpite}): <strong className="group-hover:underline">{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
+                                        Último palpite ({ultimoPalpite?.palpite}): <strong className="group-hover:underline">{lastGuessMatch.timeA} vs {lastGuessMatch.timeB}</strong>
                                     </span>
                                 </Link>
                             )}

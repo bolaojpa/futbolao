@@ -1,3 +1,4 @@
+
 import { Timestamp } from 'firebase/firestore';
 
 export interface UserType {
@@ -9,26 +10,22 @@ export interface UserType {
     urlImagemPersonalizada?: string;
     status: 'ativo' | 'pendente' | 'bloqueado';
     funcao: 'usuario' | 'moderador' | 'admin';
-    pontos: number;
-    exatos: number;
-    situacoes: number;
-    tempoMedio: number;
     posicaoVariacao?: 'up' | 'down' | 'stable';
     dataCadastro: string | Timestamp;
-    ultimaAtividade: string;
-    ultimoLogin: string;
+    ultimaAtividade: string | Timestamp;
+    ultimoLogin: string | Timestamp;
     presenceStatus: 'Disponível' | 'Ausente' | 'Ocupado' | 'Não perturbe' | 'Offline';
-    ultimoPalpite: { matchId: string; palpite: string };
+    ultimoPalpite?: { matchId: string; palpite: string };
     titulos: number;
     totalJogos: number;
     timeCoracao?: string;
     championPicks?: { championshipId: string, teams: string[] }[];
-    championshipStats: {
+    championshipStats?: {
         championshipId: string;
         pontos: number;
         acertosExatos: number;
         acertosSituacao: number;
-        maiorSequencia: number;
+        erros: number;
     }[];
 }
 
