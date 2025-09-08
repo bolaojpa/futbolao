@@ -348,7 +348,7 @@ export default function AdminUsersPage() {
                                                             </TooltipContent>
                                                         </Tooltip>
                                                         <div>
-                                                            <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido}</Link>
+                                                            <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido || user.nome}</Link>
                                                             <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
                                                             <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
                                                                 <Mail className="w-3 h-3" />
@@ -423,14 +423,14 @@ export default function AdminUsersPage() {
                                                                 </AlertDialogTrigger>
                                                                 <AlertDialogContent>
                                                                     <AlertDialogHeader>
-                                                                        <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-amber-500" />Resetar estatísticas de {user.apelido}?</AlertDialogTitle>
+                                                                        <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-amber-500" />Resetar estatísticas de {user.apelido || user.nome}?</AlertDialogTitle>
                                                                         <AlertDialogDescription>
                                                                             Esta ação é irreversível. Todas as estatísticas de campeonatos, pontos e títulos do usuário serão zerados. Isso é útil para limpar dados de teste.
                                                                         </AlertDialogDescription>
                                                                     </AlertDialogHeader>
                                                                     <AlertDialogFooter>
                                                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                        <AlertDialogAction onClick={() => handleResetStats(user.id, user.apelido)} className="bg-amber-600 hover:bg-amber-600/90">Sim, resetar</AlertDialogAction>
+                                                                        <AlertDialogAction onClick={() => handleResetStats(user.id, user.apelido || user.nome)} className="bg-amber-600 hover:bg-amber-600/90">Sim, resetar</AlertDialogAction>
                                                                     </AlertDialogFooter>
                                                                 </AlertDialogContent>
                                                             </AlertDialog>

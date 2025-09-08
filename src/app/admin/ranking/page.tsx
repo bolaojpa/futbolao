@@ -314,7 +314,7 @@ export default function AdminRankingPage() {
                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                     <Honorifics count={user.titulos ?? 0} variant="badge" />
                                 </div>
-                                <span className="font-medium group-hover:underline">{user.apelido}</span>
+                                <span className="font-medium group-hover:underline">{user.apelido || user.nome}</span>
                                 {getMedalIcon(rank)}
                             </Link>
                         </TableCell>
