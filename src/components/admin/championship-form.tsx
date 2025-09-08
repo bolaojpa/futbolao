@@ -30,7 +30,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent } from 'lucide-react';
+import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship, Team, UserType } from '@/lib/types';
@@ -87,6 +87,9 @@ const championshipFormSchema = z.object({
       placar: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(0),
     }).optional(),
   }),
+  predictionAssist: z.object({
+    active: z.boolean().default(false),
+  }).optional(),
   banner: z.object({
     ativo: z.boolean(),
     campeonatoLogoUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
@@ -167,6 +170,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
             tradicional: { ativo: true, exato: 10, situacao: 5 },
             combo: { ativo: false, gols: 3, placar: 7 },
         },
+        predictionAssist: { active: false },
         fases: [],
         banner: {
             ativo: false,
@@ -236,6 +240,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                 tradicional: { ativo: true, exato: 10, situacao: 5 },
                 combo: { ativo: false, gols: 3, placar: 7 },
             },
+            predictionAssist: { active: false },
             banner: {
                 ativo: false,
                 campeonatoLogoUrl: "",
@@ -270,6 +275,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                     tradicional: championship.pontuacao.tradicional,
                     combo: championship.pontuacao.combo || defaultData.pontuacao.combo,
                 },
+                predictionAssist: championship.predictionAssist || defaultData.predictionAssist,
                 banner: championship.banner || defaultData.banner,
                 championPredictionSettings: championship.championPredictionSettings || defaultData.championPredictionSettings,
                 finalRanking: championship.finalRanking || defaultData.finalRanking,
@@ -873,6 +879,33 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                     />
                                 </div>
                             </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="p-4">
+                                <FormField
+                                    control={form.control}
+                                    name="predictionAssist.active"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base flex items-center gap-2">
+                                                    <BrainCircuit className="w-4 h-4 text-primary" />
+                                                    Assistência de IA nos Palpites
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    Permite que usuários consultem a IA para obter sugestões de palpites neste campeonato.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardHeader>
                         </Card>
                     </TabsContent>
                     <TabsContent value="banner" className="space-y-6">

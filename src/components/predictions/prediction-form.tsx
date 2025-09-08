@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
-import type { Match, Prediction, Team } from '@/lib/types';
+import type { Match, Prediction, Team, Championship } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { getMatches, getPredictionsForUser, getTeams } from '@/lib/firebase/firestore';
 import { doc, getDoc, onSnapshot, collection } from 'firebase/firestore';
@@ -55,7 +55,7 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
 };
 
 
-export function PredictionForm() {
+export function PredictionForm({ championships }: { championships: Championship[] }) {
     const { toast } = useToast();
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
@@ -331,6 +331,8 @@ export function PredictionForm() {
                             const teamA = allTeams.find(t => t.name === match.timeA);
                             const teamB = allTeams.find(t => t.name === match.timeB);
                             const isLocked = match.predictionsLocked || isPast(parseISO(match.data));
+                            const championship = championships.find(c => c.id === match.campeonatoId);
+                            const allowAiAssist = championship?.predictionAssist?.active ?? false;
                             
                             return (
                                 <Card 
@@ -416,19 +418,21 @@ export function PredictionForm() {
                                         </div>
                                         {!isLocked && (
                                             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                                <Button 
-                                                    variant="outline" 
-                                                    onClick={() => handleAiSuggestion(match)} 
-                                                    disabled={loadingAi[match.id]}
-                                                    className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                                >
-                                                    {loadingAi[match.id] ? (
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <BrainCircuit className="mr-2 h-4 w-4" />
-                                                    )}
-                                                    Consultar IA
-                                                </Button>
+                                                {allowAiAssist && (
+                                                    <Button 
+                                                        variant="outline" 
+                                                        onClick={() => handleAiSuggestion(match)} 
+                                                        disabled={loadingAi[match.id]}
+                                                        className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                                    >
+                                                        {loadingAi[match.id] ? (
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <BrainCircuit className="mr-2 h-4 w-4" />
+                                                        )}
+                                                        Consultar IA
+                                                    </Button>
+                                                )}
                                                 <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
                                                     <Save className="mr-2 h-4 w-4" />
                                                     {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}

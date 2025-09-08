@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarCheck, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import type { Championship, Team, UserType } from '@/lib/types';
@@ -82,7 +82,7 @@ export default function PredictionsPage() {
                     
                     <Separator />
 
-                    <PredictionForm />
+                    <PredictionForm championships={championships} />
                 </>
             )}
         </div>

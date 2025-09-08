@@ -78,6 +78,9 @@ export interface Championship {
         tradicional: { ativo: boolean; exato: number; situacao: number; };
         combo?: { ativo: boolean; gols: number; placar: number; };
     };
+    predictionAssist?: {
+        active: boolean;
+    };
     banner: {
         ativo: boolean;
         campeonatoLogoUrl?: string;
