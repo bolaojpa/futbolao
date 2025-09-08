@@ -279,6 +279,8 @@ export default function DashboardPage() {
         </div>
     }
 
+    const hasContent = showLeaderCard || liveMatches.length > 0 || upcomingMatches.length > 0 || recentMatches.length > 0;
+
     return (
         <TooltipProvider>
             <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -289,270 +291,286 @@ export default function DashboardPage() {
                         <p className="text-muted-foreground">Boa sorte nos seus próximos palpites.</p>
                     </div>
                 </div>
-
-                <div className="space-y-8">
-                    {showLeaderCard && (
-                        <section>
-                            <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
-                                <CardHeader className="flex flex-row items-center gap-4 p-4">
-                                    <Link href={`/dashboard/profile?userId=${leader.id}`} className="relative block w-12 h-12">
-                                        <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
-                                            <Avatar className="w-full h-full border-2 border-background">
-                                                <AvatarImage src={leader.fotoPerfil} alt={leader.apelido} />
-                                                <AvatarFallback>{leader.apelido.substring(0, 2)}</AvatarFallback>
-                                            </Avatar>
-                                        </div>
-                                        <Honorifics count={leader.titulos} />
-                                    </Link>
-                                    <div className="flex-1">
-                                        <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
-                                        <div className="flex items-baseline gap-2">
-                                            <CardTitle className="text-xl font-headline text-primary">
-                                            <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
-                                            </CardTitle>
-                                            {leader && <p className="text-xl font-headline">{leader.pontos} pts</p>}
-                                        </div>
-                                        <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
-                                    </div>
-                                    <Button asChild variant="ghost" size="sm">
-                                        <Link href="/dashboard/leaderboard">
-                                            Ver Ranking
+                
+                {hasContent ? (
+                    <div className="space-y-8">
+                        {showLeaderCard && (
+                            <section>
+                                <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
+                                    <CardHeader className="flex flex-row items-center gap-4 p-4">
+                                        <Link href={`/dashboard/profile?userId=${leader.id}`} className="relative block w-12 h-12">
+                                            <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
+                                                <Avatar className="w-full h-full border-2 border-background">
+                                                    <AvatarImage src={leader.fotoPerfil} alt={leader.apelido} />
+                                                    <AvatarFallback>{leader.apelido.substring(0, 2)}</AvatarFallback>
+                                                </Avatar>
+                                            </div>
+                                            <Honorifics count={leader.titulos} />
                                         </Link>
-                                    </Button>
-                                </CardHeader>
-                                <div className="absolute -bottom-2 -right-2">
-                                    <Medal className="w-16 h-16 text-yellow-500/20" strokeWidth={1} />
+                                        <div className="flex-1">
+                                            <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
+                                            <div className="flex items-baseline gap-2">
+                                                <CardTitle className="text-xl font-headline text-primary">
+                                                <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
+                                                </CardTitle>
+                                                {leader && <p className="text-xl font-headline">{leader.pontos} pts</p>}
+                                            </div>
+                                            <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
+                                        </div>
+                                        <Button asChild variant="ghost" size="sm">
+                                            <Link href="/dashboard/leaderboard">
+                                                Ver Ranking
+                                            </Link>
+                                        </Button>
+                                    </CardHeader>
+                                    <div className="absolute -bottom-2 -right-2">
+                                        <Medal className="w-16 h-16 text-yellow-500/20" strokeWidth={1} />
+                                    </div>
+                                </Card>
+                            </section>
+                        )}
+
+                        {liveMatches.length > 0 && (
+                            <section>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                                        <Zap className="w-6 h-6 text-accent animate-pulse" />
+                                        Acontecendo Agora
+                                    </h2>
                                 </div>
-                            </Card>
-                        </section>
-                    )}
+                                <div className="w-full space-y-4">
+                                    {liveMatches.map((match) => {
+                                        const prediction = userPredictions.find(p => p.matchId === match.id);
+                                        if (!prediction) return null;
 
-                    {liveMatches.length > 0 && (
-                        <section>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                                    <Zap className="w-6 h-6 text-accent animate-pulse" />
-                                    Acontecendo Agora
-                                </h2>
-                            </div>
-                            <div className="w-full space-y-4">
-                                {liveMatches.map((match) => {
-                                    const prediction = userPredictions.find(p => p.matchId === match.id);
-                                    if (!prediction) return null;
+                                        const livePoints = calculateLivePoints(match, prediction);
+                                        const teamA = allTeams.find(t => t.name === match.timeA);
+                                        const teamB = allTeams.find(t => t.name === match.timeB);
 
-                                    const livePoints = calculateLivePoints(match, prediction);
-                                    const teamA = allTeams.find(t => t.name === match.timeA);
-                                    const teamB = allTeams.find(t => t.name === match.timeB);
-
-                                    return (
-                                        <Accordion type="single" collapsible className="w-full" key={match.id}>
-                                            <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
-                                                <Card className={cn('border-accent/50', getPredictionStatusClass(livePoints, match.maxPontos))}>
-                                                    <AccordionTrigger className="p-4 hover:no-underline">
-                                                        <div className="flex flex-col items-center justify-center w-full">
-                                                            <div className="flex items-center justify-center w-full">
-                                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
-                                                                </div>
-                                                                <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
-                                                                    <span>{`${match.placarA ?? 0}`} - {`${match.placarB ?? 0}`}</span>
-                                                                    <Badge variant="destructive" className='mt-2 animate-pulse'>
-                                                                        Ao Vivo
-                                                                    </Badge>
-                                                                </div>
-                                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
-                                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                        return (
+                                            <Accordion type="single" collapsible className="w-full" key={match.id}>
+                                                <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
+                                                    <Card className={cn('border-accent/50', getPredictionStatusClass(livePoints, match.maxPontos))}>
+                                                        <AccordionTrigger className="p-4 hover:no-underline">
+                                                            <div className="flex flex-col items-center justify-center w-full">
+                                                                <div className="flex items-center justify-center w-full">
+                                                                    <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                                        <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
+                                                                    </div>
+                                                                    <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
+                                                                        <span>{`${match.placarA ?? 0}`} - {`${match.placarB ?? 0}`}</span>
+                                                                        <Badge variant="destructive" className='mt-2 animate-pulse'>
+                                                                            Ao Vivo
+                                                                        </Badge>
+                                                                    </div>
+                                                                    <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
+                                                                        <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    </AccordionTrigger>
-                                                    <AccordionContent>
-                                                         <div className={cn("p-4 border-t", getPredictionStatusClass(livePoints, match.maxPontos))}>
-                                                            <div className="flex justify-between items-center w-full">
-                                                                <div className="w-1/3 text-left flex items-center gap-2">
-                                                                    <Avatar className="w-8 h-8">
-                                                                        <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                        <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
-                                                                    </Avatar>
-                                                                    <span className="font-bold">Seu Palpite:</span>
-                                                                </div>
-                                                                <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
-                                                                <div className="w-1/3 text-right">
-                                                                    <Badge variant={getPointsBadgeVariant(livePoints, match.maxPontos)} className='whitespace-nowrap'>
-                                                                        {livePoints} pts
-                                                                    </Badge>
+                                                        </AccordionTrigger>
+                                                        <AccordionContent>
+                                                            <div className={cn("p-4 border-t", getPredictionStatusClass(livePoints, match.maxPontos))}>
+                                                                <div className="flex justify-between items-center w-full">
+                                                                    <div className="w-1/3 text-left flex items-center gap-2">
+                                                                        <Avatar className="w-8 h-8">
+                                                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                            <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                                        </Avatar>
+                                                                        <span className="font-bold">Seu Palpite:</span>
+                                                                    </div>
+                                                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                                                    <div className="w-1/3 text-right">
+                                                                        <Badge variant={getPointsBadgeVariant(livePoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                                            {livePoints} pts
+                                                                        </Badge>
+                                                                    </div>
                                                                 </div>
                                                             </div>
+                                                        </AccordionContent>
+                                                    </Card>
+                                                </AccordionItem>
+                                            </Accordion>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        )}
+
+                        {upcomingMatches.length > 0 && (
+                            <section>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                                        <Calendar className="w-6 h-6 text-primary" />
+                                        Próximas Partidas
+                                    </h2>
+                                    <Button asChild variant="link">
+                                        <Link href="/dashboard/predictions">Ver todos &rarr;</Link>
+                                    </Button>
+                                </div>
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {upcomingMatches.map((match) => {
+                                        const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                                        const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !userPrediction;
+                                        const championship = allChampionships.find(c => c.id === match.campeonatoId);
+                                        const displayStatus = getMatchDisplayStatus(match.data, match.status);
+                                        const teamA = allTeams.find(t => t.name === match.timeA);
+                                        const teamB = allTeams.find(t => t.name === match.timeB);
+
+                                        return (
+                                            <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
+                                                <Card className={cn(
+                                                    "relative flex flex-col h-full overflow-hidden",
+                                                    needsAttention && "border-accent animate-pulse"
+                                                )}>
+                                                    {needsAttention && (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="absolute top-2 left-2 z-10">
+                                                                    <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top">
+                                                                <p>Seu palpite é necessário! Esta partida começa em breve.</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    )}
+                                                    <CardContent className="flex-grow flex flex-col justify-center items-center p-4">
+                                                        <div className="flex justify-center items-center gap-2 mb-2">
+                                                            {championship?.iconUrl && (
+                                                                <Image src={championship.iconUrl} alt={championship.nome} width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
+                                                            )}
+                                                            <p className="text-xs text-muted-foreground font-semibold">{match.campeonato}</p>
                                                         </div>
-                                                    </AccordionContent>
-                                                </Card>
-                                            </AccordionItem>
-                                        </Accordion>
-                                    );
-                                })}
-                            </div>
-                        </section>
-                    )}
-
-                    {upcomingMatches.length > 0 && (
-                        <section>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                                    <Calendar className="w-6 h-6 text-primary" />
-                                    Próximas Partidas
-                                </h2>
-                                <Button asChild variant="link">
-                                    <Link href="/dashboard/predictions">Ver todos &rarr;</Link>
-                                </Button>
-                            </div>
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {upcomingMatches.map((match) => {
-                                    const userPrediction = userPredictions.find(p => p.matchId === match.id);
-                                    const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !userPrediction;
-                                    const championship = allChampionships.find(c => c.id === match.campeonatoId);
-                                    const displayStatus = getMatchDisplayStatus(match.data, match.status);
-                                    const teamA = allTeams.find(t => t.name === match.timeA);
-                                    const teamB = allTeams.find(t => t.name === match.timeB);
-
-                                    return (
-                                        <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
-                                            <Card className={cn(
-                                                "relative flex flex-col h-full overflow-hidden",
-                                                needsAttention && "border-accent animate-pulse"
-                                            )}>
-                                                {needsAttention && (
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <div className="absolute top-2 left-2 z-10">
-                                                                <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                                                        <div className="flex items-center justify-around w-full text-center">
+                                                            <div className='flex flex-col items-center gap-2 w-1/3'>
+                                                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                                <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
                                                             </div>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="top">
-                                                            <p>Seu palpite é necessário! Esta partida começa em breve.</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                )}
-                                                <CardContent className="flex-grow flex flex-col justify-center items-center p-4">
-                                                    <div className="flex justify-center items-center gap-2 mb-2">
-                                                        {championship?.iconUrl && (
-                                                            <Image src={championship.iconUrl} alt={championship.nome} width={20} height={20} className="rounded-sm" data-ai-hint="championship logo" />
-                                                        )}
-                                                        <p className="text-xs text-muted-foreground font-semibold">{match.campeonato}</p>
-                                                    </div>
-                                                    <div className="flex items-center justify-around w-full text-center">
-                                                        <div className='flex flex-col items-center gap-2 w-1/3'>
-                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                                            <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
-                                                        </div>
-                                                        <div className="flex flex-col items-center justify-center gap-1 mx-2">
-                                                            <Badge variant={getStatusVariant(displayStatus)}>
-                                                                {displayStatus}
-                                                            </Badge>
-                                                            <span className="text-2xl font-bold text-muted-foreground">vs</span>
-                                                        </div>
-                                                        <div className='flex flex-col items-center gap-2 w-1/3'>
-                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
-                                                            <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                                
-                                                {userPrediction && (
-                                                    <CardContent className="py-2">
-                                                        <Separator className="mb-2" />
-                                                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                                            <Goal className="w-4 h-4 text-primary" />
-                                                            <span className="font-semibold">Seu Palpite:</span>
-                                                            <span className="font-bold text-foreground">{`${userPrediction.palpiteUsuario.placarA} - ${userPrediction.palpiteUsuario.placarB}`}</span>
+                                                            <div className="flex flex-col items-center justify-center gap-1 mx-2">
+                                                                <Badge variant={getStatusVariant(displayStatus)}>
+                                                                    {displayStatus}
+                                                                </Badge>
+                                                                <span className="text-2xl font-bold text-muted-foreground">vs</span>
+                                                            </div>
+                                                            <div className='flex flex-col items-center gap-2 w-1/3'>
+                                                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                                <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
+                                                            </div>
                                                         </div>
                                                     </CardContent>
+                                                    
+                                                    {userPrediction && (
+                                                        <CardContent className="py-2">
+                                                            <Separator className="mb-2" />
+                                                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                                                <Goal className="w-4 h-4 text-primary" />
+                                                                <span className="font-semibold">Seu Palpite:</span>
+                                                                <span className="font-bold text-foreground">{`${userPrediction.palpiteUsuario.placarA} - ${userPrediction.palpiteUsuario.placarB}`}</span>
+                                                            </div>
+                                                        </CardContent>
+                                                    )}
+
+                                                    <CardContent className="text-center bg-muted/50 py-2 mt-auto">
+                                                    <UpcomingMatchDate matchDateString={match.data} />
+                                                    </CardContent>
+                                                </Card>
+                                            </Link>
+                                        )
+                                    })}
+                                </div>
+                            </section>
+                        )}
+
+                        {recentMatches.length > 0 && (
+                            <section>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                                        <History className="w-6 h-6 text-primary" />
+                                        Resultados Recentes
+                                    </h2>
+                                    <Button asChild variant="link">
+                                        <Link href="/dashboard/history">Ver histórico completo &rarr;</Link>
+                                    </Button>
+                                </div>
+                                <div className="w-full space-y-4">
+                                    {recentMatches.map((match) => {
+                                        const prediction = userPredictions.find(p => p.matchId === match.id);
+                                        const teamA = allTeams.find(t => t.name === match.timeA);
+                                        const teamB = allTeams.find(t => t.name === match.timeB);
+
+                                        return (
+                                            <Accordion type="single" collapsible className="w-full" key={match.id}>
+                                            <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
+                                                <Card>
+                                                <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction?.pontos, match.maxPontos))}>
+                                                    <div className="flex flex-col items-center justify-center w-full">
+                                                        <div className="flex items-center justify-center w-full">
+                                                            <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
+                                                                {match.timeA}
+                                                            </div>
+                                                            <div className="flex items-center justify-center gap-3 md:gap-4">
+                                                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
+                                                                <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
+                                                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
+                                                            </div>
+                                                            <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
+                                                                {match.timeB}
+                                                            </div>
+                                                        </div>
+                                                        <div className='flex flex-col items-center justify-center mt-2 gap-1'>
+                                                            <Badge variant="secondary">{match.status}</Badge>
+                                                            <span className="text-xs text-muted-foreground">{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
+                                                        </div>
+                                                    </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent>
+                                                {prediction && (
+                                                    <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos, match.maxPontos))}>
+                                                        <div className="flex justify-between items-center w-full">
+                                                            <div className="w-1/3 text-left flex items-center gap-2">
+                                                                <Avatar className="w-8 h-8">
+                                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                                </Avatar>
+                                                                <span className="font-bold">Seu Palpite:</span>
+                                                            </div>
+                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                                            <div className="w-1/3 text-right">
+                                                                <Badge variant={getPointsBadgeVariant(prediction.pontos, match.maxPontos)} className='whitespace-nowrap'>
+                                                                    {prediction.pontos} pts
+                                                                </Badge>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 )}
-
-                                                <CardContent className="text-center bg-muted/50 py-2 mt-auto">
-                                                   <UpcomingMatchDate matchDateString={match.data} />
-                                                </CardContent>
-                                            </Card>
-                                        </Link>
-                                    )
-                                })}
+                                                </AccordionContent>
+                                                </Card>
+                                            </AccordionItem>
+                                            </Accordion>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        )}
+                    </div>
+                ) : (
+                    <Card>
+                        <CardContent className="p-10 text-center">
+                            <div className="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
+                                <Goal className="w-12 h-12 text-muted-foreground" />
                             </div>
-                        </section>
-                    )}
-
-                    {recentMatches.length > 0 && (
-                         <section>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                                    <History className="w-6 h-6 text-primary" />
-                                    Resultados Recentes
-                                </h2>
-                                <Button asChild variant="link">
-                                    <Link href="/dashboard/history">Ver histórico completo &rarr;</Link>
-                                </Button>
-                            </div>
-                            <div className="w-full space-y-4">
-                                {recentMatches.map((match) => {
-                                    const prediction = userPredictions.find(p => p.matchId === match.id);
-                                    const teamA = allTeams.find(t => t.name === match.timeA);
-                                    const teamB = allTeams.find(t => t.name === match.timeB);
-
-                                    return (
-                                        <Accordion type="single" collapsible className="w-full" key={match.id}>
-                                        <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
-                                            <Card>
-                                            <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction?.pontos, match.maxPontos))}>
-                                                <div className="flex flex-col items-center justify-center w-full">
-                                                    <div className="flex items-center justify-center w-full">
-                                                        <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
-                                                            {match.timeA}
-                                                        </div>
-                                                        <div className="flex items-center justify-center gap-3 md:gap-4">
-                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
-                                                            <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="rounded-full border" data-ai-hint="team logo" />
-                                                        </div>
-                                                        <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
-                                                            {match.timeB}
-                                                        </div>
-                                                    </div>
-                                                    <div className='flex flex-col items-center justify-center mt-2 gap-1'>
-                                                        <Badge variant="secondary">{match.status}</Badge>
-                                                        <span className="text-xs text-muted-foreground">{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
-                                                    </div>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                            {prediction && (
-                                                <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos, match.maxPontos))}>
-                                                    <div className="flex justify-between items-center w-full">
-                                                        <div className="w-1/3 text-left flex items-center gap-2">
-                                                            <Avatar className="w-8 h-8">
-                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                                            </Avatar>
-                                                            <span className="font-bold">Seu Palpite:</span>
-                                                        </div>
-                                                        <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
-                                                        <div className="w-1/3 text-right">
-                                                            <Badge variant={getPointsBadgeVariant(prediction.pontos, match.maxPontos)} className='whitespace-nowrap'>
-                                                                {prediction.pontos} pts
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            </AccordionContent>
-                                            </Card>
-                                        </AccordionItem>
-                                        </Accordion>
-                                    );
-                                })}
-                            </div>
-                        </section>
-                    )}
-                </div>
+                            <h3 className="text-xl font-semibold">Tudo pronto para começar!</h3>
+                            <p className="text-muted-foreground mt-2">
+                                Nenhuma atividade de campeonato no momento.
+                                <br />
+                                Volte mais tarde para ver as partidas e fazer seus palpites.
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </TooltipProvider>
     );
