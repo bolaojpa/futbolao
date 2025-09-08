@@ -6,7 +6,7 @@
  *
  * - suggestPredictions - A function that suggests predictions for a given match based on other user predictions.
  * - SuggestPredictionsInput - The input type for the suggestPredictions function.
- * - SuggestPredictionsOutput - The return type for the suggestPredictions function.
+ * - SuggestPredictionsOutput - The return type for the suggestPredictionsOutput function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -16,7 +16,7 @@ const SuggestPredictionsInputSchema = z.object({
   matchId: z.string().describe('The ID of the match to suggest predictions for.'),
   predictionData: z
     .array(z.object({
-      userId: z.string(),
+      userNickname: z.string(),
       prediction: z.string(),
     }))
     .describe('An array of user predictions for the match.'),
@@ -24,7 +24,7 @@ const SuggestPredictionsInputSchema = z.object({
 export type SuggestPredictionsInput = z.infer<typeof SuggestPredictionsInputSchema>;
 
 const SuggestPredictionsOutputSchema = z.object({
-  suggestedPrediction: z.string().describe('The AI suggested prediction based on the user prediction tendencies.'),
+  suggestedPrediction: z.string().describe('A sugestão de previsão da IA com base nas tendências dos palpites dos usuários (formato: "X-Y").'),
 });
 export type SuggestPredictionsOutput = z.infer<typeof SuggestPredictionsOutputSchema>;
 
@@ -38,13 +38,14 @@ const suggestPredictionsPrompt = ai.definePrompt({
   output: {schema: SuggestPredictionsOutputSchema},
   prompt: `Você é um especialista em futebol e apostas esportivas.
 
-  Com base nas seguintes previsões de outros usuários para a partida com ID {{matchId}}, sugira uma previsão com alta probabilidade de acerto.
+  Com base nas seguintes previsões de outros usuários para a partida com ID {{matchId}}, analise a tendência e sugira uma previsão com alta probabilidade de acerto.
 
   Previsões dos usuários:
   {{#each predictionData}}
-  - Usuário {{this.userId}}: {{this.prediction}}
+  - {{this.userNickname}}: {{this.prediction}}
   {{/each}}
 
+  A sua sugestão final DEVE estar no formato "Placar Time A - Placar Time B", por exemplo: "2-1". Não adicione nenhum texto extra.
   Apresente a sua sugestão de previsão em Português (PT-BR).`,
 });
 
