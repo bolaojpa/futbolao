@@ -135,6 +135,21 @@ export async function updateUserStatsAfterMatch(
 
 
 /**
+ * Resets the statistics for a specific user.
+ * Sets total games, titles to 0 and clears championship stats.
+ * @param userId - The ID of the user to reset.
+ */
+export async function resetUserStats(userId: string): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+        championshipStats: [],
+        totalJogos: 0,
+        titulos: 0,
+    });
+}
+
+
+/**
  * Fetches all teams from the Firestore 'teams' collection.
  */
 export async function getTeams(): Promise<Team[]> {

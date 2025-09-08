@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail } from 'lucide-react';
+import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { UserType } from '@/lib/types';
-import { getUsers, updateUserStatus, updateUserRole, deleteUsers } from '@/lib/firebase/firestore';
+import { getUsers, updateUserStatus, updateUserRole, deleteUsers, resetUserStats } from '@/lib/firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
 
 const ITEMS_PER_PAGE = 10;
@@ -127,6 +127,24 @@ export default function AdminUsersPage() {
             });
         }
     }
+
+    const handleResetStats = async (userId: string, userName: string) => {
+        try {
+            await resetUserStats(userId);
+            await fetchUsers();
+            toast({
+                title: "Estatísticas Resetadas",
+                description: `As estatísticas de ${userName} foram zeradas.`,
+            });
+        } catch (error) {
+            toast({
+                title: "Erro ao Resetar",
+                description: `Não foi possível resetar as estatísticas de ${userName}.`,
+                variant: "destructive",
+            });
+        }
+    };
+
 
     const filteredUsers = useMemo(() => {
         return users.filter(user => {
@@ -362,7 +380,7 @@ export default function AdminUsersPage() {
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                            <DropdownMenuLabel>Ações de Moderação</DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
                                                             {user.status === 'pendente' && (
                                                                 <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
@@ -382,7 +400,6 @@ export default function AdminUsersPage() {
                                                                     <span>Desbloquear Usuário</span>
                                                                 </DropdownMenuItem>
                                                             )}
-                                                            <DropdownMenuSeparator />
                                                             {user.funcao === 'usuario' && (
                                                                 <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'moderador')}>
                                                                     <ShieldCheck className="mr-2 h-4 w-4 text-blue-500"/>
@@ -395,6 +412,27 @@ export default function AdminUsersPage() {
                                                                     <span>Rebaixar a Usuário</span>
                                                                 </DropdownMenuItem>
                                                             )}
+                                                            <DropdownMenuSeparator />
+                                                             <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <DropdownMenuItem className="text-amber-600 focus:bg-amber-500/10 focus:text-amber-700" onSelect={(e) => e.preventDefault()}>
+                                                                        <RefreshCcw className="mr-2 h-4 w-4" />
+                                                                        Resetar Estatísticas
+                                                                    </DropdownMenuItem>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-amber-500" />Resetar estatísticas de {user.apelido}?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            Esta ação é irreversível. Todas as estatísticas de campeonatos, pontos e títulos do usuário serão zerados. Isso é útil para limpar dados de teste.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => handleResetStats(user.id, user.apelido)} className="bg-amber-600 hover:bg-amber-600/90">Sim, resetar</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
