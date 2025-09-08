@@ -416,3 +416,5 @@ export async function updateUserLastLogin(userId: string): Promise<void> {
         ultimaAtividade: now, // Also update last activity on login
     });
 }
+
+    
