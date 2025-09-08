@@ -8,7 +8,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { onSnapshot, collection, query, where, Timestamp, deleteDoc, doc } from 'firebase/firestore';
+import { onSnapshot, collection, query, where, Timestamp, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { SparkleAnimation } from '@/components/shared/sparkle-animation';
 
@@ -19,15 +19,17 @@ function ToastListener() {
   useEffect(() => {
     if (!user) return;
 
+    // Consulta ajustada: filtra pelo usuário e ordena pela data, o que é compatível com o índice existente.
     const q = query(
       collection(db, 'toast_notifications'),
       where('userId', '==', user.id),
-      where('createdAt', '>', Timestamp.now()) // Busca apenas notificações futuras/novas
+      orderBy('createdAt', 'asc')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added') {
+        // Verifica se a notificação é nova para evitar re-exibir toasts antigos no caso de re-conexão
+        if (change.type === 'added' && change.doc.data().createdAt?.toMillis() > Date.now() - 5000) { // Tolerância de 5 segundos
           const data = change.doc.data();
           toast({
             duration: 10000,
