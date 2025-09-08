@@ -62,6 +62,8 @@ export default function LeaderboardPage() {
         } else if (champs.length > 0) {
           // O primeiro campeonato na lista já é o mais recente
           setSelectedChampionship(champs[0].id);
+        } else {
+          setSelectedChampionship(null);
         }
       } catch (error) {
         console.error("Failed to fetch championships", error);
@@ -217,7 +219,7 @@ export default function LeaderboardPage() {
             </div>
         </div>
 
-        {championships.length > 0 && selectedChampionship && (
+        {championships.length > 0 && selectedChampionship ? (
             <>
                 <div className="w-full md:w-auto mb-8">
                     <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
@@ -359,9 +361,22 @@ export default function LeaderboardPage() {
                 </CardContent>
                 </Card>
             </>
+        ) : (
+            <Card>
+                <CardContent className="p-10 text-center">
+                    <div className="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
+                        <Trophy className="w-12 h-12 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-semibold">Nenhum Campeonato Ativo</h3>
+                    <p className="text-muted-foreground mt-2">
+                        Ainda não há campeonatos disponíveis para exibir o ranking.
+                        <br />
+                        Por favor, volte mais tarde ou contate um administrador.
+                    </p>
+                </CardContent>
+            </Card>
         )}
       </div>
     </TooltipProvider>
   );
 }
-
