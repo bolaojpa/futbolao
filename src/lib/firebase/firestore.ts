@@ -191,18 +191,10 @@ export async function deleteTeams(teamIds: string[]): Promise<void> {
  */
 export async function getChampionships(): Promise<Championship[]> {
     const championshipsCollection = collection(db, 'championships');
-    // Firestore não permite ordenar por um campo que não existe em todos os documentos (serverTimestamp)
-    // A ordenação será feita no cliente após a busca.
-    const q = query(championshipsCollection);
+    const q = query(championshipsCollection, orderBy('createdAt', 'desc'));
     const championshipSnapshot = await getDocs(q);
     const championshipList = championshipSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
-    
-    // Ordena por data de criação, tratando casos onde o timestamp ainda não foi setado pelo servidor
-    return championshipList.sort((a, b) => {
-        const timeA = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : 0;
-        const timeB = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : 0;
-        return timeB - timeA;
-    });
+    return championshipList;
 }
 
 

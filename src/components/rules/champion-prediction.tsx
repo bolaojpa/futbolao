@@ -1,10 +1,9 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { mockChampionships, mockTeams, mockUser } from '@/lib/data';
 import { isFuture, parseISO } from 'date-fns';
 import { Trophy, Save, Info, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -20,16 +19,25 @@ import {
 } from "@/components/ui/accordion";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Separator } from '../ui/separator';
+import type { Championship, Team, UserType } from '@/lib/types';
+import { saveChampionPicks } from '@/app/dashboard/predictions/actions';
 
-export function ChampionPrediction() {
+interface ChampionPredictionProps {
+    championships: Championship[];
+    teams: Team[];
+    user: UserType | null;
+}
+
+export function ChampionPrediction({ championships, teams, user }: ChampionPredictionProps) {
     const { toast } = useToast();
     
     const { openForPrediction, lockedPredictions } = useMemo(() => {
-        const open: (typeof mockChampionships[0])[] = [];
-        const locked: (typeof mockChampionships[0])[] = [];
+        const open: Championship[] = [];
+        const locked: Championship[] = [];
+        if (!user) return { openForPrediction: [], lockedPredictions: [] };
 
-        mockChampionships.forEach(champ => {
-            const hasPrediction = mockUser.championPicks?.some(p => p.championshipId === champ.id);
+        championships.forEach(champ => {
+            const hasPrediction = user.championPicks?.some(p => p.championshipId === champ.id);
             if (!champ.championPredictionSettings?.active) return;
             
             const startDateString = typeof champ.dataInicio === 'string' ? champ.dataInicio : champ.dataInicio.toISOString();
@@ -42,12 +50,12 @@ export function ChampionPrediction() {
             }
         });
         return { openForPrediction: open, lockedPredictions: locked };
-    }, []);
+    }, [championships, user]);
 
     const [predictions, setPredictions] = useState<Record<string, string[]>>(() => {
         const initialState: Record<string, string[]> = {};
-        if (mockUser.championPicks) {
-            for (const pick of mockUser.championPicks) {
+        if (user?.championPicks) {
+            for (const pick of user.championPicks) {
                 initialState[pick.championshipId] = pick.teams;
             }
         }
@@ -56,8 +64,8 @@ export function ChampionPrediction() {
 
     const [savedPicks, setSavedPicks] = useState<Record<string, boolean>>(() => {
         const initialState: Record<string, boolean> = {};
-        if (mockUser.championPicks) {
-            for (const pick of mockUser.championPicks) {
+        if (user?.championPicks) {
+            for (const pick of user.championPicks) {
                 initialState[pick.championshipId] = true;
             }
         }
@@ -77,12 +85,12 @@ export function ChampionPrediction() {
     };
 
     const getTeamOptions = (championshipId: string, currentIndex: number) => {
-        const championship = mockChampionships.find(c => c.id === championshipId);
+        const championship = championships.find(c => c.id === championshipId);
         if (!championship || !championship.teamIds) return [];
         
         const participatingTeams = championship.teamIds
-            .map(id => mockTeams.find(team => team.id === id))
-            .filter(Boolean as (value: any) => value is NonNullable<any>);
+            .map(id => teams.find(team => team.id === id))
+            .filter(Boolean as (value: any) => value is Team);
             
         const selectedValues = (predictions[championshipId] || []).filter((_, index) => index !== currentIndex);
         
@@ -91,27 +99,27 @@ export function ChampionPrediction() {
             .map(team => ({ label: team!.name, value: team!.name }));
     };
 
-    const handleSave = (championshipId: string, championshipName: string) => {
-        console.log(`Salvando palpites para ${championshipName}:`, predictions[championshipId]);
-        toast({
-            title: "Palpites Salvos!",
-            description: `Seus palpites de campeão para "${championshipName}" foram salvos com sucesso.`,
-        });
-        setSavedPicks(prev => ({...prev, [championshipId]: true}));
+    const handleSave = async (championshipId: string, championshipName: string) => {
+        if (!user) return;
+        const currentPicks = predictions[championshipId];
+        const res = await saveChampionPicks(user.id, championshipId, currentPicks);
+        if (res.success) {
+            toast({
+                title: "Palpites Salvos!",
+                description: `Seus palpites de campeão para "${championshipName}" foram salvos com sucesso.`,
+            });
+            setSavedPicks(prev => ({...prev, [championshipId]: true}));
+        } else {
+             toast({
+                title: "Erro ao Salvar",
+                description: res.error,
+                variant: "destructive",
+            });
+        }
     };
 
-    if (openForPrediction.length === 0 && lockedPredictions.length === 0) {
-        return (
-            <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
-                     <div className="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
-                        <Trophy className="w-10 h-10" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Nenhum Palpite de Campeão Disponível</h3>
-                    <p className="text-sm">No momento, não há campeonatos aceitando palpites de longo prazo.</p>
-                </CardContent>
-            </Card>
-        );
+    if (!user || (openForPrediction.length === 0 && lockedPredictions.length === 0)) {
+        return null;
     }
 
     return (
@@ -206,7 +214,7 @@ export function ChampionPrediction() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {userPicks.map((pickName, index) => {
-                                                const team = mockTeams.find(t => t.name === pickName);
+                                                const team = teams.find(t => t.name === pickName);
                                                 return (
                                                     <Tooltip key={index}>
                                                         <TooltipTrigger asChild>
