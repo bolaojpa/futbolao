@@ -19,11 +19,11 @@ function ToastListener() {
   useEffect(() => {
     if (!user) return;
 
-    // Consulta ajustada: filtra pelo usuário e ordena pela data, o que é compatível com o índice existente.
+    // Consulta simplificada para evitar a necessidade de um índice composto.
+    // A filtragem de notificações "novas" é feita no lado do cliente.
     const q = query(
       collection(db, 'toast_notifications'),
-      where('userId', '==', user.id),
-      orderBy('createdAt', 'asc')
+      where('userId', '==', user.id)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
