@@ -141,22 +141,24 @@ export default function AdminDashboardPage() {
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao.tradicional;
-
-        if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) return { pontos: 0, exato: false, situacao: false };
-        
-        const acertouPlacar = guessA === finalA && guessB === finalB;
-        if (acertouPlacar) {
-            return { pontos: pontuacao.exato, exato: true, situacao: false }; 
+    
+        if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) {
+            return { pontos: 0, exato: false, situacao: false };
         }
-
+    
+        const acertouPlacarExato = guessA === finalA && guessB === finalB;
+        if (acertouPlacarExato) {
+            return { pontos: pontuacao.exato, exato: true, situacao: false }; // Situação é falsa se o placar for exato
+        }
+    
         const finalWinner = finalA > finalB ? 'A' : finalA < finalB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
-
+    
         if (finalWinner === guessWinner) {
             return { pontos: pontuacao.situacao, exato: false, situacao: true };
         }
-        
-        return { pontos: 0, exato: false, situacao: false }; // Errou tudo
+    
+        return { pontos: 0, exato: false, situacao: false };
     };
 
 
@@ -444,4 +446,5 @@ export default function AdminDashboardPage() {
             </div>
         </TooltipProvider>
     );
-}
+
+    
