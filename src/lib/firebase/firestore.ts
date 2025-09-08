@@ -67,80 +67,71 @@ export async function deleteUsers(userIds: string[]): Promise<void> {
 
 /**
  * Updates a user's stats for a specific championship after a match is finalized.
- * This function handles creating the stats object if it doesn't exist and recalculates stats.
+ * This function handles creating the stats object if it doesn't exist and increments stats.
  * @param userId The ID of the user to update.
- * @param finalizedMatch The match that was just finalized.
- * @param userPrediction The user's prediction for the finalized match.
- * @param championship The championship object for scoring rules.
+ * @param championshipId The ID of the championship for which to update stats.
+ * @param pointsGanhos The points earned in the finalized match.
+ * @param isAcertoExato Whether the prediction was an exact score match.
+ * @param isAcertoSituacao Whether the prediction matched the winner/draw.
+ * @param predictionId The ID of the prediction document to update with the points.
  */
 export async function updateUserStatsAfterMatch(
     userId: string, 
-    finalizedMatch: Match,
-    userPrediction: Prediction,
-    championship: Championship
+    championshipId: string,
+    pointsGanhos: number,
+    isAcertoExato: boolean,
+    isAcertoSituacao: boolean,
+    predictionId: string
 ) {
     const userRef = doc(db, 'users', userId);
+    const predictionRef = doc(db, 'predictions', predictionId);
 
     try {
         await runTransaction(db, async (transaction) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists()) {
-                throw "Document does not exist!";
+                throw new Error(`User with ID ${userId} does not exist!`);
             }
+
+            // 1. Update a pontuação no documento de palpite
+            transaction.update(predictionRef, { pontos: pointsGanhos });
 
             const userData = userDoc.data() as UserType;
-            const pontuacao = championship.pontuacao.tradicional;
 
-            let pontosGanhos = 0;
-            let acertosExatosGanhos = 0;
-            let acertosSituacaoGanhos = 0;
-
-            const acertouPlacar = userPrediction.palpiteUsuario.placarA === finalizedMatch.placarA && userPrediction.palpiteUsuario.placarB === finalizedMatch.placarB;
-            const finalWinner = finalizedMatch.placarA! > finalizedMatch.placarB! ? 'A' : finalizedMatch.placarA! < finalizedMatch.placarB! ? 'B' : 'E';
-            const guessWinner = userPrediction.palpiteUsuario.placarA > userPrediction.palpiteUsuario.placarB ? 'A' : userPrediction.palpiteUsuario.placarA < userPrediction.palpiteUsuario.placarB ? 'B' : 'E';
-            
-            if (acertouPlacar) {
-                pontosGanhos = pontuacao.exato;
-                acertosExatosGanhos = 1;
-            } else if (finalWinner === guessWinner) {
-                pontosGanhos = pontuacao.situacao;
-                acertosSituacaoGanhos = 1;
-            }
-
-            // Atualiza o documento de palpite com os pontos ganhos
-            const predictionRef = doc(db, 'predictions', userPrediction.id!);
-            transaction.update(predictionRef, { pontos: pontosGanhos });
-
-
+            // 2. Garante que championshipStats exista
             let champStats = [...(userData.championshipStats || [])];
-            let statsIndex = champStats.findIndex(s => s.championshipId === championship.id);
+            let statsIndex = champStats.findIndex(s => s.championshipId === championshipId);
 
             if (statsIndex === -1) {
                 // Se não existem stats para este campeonato, cria um novo registro
                 const newStats = {
-                    championshipId: championship.id,
-                    pontos: pontosGanhos,
-                    acertosExatos: acertosExatosGanhos,
-                    acertosSituacao: acertosSituacaoGanhos,
-                    maiorSequencia: 0, // Lógica de sequência a ser implementada
+                    championshipId: championshipId,
+                    pontos: pointsGanhos,
+                    acertosExatos: isAcertoExato ? 1 : 0,
+                    acertosSituacao: isAcertoSituacao ? 1 : 0,
+                    maiorSequencia: isAcertoExato ? 1 : 0, // Inicia a sequência se acertar de primeira
                 };
                 champStats.push(newStats);
             } else {
                 // Se já existem, incrementa os valores
                 const existingStats = champStats[statsIndex];
-                existingStats.pontos += pontosGanhos;
-                existingStats.acertosExatos += acertosExatosGanhos;
-                existingStats.acertosSituacao += acertosSituacaoGanhos;
-                // Lógica para maiorSequencia precisaria ser mais elaborada
+                existingStats.pontos += pointsGanhos;
+                existingStats.acertosExatos += isAcertoExato ? 1 : 0;
+                existingStats.acertosSituacao += isAcertoSituacao ? 1 : 0;
+                // Lógica de sequência de acertos precisaria de mais contexto para ser implementada corretamente
             }
             
+            // 3. Atualiza o documento do usuário com os novos stats e incrementa o total de jogos
             transaction.update(userRef, { 
                 championshipStats: champStats,
-                totalJogos: increment(1), // Incrementa o total de jogos
+                totalJogos: increment(1),
+                ultimaAtividade: serverTimestamp(),
             });
         });
     } catch (e) {
-        console.error("Transaction failed: ", e);
+        console.error("User stats update transaction failed: ", e);
+        // Lançar o erro novamente para que o chamador saiba que a operação falhou
+        throw e;
     }
 }
 

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -198,7 +197,8 @@ export default function AdminDashboardPage() {
             for (const prediction of match.predictions) {
                 const user = allUsers.find(u => u.id === prediction.userId);
                 if (user) {
-                     await updateUserStatsAfterMatch(user.id, finalizedMatch, prediction, championship);
+                     const result = calculatePointsForSingleMatch(finalizedMatch, prediction);
+                     await updateUserStatsAfterMatch(user.id, championship.id, result.pontos, result.exato, result.situacao, prediction.id!);
 
                     // 3. (Opcional) Envia notificação por IA
                     if (enableAiNotifications) {

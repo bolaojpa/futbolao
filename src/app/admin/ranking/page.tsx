@@ -123,22 +123,24 @@ export default function AdminRankingPage() {
     return allUsers.map(user => {
       const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
       const basePoints = stats?.pontos ?? 0;
+      const baseExatos = stats?.acertosExatos ?? 0;
+      const baseSituacoes = stats?.acertosSituacao ?? 0;
 
       let livePoints = 0;
-        liveMatches.forEach(match => {
-            if(match.campeonatoId === selectedChampionshipId) {
-                const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
-                if (prediction) {
-                    livePoints += calculateLivePoints(match, prediction);
-                }
-            }
-        });
+      liveMatches.forEach(match => {
+          if(match.campeonatoId === selectedChampionshipId) {
+              const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
+              if (prediction) {
+                  livePoints += calculateLivePoints(match, prediction);
+              }
+          }
+      });
 
       return {
         ...user,
         pontos: basePoints + livePoints,
-        exatos: stats?.acertosExatos ?? 0,
-        situacoes: stats?.acertosSituacao ?? 0,
+        exatos: baseExatos,
+        situacoes: baseSituacoes,
       }
     });
   }, [allUsers, selectedChampionshipId, liveMatches, allPredictions, championships]);
@@ -334,5 +336,3 @@ export default function AdminRankingPage() {
     </TooltipProvider>
   );
 }
-
-    
