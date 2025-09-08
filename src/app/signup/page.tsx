@@ -68,6 +68,9 @@ export default function SignupPage() {
                 status: 'pendente',
                 funcao: 'usuario',
                 dataCadastro: serverTimestamp(),
+                titulos: 0,
+                totalJogos: 0,
+                championshipStats: [],
             });
             
             router.push('/pending-approval');
@@ -105,6 +108,9 @@ export default function SignupPage() {
                 status: 'pendente',
                 funcao: 'usuario',
                 dataCadastro: serverTimestamp(),
+                titulos: 0,
+                totalJogos: 0,
+                championshipStats: [],
             }, { merge: true }); // Merge to not overwrite existing data if user logs in again
 
             router.push('/pending-approval');
