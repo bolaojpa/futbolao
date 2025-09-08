@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, CalendarCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion, savePrediction } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
@@ -22,7 +22,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getMatches, getPredictionsForUser, getTeams, getUsers } from '@/lib/firebase/firestore';
 import { doc, getDoc, onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Badge } from '../ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { ChampionPrediction } from '@/components/rules/champion-prediction';
 import { Separator } from '@/components/ui/separator';
 
@@ -57,7 +57,7 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
 };
 
 
-export function PredictionForm({ championships }: { championships: Championship[] }) {
+export default function PredictionsPage() {
     const { toast } = useToast();
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
@@ -67,6 +67,7 @@ export function PredictionForm({ championships }: { championships: Championship[
     const [allUsers, setAllUsers] = useState<UserType[]>([]);
     const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
     const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
+    const [championships, setChampionships] = useState<Championship[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -341,157 +342,173 @@ export function PredictionForm({ championships }: { championships: Championship[
     }
 
     return (
-        <TooltipProvider>
-            <div className="space-y-8">
-                {Object.entries(groupedMatches).map(([phase, matches]) => (
-                     <div key={phase} className="space-y-4">
-                        <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
-                        {matches.map((match) => {
-                            const userPrediction = userPredictions.find(p => p.matchId === match.id);
-                            const isEditing = !!userPrediction;
-                            const currentScore = scores[match.id] || { placarA: userPrediction?.palpiteUsuario.placarA ?? null, placarB: userPrediction?.palpiteUsuario.placarB ?? null };
-                            const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
-                            const teamA = allTeams.find(t => t.name === match.timeA);
-                            const teamB = allTeams.find(t => t.name === match.timeB);
-                            const isLocked = match.predictionsLocked || isPast(parseISO(match.data));
-                            const championship = championships.find(c => c.id === match.campeonatoId);
-                            const allowAiAssist = championship?.predictionAssist?.active ?? false;
-                            
-                            return (
-                                <Card 
-                                    key={match.id} 
-                                    id={match.id} 
-                                    ref={(el) => matchRefs.current[match.id] = el}
-                                    className={cn("relative overflow-hidden scroll-mt-20", needsAttention && !isLocked && "border-accent animate-pulse", isLocked && "bg-muted/30")}
-                                >
-                                    {needsAttention && !isLocked && (
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <div className="absolute top-2 left-2 z-10">
-                                                    <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="right">
-                                                <p>Palpite necessário! Esta partida começa em breve.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    )}
-                                    <CardHeader className='pb-2 pt-4 text-center'>
-                                        <CardTitle className="text-base font-semibold flex items-center justify-center gap-2">
-                                            {match.campeonato}
-                                        </CardTitle>
-                                        <div className="text-xs text-muted-foreground">
-                                            <UpcomingMatchDate matchDateString={match.data} />
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex items-center justify-around w-full gap-2">
-                                            <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{match.timeA}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-
-                                            <div className="flex items-center justify-center gap-2">
-                                                {isLocked ? (
-                                                    <div className="flex items-center justify-center w-44 h-12 text-center text-2xl font-bold bg-muted/50 rounded-md">
-                                                        {currentScore.placarA !== null ? (
-                                                            <span>{currentScore.placarA} - {currentScore.placarB}</span>
-                                                        ) : (
-                                                            <Lock className="h-6 w-6 text-muted-foreground" />
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
-                                                        <span className="font-bold text-muted-foreground text-lg">x</span>
-                                                        <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
-                                                    </>
-                                                )}
-                                            </div>
-                                            
-                                            <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{match.timeB}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                                <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                    <CardFooter className="flex flex-col gap-2 p-4">
-                                        <div className='text-center h-4 mb-2'>
-                                             {isLocked ? (
-                                                <Badge variant="destructive">Palpites Encerrados</Badge>
-                                             ) : lastUpdated[match.id] && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    {`Alterado em ${format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}`}
-                                                </p>
-                                            )}
-                                        </div>
-                                        {!isLocked && (
-                                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                                {allowAiAssist && (
-                                                    <Button 
-                                                        variant="outline" 
-                                                        onClick={() => handleAiSuggestion(match)} 
-                                                        disabled={loadingAi[match.id]}
-                                                        className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                                    >
-                                                        {loadingAi[match.id] ? (
-                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                        ) : (
-                                                            <BrainCircuit className="mr-2 h-4 w-4" />
-                                                        )}
-                                                        Consultar IA
-                                                    </Button>
-                                                )}
-                                                <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
-                                                    <Save className="mr-2 h-4 w-4" />
-                                                    {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </CardFooter>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                ))}
+        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
+            <div className="flex items-center gap-4">
+                 <CalendarCheck className="h-8 w-8 text-primary" />
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">Meus Palpites</h1>
+                    <p className="text-muted-foreground">
+                        Registre ou altere seus palpites para as próximas partidas.
+                    </p>
+                </div>
             </div>
 
-            <Dialog open={aiModalState.open} onOpenChange={(isOpen) => setAiModalState(prev => ({...prev, open: isOpen}))}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                             <Wand2 className="h-5 w-5 text-primary" />
-                             Sugestão Estratégica da IA
-                        </DialogTitle>
-                         {aiModalState.match && (
-                            <DialogDescription>
-                                Confronto: <strong>{aiModalState.match.timeA} vs {aiModalState.match.timeB}</strong>
-                            </DialogDescription>
-                        )}
-                    </DialogHeader>
-                    <div className="py-4 space-y-4">
-                        <div className="text-center bg-muted p-4 rounded-md">
-                             <p className="font-semibold text-lg">{aiModalState.suggestion}</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{aiModalState.justification}</p>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <ChampionPrediction championships={championships} teams={allTeams} user={user} />
+            
+            <TooltipProvider>
+                <div className="space-y-8">
+                    {Object.entries(groupedMatches).map(([phase, matches]) => (
+                        <div key={phase} className="space-y-4">
+                            <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
+                            {matches.map((match) => {
+                                const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                                const isEditing = !!userPrediction;
+                                const currentScore = scores[match.id] || { placarA: userPrediction?.palpiteUsuario.placarA ?? null, placarB: userPrediction?.palpiteUsuario.placarB ?? null };
+                                const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
+                                const teamA = allTeams.find(t => t.name === match.timeA);
+                                const teamB = allTeams.find(t => t.name === match.timeB);
+                                const isLocked = match.predictionsLocked || isPast(parseISO(match.data));
+                                const championship = championships.find(c => c.id === match.campeonatoId);
+                                const allowAiAssist = championship?.predictionAssist?.active ?? false;
+                                
+                                return (
+                                    <Card 
+                                        key={match.id} 
+                                        id={match.id} 
+                                        ref={(el) => matchRefs.current[match.id] = el}
+                                        className={cn("relative overflow-hidden scroll-mt-20", needsAttention && !isLocked && "border-accent animate-pulse", isLocked && "bg-muted/30")}
+                                    >
+                                        {needsAttention && !isLocked && (
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="absolute top-2 left-2 z-10">
+                                                        <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="right">
+                                                    <p>Palpite necessário! Esta partida começa em breve.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )}
+                                        <CardHeader className='pb-2 pt-4 text-center'>
+                                            <CardTitle className="text-base font-semibold flex items-center justify-center gap-2">
+                                                {match.campeonato}
+                                            </CardTitle>
+                                            <div className="text-xs text-muted-foreground">
+                                                <UpcomingMatchDate matchDateString={match.data} />
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="flex items-center justify-around w-full gap-2">
+                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>{match.timeA}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
 
-        </TooltipProvider>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {isLocked ? (
+                                                        <div className="flex items-center justify-center w-44 h-12 text-center text-2xl font-bold bg-muted/50 rounded-md">
+                                                            {currentScore.placarA !== null ? (
+                                                                <span>{currentScore.placarA} - {currentScore.placarB}</span>
+                                                            ) : (
+                                                                <Lock className="h-6 w-6 text-muted-foreground" />
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
+                                                            <span className="font-bold text-muted-foreground text-lg">x</span>
+                                                            <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
+                                                        </>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>{match.timeB}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                        <CardFooter className="flex flex-col gap-2 p-4">
+                                            <div className='text-center h-4 mb-2'>
+                                                {isLocked ? (
+                                                    <Badge variant="destructive">Palpites Encerrados</Badge>
+                                                ) : lastUpdated[match.id] && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {`Alterado em ${format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}`}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            {!isLocked && (
+                                                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                                    {allowAiAssist && (
+                                                        <Button 
+                                                            variant="outline" 
+                                                            onClick={() => handleAiSuggestion(match)} 
+                                                            disabled={loadingAi[match.id]}
+                                                            className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                                        >
+                                                            {loadingAi[match.id] ? (
+                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <BrainCircuit className="mr-2 h-4 w-4" />
+                                                            )}
+                                                            Consultar IA
+                                                        </Button>
+                                                    )}
+                                                    <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
+                                                        <Save className="mr-2 h-4 w-4" />
+                                                        {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </CardFooter>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
+
+                <Dialog open={aiModalState.open} onOpenChange={(isOpen) => setAiModalState(prev => ({...prev, open: isOpen}))}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Wand2 className="h-5 w-5 text-primary" />
+                                Sugestão Estratégica da IA
+                            </DialogTitle>
+                            {aiModalState.match && (
+                                <DialogDescription>
+                                    Confronto: <strong>{aiModalState.match.timeA} vs {aiModalState.match.timeB}</strong>
+                                </DialogDescription>
+                            )}
+                        </DialogHeader>
+                        <div className="py-4 space-y-4">
+                            <div className="text-center bg-muted p-4 rounded-md">
+                                <p className="font-semibold text-lg">{aiModalState.suggestion}</p>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{aiModalState.justification}</p>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+            </TooltipProvider>
+        </div>
     );
 }
+
+    
