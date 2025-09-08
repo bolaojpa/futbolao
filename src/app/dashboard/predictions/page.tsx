@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -103,26 +102,28 @@ export default function PredictionsPage() {
             return;
         }
 
-        async function fetchInitialData() {
+        async function fetchStaticData() {
             setLoadingData(true);
             try {
-                // Teams are static enough to be fetched once.
                 const [teamsData, usersData] = await Promise.all([getTeams(), getUsers()]);
                 setAllTeams(teamsData);
                 setAllUsers(usersData);
-
             } catch (error) {
                 toast({ title: "Erro ao buscar dados", description: "Não foi possível carregar equipes e usuários.", variant: "destructive" });
             } finally {
                 setLoadingData(false);
             }
         }
-        fetchInitialData();
+        fetchStaticData();
         
-        // Listen to matches and predictions in real-time
         const unsubMatches = onSnapshot(collection(db, 'matches'), (snapshot) => {
             const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
             setAllMatches(matchesData);
+        });
+
+        const unsubChampionships = onSnapshot(collection(db, 'championships'), (snapshot) => {
+            const championshipsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
+            setChampionships(championshipsData);
         });
 
         const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
@@ -162,6 +163,7 @@ export default function PredictionsPage() {
         return () => {
             unsubMatches();
             unsubPredictions();
+            unsubChampionships();
         };
 
     }, [authLoading, user, router, toast]);
@@ -317,11 +319,11 @@ export default function PredictionsPage() {
 
 
     if (authLoading || loadingData) {
-        return <div className="space-y-6">
+        return <div className="space-y-6 p-4 sm:p-6 lg:p-8">
             {[1, 2, 3].map(i => (
                 <Card key={i}>
                     <CardHeader>
-                        <CardTitle>Carregando Partidas...</CardTitle>
+                        <Skeleton className="h-6 w-1/2" />
                     </CardHeader>
                     <CardContent>
                         <div className="h-24 bg-muted rounded-md animate-pulse"></div>
@@ -333,9 +335,10 @@ export default function PredictionsPage() {
 
     if (Object.keys(groupedMatches).length === 0) {
         return (
-             <Card>
-                <CardContent className="p-6 text-center">
-                     <p>Não há partidas abertas para palpites no momento. Volte mais tarde!</p>
+             <Card className="m-4 sm:m-6 lg:m-8">
+                <CardContent className="p-10 text-center">
+                     <p className="text-lg font-semibold">Tudo em dia!</p>
+                     <p className="text-muted-foreground">Não há partidas abertas para palpites no momento. Volte mais tarde!</p>
                 </CardContent>
             </Card>
         )
@@ -510,5 +513,3 @@ export default function PredictionsPage() {
         </div>
     );
 }
-
-    
