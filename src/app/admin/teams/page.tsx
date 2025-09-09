@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -217,7 +218,7 @@ export default function AdminTeamsPage() {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Image src={team.crestUrl} alt={`Escudo do ${team.name}`} width={40} height={40} className="rounded-sm object-contain" />
+                                            <Image src={team.crestUrl} alt={`Escudo do ${team.name}`} width={40} height={32} className="object-contain" />
                                         </TableCell>
                                         <TableCell className="font-medium">{team.name}</TableCell>
                                     </TableRow>
