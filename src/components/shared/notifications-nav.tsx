@@ -39,8 +39,7 @@ export function NotificationsNav() {
 
         const q = query(
             collection(db, "notifications"),
-            where("userId", "==", user.id),
-            orderBy("createdAt", "desc")
+            where("userId", "==", user.id)
         );
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -49,6 +48,10 @@ export function NotificationsNav() {
                 ...doc.data(),
                 createdAt: doc.data().createdAt?.toDate() // Converte Timestamp para Date
             } as Notification));
+            
+            // Ordena as notificações no lado do cliente
+            fetchedNotifications.sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime());
+
             setNotifications(fetchedNotifications);
             setLoading(false);
         });

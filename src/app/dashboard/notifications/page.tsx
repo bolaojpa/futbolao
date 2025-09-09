@@ -47,8 +47,7 @@ export default function NotificationsPage() {
         setLoading(true);
         const q = query(
             collection(db, 'notifications'), 
-            where('userId', '==', user.id),
-            orderBy('createdAt', 'desc')
+            where('userId', '==', user.id)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -57,6 +56,10 @@ export default function NotificationsPage() {
                 ...doc.data(),
                 createdAt: doc.data().createdAt.toDate() // Converte Timestamp para Date
             } as Notification));
+
+            // Ordena as notificações no lado do cliente
+            fetchedNotifications.sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime());
+
             setNotifications(fetchedNotifications);
             setLoading(false);
         });
@@ -136,7 +139,7 @@ export default function NotificationsPage() {
                                             )}
                                         </div>
                                         <p className="text-xs text-muted-foreground mt-2">
-                                            <TimeAgo date={notification.createdAt} />
+                                            <TimeAgo date={notification.createdAt as Date} />
                                         </p>
                                     </Link>
                                 </li>
