@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -408,7 +409,7 @@ export default function PredictionsPage() {
                                                     <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeA}`} width={40} height={40} className="object-contain" data-ai-hint="team logo" />
                                                         </TooltipTrigger>
                                                         <TooltipContent>
                                                             <p>{match.timeA}</p>
@@ -437,7 +438,7 @@ export default function PredictionsPage() {
                                                 <div className='flex-1 flex flex-row items-center justify-start gap-3'>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
+                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeB}`} width={40} height={40} className="object-contain" data-ai-hint="team logo" />
                                                         </TooltipTrigger>
                                                         <TooltipContent>
                                                             <p>{match.timeB}</p>
@@ -514,4 +515,3 @@ export default function PredictionsPage() {
         </div>
     );
 }
-

@@ -213,38 +213,38 @@ export default function AdminDashboardPage() {
             setAllUsers(usersAfterUpdate);
 
              // 4. (Opcional) Envia notificação por IA
-            if (enableAiNotifications) {
-                for (const prediction of match.predictions) {
-                    const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
-                    const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
+            // if (enableAiNotifications) {
+            //     for (const prediction of match.predictions) {
+            //         const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
+            //         const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
 
-                    if (userBefore && userAfter) {
-                        const pontosGanhos = calculatePointsForSingleMatch(finalizedMatch, prediction).pontos;
+            //         if (userBefore && userAfter) {
+            //             const pontosGanhos = calculatePointsForSingleMatch(finalizedMatch, prediction).pontos;
                         
-                        const getPosition = (userList: UserType[], userId: string, champId: string) => {
-                             const sorted = userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0))
-                             return sorted.findIndex(u => u.id === userId) + 1;
-                        }
+            //             const getPosition = (userList: UserType[], userId: string, champId: string) => {
+            //                  const sorted = userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0))
+            //                  return sorted.findIndex(u => u.id === userId) + 1;
+            //             }
 
-                        const oldPosition = getPosition(usersBeforeUpdate, userBefore.id, championship.id);
-                        const newPosition = getPosition(usersAfterUpdate, userAfter.id, championship.id);
+            //             const oldPosition = getPosition(usersBeforeUpdate, userBefore.id, championship.id);
+            //             const newPosition = getPosition(usersAfterUpdate, userAfter.id, championship.id);
 
-                        const notificationData = {
-                            apelido: userAfter.apelido,
-                            pontosGanhos: pontosGanhos,
-                            posicaoAnterior: oldPosition > 0 ? oldPosition : usersBeforeUpdate.length,
-                            novaPosicao: newPosition > 0 ? newPosition : usersAfterUpdate.length,
-                            nomePartida: `${match.timeA} vs ${match.timeB}`
-                        };
+            //             const notificationData = {
+            //                 apelido: userAfter.apelido,
+            //                 pontosGanhos: pontosGanhos,
+            //                 posicaoAnterior: oldPosition > 0 ? oldPosition : usersBeforeUpdate.length,
+            //                 novaPosicao: newPosition > 0 ? newPosition : usersAfterUpdate.length,
+            //                 nomePartida: `${match.timeA} vs ${match.timeB}`
+            //             };
 
-                        // generatePerformanceUpdate(notificationData).then(result => {
-                        //     addNotification(userAfter.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
-                        // }).catch(err => {
-                        //     console.error("Falha ao gerar notificação de IA para", userAfter.apelido, err);
-                        // });
-                    }
-                }
-            }
+            //             generatePerformanceUpdate(notificationData).then(result => {
+            //                 addNotification(userAfter.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
+            //             }).catch(err => {
+            //                 console.error("Falha ao gerar notificação de IA para", userAfter.apelido, err);
+            //             });
+            //         }
+            //     }
+            // }
 
 
         } catch (error) {
@@ -332,7 +332,7 @@ export default function AdminDashboardPage() {
                                                     <div className="flex items-center justify-around w-full">
                                                         <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                                             <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={48} height={48} className="object-contain" data-ai-hint="team logo" />
                                                         </div>
                                                         <div className="flex items-center justify-center gap-2 mx-2">
                                                             <Input 
@@ -352,7 +352,7 @@ export default function AdminDashboardPage() {
                                                             />
                                                         </div>
                                                         <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={48} height={48} className="rounded-full border" data-ai-hint="team logo" />
+                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={48} height={48} className="object-contain" data-ai-hint="team logo" />
                                                             <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                         </div>
                                                     </div>
@@ -413,7 +413,7 @@ export default function AdminDashboardPage() {
                                                                                 {chosenTeams.map(team => (
                                                                                     <Tooltip key={team.id}>
                                                                                         <TooltipTrigger>
-                                                                                             <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="rounded-full" />
+                                                                                             <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
                                                                                         </TooltipTrigger>
                                                                                         <TooltipContent><p>{team.name}</p></TooltipContent>
                                                                                     </Tooltip>
@@ -464,5 +464,4 @@ export default function AdminDashboardPage() {
             </div>
         </TooltipProvider>
     );
-
     

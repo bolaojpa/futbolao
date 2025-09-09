@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -220,7 +221,7 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
                                                         <TooltipTrigger asChild>
                                                             <div className="flex items-center gap-1">
                                                                 <span className="text-xs font-bold">{index + 1}º</span>
-                                                                {team && <Image src={team.crestUrl} alt={team.name} width={20} height={20} className="rounded-full" />}
+                                                                {team && <Image src={team.crestUrl} alt={team.name} width={20} height={20} className="object-contain" />}
                                                             </div>
                                                         </TooltipTrigger>
                                                         <TooltipContent><p>{pickName}</p></TooltipContent>
