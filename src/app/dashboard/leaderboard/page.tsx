@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -57,14 +58,6 @@ export default function LeaderboardPage() {
         const champs = await getChampionships();
         // A ordenação já é feita no getChampionships
         setChampionships(champs);
-        if (championshipIdFromQuery) {
-          setSelectedChampionship(championshipIdFromQuery);
-        } else if (champs.length > 0) {
-          // O primeiro campeonato na lista já é o mais recente
-          setSelectedChampionship(champs[0].id);
-        } else {
-          setSelectedChampionship(null);
-        }
       } catch (error) {
         console.error("Failed to fetch championships", error);
       }
@@ -98,7 +91,24 @@ export default function LeaderboardPage() {
       unsubMatches();
       unsubPredictions();
     };
-  }, [championshipIdFromQuery]);
+  }, []);
+
+  useEffect(() => {
+    if (authLoading || !authUser) return;
+
+    if (championshipIdFromQuery) {
+        setSelectedChampionship(championshipIdFromQuery);
+    } else {
+        // Encontra o campeonato mais recente (ativo ou não) em que o usuário está
+        const userChampionships = championships.filter(c => c.participantes.includes(authUser.id));
+        if (userChampionships.length > 0) {
+            setSelectedChampionship(userChampionships[0].id); // O primeiro é o mais recente
+        } else {
+            setSelectedChampionship(null);
+        }
+    }
+}, [championships, championshipIdFromQuery, authUser, authLoading]);
+
 
   const calculateLivePoints = (match: Match, prediction: Prediction): number => {
     if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
@@ -125,9 +135,14 @@ export default function LeaderboardPage() {
   };
 
   const usersWithLiveScore = useMemo(() => {
-    if (!selectedChampionship) return allUsers.map(u => ({ ...u, pontos: 0, exatos: 0, situacoes: 0}));
+    if (!selectedChampionship) return [];
 
-    return allUsers.map(user => {
+    const championshipDetails = championships.find(c => c.id === selectedChampionship);
+    if (!championshipDetails) return [];
+
+    const participantUsers = allUsers.filter(u => championshipDetails.participantes.includes(u.id));
+
+    return participantUsers.map(user => {
         const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
         const basePoints = stats?.pontos ?? 0;
         const baseExatos = stats?.acertosExatos ?? 0;
@@ -206,6 +221,8 @@ export default function LeaderboardPage() {
   if (authLoading || loadingData) {
       return <div className="p-8 flex justify-center items-center h-full"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   }
+  
+  const userChampionshipOptions = championships.filter(c => authUser && c.participantes.includes(authUser.id));
 
   return (
     <TooltipProvider>
@@ -219,7 +236,7 @@ export default function LeaderboardPage() {
             </div>
         </div>
 
-        {championships.length > 0 && selectedChampionship ? (
+        {userChampionshipOptions.length > 0 && selectedChampionship ? (
             <>
                 <div className="w-full md:w-auto mb-8">
                     <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
@@ -227,7 +244,7 @@ export default function LeaderboardPage() {
                             <SelectValue placeholder="Filtrar por campeonato" />
                         </SelectTrigger>
                         <SelectContent>
-                            {championships.map(champ => (
+                            {userChampionshipOptions.map(champ => (
                                 <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
                             ))}
                         </SelectContent>
@@ -367,11 +384,11 @@ export default function LeaderboardPage() {
                     <div className="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
                         <Trophy className="w-12 h-12 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold">Nenhum Campeonato Ativo</h3>
+                    <h3 className="text-xl font-semibold">Nenhum Campeonato para Exibir</h3>
                     <p className="text-muted-foreground mt-2">
-                        Ainda não há campeonatos disponíveis para exibir o ranking.
+                        Você ainda não foi adicionado a nenhum campeonato.
                         <br />
-                        Por favor, volte mais tarde ou contate um administrador.
+                        Peça a um administrador para incluí-lo e volte para ver o ranking.
                     </p>
                 </CardContent>
             </Card>

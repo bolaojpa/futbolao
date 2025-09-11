@@ -112,25 +112,45 @@ export default function DashboardPage() {
         }
     }, [loadingData]);
 
+    const activeChampionship = useMemo(() => {
+        if (!user) return null;
+        // Prioriza campeonatos ativos onde o usuário é participante
+        let champ = allChampionships.find(c => c.status === 'ativo' && c.participantes.includes(user.id));
+        if (champ) return champ;
+        // Se não, pega o último campeonato (ativo ou não) que o usuário participou
+        const userChamps = allChampionships.filter(c => c.participantes.includes(user.id));
+        if (userChamps.length > 0) return userChamps[0]; // Assumindo que estão ordenados por data
+        return null;
+    }, [allChampionships, user]);
+
+    const isUserInActiveChampionship = useMemo(() => {
+        if (!user || !activeChampionship) return false;
+        return activeChampionship.status === 'ativo' && activeChampionship.participantes.includes(user.id);
+    }, [user, activeChampionship]);
+
+
     const liveMatches = useMemo(() => {
+        if (!activeChampionship) return [];
         return allMatches
-            .filter(match => match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data))))
+            .filter(match => match.campeonatoId === activeChampionship.id && (match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data)))))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches, currentTime]);
+    }, [allMatches, activeChampionship, currentTime]);
 
     const upcomingMatches = useMemo(() => {
+        if (!activeChampionship) return [];
         return allMatches
-            .filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)))
+            .filter(match => match.campeonatoId === activeChampionship.id && match.status === 'Agendado' && !isPast(parseISO(match.data)))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
             .slice(0, 6); 
-    }, [allMatches, currentTime]);
+    }, [allMatches, activeChampionship, currentTime]);
 
     const recentMatches = useMemo(() => {
+        if (!activeChampionship) return [];
         return allMatches
-            .filter(match => match.status === 'Finalizado')
-            .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+            .filter(match => match.campeonatoId === activeChampionship.id && match.status === 'Finalizado')
+            .sort((a, b) => new Date(b.data).getTime() - new Date(b.data).getTime())
             .slice(0, 3);
-    }, [allMatches]);
+    }, [allMatches, activeChampionship]);
 
     const calculateLivePoints = (match: Match, prediction: Prediction): number => {
         if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
@@ -157,21 +177,20 @@ export default function DashboardPage() {
     };
     
     const sortedUsers = useMemo(() => {
-        if (allUsers.length === 0) return [];
+        if (!activeChampionship || allUsers.length === 0) return [];
         
-        const usersWithLivePoints = allUsers.map(u => {
-            const activeChampionship = allChampionships.find(c => c.status === 'ativo');
-            const baseStats = u.championshipStats?.find(s => s.championshipId === activeChampionship?.id);
+        const usersInChamp = allUsers.filter(u => activeChampionship.participantes.includes(u.id));
+
+        const usersWithLivePoints = usersInChamp.map(u => {
+            const baseStats = u.championshipStats?.find(s => s.championshipId === activeChampionship.id);
             const basePoints = baseStats?.pontos ?? 0;
             const baseExatos = baseStats?.acertosExatos ?? 0;
             
             let livePoints = 0;
             liveMatches.forEach(match => {
-                if(match.campeonatoId === activeChampionship?.id) {
-                    const prediction = userPredictions.find(p => p.matchId === match.id && p.userId === u.id);
-                    if (prediction) {
-                        livePoints += calculateLivePoints(match, prediction);
-                    }
+                const prediction = userPredictions.find(p => p.matchId === match.id && p.userId === u.id);
+                if (prediction) {
+                    livePoints += calculateLivePoints(match, prediction);
                 }
             });
             return { ...u, pontos: basePoints + livePoints, exatos: baseExatos };
@@ -184,18 +203,12 @@ export default function DashboardPage() {
             const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
             return dateA - dateB;
         });
-    }, [allUsers, allChampionships, liveMatches, userPredictions]);
+    }, [allUsers, activeChampionship, liveMatches, userPredictions]);
 
 
     const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
     const secondPlace = sortedUsers[1] as (UserType & { pontos: number }) | undefined;
     
-    const activeChampionship = useMemo(() => allChampionships.find(c => c.status === 'ativo'), [allChampionships]);
-    const isUserInActiveChampionship = useMemo(() => {
-        if (!user || !activeChampionship) return false;
-        return activeChampionship.participantes.includes(user.id);
-    }, [user, activeChampionship]);
-
     const showLeaderCard = leader && isUserInActiveChampionship;
 
 
@@ -279,7 +292,7 @@ export default function DashboardPage() {
         </div>
     }
 
-    const hasContent = showLeaderCard || liveMatches.length > 0 || upcomingMatches.length > 0 || recentMatches.length > 0;
+    const hasContent = isUserInActiveChampionship && (showLeaderCard || liveMatches.length > 0 || upcomingMatches.length > 0 || recentMatches.length > 0);
 
     return (
         <TooltipProvider>
@@ -564,9 +577,9 @@ export default function DashboardPage() {
                             </div>
                             <h3 className="text-xl font-semibold">Tudo pronto para começar!</h3>
                             <p className="text-muted-foreground mt-2">
-                                Nenhuma atividade de campeonato no momento.
+                                Você ainda não foi adicionado a um campeonato ativo.
                                 <br />
-                                Volte mais tarde para ver as partidas e fazer seus palpites.
+                                Peça ao administrador para incluí-lo e volte para ver as partidas.
                             </p>
                         </CardContent>
                     </Card>

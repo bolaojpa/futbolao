@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, CalendarCheck } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, CalendarCheck, Goal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion, savePrediction } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useRouter } from 'next/navigation';
 import type { Match, Prediction, Team, Championship, UserType } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { getMatches, getPredictionsForUser, getTeams, getUsers } from '@/lib/firebase/firestore';
+import { getMatches, getPredictionsForUser, getTeams, getUsers, getChampionships as fetchChampionships } from '@/lib/firebase/firestore';
 import { doc, getDoc, onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Badge } from '@/components/ui/badge';
@@ -86,15 +86,23 @@ export default function PredictionsPage() {
         return () => clearInterval(timer);
     }, []);
 
+    const activeChampionshipsForUser = useMemo(() => {
+        if (!user) return [];
+        return championships.filter(c => c.status === 'ativo' && c.participantes.includes(user.id));
+    }, [championships, user]);
+
     const displayedMatches = useMemo(() => {
-        // A partida aparece aqui SE E SOMENTE SE o status for 'Agendado' E o jogo ainda não começou.
+        if (activeChampionshipsForUser.length === 0) return [];
+        const activeChampIds = activeChampionshipsForUser.map(c => c.id);
+        
         return allMatches
             .filter(match => {
                 if (match.status !== 'Agendado') return false;
+                if (!activeChampIds.includes(match.campeonatoId)) return false;
                 return !isPast(parseISO(match.data));
             })
             .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches, currentTime]); // Depende do currentTime para reavaliar
+    }, [allMatches, activeChampionshipsForUser, currentTime]);
 
 
     useEffect(() => {
@@ -107,11 +115,12 @@ export default function PredictionsPage() {
         async function fetchStaticData() {
             setLoadingData(true);
             try {
-                const [teamsData, usersData] = await Promise.all([getTeams(), getUsers()]);
+                const [teamsData, usersData, championshipsData] = await Promise.all([getTeams(), getUsers(), fetchChampionships()]);
                 setAllTeams(teamsData);
                 setAllUsers(usersData);
+                setChampionships(championshipsData);
             } catch (error) {
-                toast({ title: "Erro ao buscar dados", description: "Não foi possível carregar equipes e usuários.", variant: "destructive" });
+                toast({ title: "Erro ao buscar dados", description: "Não foi possível carregar equipes, usuários e campeonatos.", variant: "destructive" });
             } finally {
                 setLoadingData(false);
             }
@@ -121,11 +130,6 @@ export default function PredictionsPage() {
         const unsubMatches = onSnapshot(collection(db, 'matches'), (snapshot) => {
             const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
             setAllMatches(matchesData);
-        });
-
-        const unsubChampionships = onSnapshot(collection(db, 'championships'), (snapshot) => {
-            const championshipsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship));
-            setChampionships(championshipsData);
         });
 
         const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
@@ -165,7 +169,6 @@ export default function PredictionsPage() {
         return () => {
             unsubMatches();
             unsubPredictions();
-            unsubChampionships();
         };
 
     }, [authLoading, user, router, toast]);
@@ -337,10 +340,23 @@ export default function PredictionsPage() {
 
     if (Object.keys(groupedMatches).length === 0) {
         return (
-             <Card className="m-4 sm:m-6 lg:m-8">
+             <Card className="m-4 sm:m-6 lg:p-8">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                         <CalendarCheck className="h-6 w-6 text-primary" />
+                        Palpites
+                    </CardTitle>
+                </CardHeader>
                 <CardContent className="p-10 text-center">
+                     <div className="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
+                        <Goal className="w-12 h-12 text-muted-foreground" />
+                    </div>
                      <p className="text-lg font-semibold">Tudo em dia!</p>
-                     <p className="text-muted-foreground">Não há partidas abertas para palpites no momento. Volte mais tarde!</p>
+                     <p className="text-muted-foreground mt-2">
+                        Não há partidas abertas para palpites nos campeonatos em que você participa.
+                        <br/>
+                        Volte mais tarde ou verifique o dashboard.
+                    </p>
                 </CardContent>
             </Card>
         )
