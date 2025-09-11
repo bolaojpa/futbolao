@@ -148,8 +148,13 @@ export default function DashboardPage() {
         if (!activeChampionship) return [];
         return allMatches
             .filter(match => match.campeonatoId === activeChampionship.id && match.status === 'Finalizado')
-            .sort((a, b) => new Date(b.data).getTime() - new Date(b.data).getTime())
+            .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
             .slice(0, 3);
+    }, [allMatches, activeChampionship]);
+
+    const hasChampionshipStarted = useMemo(() => {
+        if (!activeChampionship) return false;
+        return allMatches.some(m => m.campeonatoId === activeChampionship.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
     }, [allMatches, activeChampionship]);
 
     const calculateLivePoints = (match: Match, prediction: Prediction): number => {
@@ -209,7 +214,7 @@ export default function DashboardPage() {
     const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
     const secondPlace = sortedUsers[1] as (UserType & { pontos: number }) | undefined;
     
-    const showLeaderCard = leader && isUserInActiveChampionship;
+    const showLeaderCard = leader && isUserInActiveChampionship && hasChampionshipStarted;
 
 
     const getLeaderMessage = () => {
