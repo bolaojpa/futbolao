@@ -43,7 +43,7 @@ export default function DashboardPage() {
     const [allUsers, setAllUsers] = useState<UserType[]>([]);
     const [allChampionships, setAllChampionships] = useState<Championship[]>([]);
     const [allTeams, setAllTeams] = useState<Team[]>([]);
-    const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
+    const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -84,11 +84,9 @@ export default function DashboardPage() {
                 const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType));
                 setAllUsers(usersData);
             });
-            const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
-                 const predictionsData = snapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() } as Prediction))
-                    .filter(p => p.userId === user.id);
-                 setUserPredictions(predictionsData);
+            const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
+                const predictionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+                setAllPredictions(predictionsData);
             });
 
             return () => {
@@ -157,6 +155,8 @@ export default function DashboardPage() {
         return allMatches.some(m => m.campeonatoId === activeChampionship.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
     }, [allMatches, activeChampionship]);
 
+    const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
+
     const calculateLivePoints = (match: Match, prediction: Prediction): number => {
         if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
         
@@ -193,7 +193,7 @@ export default function DashboardPage() {
             
             let livePoints = 0;
             liveMatches.forEach(match => {
-                const prediction = userPredictions.find(p => p.matchId === match.id && p.userId === u.id);
+                const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === u.id);
                 if (prediction) {
                     livePoints += calculateLivePoints(match, prediction);
                 }
@@ -208,7 +208,7 @@ export default function DashboardPage() {
             const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
             return dateA - dateB;
         });
-    }, [allUsers, activeChampionship, liveMatches, userPredictions]);
+    }, [allUsers, activeChampionship, liveMatches, allPredictions]);
 
 
     const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
@@ -358,18 +358,19 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="w-full space-y-4">
                                     {liveMatches.map((match) => {
-                                        const prediction = userPredictions.find(p => p.matchId === match.id);
-                                        if (!prediction) return null;
+                                        const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                                        if (!userPrediction) return null;
 
-                                        const livePoints = calculateLivePoints(match, prediction);
+                                        const livePoints = calculateLivePoints(match, userPrediction);
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
+                                        const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
 
                                         return (
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
                                                 <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                                                     <Card className={cn('border-accent/50', getPredictionStatusClass(livePoints, match.maxPontos))}>
-                                                        <AccordionTrigger className="p-4 hover:no-underline">
+                                                        <div className="p-4">
                                                             <div className="flex flex-col items-center justify-center w-full">
                                                                 <div className="flex items-center justify-center w-full">
                                                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
@@ -377,7 +378,7 @@ export default function DashboardPage() {
                                                                         <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={48} className="object-contain" data-ai-hint="team logo" />
                                                                     </div>
                                                                     <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
-                                                                        <span>{`${match.placarA ?? 0}`} - {`${match.placarB ?? 0}`}</span>
+                                                                        <span>{`${match.placarA ?? '?'}`} - {`${match.placarB ?? '?'}`}</span>
                                                                         <Badge variant="destructive" className='mt-2 animate-pulse'>
                                                                             Ao Vivo
                                                                         </Badge>
@@ -388,24 +389,53 @@ export default function DashboardPage() {
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                        </div>
+                                                        <AccordionTrigger className={cn("p-4 hover:no-underline border-t", getPredictionStatusClass(livePoints, match.maxPontos))}>
+                                                            <div className="flex justify-between items-center w-full">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Avatar className="w-8 h-8">
+                                                                        <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                        <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <span className="font-bold">Seu Palpite:</span>
+                                                                </div>
+                                                                <span className="font-mono font-semibold text-base">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
+                                                                <Badge variant={getPointsBadgeVariant(livePoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                                    {livePoints} pts
+                                                                </Badge>
+                                                            </div>
                                                         </AccordionTrigger>
                                                         <AccordionContent>
-                                                            <div className={cn("p-4 border-t", getPredictionStatusClass(livePoints, match.maxPontos))}>
-                                                                <div className="flex justify-between items-center w-full">
-                                                                    <div className="w-1/3 text-left flex items-center gap-2">
-                                                                        <Avatar className="w-8 h-8">
-                                                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                            <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
-                                                                        </Avatar>
-                                                                        <span className="font-bold">Seu Palpite:</span>
-                                                                    </div>
-                                                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
-                                                                    <div className="w-1/3 text-right">
-                                                                        <Badge variant={getPointsBadgeVariant(livePoints, match.maxPontos)} className='whitespace-nowrap'>
-                                                                            {livePoints} pts
-                                                                        </Badge>
-                                                                    </div>
+                                                            <div className="bg-background/80 border-t">
+                                                                <div className="text-center py-2">
+                                                                    <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                                                                 </div>
+                                                                <ul className="text-sm">
+                                                                    {otherPredictions.map((p, i) => {
+                                                                        const otherUser = allUsers.find(u => u.id === p.userId);
+                                                                        if (!otherUser) return null;
+                                                                        const otherLivePoints = calculateLivePoints(match, p);
+                                                                        return (
+                                                                            <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(otherLivePoints, match.maxPontos))}>
+                                                                                <div className="w-1/3 text-left">
+                                                                                    <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
+                                                                                        <Avatar className="w-8 h-8">
+                                                                                            <AvatarImage src={otherUser.fotoPerfil} alt={otherUser.apelido} />
+                                                                                            <AvatarFallback>{otherUser.apelido.substring(0,2)}</AvatarFallback>
+                                                                                        </Avatar>
+                                                                                        <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
+                                                                                    </Link>
+                                                                                </div>
+                                                                                <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                                <div className="w-1/3 text-right">
+                                                                                    <Badge variant={getPointsBadgeVariant(otherLivePoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                                                        {otherLivePoints} pts
+                                                                                    </Badge>
+                                                                                </div>
+                                                                            </li>
+                                                                        );
+                                                                    })}
+                                                                </ul>
                                                             </div>
                                                         </AccordionContent>
                                                     </Card>
@@ -593,3 +623,4 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
