@@ -110,50 +110,46 @@ export default function DashboardPage() {
         }
     }, [loadingData]);
 
-    const activeChampionship = useMemo(() => {
-        if (!user) return null;
-        // Prioriza campeonatos ativos onde o usuário é participante
-        let champ = allChampionships.find(c => c.status === 'ativo' && c.participantes.includes(user.id));
-        if (champ) return champ;
-        // Se não, pega o último campeonato (ativo ou não) que o usuário participou
-        const userChamps = allChampionships.filter(c => c.participantes.includes(user.id));
-        if (userChamps.length > 0) return userChamps[0]; // Assumindo que estão ordenados por data
-        return null;
+    const userChampionships = useMemo(() => {
+        if (!user) return [];
+        return allChampionships.filter(c => c.participantes.includes(user.id));
     }, [allChampionships, user]);
 
     const isUserInActiveChampionship = useMemo(() => {
-        if (!user || !activeChampionship) return false;
-        return activeChampionship.status === 'ativo' && activeChampionship.participantes.includes(user.id);
-    }, [user, activeChampionship]);
-
+        return userChampionships.some(c => c.status === 'ativo');
+    }, [userChampionships]);
 
     const liveMatches = useMemo(() => {
-        if (!activeChampionship) return [];
+        if (userChampionships.length === 0) return [];
+        const userChampionshipIds = userChampionships.map(c => c.id);
         return allMatches
-            .filter(match => match.campeonatoId === activeChampionship.id && (match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data)))))
+            .filter(match => userChampionshipIds.includes(match.campeonatoId) && (match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data)))))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches, activeChampionship, currentTime]);
+    }, [allMatches, userChampionships, currentTime]);
 
     const upcomingMatches = useMemo(() => {
-        if (!activeChampionship) return [];
+        if (userChampionships.length === 0) return [];
+        const userChampionshipIds = userChampionships.map(c => c.id);
         return allMatches
-            .filter(match => match.campeonatoId === activeChampionship.id && match.status === 'Agendado' && !isPast(parseISO(match.data)))
+            .filter(match => userChampionshipIds.includes(match.campeonatoId) && match.status === 'Agendado' && !isPast(parseISO(match.data)))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
             .slice(0, 6); 
-    }, [allMatches, activeChampionship, currentTime]);
+    }, [allMatches, userChampionships, currentTime]);
 
     const recentMatches = useMemo(() => {
-        if (!activeChampionship) return [];
+        if (userChampionships.length === 0) return [];
+        const userChampionshipIds = userChampionships.map(c => c.id);
         return allMatches
-            .filter(match => match.campeonatoId === activeChampionship.id && match.status === 'Finalizado')
+            .filter(match => userChampionshipIds.includes(match.campeonatoId) && match.status === 'Finalizado')
             .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
             .slice(0, 3);
-    }, [allMatches, activeChampionship]);
+    }, [allMatches, userChampionships]);
 
-    const hasChampionshipStarted = useMemo(() => {
-        if (!activeChampionship) return false;
-        return allMatches.some(m => m.campeonatoId === activeChampionship.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
-    }, [allMatches, activeChampionship]);
+    const hasAnyChampionshipStarted = useMemo(() => {
+        if (userChampionships.length === 0) return false;
+        const userChampionshipIds = userChampionships.map(c => c.id);
+        return allMatches.some(m => userChampionshipIds.includes(m.campeonatoId) && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
+    }, [allMatches, userChampionships]);
 
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
@@ -181,21 +177,25 @@ export default function DashboardPage() {
         return 0;
     };
     
+    // Mostra o líder do campeonato mais relevante (o primeiro da lista, que é o mais recente)
     const sortedUsers = useMemo(() => {
-        if (!activeChampionship || allUsers.length === 0) return [];
+        const primaryChampionship = userChampionships.length > 0 ? userChampionships[0] : null;
+        if (!primaryChampionship || allUsers.length === 0) return [];
         
-        const usersInChamp = allUsers.filter(u => activeChampionship.participantes.includes(u.id));
+        const usersInChamp = allUsers.filter(u => primaryChampionship.participantes.includes(u.id));
 
         const usersWithLivePoints = usersInChamp.map(u => {
-            const baseStats = u.championshipStats?.find(s => s.championshipId === activeChampionship.id);
+            const baseStats = u.championshipStats?.find(s => s.championshipId === primaryChampionship.id);
             const basePoints = baseStats?.pontos ?? 0;
             const baseExatos = baseStats?.acertosExatos ?? 0;
             
             let livePoints = 0;
             liveMatches.forEach(match => {
-                const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === u.id);
-                if (prediction) {
-                    livePoints += calculateLivePoints(match, prediction);
+                 if (match.campeonatoId === primaryChampionship.id) {
+                    const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === u.id);
+                    if (prediction) {
+                        livePoints += calculateLivePoints(match, prediction);
+                    }
                 }
             });
             return { ...u, pontos: basePoints + livePoints, exatos: baseExatos };
@@ -208,13 +208,13 @@ export default function DashboardPage() {
             const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
             return dateA - dateB;
         });
-    }, [allUsers, activeChampionship, liveMatches, allPredictions]);
+    }, [allUsers, userChampionships, liveMatches, allPredictions]);
 
 
     const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
     const secondPlace = sortedUsers[1] as (UserType & { pontos: number }) | undefined;
     
-    const showLeaderCard = leader && isUserInActiveChampionship && hasChampionshipStarted;
+    const showLeaderCard = leader && isUserInActiveChampionship && hasAnyChampionshipStarted;
 
 
     const getLeaderMessage = () => {
@@ -359,7 +359,6 @@ export default function DashboardPage() {
                                 <div className="w-full space-y-4">
                                     {liveMatches.map((match) => {
                                         const userPrediction = userPredictions.find(p => p.matchId === match.id);
-                                        const livePoints = userPrediction ? calculateLivePoints(match, userPrediction) : 0;
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
                                         const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
@@ -396,7 +395,7 @@ export default function DashboardPage() {
                                                                 </div>
                                                                 <ul className="text-sm">
                                                                     {userPrediction ? (
-                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(livePoints, match.maxPontos))}>
+                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(calculateLivePoints(match, userPrediction), match.maxPontos))}>
                                                                             <div className="w-1/3 text-left flex items-center gap-2 group">
                                                                                 <Avatar className="w-8 h-8">
                                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
@@ -406,8 +405,8 @@ export default function DashboardPage() {
                                                                             </div>
                                                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
                                                                             <div className="w-1/3 text-right">
-                                                                                <Badge variant={getPointsBadgeVariant(livePoints, match.maxPontos)} className='whitespace-nowrap'>
-                                                                                    {livePoints} pts
+                                                                                <Badge variant={getPointsBadgeVariant(calculateLivePoints(match, userPrediction), match.maxPontos)} className='whitespace-nowrap'>
+                                                                                    {calculateLivePoints(match, userPrediction)} pts
                                                                                 </Badge>
                                                                             </div>
                                                                         </li>
@@ -638,5 +637,6 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
 
