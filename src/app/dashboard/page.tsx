@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/accordion';
 import { format, parseISO, isToday, differenceInHours, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard, ChevronDown, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -359,9 +359,7 @@ export default function DashboardPage() {
                                 <div className="w-full space-y-4">
                                     {liveMatches.map((match) => {
                                         const userPrediction = userPredictions.find(p => p.matchId === match.id);
-                                        if (!userPrediction) return null;
-
-                                        const livePoints = calculateLivePoints(match, userPrediction);
+                                        const livePoints = userPrediction ? calculateLivePoints(match, userPrediction) : 0;
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
                                         const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
@@ -397,21 +395,37 @@ export default function DashboardPage() {
                                                                     <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                                 </div>
                                                                 <ul className="text-sm">
-                                                                    <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(livePoints, match.maxPontos))}>
-                                                                        <div className="w-1/3 text-left flex items-center gap-2 group">
-                                                                            <Avatar className="w-8 h-8">
-                                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                                <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                                                            </Avatar>
-                                                                            <span className="font-bold">Seu Palpite:</span>
-                                                                        </div>
-                                                                        <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
-                                                                        <div className="w-1/3 text-right">
-                                                                            <Badge variant={getPointsBadgeVariant(livePoints, match.maxPontos)} className='whitespace-nowrap'>
-                                                                                {livePoints} pts
-                                                                            </Badge>
-                                                                        </div>
-                                                                    </li>
+                                                                    {userPrediction ? (
+                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(livePoints, match.maxPontos))}>
+                                                                            <div className="w-1/3 text-left flex items-center gap-2 group">
+                                                                                <Avatar className="w-8 h-8">
+                                                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                                                </Avatar>
+                                                                                <span className="font-bold">Seu Palpite:</span>
+                                                                            </div>
+                                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
+                                                                            <div className="w-1/3 text-right">
+                                                                                <Badge variant={getPointsBadgeVariant(livePoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                                                    {livePoints} pts
+                                                                                </Badge>
+                                                                            </div>
+                                                                        </li>
+                                                                    ) : (
+                                                                        <li className="flex justify-between items-center p-4 border-t bg-red-100/80 dark:bg-red-900/40">
+                                                                            <div className="w-1/3 text-left flex items-center gap-2 group">
+                                                                                <Avatar className="w-8 h-8 opacity-70">
+                                                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                                                </Avatar>
+                                                                                <span className="font-bold">Seu Palpite:</span>
+                                                                            </div>
+                                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap text-destructive">? - ?</span>
+                                                                            <div className="w-1/3 text-right">
+                                                                                <Badge variant="destructive">Sem Palpite</Badge>
+                                                                            </div>
+                                                                        </li>
+                                                                    )}
                                                                     {otherPredictions.map((p, i) => {
                                                                         const otherUser = allUsers.find(u => u.id === p.userId);
                                                                         if (!otherUser) return null;
@@ -624,4 +638,5 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
