@@ -4,18 +4,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockHallOfFame, mockUsers } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Award, AlertTriangle, Archive, ArchiveRestore } from 'lucide-react';
+import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Award, AlertTriangle, Archive, ArchiveRestore, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ChampionshipForm } from '@/components/admin/championship-form';
-import type { Championship } from '@/lib/types';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import type { Championship, Match, UserType } from '@/lib/types';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getChampionships, addChampionship, updateChampionship, deleteChampionship } from '@/lib/firebase/firestore';
+import { getChampionships, addChampionship, updateChampionship, deleteChampionship, getMatches, getUsers } from '@/lib/firebase/firestore';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -44,6 +43,8 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
 
 export default function AdminChampionshipsPage() {
     const [championships, setChampionships] = useState<Championship[]>([]);
+    const [allMatches, setAllMatches] = useState<Match[]>([]);
+    const [allUsers, setAllUsers] = useState<UserType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingChampionship, setEditingChampionship] = useState<Championship | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -51,20 +52,26 @@ export default function AdminChampionshipsPage() {
     const [activeTab, setActiveTab] = useState<ChampionshipStatus>('ativo');
     const { toast } = useToast();
 
-    const fetchChampionships = async () => {
+    const fetchData = async () => {
         setIsLoading(true);
         try {
-            const fetchedChampionships = await getChampionships();
-            setChampionships(fetchedChampionships);
+            const [championshipsData, matchesData, usersData] = await Promise.all([
+                getChampionships(),
+                getMatches(),
+                getUsers()
+            ]);
+            setChampionships(championshipsData);
+            setAllMatches(matchesData);
+            setAllUsers(usersData);
         } catch (error) {
-            toast({ title: "Erro ao buscar campeonatos", variant: "destructive" });
+            toast({ title: "Erro ao buscar dados", variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchChampionships();
+        fetchData();
     }, []);
 
     const handleCreate = () => {
@@ -80,7 +87,7 @@ export default function AdminChampionshipsPage() {
     const handleDelete = async (championshipId: string) => {
         try {
             await deleteChampionship(championshipId);
-            await fetchChampionships();
+            await fetchData();
             toast({
                 title: "Campeonato Excluído",
                 description: "O campeonato foi removido com sucesso.",
@@ -94,24 +101,23 @@ export default function AdminChampionshipsPage() {
         const newStatus = status === 'ativo' ? 'arquivado' : 'ativo';
         try {
             await updateChampionship(championshipId, { status: newStatus });
-            await fetchChampionships();
+            await fetchData();
             toast({
                 title: `Campeonato ${newStatus === 'arquivado' ? 'Arquivado' : 'Restaurado'}`,
                 description: `O campeonato foi movido para os ${newStatus === 'arquivado' ? 'arquivados' : 'ativos'}.`,
             });
         } catch (error) {
-            toast({ title: "Erro ao arquivar", variant: "destructive" });
+            toast({ title: "Erro ao arquivar/restaurar", variant: "destructive" });
         }
     }
 
     const handleFinalize = async (championship: Championship) => {
-        // Validação: Verifica se a classificação final foi preenchida, APENAS se o banner estiver ativo
         if (championship.banner.ativo) {
             const isRankingFilled = championship.finalRanking && Object.values(championship.finalRanking).some(v => !!v);
             if (!isRankingFilled) {
                  toast({
                     title: "Finalização Pendente",
-                    description: "Para gerar o banner, é necessário definir a classificação final do campeonato. Edite o campeonato e preencha a seção de 'Classificação Final' na aba 'Banner'.",
+                    description: "Para gerar o banner, é necessário definir a classificação final do campeonato. Edite o campeonato e preencha a seção 'Banner'.",
                     variant: "destructive",
                     duration: 10000,
                 });
@@ -121,24 +127,9 @@ export default function AdminChampionshipsPage() {
 
         try {
             await updateChampionship(championship.id, { status: 'arquivado' });
-             await fetchChampionships();
-            // Simulação da geração de banner
+             await fetchData();
             if (championship.banner.ativo) {
-                // Simulação de lógica para encontrar o campeão do palpite de equipe
-                const melhorPalpiteiro = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-
-                // Em um app real, isso seria salvo em uma coleção 'hallOfFame'
-                mockHallOfFame.push({
-                    id: `hof_${championship.id}`,
-                    campeonatoLogoUrl: championship.banner.campeonatoLogoUrl || "https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png",
-                    campeonatoNome: championship.nome,
-                    campeaoGeralNome: championship.finalRanking?.pos1 || 'N/A',
-                    campeaoGeralAvatarUrl: mockUsers.find(u => u.apelido === championship.finalRanking?.pos1)?.fotoPerfil || "https://picsum.photos/128/128",
-                    modoEquipes: championship.modoEquipes,
-                    palpiteiroNome: melhorPalpiteiro.apelido,
-                    palpiteiroAvatarUrl: melhorPalpiteiro.fotoPerfil,
-                    displayMode: championship.banner.displayMode || 'photo_and_names',
-                });
+                // Lógica de Hall da Fama (pode ser expandida no futuro)
                 toast({
                     title: "Campeonato Finalizado e Banner Criado!",
                     description: `O campeonato "${championship.nome}" foi finalizado e um banner foi adicionado ao Hall da Fama.`,
@@ -154,52 +145,38 @@ export default function AdminChampionshipsPage() {
         }
     };
 
-
     const handleFormSubmit = async (data: Omit<Championship, 'status'>) => {
         try {
-            // Prepara os dados para salvar, convertendo as datas
-            const dataToSave: Partial<Championship> = {
-                ...data,
-                dataInicio: (data.dataInicio as Date).toISOString(),
-                dataFim: (data.dataFim as Date).toISOString(),
-            };
-
-            // Remove campos condicionais que podem ser 'undefined'
-            if (data.tipoCampeonato === 'liga') {
-                delete dataToSave.formatoFases;
-                delete dataToSave.fases;
-            } else {
-                if (data.formatoFases === 'rodadas') {
-                    delete dataToSave.fases;
-                } else {
-                    delete dataToSave.rodadas;
-                }
-            }
-
             if (data.id) {
-                // Atualiza um campeonato existente
-                const { id, ...updateData } = dataToSave;
-                await updateChampionship(id, updateData);
+                // Editando campeonato existente
+                await updateChampionship(data.id, {
+                    ...data,
+                    dataInicio: (data.dataInicio as Date).toISOString(),
+                    dataFim: (data.dataFim as Date).toISOString(),
+                });
                 toast({
                     title: "Campeonato Atualizado",
                     description: `O campeonato "${data.nome}" foi atualizado.`,
                 });
             } else {
-                // Cria um novo campeonato
-                const { id, ...createData } = dataToSave;
-                await addChampionship({ ...createData, status: 'ativo' } as Omit<Championship, 'id'>);
+                // Criando novo campeonato
+                await addChampionship({
+                    ...data,
+                    dataInicio: (data.dataInicio as Date).toISOString(),
+                    dataFim: (data.dataFim as Date).toISOString(),
+                });
                 toast({
                     title: "Campeonato Criado!",
                     description: `O campeonato "${data.nome}" foi adicionado.`,
                 });
             }
-            await fetchChampionships();
+            await fetchData();
         } catch (error) {
             console.error("Error saving championship: ", error);
             toast({ title: `Erro ao salvar campeonato`, description: "Verifique o console para mais detalhes.", variant: 'destructive' });
         }
     };
-
+    
     const filteredChampionships = useMemo(() => 
         [...championships]
             .filter(c => c.status === activeTab)
@@ -216,6 +193,14 @@ export default function AdminChampionshipsPage() {
         setCurrentPage(1);
     }, [activeTab]);
 
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -238,6 +223,7 @@ export default function AdminChampionshipsPage() {
                         setIsOpen={setIsFormOpen}
                         onSubmit={handleFormSubmit}
                         championship={editingChampionship}
+                        allMatches={allMatches}
                      >
                         <Button onClick={handleCreate}>
                             Criar Novo Campeonato

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -34,7 +33,7 @@ import { Calendar } from '../ui/calendar';
 import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import type { Championship, Team, UserType } from '@/lib/types';
+import type { Championship, Match, Team, UserType } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
@@ -138,16 +137,24 @@ interface ChampionshipFormProps {
     setIsOpen: (open: boolean) => void;
     onSubmit: (data: Omit<Championship, 'status'>) => void;
     championship: Championship | null;
+    allMatches: Match[];
     children: React.ReactNode;
 }
 
-export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, children }: ChampionshipFormProps) {
+export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, allMatches, children }: ChampionshipFormProps) {
   const [fasesList, setFasesList] = useState<Array<Fase>>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [teamSearch, setTeamSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  
+  const isChampionshipStarted = useMemo(() => {
+    if (!championship) return false;
+    return allMatches.some(
+      match => match.campeonatoId === championship.id && (match.status === 'Ao Vivo' || match.status === 'Finalizado')
+    );
+  }, [championship, allMatches]);
   
   useEffect(() => {
     async function fetchData() {
@@ -375,8 +382,14 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                         <TooltipContent><p>Equipes</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
-                        <TooltipTrigger asChild><TabsTrigger value="participants"><Users className="md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
-                        <TooltipContent><p>Participantes</p></TooltipContent>
+                        <TooltipTrigger asChild><TabsTrigger value="participants" disabled={isChampionshipStarted}><Users className="md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent>
+                            {isChampionshipStarted ? (
+                                <p>Não é possível editar participantes após o início do campeonato.</p>
+                            ) : (
+                                <p>Participantes</p>
+                            )}
+                        </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild><TabsTrigger value="scoring"><Percent className="md:mr-2" /><span className="hidden md:inline">Pontuação</span></TabsTrigger></TooltipTrigger>
