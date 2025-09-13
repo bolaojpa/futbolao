@@ -119,8 +119,13 @@ export default function AdminRankingPage() {
   
   const usersWithStatsForChampionship = useMemo(() => {
     if (!selectedChampionshipId) return [];
+    
+    const selectedChampionship = championships.find(c => c.id === selectedChampionshipId);
+    if (!selectedChampionship) return [];
 
-    return allUsers.map(user => {
+    const participantUsers = allUsers.filter(user => selectedChampionship.participantes.includes(user.id));
+
+    return participantUsers.map(user => {
       const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
       const basePoints = stats?.pontos ?? 0;
       const baseExatos = stats?.acertosExatos ?? 0;
@@ -336,3 +341,4 @@ export default function AdminRankingPage() {
     </TooltipProvider>
   );
 }
+
