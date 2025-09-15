@@ -302,7 +302,7 @@ export default function HistoryPage() {
                 const teamA = allTeams.find(t => t.name === match.timeA);
                 const teamB = allTeams.find(t => t.name === match.timeB);
                 const champ = championships.find(c => c.id === match.campeonatoId);
-                const isChampionshipStarted = champ ? isPast(parseISO(champ.dataInicio as string)) : false;
+                const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
                 const maxPointsForMatch = champ?.pontuacao.tradicional.exato ?? 0;
 
                 return (
@@ -450,3 +450,4 @@ export default function HistoryPage() {
     </div>
   );
 }
+
