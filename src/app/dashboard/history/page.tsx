@@ -388,7 +388,7 @@ export default function HistoryPage() {
                                                         <TooltipTrigger>
                                                               <Image src={team!.crestUrl} alt={team!.name} width={16} height={16} className="object-contain" />
                                                         </TooltipTrigger>
-                                                        <TooltipContent><p>{team!.pickOrder}º Palpite: {team!.name}</p></TooltipContent>
+                                                        <TooltipContent><p>Opção {team!.pickOrder}: {team!.name}</p></TooltipContent>
                                                     </Tooltip>
                                                 ))}
                                             </div>

@@ -316,7 +316,6 @@ export default function AdminDashboardPage() {
                             {liveMatchesWithPredictions.map(match => {
                                 const score = scores[match.id] || { placarA: '0', placarB: '0' };
                                 const championship = allChampionships.find(c => c.id === match.campeonatoId);
-                                const isChampionshipStarted = championship ? isPast(parseISO(championship.dataInicio as string)) : false;
                                 const teamA = allTeams.find(t => t.name === match.timeA);
                                 const teamB = allTeams.find(t => t.name === match.timeB);
 
@@ -392,7 +391,7 @@ export default function AdminDashboardPage() {
                                                         
                                                         const simulatedPoints = calculateSimulatedPoints(match, p.palpiteUsuario.placarA, p.palpiteUsuario.placarB);
                                                         const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                        const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
+                                                        const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
                                                             return team ? { ...team, pickOrder: index + 1 } : null;
                                                         }).filter(Boolean) : [];
@@ -418,7 +417,7 @@ export default function AdminDashboardPage() {
                                                                                     <TooltipTrigger>
                                                                                         <Image src={team!.crestUrl} alt={team!.name} width={16} height={16} className="object-contain" />
                                                                                     </TooltipTrigger>
-                                                                                    <TooltipContent><p>{team!.pickOrder}º Palpite: {team!.name}</p></TooltipContent>
+                                                                                    <TooltipContent><p>Opção {team!.pickOrder}: {team!.name}</p></TooltipContent>
                                                                                 </Tooltip>
                                                                             ))}
                                                                         </div>
