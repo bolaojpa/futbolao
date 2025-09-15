@@ -1,11 +1,10 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { isFuture, parseISO } from 'date-fns';
+import { isFuture, parseISO, isPast } from 'date-fns';
 import { CalendarCheck, Goal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
