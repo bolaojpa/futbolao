@@ -50,6 +50,7 @@ import { Badge } from '@/components/ui/badge';
 import { Combobox } from '../ui/combobox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 
 type Fase = {
@@ -403,7 +404,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                         <TooltipTrigger asChild><TabsTrigger value="teams"><Shield className="md:mr-2" /><span className="hidden md:inline">Equipes</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Equipes</p></TooltipContent>
                     </Tooltip>
-                    <Tooltip>
+                     <Tooltip>
                         <TooltipTrigger asChild><TabsTrigger value="participants" disabled={isChampionshipStarted}><Users className="md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent>
                             {isChampionshipStarted ? (
