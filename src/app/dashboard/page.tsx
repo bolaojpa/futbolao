@@ -297,7 +297,7 @@ export default function DashboardPage() {
         </div>
     }
 
-    const hasContent = isUserInActiveChampionship && (showLeaderCard || liveMatches.length > 0 || upcomingMatches.length > 0 || recentMatches.length > 0);
+    const hasContent = userChampionships.length > 0;
 
     return (
         <TooltipProvider>
@@ -362,6 +362,7 @@ export default function DashboardPage() {
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
                                         const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
+                                        const maxPontos = match.maxPontos ?? 0;
 
                                         return (
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -375,7 +376,7 @@ export default function DashboardPage() {
                                                                         <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={48} className="object-contain" data-ai-hint="team logo" />
                                                                     </div>
                                                                     <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
-                                                                        <span>{`${match.placarA ?? 0}`} - {`${match.placarB ?? 0}`}</span>
+                                                                        <span>{`${match.placarA ?? 0} - ${match.placarB ?? 0}`}</span>
                                                                         <Badge variant="destructive" className='mt-2 animate-pulse'>
                                                                             Ao Vivo
                                                                         </Badge>
@@ -395,7 +396,7 @@ export default function DashboardPage() {
                                                                 </div>
                                                                 <ul className="text-sm">
                                                                     {userPrediction ? (
-                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(calculateLivePoints(match, userPrediction), match.maxPontos))}>
+                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(calculateLivePoints(match, userPrediction), maxPontos))}>
                                                                             <div className="w-1/3 text-left flex items-center gap-2 group">
                                                                                 <Avatar className="w-8 h-8">
                                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
@@ -405,7 +406,7 @@ export default function DashboardPage() {
                                                                             </div>
                                                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
                                                                             <div className="w-1/3 text-right">
-                                                                                <Badge variant={getPointsBadgeVariant(calculateLivePoints(match, userPrediction), match.maxPontos)} className='whitespace-nowrap'>
+                                                                                <Badge variant={getPointsBadgeVariant(calculateLivePoints(match, userPrediction), maxPontos)} className='whitespace-nowrap'>
                                                                                     {calculateLivePoints(match, userPrediction)} pts
                                                                                 </Badge>
                                                                             </div>
@@ -430,7 +431,7 @@ export default function DashboardPage() {
                                                                         if (!otherUser) return null;
                                                                         const otherLivePoints = calculateLivePoints(match, p);
                                                                         return (
-                                                                            <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(otherLivePoints, match.maxPontos))}>
+                                                                            <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(otherLivePoints, maxPontos))}>
                                                                                 <div className="w-1/3 text-left">
                                                                                     <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
                                                                                         <Avatar className="w-8 h-8">
@@ -442,7 +443,7 @@ export default function DashboardPage() {
                                                                                 </div>
                                                                                 <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                                                 <div className="w-1/3 text-right">
-                                                                                    <Badge variant={getPointsBadgeVariant(otherLivePoints, match.maxPontos)} className='whitespace-nowrap'>
+                                                                                    <Badge variant={getPointsBadgeVariant(otherLivePoints, maxPontos)} className='whitespace-nowrap'>
                                                                                         {otherLivePoints} pts
                                                                                     </Badge>
                                                                                 </div>
@@ -637,6 +638,7 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
 
 
