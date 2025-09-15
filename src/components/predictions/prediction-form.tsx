@@ -17,10 +17,9 @@ import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
-import type { Match, Prediction, Team, Championship } from '@/lib/types';
+import type { Match, Prediction, Team, Championship, UserType } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { getMatches, getPredictionsForUser, getTeams } from '@/lib/firebase/firestore';
-import { doc, getDoc, onSnapshot, collection } from 'firebase/firestore';
+import { getDoc, onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Badge } from '../ui/badge';
 
@@ -55,18 +54,23 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
 };
 
 
-export function PredictionForm({ championships }: { championships: Championship[] }) {
-    const { toast } = useToast();
-    const router = useRouter();
-    const { user, loading: authLoading } = useAuth();
+interface PredictionFormProps {
+    championships: Championship[];
+    allTeams: Team[];
+    allMatches: Match[];
+    selectedChampionshipId: string | 'all';
+}
 
-    const [allMatches, setAllMatches] = useState<Match[]>([]);
-    const [allTeams, setAllTeams] = useState<Team[]>([]);
+
+export function PredictionForm({ championships, allTeams, allMatches, selectedChampionshipId }: PredictionFormProps) {
+    const { toast } = useToast();
+    const { user } = useAuth();
+
     const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
-    const [loadingData, setLoadingData] = useState(true);
+    const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    const [aiModalState, setAiModalState] = useState<{ open: boolean; suggestion: string | null; match: Match | null }>({ open: false, suggestion: null, match: null });
+    const [aiModalState, setAiModalState] = useState<{ open: boolean; suggestion: string | null; justification: string | null; match: Match | null }>({ open: false, suggestion: null, justification: null, match: null });
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
@@ -80,47 +84,35 @@ export function PredictionForm({ championships }: { championships: Championship[
         return () => clearInterval(timer);
     }, []);
 
+    const activeChampionshipsForUser = useMemo(() => {
+        if (!user) return [];
+        return championships.filter(c => c.status === 'ativo' && c.participantes.includes(user.id));
+    }, [championships, user]);
+
     const displayedMatches = useMemo(() => {
-        // A partida aparece aqui SE E SOMENTE SE o status for 'Agendado' E o jogo ainda não começou.
+        if (activeChampionshipsForUser.length === 0) return [];
+        const champIds = selectedChampionshipId === 'all' 
+            ? activeChampionshipsForUser.map(c => c.id)
+            : [selectedChampionshipId];
+        
         return allMatches
             .filter(match => {
                 if (match.status !== 'Agendado') return false;
+                if (!champIds.includes(match.campeonatoId)) return false;
                 return !isPast(parseISO(match.data));
             })
             .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches, currentTime]); // Depende do currentTime para reavaliar
+    }, [allMatches, activeChampionshipsForUser, currentTime, selectedChampionshipId]);
 
 
     useEffect(() => {
-        if (authLoading) return;
-        if (!user) {
-            router.push('/');
-            return;
-        }
-
-        async function fetchInitialData() {
-            setLoadingData(true);
-            try {
-                // Teams are static enough to be fetched once.
-                const teamsData = await getTeams();
-                setAllTeams(teamsData);
-
-            } catch (error) {
-                toast({ title: "Erro ao buscar equipes", description: "Não foi possível carregar a lista de equipes.", variant: "destructive" });
-            } finally {
-                setLoadingData(false);
-            }
-        }
-        fetchInitialData();
+        if (!user) return;
         
-        // Listen to matches and predictions in real-time
-        const unsubMatches = onSnapshot(collection(db, 'matches'), (snapshot) => {
-            const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-            setAllMatches(matchesData);
-        });
-
         const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
-            const predictionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction)).filter(p => p.userId === user.id);
+            const allPreds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+            setAllPredictions(allPreds);
+
+            const predictionsData = allPreds.filter(p => p.userId === user.id);
             setUserPredictions(predictionsData);
 
             // Update local state based on Firestore predictions
@@ -151,11 +143,10 @@ export function PredictionForm({ championships }: { championships: Championship[
         }
 
         return () => {
-            unsubMatches();
             unsubPredictions();
         };
 
-    }, [authLoading, user, router, toast]);
+    }, [user]);
 
     const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: number) => {
         setScores(prev => ({
@@ -179,7 +170,6 @@ export function PredictionForm({ championships }: { championships: Championship[
                 description: "Esta partida já começou ou está bloqueada para palpites.",
                 variant: "destructive",
             });
-             setAllMatches(prev => prev.filter(m => m.id !== match.id));
             return;
         }
 
@@ -203,38 +193,54 @@ export function PredictionForm({ championships }: { championships: Championship[
                 description: `Seu palpite foi ${isEditing ? 'atualizado' : 'registrado'} com sucesso. Boa sorte!`,
                 variant: "default",
             });
-            // Firestore listener will update the 'lastUpdated' state implicitly.
         } catch (error) {
             toast({ title: "Erro ao salvar palpite", description: "Não foi possível salvar seu palpite. Tente novamente.", variant: "destructive" });
         }
     };
 
     const handleAiSuggestion = async (match: Match) => {
+        if (!user) return;
         setLoadingAi(prev => ({ ...prev, [match.id]: true }));
         
-        // Simulação de busca de palpites de outros usuários.
-        // Em um app real, isso poderia buscar de um subconjunto de palpites públicos.
-        const mockPredictionsForAI = [
-            { userId: 'user_2', prediction: 'Time A vence por 2 a 1.' },
-            { userId: 'user_3', prediction: 'Empate em 1 a 1.' },
-            { userId: 'user_4', prediction: 'Acho que o Time A ganha de 1 a 0.' },
-            { userId: 'user_5', prediction: '2 a 0 para o Time A.' },
-            { userId: 'user_6', prediction: 'Time B surpreende e vence por 1 a 0.' },
-        ];
-        
-        if (mockPredictionsForAI.length < 5) {
+        const championship = championships.find(c => c.id === match.campeonatoId);
+        if (!championship) {
+            toast({ title: "Erro", description: "Não foi possível encontrar dados do campeonato.", variant: "destructive" });
+            setLoadingAi(prev => ({ ...prev, [match.id]: false }));
+            return;
+        }
+
+        const predictionsForMatch = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
+
+        if (predictionsForMatch.length < 3) {
              toast({
                 title: "Dados Insuficientes",
-                description: "Ainda não há palpites suficientes para gerar uma sugestão da IA.",
+                description: "Ainda não há palpites suficientes de outros jogadores para gerar uma sugestão da IA.",
                 variant: "destructive",
             });
             setLoadingAi(prev => ({ ...prev, [match.id]: false }));
             return;
         }
+        
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const allUsers = usersSnapshot.docs.map(doc => doc.data() as UserType);
+
+
+        const predictionDataForAPI = predictionsForMatch.map(p => {
+            const predictor = allUsers.find(u => u.id === p.userId);
+            return {
+                userNickname: predictor?.apelido || 'Anônimo',
+                prediction: `${p.palpiteUsuario.placarA}-${p.palpiteUsuario.placarB}`,
+            };
+        });
+
+        const sortedUsers = [...allUsers].sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0));
+        const userRank = sortedUsers.findIndex(u => u.id === user.id) + 1;
 
         const res = await getAiSuggestion({
-            matchId: match.id,
-            predictionData: mockPredictionsForAI,
+            userNickname: user.apelido,
+            userPosition: userRank,
+            totalParticipants: championship.participantes.length,
+            predictionData: predictionDataForAPI,
         });
 
         if (res.error || !res.suggestion) {
@@ -244,7 +250,14 @@ export function PredictionForm({ championships }: { championships: Championship[
                 variant: "destructive",
             });
         } else {
-            setAiModalState({ open: true, suggestion: res.suggestion, match: match });
+            const [placarA, placarB] = res.suggestion.split('-').map(Number);
+            handleScoreChange(match.id, 'placarA', placarA);
+            handleScoreChange(match.id, 'placarB', placarB);
+            
+            toast({
+                title: "Sugestão da IA aplicada!",
+                description: `A IA sugeriu o placar de ${res.suggestion}. Agora é só salvar!`,
+            });
         }
 
         setLoadingAi(prev => ({ ...prev, [match.id]: false }));
@@ -292,29 +305,8 @@ export function PredictionForm({ championships }: { championships: Championship[
     }, [displayedMatches]);
 
 
-    if (authLoading || loadingData) {
-        return <div className="space-y-6">
-            {[1, 2, 3].map(i => (
-                <Card key={i}>
-                    <CardHeader>
-                        <CardTitle>Carregando Partidas...</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-24 bg-muted rounded-md animate-pulse"></div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
-    }
-
     if (Object.keys(groupedMatches).length === 0) {
-        return (
-             <Card>
-                <CardContent className="p-6 text-center">
-                     <p>Não há partidas abertas para palpites no momento. Volte mais tarde!</p>
-                </CardContent>
-            </Card>
-        )
+        return null;
     }
 
     return (
@@ -355,6 +347,7 @@ export function PredictionForm({ championships }: { championships: Championship[
                                     )}
                                     <CardHeader className='pb-2 pt-4 text-center'>
                                         <CardTitle className="text-base font-semibold flex items-center justify-center gap-2">
+                                            {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
                                             {match.campeonato}
                                         </CardTitle>
                                         <div className="text-xs text-muted-foreground">
@@ -451,18 +444,20 @@ export function PredictionForm({ championships }: { championships: Championship[
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                             <Wand2 className="h-5 w-5 text-primary" />
-                             Sugestão da IA
+                            <Wand2 className="h-5 w-5 text-primary" />
+                            Sugestão Estratégica da IA
                         </DialogTitle>
-                         {aiModalState.match && (
+                        {aiModalState.match && (
                             <DialogDescription>
                                 Confronto: <strong>{aiModalState.match.timeA} vs {aiModalState.match.timeB}</strong>
                             </DialogDescription>
                         )}
                     </DialogHeader>
-                    <div className="py-4 font-semibold text-center text-lg">
-                        <p className="text-sm text-muted-foreground mb-2">Com base na tendência de outros jogadores, esta é a sugestão para sua aposta. Use com sabedoria!</p>
-                        <p className="text-primary">{aiModalState.suggestion}</p>
+                    <div className="py-4 space-y-4">
+                        <div className="text-center bg-muted p-4 rounded-md">
+                            <p className="font-semibold text-lg">{aiModalState.suggestion}</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{aiModalState.justification}</p>
                     </div>
                 </DialogContent>
             </Dialog>

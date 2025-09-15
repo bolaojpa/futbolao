@@ -1,19 +1,20 @@
 
+
 'use server';
 
-import { suggestPredictions, SuggestPredictionsInput } from '@/ai/flows/suggest-predictions';
+import { suggestPredictions, SuggestPredictionsInput, SuggestPredictionsOutput } from '@/ai/flows/suggest-predictions';
 import { addOrUpdatePrediction } from '@/lib/firebase/firestore';
-import type { Prediction } from '@/lib/types';
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import type { Prediction, UserType } from '@/lib/types';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-export async function getAiSuggestion(input: SuggestPredictionsInput): Promise<{ suggestion: string | null; error: string | null; }> {
+export async function getAiSuggestion(input: SuggestPredictionsInput): Promise<SuggestPredictionsOutput | { error: string }> {
   try {
     const result = await suggestPredictions(input);
-    return { suggestion: result.suggestedPrediction, error: null };
+    return result;
   } catch (error) {
     console.error("Error getting AI suggestion:", error);
-    return { suggestion: null, error: "Não foi possível obter uma sugestão da IA no momento. Tente novamente mais tarde." };
+    return { error: "Não foi possível obter uma sugestão da IA no momento. Tente novamente mais tarde." };
   }
 }
 
@@ -32,23 +33,21 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
 
 
 export async function saveChampionPicks(userId: string, championshipId: string, teams: string[]): Promise<{ success: boolean; error?: string; }> {
-    if (!userId || !championshipId || !teams) {
+    if (!userId || !championshipId) {
         return { success: false, error: "Dados inválidos fornecidos." };
     }
     const userRef = doc(db, "users", userId);
     try {
-        // Primeiro, remove qualquer palpite antigo para este campeonato para evitar duplicatas
-        await updateDoc(userRef, {
-            championPicks: arrayRemove({ championshipId, teams: [] }) // Isso é um truque; não podemos remover sem saber o array exato, então teremos que filtrar no cliente e reescrever.
-        });
+        const userDoc = await getDoc(userRef);
+        if (!userDoc.exists()) {
+             return { success: false, error: "Usuário não encontrado." };
+        }
         
-        const userDoc = await doc(db, 'users', userId).get();
-        const userData = userDoc.data();
+        const userData = userDoc.data() as UserType;
         const existingPicks = userData.championPicks || [];
         
         const otherPicks = existingPicks.filter((p: any) => p.championshipId !== championshipId);
 
-        // Adiciona o novo palpite
         await updateDoc(userRef, {
             championPicks: [...otherPicks, { championshipId, teams }]
         });
