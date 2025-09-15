@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useRouter } from 'next/navigation';
 import type { Match, Prediction, Team, Championship, UserType } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { getDoc, onSnapshot, collection } from 'firebase/firestore';
+import { getDoc, onSnapshot, collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Badge } from '../ui/badge';
 
