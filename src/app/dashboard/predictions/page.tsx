@@ -349,7 +349,7 @@ export default function PredictionsPage() {
         </div>
     }
 
-    if (Object.keys(groupedMatches).length === 0) {
+    if (Object.keys(groupedMatches).length === 0 && !championships.some(c => c.championPredictionSettings?.active && isFuture(parseISO(c.dataInicio as string)))) {
         return (
              <Card className="m-4 sm:m-6 lg:p-8">
                 <CardHeader>
@@ -441,6 +441,7 @@ export default function PredictionsPage() {
                                         )}
                                         <CardHeader className='pb-2 pt-4 text-center'>
                                             <CardTitle className="text-base font-semibold flex items-center justify-center gap-2">
+                                                {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
                                                 {match.campeonato}
                                             </CardTitle>
                                             <div className="text-xs text-muted-foreground">

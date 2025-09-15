@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -91,7 +92,7 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
     const { openForPrediction, lockedPredictions } = useMemo(() => {
         const open: Championship[] = [];
         const locked: Championship[] = [];
-        if (!user) return { openForPrediction: [], lockedPredictions: [] };
+        if (!user || !championships) return { openForPrediction: [], lockedPredictions: [] };
 
         championships.forEach(champ => {
             if (!champ.championPredictionSettings?.active) return;
@@ -119,7 +120,7 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
         return initialState;
     });
 
-    const handleSave = (championshipId: string, championshipName: string) => {
+    const handleSave = async (championshipId: string, championshipName: string) => {
         toast({
             title: "Palpites Salvos!",
             description: `Seus palpites de campeão para "${championshipName}" foram salvos com sucesso.`,
