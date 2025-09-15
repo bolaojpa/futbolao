@@ -154,20 +154,20 @@ export default function DashboardPage() {
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
     const calculateLivePoints = (match: Match, prediction: Prediction): number => {
-        if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+        const livePlacarA = match.placarA ?? 0;
+        const livePlacarB = match.placarB ?? 0;
         
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
         if (!championship) return 0;
 
-        const { placarA: liveA, placarB: liveB } = match;
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         const pontuacao = championship.pontuacao.tradicional;
 
-        if (guessA === liveA && guessB === liveB) {
+        if (guessA === livePlacarA && guessB === livePlacarB) {
             return pontuacao.exato; 
         }
 
-        const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
+        const liveWinner = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
 
         if (liveWinner === guessWinner) {
@@ -375,7 +375,7 @@ export default function DashboardPage() {
                                                                         <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={48} className="object-contain" data-ai-hint="team logo" />
                                                                     </div>
                                                                     <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
-                                                                        <span>{`${match.placarA ?? '?'}`} - {`${match.placarB ?? '?'}`}</span>
+                                                                        <span>{`${match.placarA ?? 0}`} - {`${match.placarB ?? 0}`}</span>
                                                                         <Badge variant="destructive" className='mt-2 animate-pulse'>
                                                                             Ao Vivo
                                                                         </Badge>
@@ -637,6 +637,7 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
 
 

@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
         setScores(prev => ({
             ...prev,
             [matchId]: {
-                ...(prev[matchId] || { placarA: '', placarB: '' }),
+                ...(prev[matchId] || { placarA: '0', placarB: '0' }),
                 [team]: numericValue,
             },
         }));
