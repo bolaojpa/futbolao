@@ -9,13 +9,13 @@ import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, CalendarCheck, Goal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getAiSuggestion, savePrediction } from '@/app/dashboard/predictions/actions';
+import { getAiSuggestion, savePrediction, saveChampionPicks } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import type { Match, Prediction, Team, Championship, UserType } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChampionPrediction } from '@/components/rules/champion-prediction';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -531,3 +532,5 @@ export default function PredictionsPage() {
         </div>
     );
 }
+
+    

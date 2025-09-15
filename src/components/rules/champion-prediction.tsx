@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -239,3 +238,5 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
         </div>
     );
 }
+
+    
