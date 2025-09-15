@@ -210,7 +210,12 @@ export async function addChampionship(championshipData: Omit<Championship, 'id' 
         createdAt: serverTimestamp() 
     };
     const docRef = await addDoc(championshipsCollection, dataWithTimestamp);
-    return { id: docRef.id, ...championshipData, status: 'ativo' };
+    // Return a complete Championship object, although createdAt will be a server value
+    return { 
+      id: docRef.id, 
+      ...championshipData, 
+      status: 'ativo',
+    };
 }
 
 
@@ -416,5 +421,3 @@ export async function updateUserLastLogin(userId: string): Promise<void> {
         ultimaAtividade: now, // Also update last activity on login
     });
 }
-
-    

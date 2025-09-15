@@ -165,9 +165,9 @@ export default function AdminChampionshipsPage() {
                     description: `O campeonato "${dataToSave.nome}" foi atualizado.`,
                 });
             } else {
-                delete dataToSave.id; // Garante que o campo id não seja enviado
+                 const { id, ...rest } = dataToSave;
                 await addChampionship({
-                    ...dataToSave,
+                    ...rest,
                     dataInicio: (dataToSave.dataInicio as Date).toISOString(),
                     dataFim: (dataToSave.dataFim as Date).toISOString(),
                 } as Omit<Championship, 'id' | 'status' | 'createdAt'>);
