@@ -89,7 +89,7 @@ export default function HistoryPage() {
                 getUsers(),
                 getTeams(),
                 getPredictionsForUser(user.id),
-                getDocs(collection(db, 'predictions')).then(snap => snap.docs.map(d => d.data() as Prediction)),
+                getDocs(collection(db, 'predictions')).then(snap => snap.docs.map(d => ({ id: d.id, ...d.data() } as Prediction))),
             ]);
             setChampionships(champs);
             setAllMatches(matches.filter(m => m.status === 'Finalizado'));
@@ -364,7 +364,7 @@ export default function HistoryPage() {
                                 const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
                                     const team = allTeams.find(t => t.name === teamName);
                                     return team ? { ...team, pickOrder: index + 1 } : null;
-                                }).filter(Boolean) : [];
+                                }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
 
                                 const otherMaxPoints = championships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
 
@@ -384,11 +384,11 @@ export default function HistoryPage() {
                                          {chosenTeams.length > 0 && (
                                             <div className="flex items-center gap-1">
                                                 {chosenTeams.map(team => (
-                                                    <Tooltip key={team!.id}>
+                                                    <Tooltip key={team.id}>
                                                         <TooltipTrigger>
-                                                              <Image src={team!.crestUrl} alt={team!.name} width={16} height={16} className="object-contain" />
+                                                              <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
                                                         </TooltipTrigger>
-                                                        <TooltipContent><p>Opção {team!.pickOrder}: {team!.name}</p></TooltipContent>
+                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
                                                     </Tooltip>
                                                 ))}
                                             </div>

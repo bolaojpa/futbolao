@@ -394,7 +394,7 @@ export default function AdminDashboardPage() {
                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
                                                             return team ? { ...team, pickOrder: index + 1 } : null;
-                                                        }).filter(Boolean) : [];
+                                                        }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
                                                         const pontuacao = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional;
                                                         const maxPontos = pontuacao?.exato ?? 0;
 
@@ -413,11 +413,11 @@ export default function AdminDashboardPage() {
                                                                     {chosenTeams.length > 0 && (
                                                                         <div className="flex items-center gap-1">
                                                                             {chosenTeams.map(team => (
-                                                                                <Tooltip key={team!.id}>
+                                                                                <Tooltip key={team.id}>
                                                                                     <TooltipTrigger>
-                                                                                        <Image src={team!.crestUrl} alt={team!.name} width={16} height={16} className="object-contain" />
+                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
                                                                                     </TooltipTrigger>
-                                                                                    <TooltipContent><p>Opção {team!.pickOrder}: {team!.name}</p></TooltipContent>
+                                                                                    <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
                                                                                 </Tooltip>
                                                                             ))}
                                                                         </div>

@@ -355,7 +355,7 @@ export default function AdminHistoryPage() {
                                       const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                           const team = teams.find(t => t.name === teamName);
                                           return team ? { ...team, pickOrder: index + 1 } : null;
-                                      }).filter(Boolean) : [];
+                                      }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
 
                                       return (
                                       <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(points, maxPointsForMatch))}>
@@ -372,11 +372,11 @@ export default function AdminHistoryPage() {
                                             {chosenTeams.length > 0 && (
                                                 <div className="flex items-center gap-1">
                                                     {chosenTeams.map(team => (
-                                                        <Tooltip key={team!.id}>
+                                                        <Tooltip key={team.id}>
                                                             <TooltipTrigger>
-                                                                 <Image src={team!.crestUrl} alt={team!.name} width={16} height={16} className="object-contain" />
+                                                                 <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Opção {team!.pickOrder}: {team!.name}</p></TooltipContent>
+                                                            <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
                                                         </Tooltip>
                                                     ))}
                                                 </div>
