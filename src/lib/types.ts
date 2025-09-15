@@ -2,6 +2,8 @@
 
 import { Timestamp } from 'firebase/firestore';
 
+export type TiebreakerRule = 'maiorNumeroExatos' | 'maiorNumeroSituacoes' | 'primeiraBucha';
+
 export interface UserType {
     id: string;
     nome: string;
@@ -74,6 +76,7 @@ export interface Championship {
     formatoFases?: 'fases' | 'rodadas';
     fases?: { nome: string; idaEVolta: boolean; rodadas?: number }[];
     rodadas?: number;
+    regrasDesempate?: TiebreakerRule[];
     pontuacao: {
         tradicional: { ativo: boolean; exato: number; situacao: number; };
         combo?: { ativo: boolean; gols: number; placar: number; };

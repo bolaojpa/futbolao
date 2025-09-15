@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -17,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { UserType, Championship, Match, Prediction } from '@/lib/types';
+import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
 import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -36,9 +37,6 @@ export default function AdminRankingPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
   
-  type SortType = 'default' | 'exact' | 'situation';
-
-  const [sortType, setSortType] = useState<SortType>('default');
   const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [championships, setChampionships] = useState<Championship[]>([]);
@@ -152,47 +150,33 @@ export default function AdminRankingPage() {
 
 
   const sortedTableUsers = useMemo(() => {
+      const selectedChampionship = championships.find(c => c.id === selectedChampionshipId);
+      const tiebreakerRules = selectedChampionship?.regrasDesempate || [];
+
       return [...usersWithStatsForChampionship].sort((a, b) => {
-        switch (sortType) {
-            case 'exact':
-                if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-                break;
-            case 'situation':
-                if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-                break;
-            default:
-                if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-                if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-                if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-                break;
+        // Critério principal: pontos
+        if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+
+        // Aplica regras de desempate
+        for (const rule of tiebreakerRules) {
+            switch (rule) {
+                case 'maiorNumeroExatos':
+                    if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+                    break;
+                case 'maiorNumeroSituacoes':
+                    if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+                    break;
+                // A lógica para 'primeiraBucha' seria mais complexa, envolvendo timestamps de palpites.
+                // Por enquanto, vamos nos ater aos critérios mais simples.
+            }
         }
+        
+        // Critério final: data de cadastro
         const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
         const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateA - dateB;
     })
-  }, [usersWithStatsForChampionship, sortType]);
-
-  const getSortColumn = () => {
-    switch (sortType) {
-      case 'exact':
-        return {
-          header: 'Buchas',
-          accessor: (user: { exatos: number }) => user.exatos,
-        };
-      case 'situation':
-        return {
-          header: 'Situação',
-          accessor: (user: { situacoes: number }) => user.situacoes,
-        };
-      default:
-        return {
-          header: 'Pontos',
-          accessor: (user: { pontos: number }) => user.pontos,
-        };
-    }
-  };
-
-  const { header: sortColumnHeader, accessor: sortColumnAccessor } = getSortColumn();
+  }, [usersWithStatsForChampionship, championships, selectedChampionshipId]);
 
   const getMedalIcon = (rank: number) => {
     if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500 fill-yellow-400" />;
@@ -254,16 +238,6 @@ export default function AdminRankingPage() {
                         ))}
                     </SelectContent>
                 </Select>
-                <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
-                    <SelectTrigger className="w-full md:w-[240px]">
-                        <SelectValue placeholder="Critério de Ordenação" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="default">Ordenar por Pontos (Padrão)</SelectItem>
-                        <SelectItem value="exact">Ordenar por Buchas</SelectItem>
-                        <SelectItem value="situation">Ordenar por Situação</SelectItem>
-                    </SelectContent>
-                </Select>
             </div>
         </div>
 
@@ -276,13 +250,9 @@ export default function AdminRankingPage() {
                   <TableHead className='w-16 text-center'>Pos.</TableHead>
                   <TableHead className='w-16 text-center'>Var.</TableHead>
                   <TableHead>Jogador</TableHead>
-                  <TableHead className="text-right">{sortColumnHeader}</TableHead>
-                  <TableHead className="text-right hidden md:table-cell">
-                    {sortType === 'default' ? 'Buchas' : 'Pontos'}
-                  </TableHead>
-                   <TableHead className="text-right hidden md:table-cell">
-                    {sortType === 'situation' ? 'Buchas' : 'Situação'}
-                  </TableHead>
+                  <TableHead className="text-right">Pontos</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">Buchas</TableHead>
+                   <TableHead className="text-right hidden md:table-cell">Situação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -323,13 +293,9 @@ export default function AdminRankingPage() {
                                 {getMedalIcon(rank)}
                             </Link>
                         </TableCell>
-                        <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user as any)}</TableCell>
-                        <TableCell className="text-right hidden md:table-cell">
-                          {sortType === 'default' ? user.exatos : user.pontos}
-                        </TableCell>
-                        <TableCell className="text-right hidden md:table-cell">
-                           {sortType === 'situation' ? user.exatos : user.situacoes}
-                        </TableCell>
+                        <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>
                       </TableRow>
                   )
                 })}
@@ -341,4 +307,3 @@ export default function AdminRankingPage() {
     </TooltipProvider>
   );
 }
-

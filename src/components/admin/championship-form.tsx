@@ -30,10 +30,10 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit } from 'lucide-react';
+import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit, Gavel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import type { Championship, Match, Team, UserType } from '@/lib/types';
+import type { Championship, Match, Team, UserType, TiebreakerRule } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
@@ -68,6 +68,7 @@ const championshipFormSchema = z.object({
   modoEquipes: z.enum(['times', 'selecao', 'mista'], { required_error: "Selecione o modo de equipes." }),
   teamIds: z.array(z.string()).min(2, "Selecione pelo menos duas equipes."),
   participantes: z.array(z.string()).min(1, "Selecione pelo menos um participante."),
+  regrasDesempate: z.array(z.string()).optional(),
   formatoFases: z.enum(['fases', 'rodadas']).optional(),
   fases: z.array(z.object({ 
       nome: z.string().min(1, "O nome da fase é obrigatório."), 
@@ -174,6 +175,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
         modoEquipes: 'times',
         teamIds: [],
         participantes: [],
+        regrasDesempate: [],
         pontuacao: { 
             tradicional: { ativo: true, exato: 10, situacao: 5 },
             combo: { ativo: false, gols: 3, placar: 7 },
@@ -241,6 +243,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
             modoEquipes: 'times' as const,
             teamIds: [],
             participantes: [],
+            regrasDesempate: [],
             formatoFases: undefined,
             fases: [],
             rodadas: undefined,
@@ -276,6 +279,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                 modoEquipes: championship.modoEquipes,
                 teamIds: championship.teamIds || [],
                 participantes: championship.participantes || [],
+                regrasDesempate: championship.regrasDesempate || [],
                 formatoFases: championship.formatoFases,
                 rodadas: championship.rodadas,
                 fases: championship.fases,
@@ -355,6 +359,20 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
 
     return teamOptionsForRanking.filter(option => !selectedValues.includes(option.value));
   };
+  
+  const tiebreakerOptions: { id: TiebreakerRule, label: string, description: string }[] = [
+    { id: 'maiorNumeroExatos', label: 'Maior Nº de Buchas', description: 'Quem acertou mais placares exatos.' },
+    { id: 'maiorNumeroSituacoes', label: 'Maior Nº de Situações', description: 'Quem acertou mais vencedores/empates.' },
+    { id: 'primeiraBucha', label: 'Primeira Bucha', description: 'Quem acertou um placar exato primeiro no campeonato.' },
+  ];
+
+  const handleTiebreakerChange = (ruleId: TiebreakerRule) => {
+    const currentRules = form.getValues('regrasDesempate') || [];
+    const newRules = currentRules.includes(ruleId)
+      ? currentRules.filter(id => id !== ruleId)
+      : [...currentRules, ruleId];
+    form.setValue('regrasDesempate', newRules, { shouldValidate: true });
+  };
 
 
   return (
@@ -372,10 +390,14 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <TooltipProvider>
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-5 md:max-w-2xl mx-auto">
+                <TabsList className="grid w-full grid-cols-6 md:max-w-3xl mx-auto">
                     <Tooltip>
                         <TooltipTrigger asChild><TabsTrigger value="general"><ClipboardList className="md:mr-2" /><span className="hidden md:inline">Gerais</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Gerais</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild><TabsTrigger value="rules"><Gavel className="md:mr-2" /><span className="hidden md:inline">Regras</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent><p>Regras</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild><TabsTrigger value="teams"><Shield className="md:mr-2" /><span className="hidden md:inline">Equipes</span></TabsTrigger></TooltipTrigger>
@@ -644,6 +666,66 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                 )}
                              </div>
                         )}
+                    </TabsContent>
+                    <TabsContent value="rules" className="space-y-6">
+                        <Card>
+                             <CardHeader>
+                                <h3 className="text-lg font-semibold">Critérios de Desempate</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Selecione os critérios para desempate no ranking e ordene-os por prioridade. O critério com prioridade 1 será usado primeiro.
+                                </p>
+                             </CardHeader>
+                             <CardContent className="space-y-4">
+                                {(watchAllFields.regrasDesempate || []).map((ruleId, index) => {
+                                    const rule = tiebreakerOptions.find(o => o.id === ruleId);
+                                    if (!rule) return null;
+                                    return (
+                                        <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted">
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-bold text-lg">{index + 1}º</span>
+                                                <div>
+                                                    <p className="font-medium">{rule.label}</p>
+                                                    <p className="text-xs text-muted-foreground">{rule.description}</p>
+                                                </div>
+                                            </div>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => handleTiebreakerChange(rule.id)}>
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    )
+                                })}
+                                <Separator />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full">Adicionar Critério</Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar critério..." />
+                                            <CommandList>
+                                                <CommandEmpty>Nenhum critério encontrado.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {tiebreakerOptions.map((option) => {
+                                                        const isSelected = (watchAllFields.regrasDesempate || []).includes(option.id);
+                                                        return (
+                                                            <CommandItem
+                                                                key={option.id}
+                                                                onSelect={() => handleTiebreakerChange(option.id)}
+                                                                className="flex justify-between"
+                                                                disabled={isSelected}
+                                                            >
+                                                                {option.label}
+                                                                <Checkbox checked={isSelected} className="mr-2" />
+                                                            </CommandItem>
+                                                        )
+                                                    })}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                             </CardContent>
+                        </Card>
                     </TabsContent>
                     <TabsContent value="teams" className="space-y-4">
                         <Card>
