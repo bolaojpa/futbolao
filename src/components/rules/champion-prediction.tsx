@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { isFuture, parseISO } from 'date-fns';
@@ -17,6 +17,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Separator } from '../ui/separator';
 import type { Championship, Team, UserType } from '@/lib/types';
@@ -30,7 +31,8 @@ interface ChampionPredictionProps {
 
 export function ChampionPrediction({ championships, teams, user }: ChampionPredictionProps) {
     const { toast } = useToast();
-    
+    const [modalState, setModalState] = useState<{ open: boolean, champId: string | null }>({ open: false, champId: null });
+
     const { openForPrediction, lockedPredictions } = useMemo(() => {
         const open: Championship[] = [];
         const locked: Championship[] = [];
@@ -72,6 +74,22 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
         return initialState;
     });
 
+    useEffect(() => {
+        if (!user || openForPrediction.length === 0) return;
+
+        const champToPrompt = openForPrediction.find(champ => {
+            const userPick = user.championPicks?.find(p => p.championshipId === champ.id);
+            return !userPick;
+        });
+
+        if (champToPrompt) {
+            setTimeout(() => {
+                setModalState({ open: true, champId: champToPrompt.id });
+            }, 1000); 
+        }
+    }, [openForPrediction, user]);
+
+
     const handlePredictionChange = (championshipId: string, index: number, value: string) => {
         setPredictions(prev => {
             const currentPicks = prev[championshipId] ? [...prev[championshipId]] : [];
@@ -109,6 +127,7 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
                 description: `Seus palpites de campeão para "${championshipName}" foram salvos com sucesso.`,
             });
             setSavedPicks(prev => ({...prev, [championshipId]: true}));
+            setModalState({ open: false, champId: null });
         } else {
              toast({
                 title: "Erro ao Salvar",
@@ -117,6 +136,47 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
             });
         }
     };
+    
+    const renderModalContent = () => {
+        const champ = championships.find(c => c.id === modalState.champId);
+        if (!champ) return null;
+        
+        const numberOfPicks = champ.championPredictionSettings?.numberOfPicks || 1;
+        const picksArray = Array.from({ length: numberOfPicks });
+        const arePicksMade = predictions[champ.id]?.every(p => p && p.length > 0) && predictions[champ.id]?.length === numberOfPicks;
+
+        return (
+            <>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Trophy className="text-amber-500" /> Palpite de Campeão: {champ.nome}</DialogTitle>
+                    <DialogDescription>
+                        Faça suas apostas para o ranking final. Você pode alterar seus palpites até o início do campeonato.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    {picksArray.map((_, index) => (
+                        <div key={index} className="space-y-2">
+                            <Label htmlFor={`modal-prediction-${champ.id}-${index}`}>{index + 1}º Lugar</Label>
+                            <Combobox
+                                options={getTeamOptions(champ.id, index)}
+                                value={(predictions[champ.id] && predictions[champ.id][index]) || ''}
+                                onChange={(value) => handlePredictionChange(champ.id, index, value)}
+                                placeholder="Selecione a equipe..."
+                                searchPlaceholder="Buscar equipe..."
+                                notFoundMessage="Nenhuma equipe encontrada."
+                            />
+                        </div>
+                    ))}
+                </div>
+                <div className="flex justify-end">
+                    <Button onClick={() => handleSave(champ.id, champ.nome)} disabled={!arePicksMade}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Salvar e Fechar
+                    </Button>
+                </div>
+            </>
+        )
+    }
 
     if (!user || (openForPrediction.length === 0 && lockedPredictions.length === 0)) {
         return null;
@@ -130,71 +190,40 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
                         <div className="flex items-center gap-3">
                             <Trophy className="h-6 w-6 text-amber-500" />
                             <div>
-                                <CardTitle>Palpites de Campeão</CardTitle>
+                                <CardTitle>Palpites de Campeão (Abertos)</CardTitle>
                                 <CardDescription>
-                                    Faça suas apostas de longo prazo. Os palpites serão bloqueados após o início do campeonato.
+                                    Clique em um campeonato para registrar ou alterar seu palpite final.
                                 </CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <Accordion type="single" collapsible className="w-full">
-                            {openForPrediction.map(champ => {
-                                const numberOfPicks = champ.championPredictionSettings?.numberOfPicks || 1;
-                                const picksArray = Array.from({ length: numberOfPicks });
-                                const arePicksMade = predictions[champ.id]?.every(p => p && p.length > 0) && predictions[champ.id]?.length === numberOfPicks;
-
-                                return (
-                                    <AccordionItem value={champ.id} key={champ.id}>
-                                        <AccordionTrigger>
-                                            <div className="flex items-center gap-3 flex-1">
-                                                {champ.iconUrl && (
-                                                    <Image src={champ.iconUrl} alt="" width={24} height={24} />
-                                                )}
-                                                <span className="font-semibold">{champ.nome}</span>
-                                            </div>
-                                            <Badge variant="secondary" className="mr-4">{numberOfPicks} {numberOfPicks > 1 ? 'Escolhas' : 'Escolha'}</Badge>
-                                        </AccordionTrigger>
-                                        <AccordionContent className="pt-4 space-y-4">
-                                            {picksArray.map((_, index) => (
-                                                <div key={index} className="space-y-2">
-                                                    <Label htmlFor={`prediction-${champ.id}-${index}`}>{index + 1}º Lugar</Label>
-                                                    <Combobox
-                                                        options={getTeamOptions(champ.id, index)}
-                                                        value={(predictions[champ.id] && predictions[champ.id][index]) || ''}
-                                                        onChange={(value) => handlePredictionChange(champ.id, index, value)}
-                                                        placeholder="Selecione a equipe..."
-                                                        searchPlaceholder="Buscar equipe..."
-                                                        notFoundMessage="Nenhuma equipe encontrada."
-                                                    />
-                                                </div>
-                                            ))}
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted p-2 rounded-md">
-                                                <Info className="w-4 h-4 shrink-0" />
-                                                <p>Você pode alterar seus palpites a qualquer momento antes do início da primeira partida do campeonato.</p>
-                                            </div>
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
-                                                <Button onClick={() => handleSave(champ.id, champ.nome)} disabled={!arePicksMade}>
-                                                    <Save className="mr-2 h-4 w-4" />
-                                                    {savedPicks[champ.id] ? 'Alterar Palpites' : 'Salvar Palpites'}
-                                                </Button>
-                                                {savedPicks[champ.id] && (
-                                                    <div className="flex items-center gap-2 text-sm text-green-600 animate-in fade-in">
-                                                        <CheckCircle className="h-4 w-4" />
-                                                        <p>Seus palpites para este campeonato foram salvos!</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                )
-                            })}
-                        </Accordion>
+                    <CardContent className="space-y-2">
+                        {openForPrediction.map(champ => {
+                            const userHasPicks = savedPicks[champ.id];
+                             return (
+                                <button key={champ.id} onClick={() => setModalState({ open: true, champId: champ.id })} className="w-full text-left">
+                                <div className="flex items-center justify-between p-3 rounded-md hover:bg-muted transition-colors border">
+                                    <div className="flex items-center gap-3">
+                                        {champ.iconUrl && <Image src={champ.iconUrl} alt="" width={24} height={24} />}
+                                        <span className="font-semibold">{champ.nome}</span>
+                                    </div>
+                                    {userHasPicks ? (
+                                        <div className="flex items-center gap-2 text-sm text-green-600">
+                                            <CheckCircle className="h-4 w-4" />
+                                            <span>Palpite Salvo</span>
+                                        </div>
+                                    ) : (
+                                        <Badge variant="warning">Palpite Pendente</Badge>
+                                    )}
+                                </div>
+                                </button>
+                             )
+                        })}
                     </CardContent>
                 </Card>
             )}
 
-            {openForPrediction.length > 0 && lockedPredictions.length > 0 && <Separator />}
+            {(openForPrediction.length > 0 && lockedPredictions.length > 0) && <Separator />}
 
             {lockedPredictions.length > 0 && (
                 <Card>
@@ -235,8 +264,12 @@ export function ChampionPrediction({ championships, teams, user }: ChampionPredi
                     </CardContent>
                 </Card>
             )}
+
+            <Dialog open={modalState.open} onOpenChange={(open) => setModalState({ open, champId: open ? modalState.champId : null })}>
+                <DialogContent>
+                    {renderModalContent()}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
-
-    

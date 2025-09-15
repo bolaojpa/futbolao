@@ -27,6 +27,7 @@ import { ChampionPrediction } from '@/components/rules/champion-prediction';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -73,6 +74,7 @@ export default function PredictionsPage() {
     const [loadingData, setLoadingData] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
 
+    const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | 'all'>('all');
     const [aiModalState, setAiModalState] = useState<{ open: boolean; suggestion: string | null; justification: string | null; match: Match | null }>({ open: false, suggestion: null, justification: null, match: null });
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
@@ -92,18 +94,26 @@ export default function PredictionsPage() {
         return championships.filter(c => c.status === 'ativo' && c.participantes.includes(user.id));
     }, [championships, user]);
 
+    useEffect(() => {
+        if (activeChampionshipsForUser.length > 0 && selectedChampionshipId === 'all') {
+            setSelectedChampionshipId(activeChampionshipsForUser[0].id);
+        }
+    }, [activeChampionshipsForUser, selectedChampionshipId]);
+
     const displayedMatches = useMemo(() => {
         if (activeChampionshipsForUser.length === 0) return [];
-        const activeChampIds = activeChampionshipsForUser.map(c => c.id);
+        const champIds = selectedChampionshipId === 'all' 
+            ? activeChampionshipsForUser.map(c => c.id)
+            : [selectedChampionshipId];
         
         return allMatches
             .filter(match => {
                 if (match.status !== 'Agendado') return false;
-                if (!activeChampIds.includes(match.campeonatoId)) return false;
+                if (!champIds.includes(match.campeonatoId)) return false;
                 return !isPast(parseISO(match.data));
             })
             .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches, activeChampionshipsForUser, currentTime]);
+    }, [allMatches, activeChampionshipsForUser, currentTime, selectedChampionshipId]);
 
 
     useEffect(() => {
@@ -365,14 +375,31 @@ export default function PredictionsPage() {
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
-            <div className="flex items-center gap-4">
-                 <CalendarCheck className="h-8 w-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Meus Palpites</h1>
-                    <p className="text-muted-foreground">
-                        Registre ou altere seus palpites para as próximas partidas.
-                    </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                 <div className="flex items-center gap-4">
+                    <CalendarCheck className="h-8 w-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline">Meus Palpites</h1>
+                        <p className="text-muted-foreground">
+                            Registre ou altere seus palpites para as próximas partidas.
+                        </p>
+                    </div>
                 </div>
+                {activeChampionshipsForUser.length > 1 && (
+                    <div className="w-full sm:w-auto">
+                        <Select value={selectedChampionshipId} onValueChange={(value) => setSelectedChampionshipId(value)}>
+                            <SelectTrigger className="w-full sm:w-[280px]">
+                                <SelectValue placeholder="Filtrar por campeonato" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos os Campeonatos Ativos</SelectItem>
+                                {activeChampionshipsForUser.map(champ => (
+                                    <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
             </div>
 
             <ChampionPrediction championships={championships} teams={allTeams} user={user} />
@@ -532,5 +559,3 @@ export default function PredictionsPage() {
         </div>
     );
 }
-
-    
