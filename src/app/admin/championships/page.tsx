@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -147,27 +148,33 @@ export default function AdminChampionshipsPage() {
 
     const handleFormSubmit = async (data: Omit<Championship, 'status'>) => {
         try {
-            if (data.id) {
+            const dataToSave = { ...data };
+            // Remove 'rodadas' if it is undefined to prevent Firestore error
+            if (dataToSave.rodadas === undefined) {
+                delete dataToSave.rodadas;
+            }
+
+            if (dataToSave.id) {
                 // Editando campeonato existente
-                await updateChampionship(data.id, {
-                    ...data,
-                    dataInicio: (data.dataInicio as Date).toISOString(),
-                    dataFim: (data.dataFim as Date).toISOString(),
+                await updateChampionship(dataToSave.id, {
+                    ...dataToSave,
+                    dataInicio: (dataToSave.dataInicio as Date).toISOString(),
+                    dataFim: (dataToSave.dataFim as Date).toISOString(),
                 });
                 toast({
                     title: "Campeonato Atualizado",
-                    description: `O campeonato "${data.nome}" foi atualizado.`,
+                    description: `O campeonato "${dataToSave.nome}" foi atualizado.`,
                 });
             } else {
                 // Criando novo campeonato
                 await addChampionship({
-                    ...data,
-                    dataInicio: (data.dataInicio as Date).toISOString(),
-                    dataFim: (data.dataFim as Date).toISOString(),
+                    ...dataToSave,
+                    dataInicio: (dataToSave.dataInicio as Date).toISOString(),
+                    dataFim: (dataToSave.dataFim as Date).toISOString(),
                 });
                 toast({
                     title: "Campeonato Criado!",
-                    description: `O campeonato "${data.nome}" foi adicionado.`,
+                    description: `O campeonato "${dataToSave.nome}" foi adicionado.`,
                 });
             }
             await fetchData();
