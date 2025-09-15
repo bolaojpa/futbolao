@@ -368,6 +368,13 @@ export default function AdminMatchesPage() {
                                 {match.predictions.map((prediction, i) => {
                                     const user = users.find(u => u.id === prediction.userId);
                                     if (!user) return null;
+                                    
+                                    const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                    const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
+                                        const team = teams.find(t => t.name === teamName);
+                                        return team ? { ...team, pickOrder: index + 1 } : null;
+                                    }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
+
                                     return (
                                     <li key={i} className="flex justify-between items-center p-4 border-t">
                                         <div className="w-1/3 text-left flex items-center gap-2 group">
@@ -380,6 +387,18 @@ export default function AdminMatchesPage() {
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <span className="font-bold">{user.apelido}:</span>
+                                                 {chosenTeams.length > 0 && (
+                                                    <div className="flex items-center gap-1">
+                                                        {chosenTeams.map(team => (
+                                                            <Tooltip key={team.id}>
+                                                                <TooltipTrigger>
+                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                            </Tooltip>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
@@ -437,3 +456,4 @@ export default function AdminMatchesPage() {
     </div>
   );
 }
+
