@@ -316,6 +316,7 @@ export default function AdminDashboardPage() {
                             {liveMatchesWithPredictions.map(match => {
                                 const score = scores[match.id] || { placarA: '0', placarB: '0' };
                                 const championship = allChampionships.find(c => c.id === match.campeonatoId);
+                                const isChampionshipStarted = championship ? isPast(parseISO(championship.dataInicio as string)) : false;
                                 const teamA = allTeams.find(t => t.name === match.timeA);
                                 const teamB = allTeams.find(t => t.name === match.timeB);
 
@@ -391,7 +392,10 @@ export default function AdminDashboardPage() {
                                                         
                                                         const simulatedPoints = calculateSimulatedPoints(match, p.palpiteUsuario.placarA, p.palpiteUsuario.placarB);
                                                         const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                        const chosenTeams = champPicks ? allTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+                                                        const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
+                                                            const team = allTeams.find(t => t.name === teamName);
+                                                            return team ? { ...team, pickOrder: index + 1 } : null;
+                                                        }).filter(Boolean) : [];
                                                         const pontuacao = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional;
                                                         const maxPontos = pontuacao?.exato ?? 0;
 
@@ -408,31 +412,16 @@ export default function AdminDashboardPage() {
                                                                 <div className="flex items-center gap-1.5">
                                                                     <span className="font-bold">{user.apelido}:</span>
                                                                     {chosenTeams.length > 0 && (
-                                                                        <>
-                                                                            <div className="hidden sm:flex items-center gap-1">
-                                                                                {chosenTeams.map(team => (
-                                                                                    <Tooltip key={team.id}>
-                                                                                        <TooltipTrigger>
-                                                                                             <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
-                                                                                        </TooltipTrigger>
-                                                                                        <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                    </Tooltip>
-                                                                                ))}
-                                                                            </div>
-                                                                            <div className="flex sm:hidden">
-                                                                                <Tooltip>
+                                                                        <div className="flex items-center gap-1">
+                                                                            {chosenTeams.map(team => (
+                                                                                <Tooltip key={team!.id}>
                                                                                     <TooltipTrigger>
-                                                                                        <Trophy className="h-4 w-4 text-amber-500" />
+                                                                                        <Image src={team!.crestUrl} alt={team!.name} width={16} height={16} className="object-contain" />
                                                                                     </TooltipTrigger>
-                                                                                    <TooltipContent>
-                                                                                        <p className='font-semibold'>Palpites de Campeão:</p>
-                                                                                        <ul className='list-disc list-inside'>
-                                                                                            {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
-                                                                                        </ul>
-                                                                                    </TooltipContent>
+                                                                                    <TooltipContent><p>{team!.pickOrder}º Palpite: {team!.name}</p></TooltipContent>
                                                                                 </Tooltip>
-                                                                            </div>
-                                                                        </>
+                                                                            ))}
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                             </div>

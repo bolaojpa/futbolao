@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/accordion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users, History, ChevronLeft, ChevronRight, Trophy, Loader2 } from 'lucide-react';
 import Image from 'next/image';
@@ -302,6 +302,7 @@ export default function HistoryPage() {
                 const teamA = allTeams.find(t => t.name === match.timeA);
                 const teamB = allTeams.find(t => t.name === match.timeB);
                 const champ = championships.find(c => c.id === match.campeonatoId);
+                const isChampionshipStarted = champ ? isPast(parseISO(champ.dataInicio as string)) : false;
                 const maxPointsForMatch = champ?.pontuacao.tradicional.exato ?? 0;
 
                 return (
@@ -360,7 +361,11 @@ export default function HistoryPage() {
                                 if (!otherUser) return null;
                                 
                                 const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                const chosenTeams = champPicks ? allTeams.filter(t => champPicks.teams.includes(t.name)) : [];
+                                const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
+                                    const team = allTeams.find(t => t.name === teamName);
+                                    return team ? { ...team, pickOrder: index + 1 } : null;
+                                }).filter(Boolean) : [];
+
                                 const otherMaxPoints = championships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
 
                                 return (
@@ -377,31 +382,16 @@ export default function HistoryPage() {
                                       <div className="flex items-center gap-1.5">
                                         <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
                                          {chosenTeams.length > 0 && (
-                                            <>
-                                                <div className="hidden sm:flex items-center gap-1">
-                                                    {chosenTeams.map(team => (
-                                                        <Tooltip key={team.id}>
-                                                            <TooltipTrigger>
-                                                                 <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                        </Tooltip>
-                                                    ))}
-                                                </div>
-                                                <div className="flex sm:hidden">
-                                                    <Tooltip>
+                                            <div className="flex items-center gap-1">
+                                                {chosenTeams.map(team => (
+                                                    <Tooltip key={team!.id}>
                                                         <TooltipTrigger>
-                                                            <Trophy className="h-4 w-4 text-amber-500" />
+                                                              <Image src={team!.crestUrl} alt={team!.name} width={16} height={16} className="object-contain" />
                                                         </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p className='font-semibold'>Palpites de Campeão:</p>
-                                                            <ul className='list-disc list-inside'>
-                                                                {chosenTeams.map(team => <li key={team.id}>{team.name}</li>)}
-                                                            </ul>
-                                                        </TooltipContent>
+                                                        <TooltipContent><p>{team!.pickOrder}º Palpite: {team!.name}</p></TooltipContent>
                                                     </Tooltip>
-                                                </div>
-                                            </>
+                                                ))}
+                                            </div>
                                         )}
                                       </div>
                                     </Link>
