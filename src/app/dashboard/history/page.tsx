@@ -304,6 +304,7 @@ export default function HistoryPage() {
                 const champ = championships.find(c => c.id === match.campeonatoId);
                 const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
                 const maxPointsForMatch = champ?.pontuacao.tradicional.exato ?? 0;
+                const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
 
                 return (
                   <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -363,8 +364,9 @@ export default function HistoryPage() {
                                 const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                 const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
                                     const team = allTeams.find(t => t.name === teamName);
-                                    return team ? { ...team, pickOrder: index + 1 } : null;
-                                }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
+                                    const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
+                                    return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
 
                                 const otherMaxPoints = championships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
 
@@ -386,7 +388,7 @@ export default function HistoryPage() {
                                                 {chosenTeams.map(team => (
                                                     <Tooltip key={team.id}>
                                                         <TooltipTrigger>
-                                                              <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
+                                                              <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
                                                         </TooltipTrigger>
                                                         <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
                                                     </Tooltip>
@@ -450,4 +452,3 @@ export default function HistoryPage() {
     </div>
   );
 }
-

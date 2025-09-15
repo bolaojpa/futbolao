@@ -278,6 +278,8 @@ export default function AdminHistoryPage() {
                   const teamA = teams.find(t => t.name === match.timeA);
                   const teamB = teams.find(t => t.name === match.timeB);
 
+                  const finalRankingOrder = championship?.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) : [];
+
                   return (
                     <Accordion type="single" collapsible className="w-full" key={match.id}>
                       <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
@@ -354,8 +356,9 @@ export default function AdminHistoryPage() {
                                       const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                       const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                           const team = teams.find(t => t.name === teamName);
-                                          return team ? { ...team, pickOrder: index + 1 } : null;
-                                      }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
+                                          const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
+                                          return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                      }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
 
                                       return (
                                       <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(points, maxPointsForMatch))}>
@@ -374,7 +377,7 @@ export default function AdminHistoryPage() {
                                                     {chosenTeams.map(team => (
                                                         <Tooltip key={team.id}>
                                                             <TooltipTrigger>
-                                                                 <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
+                                                                 <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
                                                             </TooltipTrigger>
                                                             <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
                                                         </Tooltip>
