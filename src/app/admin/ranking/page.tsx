@@ -40,7 +40,7 @@ export default function AdminRankingPage() {
   const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [championships, setChampionships] = useState<Championship[]>([]);
-  const [liveMatches, setLiveMatches] = useState<Match[]>([]);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
   const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -71,12 +71,7 @@ export default function AdminRankingPage() {
 
     const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
         const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-        const live = matchesData.filter(match => 
-            match.status !== 'Finalizado' && 
-            match.status !== 'Cancelado' &&
-            isPast(parseISO(match.data))
-        );
-        setLiveMatches(live);
+        setAllMatches(matchesData);
     });
 
     const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
@@ -121,6 +116,12 @@ export default function AdminRankingPage() {
     const selectedChampionship = championships.find(c => c.id === selectedChampionshipId);
     if (!selectedChampionship) return [];
 
+    const liveMatches = allMatches.filter(match => 
+        match.status !== 'Finalizado' && 
+        match.status !== 'Cancelado' &&
+        isPast(parseISO(match.data))
+    );
+
     const participantUsers = allUsers.filter(user => selectedChampionship.participantes.includes(user.id));
 
     return participantUsers.map(user => {
@@ -146,37 +147,45 @@ export default function AdminRankingPage() {
         situacoes: baseSituacoes,
       }
     });
-  }, [allUsers, selectedChampionshipId, liveMatches, allPredictions, championships]);
+  }, [allUsers, selectedChampionshipId, allMatches, allPredictions, championships]);
 
 
   const sortedTableUsers = useMemo(() => {
       const selectedChampionship = championships.find(c => c.id === selectedChampionshipId);
       const tiebreakerRules = selectedChampionship?.regrasDesempate || [];
+      const championshipMatches = allMatches.filter(m => m.campeonatoId === selectedChampionshipId).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
       return [...usersWithStatsForChampionship].sort((a, b) => {
-        // Critério principal: pontos
         if (a.pontos !== b.pontos) return b.pontos - a.pontos;
 
-        // Aplica regras de desempate
         for (const rule of tiebreakerRules) {
             switch (rule) {
                 case 'maiorNumeroExatos':
                     if (a.exatos !== b.exatos) return b.exatos - a.exatos;
                     break;
                 case 'maiorNumeroSituacoes':
-                    if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+                    if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
                     break;
-                // A lógica para 'primeiraBucha' seria mais complexa, envolvendo timestamps de palpites.
-                // Por enquanto, vamos nos ater aos critérios mais simples.
+                case 'primeiraBucha':
+                    const maxPontos = selectedChampionship?.pontuacao.tradicional.exato ?? 0;
+                    const buchasA = allPredictions.filter(p => p.userId === a.id && p.pontos === maxPontos).map(p => p.matchId);
+                    const buchasB = allPredictions.filter(p => p.userId === b.id && p.pontos === maxPontos).map(p => p.matchId);
+
+                    for (const match of championshipMatches) {
+                        const aAcertou = buchasA.includes(match.id);
+                        const bAcertou = buchasB.includes(match.id);
+                        if (aAcertou && !bAcertou) return -1; // A leva vantagem
+                        if (!aAcertou && bAcertou) return 1;  // B leva vantagem
+                    }
+                    break;
             }
         }
         
-        // Critério final: data de cadastro
         const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
         const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateA - dateB;
     })
-  }, [usersWithStatsForChampionship, championships, selectedChampionshipId]);
+  }, [usersWithStatsForChampionship, championships, selectedChampionshipId, allMatches, allPredictions]);
 
   const getMedalIcon = (rank: number) => {
     if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500 fill-yellow-400" />;
