@@ -148,14 +148,13 @@ export default function AdminChampionshipsPage() {
 
     const handleFormSubmit = async (data: Omit<Championship, 'status'>) => {
         try {
-            const dataToSave = { ...data };
-            // Remove 'rodadas' if it is undefined to prevent Firestore error
+            const dataToSave: Partial<Omit<Championship, 'status'>> = { ...data };
+
             if (dataToSave.rodadas === undefined) {
                 delete dataToSave.rodadas;
             }
 
             if (dataToSave.id) {
-                // Editando campeonato existente
                 await updateChampionship(dataToSave.id, {
                     ...dataToSave,
                     dataInicio: (dataToSave.dataInicio as Date).toISOString(),
@@ -166,12 +165,12 @@ export default function AdminChampionshipsPage() {
                     description: `O campeonato "${dataToSave.nome}" foi atualizado.`,
                 });
             } else {
-                // Criando novo campeonato
+                delete dataToSave.id; // Garante que o campo id não seja enviado
                 await addChampionship({
                     ...dataToSave,
                     dataInicio: (dataToSave.dataInicio as Date).toISOString(),
                     dataFim: (dataToSave.dataFim as Date).toISOString(),
-                });
+                } as Omit<Championship, 'id' | 'status' | 'createdAt'>);
                 toast({
                     title: "Campeonato Criado!",
                     description: `O campeonato "${dataToSave.nome}" foi adicionado.`,
