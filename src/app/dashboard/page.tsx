@@ -363,11 +363,19 @@ export default function DashboardPage() {
                                         const teamB = allTeams.find(t => t.name === match.timeB);
                                         const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
                                         const maxPontos = match.maxPontos ?? 0;
+                                        const currentUserLivePoints = userPrediction ? calculateLivePoints(match, userPrediction) : undefined;
+                                        
+                                        let cardStatusClass = 'border-accent/50'; // Default for live
+                                        if(userPrediction) {
+                                            cardStatusClass = getPredictionStatusClass(currentUserLivePoints, maxPontos);
+                                        } else {
+                                            cardStatusClass = 'bg-red-100/80 dark:bg-red-900/40';
+                                        }
 
                                         return (
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
                                                 <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
-                                                    <Card className={cn('border-accent/50')}>
+                                                    <Card className={cn(cardStatusClass)}>
                                                          <AccordionTrigger className="p-4 hover:no-underline">
                                                             <div className="flex flex-col items-center justify-center w-full">
                                                                 <div className="flex items-center justify-center w-full">
@@ -396,7 +404,7 @@ export default function DashboardPage() {
                                                                 </div>
                                                                 <ul className="text-sm">
                                                                     {userPrediction ? (
-                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(calculateLivePoints(match, userPrediction), maxPontos))}>
+                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(currentUserLivePoints, maxPontos))}>
                                                                             <div className="w-1/3 text-left flex items-center gap-2 group">
                                                                                 <Avatar className="w-8 h-8">
                                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
@@ -406,8 +414,8 @@ export default function DashboardPage() {
                                                                             </div>
                                                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
                                                                             <div className="w-1/3 text-right">
-                                                                                <Badge variant={getPointsBadgeVariant(calculateLivePoints(match, userPrediction), maxPontos)} className='whitespace-nowrap'>
-                                                                                    {calculateLivePoints(match, userPrediction)} pts
+                                                                                <Badge variant={getPointsBadgeVariant(currentUserLivePoints, maxPontos)} className='whitespace-nowrap'>
+                                                                                    {currentUserLivePoints} pts
                                                                                 </Badge>
                                                                             </div>
                                                                         </li>
@@ -638,6 +646,7 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
 
 
