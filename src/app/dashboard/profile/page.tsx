@@ -188,39 +188,59 @@ export default function ProfilePage() {
   };
 
   const selectedChampionshipStats = useMemo(() => {
-    if (!userToDisplay || !selectedChampionshipId) {
+    if (!userToDisplay || !selectedChampionshipId || !championships) {
         return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0 };
-    };
+    }
 
-    const baseStats = userToDisplay.championshipStats?.find(stat => stat.championshipId === selectedChampionshipId) || {
-        pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0
-    };
+    let totalPontos = 0;
+    let totalExatos = 0;
+    let totalSituacao = 0;
+    let totalErros = 0;
+    let palpitesNoCampeonato = 0;
 
-    let livePoints = 0;
-    let liveExatos = 0;
-    let liveSituacao = 0;
-    let liveErros = 0;
+    // 1. Processar jogos já finalizados (usando os pontos salvos no palpite)
+    const finishedMatchesInChamp = allMatches.filter(m => m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado');
+    
+    finishedMatchesInChamp.forEach(match => {
+        const prediction = userPredictions.find(p => p.matchId === match.id);
+        if (prediction) {
+            palpitesNoCampeonato++;
+            totalPontos += prediction.pontos;
+            
+            const champ = championships.find(c => c.id === match.campeonatoId);
+            const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
 
-    liveMatches.forEach(match => {
-        if(match.campeonatoId === selectedChampionshipId) {
-            const prediction = userPredictions.find(p => p.matchId === match.id);
-            if (prediction) {
-                const result = calculateLivePoints(match, prediction);
-                livePoints += result.pontos;
-                if (result.exato) liveExatos++;
-                if (result.situacao) liveSituacao++;
-                if (result.pontos === 0) liveErros++;
+            if (prediction.pontos === maxPontos && maxPontos > 0) {
+                totalExatos++;
+            } else if (prediction.pontos > 0) {
+                totalSituacao++;
             }
         }
     });
 
+    // 2. Processar jogos "Ao Vivo" (calculando pontos em tempo real)
+    const liveMatchesInChamp = liveMatches.filter(m => m.campeonatoId === selectedChampionshipId);
+
+    liveMatchesInChamp.forEach(match => {
+        const prediction = userPredictions.find(p => p.matchId === match.id);
+        if (prediction) {
+            palpitesNoCampeonato++;
+            const result = calculateLivePoints(match, prediction);
+            totalPontos += result.pontos;
+            if (result.exato) totalExatos++;
+            if (result.situacao) totalSituacao++;
+        }
+    });
+    
+    totalErros = palpitesNoCampeonato - (totalExatos + totalSituacao);
+
     return {
-        pontos: (baseStats?.pontos || 0) + livePoints,
-        acertosExatos: (baseStats?.acertosExatos || 0) + liveExatos,
-        acertosSituacao: (baseStats?.acertosSituacao || 0) + liveSituacao,
-        erros: (baseStats?.erros || 0) + liveErros,
+        pontos: totalPontos,
+        acertosExatos: totalExatos,
+        acertosSituacao: totalSituacao,
+        erros: totalErros,
     };
-  }, [userToDisplay, selectedChampionshipId, liveMatches, userPredictions, championships]);
+  }, [userToDisplay, selectedChampionshipId, allMatches, userPredictions, championships, liveMatches]);
 
   const lastGuessMatch = useMemo(() => {
       if (!userToDisplay?.ultimoPalpite?.matchId) return null;
@@ -394,5 +414,3 @@ export default function ProfilePage() {
     </TooltipProvider>
   );
 }
-
-    
