@@ -26,7 +26,7 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 import { HonorificsExplanationModal } from '@/components/profile/honorifics-explanation-modal';
 import type { UserType, Championship, Match, Prediction } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, onSnapshot, collection, Timestamp } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getChampionships } from '@/lib/firebase/firestore';
 
@@ -129,11 +129,10 @@ export default function ProfilePage() {
         setAllMatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match)));
     });
 
-    const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
-        const userPreds = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() as Prediction }))
-            .filter(p => p.userId === userId);
-        setUserPredictions(userPreds);
+    const predictionsQuery = query(collection(db, 'predictions'), where('userId', '==', userId));
+    const unsubPredictions = onSnapshot(predictionsQuery, (snapshot) => {
+        const preds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Prediction }));
+        setUserPredictions(preds);
     });
 
     return () => {
@@ -198,27 +197,32 @@ export default function ProfilePage() {
     let palpitesNoCampeonato = 0;
 
     const champMatches = allMatches.filter(m => m.campeonatoId === selectedChampionshipId);
+    const champPredictions = userPredictions.filter(p => champMatches.some(m => m.id === p.matchId));
 
-    champMatches.forEach(match => {
-        const prediction = userPredictions.find(p => p.matchId === match.id);
-        if (prediction) {
+    champPredictions.forEach(prediction => {
+        const match = champMatches.find(m => m.id === prediction.matchId);
+        if (match) {
             palpitesNoCampeonato++;
-            
-            if (match.status === 'Finalizado') {
-                totalPontos += prediction.pontos;
+            let pontos = 0;
+            let isExato = false;
+            let isSituacao = false;
+
+            if (match.status === 'Finalizado' && typeof prediction.pontos === 'number') {
+                pontos = prediction.pontos;
                 const champ = championships.find(c => c.id === match.campeonatoId);
                 const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
-                if (prediction.pontos === maxPontos && maxPontos > 0) {
-                    totalExatos++;
-                } else if (prediction.pontos > 0) {
-                    totalSituacao++;
-                }
+                if (pontos === maxPontos && maxPontos > 0) isExato = true;
+                else if (pontos > 0) isSituacao = true;
             } else if (liveMatches.some(lm => lm.id === match.id)) {
-                const result = calculateLivePoints(match, prediction);
-                totalPontos += result.pontos;
-                if (result.exato) totalExatos++;
-                if (result.situacao) totalSituacao++;
+                 const result = calculateLivePoints(match, prediction);
+                 pontos = result.pontos;
+                 isExato = result.exato;
+                 isSituacao = result.situacao;
             }
+            
+            totalPontos += pontos;
+            if (isExato) totalExatos++;
+            if (isSituacao) totalSituacao++;
         }
     });
     
@@ -406,4 +410,3 @@ export default function ProfilePage() {
   );
 }
 
-    
