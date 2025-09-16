@@ -45,7 +45,7 @@ export default function LeaderboardPage() {
 
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
-  const [liveMatches, setLiveMatches] = useState<Match[]>([]);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
   const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -73,12 +73,7 @@ export default function LeaderboardPage() {
     
     const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
         const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-        const live = matchesData.filter(match => 
-            match.status !== 'Finalizado' && 
-            match.status !== 'Cancelado' &&
-            isPast(parseISO(match.data))
-        );
-        setLiveMatches(live);
+        setAllMatches(matchesData);
     });
 
     const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
@@ -139,6 +134,13 @@ export default function LeaderboardPage() {
 
     const championshipDetails = championships.find(c => c.id === selectedChampionship);
     if (!championshipDetails) return [];
+    
+    const liveMatchesForChamp = allMatches.filter(match => 
+        match.campeonatoId === selectedChampionship &&
+        match.status !== 'Finalizado' && 
+        match.status !== 'Cancelado' &&
+        isPast(parseISO(match.data))
+    );
 
     const participantUsers = allUsers.filter(u => championshipDetails.participantes.includes(u.id));
 
@@ -149,12 +151,10 @@ export default function LeaderboardPage() {
         const baseSituacoes = stats?.acertosSituacao ?? 0;
       
         let livePoints = 0;
-        liveMatches.forEach(match => {
-            if(match.campeonatoId === selectedChampionship) {
-                const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
-                if (prediction) {
-                    livePoints += calculateLivePoints(match, prediction);
-                }
+        liveMatchesForChamp.forEach(match => {
+            const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
+            if (prediction) {
+                livePoints += calculateLivePoints(match, prediction);
             }
         });
       
@@ -165,7 +165,7 @@ export default function LeaderboardPage() {
         situacoes: baseSituacoes,
       }
     });
-  }, [allUsers, selectedChampionship, liveMatches, allPredictions, championships]);
+  }, [allUsers, selectedChampionship, allMatches, allPredictions, championships]);
   
   const sortedTableUsers = useMemo(() => {
     return [...usersWithLiveScore].sort((a, b) => {

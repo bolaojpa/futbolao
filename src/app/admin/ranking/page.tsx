@@ -115,8 +115,9 @@ export default function AdminRankingPage() {
     
     const selectedChampionship = championships.find(c => c.id === selectedChampionshipId);
     if (!selectedChampionship) return [];
-
-    const liveMatches = allMatches.filter(match => 
+    
+    const liveMatchesForChamp = allMatches.filter(match => 
+        match.campeonatoId === selectedChampionshipId &&
         match.status !== 'Finalizado' && 
         match.status !== 'Cancelado' &&
         isPast(parseISO(match.data))
@@ -131,12 +132,10 @@ export default function AdminRankingPage() {
       const baseSituacoes = stats?.acertosSituacao ?? 0;
 
       let livePoints = 0;
-      liveMatches.forEach(match => {
-          if(match.campeonatoId === selectedChampionshipId) {
-              const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
-              if (prediction) {
-                  livePoints += calculateLivePoints(match, prediction);
-              }
+      liveMatchesForChamp.forEach(match => {
+          const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
+          if (prediction) {
+              livePoints += calculateLivePoints(match, prediction);
           }
       });
 
