@@ -18,7 +18,7 @@ export interface UserType {
     ultimaAtividade: string | Timestamp;
     ultimoLogin: string | Timestamp;
     presenceStatus: 'Disponível' | 'Ausente' | 'Ocupado' | 'Não perturbe' | 'Offline';
-    ultimoPalpite?: { matchId: string; palpite: string };
+    ultimoPalpite?: { matchId: string; palpite: string } | null;
     titulos?: number;
     totalJogos?: number;
     timeCoracao?: string;
@@ -28,7 +28,6 @@ export interface UserType {
         pontos: number;
         acertosExatos: number;
         acertosSituacao: number;
-        erros: number;
     }[];
 }
 

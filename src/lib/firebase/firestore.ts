@@ -109,7 +109,6 @@ export async function updateUserStatsAfterMatch(
                     pontos: pointsGanhos,
                     acertosExatos: isAcertoExato ? 1 : 0,
                     acertosSituacao: isAcertoSituacao ? 1 : 0,
-                    erros: (isAcertoExato || isAcertoSituacao) ? 0 : 1,
                     maiorSequencia: 0, // A lógica de maior sequência precisaria de mais contexto
                 });
             } else {
@@ -118,7 +117,6 @@ export async function updateUserStatsAfterMatch(
                 existingStats.pontos = (existingStats.pontos || 0) + pointsGanhos;
                 if (isAcertoExato) existingStats.acertosExatos = (existingStats.acertosExatos || 0) + 1;
                 if (isAcertoSituacao) existingStats.acertosSituacao = (existingStats.acertosSituacao || 0) + 1;
-                if (!isAcertoExato && !isAcertoSituacao) existingStats.erros = (existingStats.erros || 0) + 1;
             }
             
             // 3. Atualiza o documento do usuário com os novos stats e incrementa o total de jogos
@@ -137,16 +135,33 @@ export async function updateUserStatsAfterMatch(
 
 /**
  * Resets the statistics for a specific user.
- * Sets total games, titles to 0 and clears championship stats.
+ * This includes setting total games and titles to 0, clearing championship stats,
+ * and deleting all of the user's prediction documents.
  * @param userId - The ID of the user to reset.
  */
 export async function resetUserStats(userId: string): Promise<void> {
+    const batch = writeBatch(db);
+
+    // 1. Reset user document stats
     const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, {
+    batch.update(userDocRef, {
         championshipStats: [],
         totalJogos: 0,
         titulos: 0,
+        ultimoPalpite: null
     });
+
+    // 2. Find and delete all predictions for the user
+    const predictionsRef = collection(db, 'predictions');
+    const predictionsQuery = query(predictionsRef, where('userId', '==', userId));
+    const predictionsSnapshot = await getDocs(predictionsQuery);
+
+    predictionsSnapshot.forEach(predictionDoc => {
+        batch.delete(predictionDoc.ref);
+    });
+
+    // 3. Commit all operations
+    await batch.commit();
 }
 
 
@@ -446,5 +461,3 @@ export async function updateUserPresenceStatus(userId: string, newStatus: UserTy
       ultimaAtividade: serverTimestamp(),
     });
 }
-
-    
