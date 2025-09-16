@@ -149,12 +149,13 @@ export default function HistoryPage() {
         const prediction = match.prediction!;
         const champ = championships.find(c => c.id === match.campeonatoId);
         const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
+        const isExact = prediction.pontos === maxPontos && maxPontos > 0;
 
         switch (filterType) {
             case 'exact':
-                return prediction.pontos === maxPontos && maxPontos > 0;
+                return isExact;
             case 'situation':
-                return prediction.pontos > 0 && prediction.pontos < maxPontos;
+                return prediction.pontos > 0 && !isExact;
             case 'miss':
                 return prediction.pontos === 0;
             case 'all':
@@ -239,17 +240,19 @@ export default function HistoryPage() {
 
   const { paginatedItems, totalPages } = groupedAndPaginatedMatches;
 
-  const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
-    if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40';
-    if (pontos > 0) return 'bg-blue-100/80 dark:bg-blue-900/40';
-    return 'bg-red-100/80 dark:bg-red-900/40';
-  };
+    const getPredictionStatusClass = (pontos?: number, isExact?: boolean) => {
+        if (pontos === undefined) return '';
+        if (isExact) return 'bg-green-100/80 dark:bg-green-900/40';
+        if (pontos > 0) return 'bg-blue-100/80 dark:bg-blue-900/40';
+        return 'bg-red-100/80 dark:bg-red-900/40';
+    };
 
-  const getPointsBadgeVariant = (pontos: number, maxPontos: number): "success" | "default" | "destructive" => {
-    if (pontos === maxPontos && maxPontos > 0) return 'success';
-    if (pontos > 0) return 'default';
-    return 'destructive';
-  };
+    const getPointsBadgeVariant = (pontos?: number, isExact?: boolean): "success" | "default" | "destructive" => {
+        if (pontos === undefined) return 'default';
+        if (isExact) return 'success';
+        if (pontos > 0) return 'default';
+        return 'destructive';
+    };
 
   if (loadingData || !user) {
     return <div className="p-8 flex justify-center items-center h-full"><Loader2 className="w-8 h-8 animate-spin" /></div>;
@@ -303,14 +306,15 @@ export default function HistoryPage() {
                 const teamB = allTeams.find(t => t.name === match.timeB);
                 const champ = championships.find(c => c.id === match.campeonatoId);
                 const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
-                const maxPointsForMatch = champ?.pontuacao.tradicional.exato ?? 0;
+                const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
+                const isExact = prediction.pontos === maxPontos && maxPontos > 0;
                 const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
 
                 return (
                   <Accordion type="single" collapsible className="w-full" key={match.id}>
                     <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                       <Card>
-                        <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos, maxPointsForMatch))}>
+                        <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction.pontos, isExact))}>
                           <div className="flex flex-col items-center justify-center w-full">
                             <div className="flex items-center justify-center w-full">
                               <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
@@ -332,7 +336,7 @@ export default function HistoryPage() {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos, maxPointsForMatch))}>
+                          <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos, isExact))}>
                             <div className="flex justify-between items-center w-full">
                                 <div className="w-1/3 text-left flex items-center gap-2">
                                     <div className="relative">
@@ -346,7 +350,7 @@ export default function HistoryPage() {
                                 </div>
                               <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                               <div className="w-1/3 text-right">
-                                <Badge variant={getPointsBadgeVariant(prediction.pontos, maxPointsForMatch)} className='whitespace-nowrap'>
+                                <Badge variant={getPointsBadgeVariant(prediction.pontos, isExact)} className='whitespace-nowrap'>
                                   {prediction.pontos} pts
                                 </Badge>
                               </div>
@@ -369,9 +373,10 @@ export default function HistoryPage() {
                                 }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
 
                                 const otherMaxPoints = championships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
+                                const isOtherExact = p.pontos === otherMaxPoints && otherMaxPoints > 0;
 
                                 return (
-                                <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, otherMaxPoints))}>
+                                <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, isOtherExact))}>
                                   <div className="w-1/3 text-left">
                                       <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
                                       <div className="relative">
@@ -400,7 +405,7 @@ export default function HistoryPage() {
                                   </div>
                                   <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                   <div className="w-1/3 text-right">
-                                    <Badge variant={getPointsBadgeVariant(p.pontos, otherMaxPoints)} className='whitespace-nowrap'>
+                                    <Badge variant={getPointsBadgeVariant(p.pontos, isOtherExact)} className='whitespace-nowrap'>
                                       {p.pontos} pts
                                     </Badge>
                                   </div>
@@ -452,3 +457,5 @@ export default function HistoryPage() {
     </div>
   );
 }
+
+  
