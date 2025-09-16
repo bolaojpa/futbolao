@@ -201,7 +201,7 @@ export default function ProfilePage() {
 
     champPredictions.forEach(prediction => {
         const match = champMatches.find(m => m.id === prediction.matchId);
-        if (match) {
+        if (match && (match.status === 'Finalizado' || liveMatches.some(lm => lm.id === match.id))) {
             palpitesNoCampeonato++;
             let pontos = 0;
             let isExato = false;
@@ -244,12 +244,13 @@ export default function ProfilePage() {
   const generalStats = useMemo(() => {
     if (!userToDisplay) return [];
 
-    const championshipIdsWithPredictions = new Set(
-        userPredictions
-            .map(p => allMatches.find(m => m.id === p.matchId)?.campeonatoId)
-            .filter(Boolean)
+     const championshipIdsWithStartedMatches = new Set(
+        allMatches
+            .filter(m => (m.status === 'Ao Vivo' || m.status === 'Finalizado') && userPredictions.some(p => p.matchId === m.id))
+            .map(m => m.campeonatoId)
     );
-    const playedChampionships = championshipIdsWithPredictions.size;
+
+    const playedChampionships = championshipIdsWithStartedMatches.size;
 
     const totalPalpites = userPredictions.length;
     const totalTitulos = userToDisplay.titulos || 0;
@@ -300,7 +301,7 @@ export default function ProfilePage() {
     { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Pontos", value: selectedChampionshipStats.pontos, description: "Total de pontos no campeonato", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}`},
     { icon: <Target className="h-4 w-4 text-muted-foreground" />, title: "Acertos Exatos", value: selectedChampionshipStats.acertosExatos, description: "Placares cravados", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`},
     { icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />, title: "Acertos de Situação", value: selectedChampionshipStats.acertosSituacao, description: "Vencedor/empate corretos", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=situation`},
-    { icon: <XCircle className="h-4 w-4 text-muted-foreground" />, title: "Erros", value: selectedChampionshipStats.erros, description: "Palpites sem pontuação"},
+    { icon: <XCircle className="h-4 w-4 text-muted-foreground" />, title: "Erros", value: selectedChampionshipStats.erros, description: "Palpites sem pontuação", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=miss`},
   ];
 
   return (
@@ -411,5 +412,3 @@ export default function ProfilePage() {
     </TooltipProvider>
   );
 }
-
-    
