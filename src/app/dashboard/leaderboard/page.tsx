@@ -168,25 +168,44 @@ export default function LeaderboardPage() {
   }, [allUsers, selectedChampionship, allMatches, allPredictions, championships]);
   
   const sortedTableUsers = useMemo(() => {
-    return [...usersWithLiveScore].sort((a, b) => {
-        switch (sortType) {
-          case 'exact':
-              if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-              break;
-          case 'situation':
-              if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-              break;
-          default:
-              if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-              if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-              if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
-              break;
+      const selectedChampionshipData = championships.find(c => c.id === selectedChampionship);
+      const tiebreakerRules = selectedChampionshipData?.regrasDesempate || [];
+      const championshipMatches = allMatches.filter(m => m.campeonatoId === selectedChampionship).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
+      return [...usersWithLiveScore].sort((a, b) => {
+        if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+
+        for (const rule of tiebreakerRules) {
+            switch (rule) {
+                case 'maiorNumeroExatos':
+                    if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+                    break;
+                case 'maiorNumeroSituacoes':
+                    if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
+                    break;
+                case 'primeiraBucha':
+                    if (selectedChampionshipData?.pontuacao.tradicional) {
+                        const maxPontos = selectedChampionshipData.pontuacao.tradicional.exato;
+                        const buchasA = allPredictions.filter(p => p.userId === a.id && p.pontos === maxPontos).map(p => p.matchId);
+                        const buchasB = allPredictions.filter(p => p.userId === b.id && p.pontos === maxPontos).map(p => p.matchId);
+
+                        for (const match of championshipMatches) {
+                            const aAcertou = buchasA.includes(match.id);
+                            const bAcertou = buchasB.includes(match.id);
+                            if (aAcertou && !bAcertou) return -1; // A leva vantagem
+                            if (!aAcertou && bAcertou) return 1;  // B leva vantagem
+                        }
+                    }
+                    break;
+            }
         }
+        
+        // Critério final: data de cadastro
         const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
         const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateA - dateB;
     });
-  }, [usersWithLiveScore, sortType]);
+  }, [usersWithLiveScore, selectedChampionship, championships, allMatches, allPredictions]);
 
 
   const getSortColumn = () => {
@@ -368,7 +387,7 @@ export default function LeaderboardPage() {
                                 {sortType === 'default' ? user.exatos : user.pontos}
                                 </TableCell>
                                 <TableCell className="text-right hidden md:table-cell">
-                                {sortType === 'situation' ? user.exatos : user.situacoes}
+                                {sortType === 'situation' ? user.exatos : 'Situação'}
                                 </TableCell>
                             </TableRow>
                         )

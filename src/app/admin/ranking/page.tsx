@@ -150,8 +150,8 @@ export default function AdminRankingPage() {
 
 
   const sortedTableUsers = useMemo(() => {
-      const selectedChampionship = championships.find(c => c.id === selectedChampionshipId);
-      const tiebreakerRules = selectedChampionship?.regrasDesempate || [];
+      const selectedChampionshipData = championships.find(c => c.id === selectedChampionshipId);
+      const tiebreakerRules = selectedChampionshipData?.regrasDesempate || [];
       const championshipMatches = allMatches.filter(m => m.campeonatoId === selectedChampionshipId).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
       return [...usersWithStatsForChampionship].sort((a, b) => {
@@ -166,24 +166,27 @@ export default function AdminRankingPage() {
                     if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
                     break;
                 case 'primeiraBucha':
-                    const maxPontos = selectedChampionship?.pontuacao.tradicional.exato ?? 0;
-                    const buchasA = allPredictions.filter(p => p.userId === a.id && p.pontos === maxPontos).map(p => p.matchId);
-                    const buchasB = allPredictions.filter(p => p.userId === b.id && p.pontos === maxPontos).map(p => p.matchId);
+                    if (selectedChampionshipData?.pontuacao.tradicional) {
+                        const maxPontos = selectedChampionshipData.pontuacao.tradicional.exato;
+                        const buchasA = allPredictions.filter(p => p.userId === a.id && p.pontos === maxPontos).map(p => p.matchId);
+                        const buchasB = allPredictions.filter(p => p.userId === b.id && p.pontos === maxPontos).map(p => p.matchId);
 
-                    for (const match of championshipMatches) {
-                        const aAcertou = buchasA.includes(match.id);
-                        const bAcertou = buchasB.includes(match.id);
-                        if (aAcertou && !bAcertou) return -1; // A leva vantagem
-                        if (!aAcertou && bAcertou) return 1;  // B leva vantagem
+                        for (const match of championshipMatches) {
+                            const aAcertou = buchasA.includes(match.id);
+                            const bAcertou = buchasB.includes(match.id);
+                            if (aAcertou && !bAcertou) return -1; // A leva vantagem
+                            if (!aAcertou && bAcertou) return 1;  // B leva vantagem
+                        }
                     }
                     break;
             }
         }
         
+        // Critério final: data de cadastro
         const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
         const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateA - dateB;
-    })
+    });
   }, [usersWithStatsForChampionship, championships, selectedChampionshipId, allMatches, allPredictions]);
 
   const getMedalIcon = (rank: number) => {
