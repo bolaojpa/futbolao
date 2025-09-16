@@ -110,7 +110,7 @@ export async function updateUserStatsAfterMatch(
                     acertosExatos: isAcertoExato ? 1 : 0,
                     acertosSituacao: isAcertoSituacao ? 1 : 0,
                     erros: (isAcertoExato || isAcertoSituacao) ? 0 : 1,
-                    maiorSequencia: 0,
+                    maiorSequencia: 0, // A lógica de maior sequência precisaria de mais contexto
                 });
             } else {
                 // Se já existem, incrementa os valores
@@ -446,3 +446,5 @@ export async function updateUserPresenceStatus(userId: string, newStatus: UserTy
       ultimaAtividade: serverTimestamp(),
     });
 }
+
+    

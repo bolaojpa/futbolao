@@ -213,38 +213,38 @@ export default function AdminDashboardPage() {
             setAllUsers(usersAfterUpdate);
 
              // 4. (Opcional) Envia notificação por IA
-            // if (enableAiNotifications) {
-            //     for (const prediction of match.predictions) {
-            //         const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
-            //         const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
+            if (enableAiNotifications && championship.predictionAssist?.active) {
+                for (const prediction of match.predictions) {
+                    const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
+                    const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
 
-            //         if (userBefore && userAfter) {
-            //             const pontosGanhos = calculatePointsForSingleMatch(finalizedMatch, prediction).pontos;
+                    if (userBefore && userAfter) {
+                        const pontosGanhos = calculatePointsForSingleMatch(finalizedMatch, prediction).pontos;
                         
-            //             const getPosition = (userList: UserType[], userId: string, champId: string) => {
-            //                  const sorted = userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0))
-            //                  return sorted.findIndex(u => u.id === userId) + 1;
-            //             }
+                        const getPosition = (userList: UserType[], userId: string, champId: string) => {
+                             const sorted = userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0))
+                             return sorted.findIndex(u => u.id === userId) + 1;
+                        }
 
-            //             const oldPosition = getPosition(usersBeforeUpdate, userBefore.id, championship.id);
-            //             const newPosition = getPosition(usersAfterUpdate, userAfter.id, championship.id);
+                        const oldPosition = getPosition(usersBeforeUpdate, userBefore.id, championship.id);
+                        const newPosition = getPosition(usersAfterUpdate, userAfter.id, championship.id);
 
-            //             const notificationData = {
-            //                 apelido: userAfter.apelido,
-            //                 pontosGanhos: pontosGanhos,
-            //                 posicaoAnterior: oldPosition > 0 ? oldPosition : usersBeforeUpdate.length,
-            //                 novaPosicao: newPosition > 0 ? newPosition : usersAfterUpdate.length,
-            //                 nomePartida: `${match.timeA} vs ${match.timeB}`
-            //             };
+                        const notificationData = {
+                            apelido: userAfter.apelido,
+                            pontosGanhos: pontosGanhos,
+                            posicaoAnterior: oldPosition > 0 ? oldPosition : usersBeforeUpdate.length,
+                            novaPosicao: newPosition > 0 ? newPosition : usersAfterUpdate.length,
+                            nomePartida: `${match.timeA} vs ${match.timeB}`
+                        };
 
-            //             generatePerformanceUpdate(notificationData).then(result => {
-            //                 addNotification(userAfter.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
-            //             }).catch(err => {
-            //                 console.error("Falha ao gerar notificação de IA para", userAfter.apelido, err);
-            //             });
-            //         }
-            //     }
-            // }
+                        generatePerformanceUpdate(notificationData).then(result => {
+                            addNotification(userAfter.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
+                        }).catch(err => {
+                            console.error("Falha ao gerar notificação de IA para", userAfter.apelido, err);
+                        });
+                    }
+                }
+            }
 
 
         } catch (error) {
@@ -452,4 +452,7 @@ export default function AdminDashboardPage() {
             </div>
         </TooltipProvider>
     );
+    
+
+
     
