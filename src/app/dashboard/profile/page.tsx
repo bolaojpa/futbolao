@@ -151,90 +151,37 @@ export default function ProfilePage() {
     }
   }, [championships, selectedChampionshipId]);
 
-  const liveMatches = useMemo(() => {
-    return allMatches.filter(match => 
-        match.status !== 'Finalizado' && 
-        match.status !== 'Cancelado' &&
-        isPast(parseISO(match.data))
-    );
-  }, [allMatches]);
-
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number, exato: boolean, situacao: boolean } => {
-    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) {
-      return { pontos: 0, exato: false, situacao: false };
-    }
-    
-    const championship = championships.find(c => c.id === match.campeonatoId);
-    if (!championship) return { pontos: 0, exato: false, situacao: false };
-
-    const { placarA: liveA, placarB: liveB } = match;
-    const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-    const pontuacao = championship.pontuacao.tradicional;
-    
-    const acertouPlacarExato = guessA === liveA && guessB === liveB;
-    if (acertouPlacarExato) {
-        return { pontos: pontuacao.exato, exato: true, situacao: false }; 
-    }
-
-    const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
-    const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
-
-    if (liveWinner === guessWinner) {
-        return { pontos: pontuacao.situacao, exato: false, situacao: true };
-    }
-
-    return { pontos: 0, exato: false, situacao: false };
-  };
-
   const selectedChampionshipStats = useMemo(() => {
     if (!userToDisplay || !selectedChampionshipId || !championships) {
-        return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0 };
+      return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0 };
     }
 
-    let totalPontos = 0;
-    let totalExatos = 0;
-    let totalSituacao = 0;
-    let palpitesNoCampeonato = 0;
+    const champ = championships.find(c => c.id === selectedChampionshipId);
+    if (!champ) return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0 };
 
-    const champMatches = allMatches.filter(m => m.campeonatoId === selectedChampionshipId);
-    const champPredictions = userPredictions.filter(p => champMatches.some(m => m.id === p.matchId));
-
-    champPredictions.forEach(prediction => {
-        const match = champMatches.find(m => m.id === prediction.matchId);
-        if (match && (match.status === 'Finalizado' || liveMatches.some(lm => lm.id === match.id))) {
-            palpitesNoCampeonato++;
-            let pontos = 0;
-            let isExato = false;
-            let isSituacao = false;
-
-            if (match.status === 'Finalizado' && typeof prediction.pontos === 'number') {
-                pontos = prediction.pontos;
-                const champ = championships.find(c => c.id === match.campeonatoId);
-                const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
-                if (pontos === maxPontos && maxPontos > 0) isExato = true;
-                else if (pontos > 0) isSituacao = true;
-            } else if (liveMatches.some(lm => lm.id === match.id)) {
-                 const result = calculateLivePoints(match, prediction);
-                 pontos = result.pontos;
-                 isExato = result.exato;
-                 isSituacao = result.situacao;
-            }
-            
-            totalPontos += pontos;
-            if (isExato) totalExatos++;
-            if (isSituacao) totalSituacao++;
-        }
-    });
+    const maxPontos = champ.pontuacao.tradicional.exato;
     
-    const totalErros = palpitesNoCampeonato - (totalExatos + totalSituacao);
+    const predictionsInChampionship = userPredictions.filter(p => {
+        const match = allMatches.find(m => m.id === p.matchId);
+        return match?.campeonatoId === selectedChampionshipId && match?.status === 'Finalizado';
+    });
 
-    return {
-        pontos: totalPontos,
-        acertosExatos: totalExatos,
-        acertosSituacao: totalSituacao,
-        erros: totalErros,
-    };
-  }, [userToDisplay, selectedChampionshipId, allMatches, userPredictions, championships, liveMatches]);
+    const stats = predictionsInChampionship.reduce((acc, prediction) => {
+        acc.pontos += prediction.pontos;
+        if (prediction.pontos === maxPontos && maxPontos > 0) {
+            acc.acertosExatos++;
+        } else if (prediction.pontos > 0) {
+            acc.acertosSituacao++;
+        }
+        return acc;
+    }, { pontos: 0, acertosExatos: 0, acertosSituacao: 0 });
+
+    const totalErros = predictionsInChampionship.length - (stats.acertosExatos + stats.acertosSituacao);
+    
+    return { ...stats, erros: totalErros };
+
+  }, [userToDisplay, selectedChampionshipId, userPredictions, allMatches, championships]);
+
 
   const lastGuessMatch = useMemo(() => {
       if (!userToDisplay?.ultimoPalpite?.matchId) return null;
@@ -244,20 +191,20 @@ export default function ProfilePage() {
   const generalStats = useMemo(() => {
     if (!userToDisplay) return [];
 
-     const championshipIdsWithStartedMatches = new Set(
-        allMatches
-            .filter(m => (m.status === 'Ao Vivo' || m.status === 'Finalizado') && userPredictions.some(p => p.matchId === m.id))
+     const championshipIdsWithPlayedMatches = new Set(
+        userPredictions
+            .map(p => allMatches.find(m => m.id === p.matchId))
+            .filter((m): m is Match => !!m && m.status === 'Finalizado')
             .map(m => m.campeonatoId)
     );
 
-    const playedChampionships = championshipIdsWithStartedMatches.size;
-
+    const playedChampionships = championshipIdsWithPlayedMatches.size;
     const totalPalpites = userPredictions.length;
     const totalTitulos = userToDisplay.titulos || 0;
 
     return [
       { icon: <Trophy className="h-4 w-4 text-muted-foreground" />, title: "Títulos Conquistados", value: totalTitulos, description: "Total de campeonatos vencidos" },
-      { icon: <Users className="h-4 w-4 text-muted-foreground" />, title: "Campeonatos Disputados", value: playedChampionships, description: "Total de campeonatos que participou" },
+      { icon: <Users className="h-4 w-4 text-muted-foreground" />, title: "Campeonatos Disputados", value: playedChampionships, description: "Total de campeonatos com palpites finalizados" },
       { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Total de Palpites", value: totalPalpites, description: "Palpites enviados em todos os tempos" },
     ];
   }, [userToDisplay, allMatches, userPredictions]);
@@ -395,7 +342,7 @@ export default function ProfilePage() {
                             </Select>
                         </div>
                     </div>
-                    {(userToDisplay.championshipStats && userToDisplay.championshipStats.some(s => s.championshipId === selectedChampionshipId)) || userPredictions.some(p => allMatches.find(m => m.id === p.matchId)?.campeonatoId === selectedChampionshipId) ? (
+                    {userPredictions.some(p => allMatches.find(m => m.id === p.matchId)?.campeonatoId === selectedChampionshipId) ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
                     </div>
