@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -228,6 +227,24 @@ export default function ProfilePage() {
       return allMatches.find(m => m.id === userToDisplay.ultimoPalpite.matchId);
   }, [userToDisplay, allMatches]);
 
+  const generalStats = useMemo(() => {
+    if (!userToDisplay) return [];
+
+    const playedChampionships = championships.filter(c => 
+        c.participantes.includes(userToDisplay.id) &&
+        allMatches.some(m => m.campeonatoId === c.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'))
+    ).length;
+
+    const totalPalpites = userPredictions.length;
+
+    return [
+      { icon: <Trophy className="h-4 w-4 text-muted-foreground" />, title: "Títulos Conquistados", value: userToDisplay.titulos || 0, description: "Total de campeonatos vencidos" },
+      { icon: <Users className="h-4 w-4 text-muted-foreground" />, title: "Campeonatos Disputados", value: playedChampionships, description: "Total de campeonatos que participou" },
+      { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Total de Palpites", value: totalPalpites, description: "Palpites enviados em todos os tempos" },
+    ];
+  }, [userToDisplay, championships, allMatches, userPredictions]);
+
+
   const getLastGuessLink = () => {
     if (!lastGuessMatch) return '#';
     const championshipForMatch = championships.find(c => c.id === lastGuessMatch.campeonatoId);
@@ -253,20 +270,14 @@ export default function ProfilePage() {
   }
 
   const { 
-    nome, apelido, fotoPerfil, urlImagemPersonalizada, titulos, totalJogos, 
-    championshipStats, timeCoracao, ultimaAtividade, ultimoLogin, 
+    nome, apelido, fotoPerfil, urlImagemPersonalizada, titulos,
+    timeCoracao, ultimaAtividade, ultimoLogin, 
     ultimoPalpite, presenceStatus 
   } = userToDisplay;
   
   const displayName = apelido || nome;
   const displayImage = urlImagemPersonalizada || fotoPerfil;
   const fallbackInitials = displayName ? displayName.substring(0, 2).toUpperCase() : '';
-
-  const generalStats = [
-    { icon: <Trophy className="h-4 w-4 text-muted-foreground" />, title: "Títulos Conquistados", value: titulos || 0, description: "Total de campeonatos vencidos" },
-    { icon: <Users className="h-4 w-4 text-muted-foreground" />, title: "Campeonatos Disputados", value: championshipStats?.length || 0, description: "Total de campeonatos que participou" },
-    { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Total de Palpites", value: totalJogos || 0, description: "Palpites enviados em todos os tempos" },
-  ];
 
   const championshipSpecificStats = [
     { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Pontos", value: selectedChampionshipStats.pontos, description: "Total de pontos no campeonato", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}`},
@@ -366,7 +377,7 @@ export default function ProfilePage() {
                             </Select>
                         </div>
                     </div>
-                    {(userToDisplay.championshipStats && userToDisplay.championshipStats.some(s => s.championshipId === selectedChampionshipId)) ? (
+                    {(userToDisplay.championshipStats && userToDisplay.championshipStats.some(s => s.championshipId === selectedChampionshipId)) || userPredictions.some(p => allMatches.find(m => m.id === p.matchId)?.campeonatoId === selectedChampionshipId) ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
                     </div>
@@ -383,3 +394,5 @@ export default function ProfilePage() {
     </TooltipProvider>
   );
 }
+
+    
