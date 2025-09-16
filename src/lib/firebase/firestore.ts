@@ -441,5 +441,8 @@ export async function updateUserLastLogin(userId: string): Promise<void> {
  */
 export async function updateUserPresenceStatus(userId: string, newStatus: UserType['presenceStatus']) {
     const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, { presenceStatus: newStatus });
+    await updateDoc(userDocRef, { 
+      presenceStatus: newStatus,
+      ultimaAtividade: serverTimestamp(),
+    });
 }
