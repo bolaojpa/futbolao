@@ -407,9 +407,10 @@ export default function DashboardPage() {
                                         const { pontos: currentUserLivePoints, isExact: isCurrentUserExact } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, isExact: false };
                                         
                                         const champ = allChampionships.find(c => c.id === match.campeonatoId);
+                                        const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
                                         const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
                                         const userChampPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                        const userChosenTeams = userChampPicks ? userChampPicks.teams.map((teamName, index) => {
+                                        const userChosenTeams = isChampionshipStarted && userChampPicks ? userChampPicks.teams.map((teamName, index) => {
                                             const team = allTeams.find(t => t.name === teamName);
                                             const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
                                             return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
@@ -737,8 +738,8 @@ export default function DashboardPage() {
                                                         const otherUser = allUsers.find(u => u.id === p.userId);
                                                         if (!otherUser) return null;
                                                         
-                                                        const otherMaxPontos = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
-                                                        const isOtherExact = p.pontos === otherMaxPontos && otherMaxPoints > 0;
+                                                        const otherMaxPoints = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
+                                                        const isOtherExact = p.pontos === otherMaxPoints && otherMaxPoints > 0;
                                                         const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                                         const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
