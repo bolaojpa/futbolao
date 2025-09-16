@@ -37,12 +37,6 @@ export default function PredictionsPage() {
     }, [championships, user]);
 
     useEffect(() => {
-        if (activeChampionshipsForUser.length > 0 && selectedChampionshipId === 'all') {
-            setSelectedChampionshipId(activeChampionshipsForUser[0].id);
-        }
-    }, [activeChampionshipsForUser, selectedChampionshipId]);
-    
-    useEffect(() => {
         if (authLoading) return;
         if (!user) {
             router.push('/');
@@ -56,6 +50,13 @@ export default function PredictionsPage() {
                 setAllTeams(teamsData);
                 setAllUsers(usersData);
                 setChampionships(championshipsData);
+
+                // Set default selected championship
+                const activeChamps = championshipsData.filter(c => c.status === 'ativo' && c.participantes.includes(user.id));
+                if (activeChamps.length > 0 && selectedChampionshipId === 'all') {
+                    setSelectedChampionshipId(activeChamps[0].id);
+                }
+
             } catch (error) {
                 toast({ title: "Erro ao buscar dados", description: "Não foi possível carregar equipes, usuários e campeonatos.", variant: "destructive" });
             } finally {

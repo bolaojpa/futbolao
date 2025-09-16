@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useRouter } from 'next/navigation';
 import type { Match, Prediction, Team, Championship, UserType } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { getDoc, onSnapshot, collection, doc } from 'firebase/firestore';
+import { getDoc, onSnapshot, collection, doc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Badge } from '../ui/badge';
 
@@ -243,20 +243,20 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
             predictionData: predictionDataForAPI,
         });
 
-        if (res.error || !res.suggestion) {
+        if ('error' in res || !res.suggestedPrediction) {
              toast({
                 title: "Erro na IA",
-                description: res.error || "Ocorreu um erro desconhecido.",
+                description: ('error' in res && res.error) || "Ocorreu um erro desconhecido.",
                 variant: "destructive",
             });
         } else {
-            const [placarA, placarB] = res.suggestion.split('-').map(Number);
+            const [placarA, placarB] = res.suggestedPrediction.split('-').map(Number);
             handleScoreChange(match.id, 'placarA', placarA);
             handleScoreChange(match.id, 'placarB', placarB);
             
             toast({
                 title: "Sugestão da IA aplicada!",
-                description: `A IA sugeriu o placar de ${res.suggestion}. Agora é só salvar!`,
+                description: `A IA sugeriu o placar de ${res.suggestedPrediction}. Agora é só salvar!`,
             });
         }
 
