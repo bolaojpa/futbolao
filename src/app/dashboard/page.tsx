@@ -143,28 +143,28 @@ export default function DashboardPage() {
 
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
-    const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number, isExact: boolean } => {
+    const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number, isExact: boolean, isSituation: boolean } => {
         const livePlacarA = match.placarA ?? 0;
         const livePlacarB = match.placarB ?? 0;
         
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
-        if (!championship) return { pontos: 0, isExact: false };
+        if (!championship) return { pontos: 0, isExact: false, isSituation: false };
 
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         const pontuacao = championship.pontuacao.tradicional;
 
         if (guessA === livePlacarA && guessB === livePlacarB) {
-            return { pontos: pontuacao.exato, isExact: true }; 
+            return { pontos: pontuacao.exato, isExact: true, isSituation: false }; 
         }
 
         const liveWinner = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
 
         if (liveWinner === guessWinner) {
-            return { pontos: pontuacao.situacao, isExact: false };
+            return { pontos: pontuacao.situacao, isExact: false, isSituation: true };
         }
 
-        return { pontos: 0, isExact: false };
+        return { pontos: 0, isExact: false, isSituation: false };
     };
     
     const leaderboards = useMemo(() => {
@@ -179,28 +179,59 @@ export default function DashboardPage() {
 
             const usersWithLivePoints = usersInChamp.map(u => {
                 const baseStats = u.championshipStats?.find(s => s.championshipId === championship.id);
-                const basePoints = baseStats?.pontos ?? 0;
-                const baseExatos = baseStats?.acertosExatos ?? 0;
+                let basePoints = baseStats?.pontos ?? 0;
+                let baseExatos = baseStats?.acertosExatos ?? 0;
+                let baseSituacoes = baseStats?.acertosSituacao ?? 0;
                 
-                let livePoints = 0;
                 liveMatches.forEach(match => {
                     if (match.campeonatoId === championship.id) {
                         const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === u.id);
                         if (prediction) {
-                            livePoints += calculateLivePoints(match, prediction).pontos;
+                             const result = calculateLivePoints(match, prediction);
+                            basePoints += result.pontos;
+                            if (result.isExact) baseExatos++;
+                            if (result.isSituation) baseSituacoes++;
                         }
                     }
                 });
-                return { ...u, pontos: basePoints + livePoints, exatos: baseExatos };
+                return { ...u, pontos: basePoints, exatos: baseExatos, situacoes: baseSituacoes };
             });
+
+            const tiebreakerRules = championship.regrasDesempate || [];
+            const championshipMatches = allMatches.filter(m => m.campeonatoId === championship.id).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
             const sortedUsers = [...usersWithLivePoints].sort((a, b) => {
                 if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-                if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+
+                for (const rule of tiebreakerRules) {
+                    switch (rule) {
+                        case 'maiorNumeroExatos':
+                            if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+                            break;
+                        case 'maiorNumeroSituacoes':
+                            if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
+                            break;
+                        case 'primeiraBucha':
+                            if (championship.pontuacao.tradicional) {
+                                const maxPontos = championship.pontuacao.tradicional.exato;
+                                const buchasA = allPredictions.filter(p => p.userId === a.id && p.pontos === maxPontos).map(p => p.matchId);
+                                const buchasB = allPredictions.filter(p => p.userId === b.id && p.pontos === maxPontos).map(p => p.matchId);
+
+                                for (const match of championshipMatches) {
+                                    const aAcertou = buchasA.includes(match.id);
+                                    const bAcertou = buchasB.includes(match.id);
+                                    if (aAcertou && !bAcertou) return -1;
+                                    if (!aAcertou && bAcertou) return 1;
+                                }
+                            }
+                            break;
+                    }
+                }
                 const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
                 const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
                 return dateA - dateB;
             });
+
 
             const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
             const secondPlace = sortedUsers[1] as (UserType & { pontos: number }) | undefined;
