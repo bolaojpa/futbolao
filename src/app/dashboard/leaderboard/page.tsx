@@ -29,7 +29,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { useAuth } from '@/hooks/use-auth';
-import type { UserType, Championship, Match, Prediction } from '@/lib/types';
+import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
 import { getChampionships } from '@/lib/firebase/firestore';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { isPast, parseISO } from 'date-fns';
@@ -105,28 +105,30 @@ export default function LeaderboardPage() {
 }, [championships, championshipIdFromQuery, authUser, authLoading]);
 
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): number => {
-    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean } => {
+    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) {
+      return { pontos: 0, exato: false, situacao: false };
+    }
     
     const championship = championships.find(c => c.id === match.campeonatoId);
-    if (!championship) return 0;
+    if (!championship) return { pontos: 0, exato: false, situacao: false };
 
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const pontuacao = championship.pontuacao.tradicional;
 
     if (guessA === liveA && guessB === liveB) {
-        return pontuacao.exato; 
+        return { pontos: pontuacao.exato, exato: true, situacao: false }; 
     }
 
     const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
     const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
 
     if (liveWinner === guessWinner) {
-        return pontuacao.situacao;
+        return { pontos: pontuacao.situacao, exato: false, situacao: true };
     }
 
-    return 0;
+    return { pontos: 0, exato: false, situacao: false };
   };
 
   const usersWithLiveScore = useMemo(() => {
@@ -146,21 +148,23 @@ export default function LeaderboardPage() {
 
     return participantUsers.map(user => {
         const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
-        const basePoints = stats?.pontos ?? 0;
-        const baseExatos = stats?.acertosExatos ?? 0;
-        const baseSituacoes = stats?.acertosSituacao ?? 0;
+        let basePoints = stats?.pontos ?? 0;
+        let baseExatos = stats?.acertosExatos ?? 0;
+        let baseSituacoes = stats?.acertosSituacao ?? 0;
       
-        let livePoints = 0;
         liveMatchesForChamp.forEach(match => {
             const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
             if (prediction) {
-                livePoints += calculateLivePoints(match, prediction);
+                const result = calculateLivePoints(match, prediction);
+                basePoints += result.pontos;
+                if (result.exato) baseExatos++;
+                if (result.situacao) baseSituacoes++;
             }
         });
       
       return {
         ...user,
-        pontos: basePoints + livePoints,
+        pontos: basePoints,
         exatos: baseExatos,
         situacoes: baseSituacoes,
       }
@@ -181,7 +185,7 @@ export default function LeaderboardPage() {
                     if (a.exatos !== b.exatos) return b.exatos - a.exatos;
                     break;
                 case 'maiorNumeroSituacoes':
-                    if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
+                    if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
                     break;
                 case 'primeiraBucha':
                     if (selectedChampionshipData?.pontuacao.tradicional) {
@@ -201,9 +205,9 @@ export default function LeaderboardPage() {
         }
         
         // Critério final: data de cadastro
-        const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
-        const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
-        return dateA - dateB;
+        const dateAValue = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
+        const dateBValue = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
+        return dateAValue - dateBValue;
     });
   }, [usersWithLiveScore, selectedChampionship, championships, allMatches, allPredictions]);
 
@@ -387,7 +391,7 @@ export default function LeaderboardPage() {
                                 {sortType === 'default' ? user.exatos : user.pontos}
                                 </TableCell>
                                 <TableCell className="text-right hidden md:table-cell">
-                                {sortType === 'situation' ? user.exatos : 'Situação'}
+                                {sortType === 'situation' ? user.exatos : user.situacoes}
                                 </TableCell>
                             </TableRow>
                         )

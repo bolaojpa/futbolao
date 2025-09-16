@@ -86,28 +86,30 @@ export default function AdminRankingPage() {
     };
   }, [championshipIdFromQuery]);
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): number => {
-    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) return 0;
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean } => {
+    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) {
+      return { pontos: 0, exato: false, situacao: false };
+    }
     
     const championship = championships.find(c => c.id === match.campeonatoId);
-    if (!championship) return 0;
+    if (!championship) return { pontos: 0, exato: false, situacao: false };
 
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const pontuacao = championship.pontuacao.tradicional;
 
     if (guessA === liveA && guessB === liveB) {
-        return pontuacao.exato; 
+        return { pontos: pontuacao.exato, exato: true, situacao: false };
     }
 
     const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
     const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
 
     if (liveWinner === guessWinner) {
-        return pontuacao.situacao;
+        return { pontos: pontuacao.situacao, exato: false, situacao: true };
     }
 
-    return 0;
+    return { pontos: 0, exato: false, situacao: false };
   };
   
   const usersWithStatsForChampionship = useMemo(() => {
@@ -127,21 +129,23 @@ export default function AdminRankingPage() {
 
     return participantUsers.map(user => {
       const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
-      const basePoints = stats?.pontos ?? 0;
-      const baseExatos = stats?.acertosExatos ?? 0;
-      const baseSituacoes = stats?.acertosSituacao ?? 0;
+      let basePoints = stats?.pontos ?? 0;
+      let baseExatos = stats?.acertosExatos ?? 0;
+      let baseSituacoes = stats?.acertosSituacao ?? 0;
 
-      let livePoints = 0;
       liveMatchesForChamp.forEach(match => {
           const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
           if (prediction) {
-              livePoints += calculateLivePoints(match, prediction);
+              const result = calculateLivePoints(match, prediction);
+              basePoints += result.pontos;
+              if (result.exato) baseExatos++;
+              if (result.situacao) baseSituacoes++;
           }
       });
 
       return {
         ...user,
-        pontos: basePoints + livePoints,
+        pontos: basePoints,
         exatos: baseExatos,
         situacoes: baseSituacoes,
       }
@@ -183,9 +187,9 @@ export default function AdminRankingPage() {
         }
         
         // Critério final: data de cadastro
-        const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
-        const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
-        return dateA - dateB;
+        const dateAValue = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
+        const dateBValue = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
+        return dateAValue - dateBValue;
     });
   }, [usersWithStatsForChampionship, championships, selectedChampionshipId, allMatches, allPredictions]);
 
