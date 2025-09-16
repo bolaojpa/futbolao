@@ -115,10 +115,6 @@ export default function DashboardPage() {
         return allChampionships.filter(c => c.participantes.includes(user.id));
     }, [allChampionships, user]);
 
-    const isUserInActiveChampionship = useMemo(() => {
-        return userChampionships.some(c => c.status === 'ativo');
-    }, [userChampionships]);
-
     const liveMatches = useMemo(() => {
         if (userChampionships.length === 0) return [];
         const userChampionshipIds = userChampionships.map(c => c.id);
@@ -141,14 +137,8 @@ export default function DashboardPage() {
         const userChampionshipIds = userChampionships.map(c => c.id);
         return allMatches
             .filter(match => userChampionshipIds.includes(match.campeonatoId) && match.status === 'Finalizado')
-            .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+            .sort((a, b) => new Date(b.data).getTime() - new Date(b.data).getTime())
             .slice(0, 3);
-    }, [allMatches, userChampionships]);
-
-    const hasAnyChampionshipStarted = useMemo(() => {
-        if (userChampionships.length === 0) return false;
-        const userChampionshipIds = userChampionships.map(c => c.id);
-        return allMatches.some(m => userChampionshipIds.includes(m.campeonatoId) && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
     }, [allMatches, userChampionships]);
 
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
@@ -177,60 +167,69 @@ export default function DashboardPage() {
         return { pontos: 0, isExact: false };
     };
     
-    // Mostra o líder do campeonato mais relevante (o primeiro da lista, que é o mais recente)
-    const sortedUsers = useMemo(() => {
-        const primaryChampionship = userChampionships.length > 0 ? userChampionships[0] : null;
-        if (!primaryChampionship || allUsers.length === 0) return [];
-        
-        const usersInChamp = allUsers.filter(u => primaryChampionship.participantes.includes(u.id));
+    const leaderboards = useMemo(() => {
+        const activeChampionships = userChampionships.filter(c => c.status === 'ativo');
+        if (allUsers.length === 0 || activeChampionships.length === 0) return [];
 
-        const usersWithLivePoints = usersInChamp.map(u => {
-            const baseStats = u.championshipStats?.find(s => s.championshipId === primaryChampionship.id);
-            const basePoints = baseStats?.pontos ?? 0;
-            const baseExatos = baseStats?.acertosExatos ?? 0;
-            
-            let livePoints = 0;
-            liveMatches.forEach(match => {
-                 if (match.campeonatoId === primaryChampionship.id) {
-                    const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === u.id);
-                    if (prediction) {
-                        livePoints += calculateLivePoints(match, prediction).pontos;
+        return activeChampionships.map(championship => {
+            const hasStarted = allMatches.some(m => m.campeonatoId === championship.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
+            if (!hasStarted) return null;
+
+            const usersInChamp = allUsers.filter(u => championship.participantes.includes(u.id));
+
+            const usersWithLivePoints = usersInChamp.map(u => {
+                const baseStats = u.championshipStats?.find(s => s.championshipId === championship.id);
+                const basePoints = baseStats?.pontos ?? 0;
+                const baseExatos = baseStats?.acertosExatos ?? 0;
+                
+                let livePoints = 0;
+                liveMatches.forEach(match => {
+                    if (match.campeonatoId === championship.id) {
+                        const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === u.id);
+                        if (prediction) {
+                            livePoints += calculateLivePoints(match, prediction).pontos;
+                        }
                     }
-                }
+                });
+                return { ...u, pontos: basePoints + livePoints, exatos: baseExatos };
             });
-            return { ...u, pontos: basePoints + livePoints, exatos: baseExatos };
-        });
 
-        return [...usersWithLivePoints].sort((a, b) => {
-            if (a.pontos !== b.pontos) return b.pontos - a.pontos;
-            if (a.exatos !== b.exatos) return b.exatos - a.exatos;
-            const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
-            const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
-            return dateA - dateB;
-        });
-    }, [allUsers, userChampionships, liveMatches, allPredictions]);
+            const sortedUsers = [...usersWithLivePoints].sort((a, b) => {
+                if (a.pontos !== b.pontos) return b.pontos - a.pontos;
+                if (a.exatos !== b.exatos) return b.exatos - a.exatos;
+                const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
+                const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
+                return dateA - dateB;
+            });
 
+            const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
+            const secondPlace = sortedUsers[1] as (UserType & { pontos: number }) | undefined;
+            
+            if (!leader) return null;
 
-    const leader = sortedUsers[0] as (UserType & { pontos: number }) | undefined;
-    const secondPlace = sortedUsers[1] as (UserType & { pontos: number }) | undefined;
-    
-    const showLeaderCard = leader && isUserInActiveChampionship && hasAnyChampionshipStarted;
+            let message = "Líder do ranking!";
+            if (secondPlace) {
+                 const pointsDifference = leader.pontos - secondPlace.pontos;
+                if (pointsDifference > 10) {
+                    message = "Líder isolado!";
+                } else if (pointsDifference <= 3 && pointsDifference > 0) {
+                    message = "Disputa acirrada pela ponta!";
+                } else if (pointsDifference === 0) {
+                    message = "Empatado na liderança!"
+                } else {
+                     message = "O alvo de todos!";
+                }
+            }
 
+            return {
+                championship,
+                leader,
+                message
+            };
+        }).filter(Boolean);
 
-    const getLeaderMessage = () => {
-        if (!leader || !secondPlace) return "Líder do ranking!";
-        const pointsDifference = leader.pontos - secondPlace.pontos;
-        if (pointsDifference > 10) {
-            return "Líder isolado!";
-        }
-        if (pointsDifference <= 3 && pointsDifference > 0) {
-            return "Disputa acirrada pela ponta!";
-        }
-        if (pointsDifference === 0) {
-            return "Empatado na liderança!"
-        }
-        return "O alvo de todos!";
-    };
+    }, [allUsers, userChampionships, liveMatches, allPredictions, allMatches]);
+
 
     const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
         if (status === 'Ao Vivo') return 'destructive';
@@ -312,41 +311,52 @@ export default function DashboardPage() {
                 
                 {hasContent ? (
                     <div className="space-y-8">
-                        {showLeaderCard && (
+                         {leaderboards.length > 0 && (
                             <section>
-                                <Card className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
-                                    <CardHeader className="flex flex-row items-center gap-4 p-4">
-                                        <Link href={`/dashboard/profile?userId=${leader.id}`} className="relative block w-12 h-12">
-                                            <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
-                                                <Avatar className="w-full h-full border-2 border-background">
-                                                    <AvatarImage src={leader.fotoPerfil} alt={leader.apelido} />
-                                                    <AvatarFallback>{leader.apelido.substring(0, 2)}</AvatarFallback>
-                                                </Avatar>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                {leaderboards.map(lb => {
+                                    if (!lb) return null;
+                                    const { championship, leader, message } = lb;
+                                    return (
+                                        <Card key={championship.id} className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
+                                            <CardHeader className="flex flex-row items-center gap-4 p-4">
+                                                <Link href={`/dashboard/profile?userId=${leader.id}`} className="relative block w-12 h-12">
+                                                    <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
+                                                        <Avatar className="w-full h-full border-2 border-background">
+                                                            <AvatarImage src={leader.fotoPerfil} alt={leader.apelido} />
+                                                            <AvatarFallback>{leader.apelido.substring(0, 2)}</AvatarFallback>
+                                                        </Avatar>
+                                                    </div>
+                                                    <Honorifics count={leader.titulos} />
+                                                </Link>
+                                                <div className="flex-1">
+                                                    <CardDescription className="flex items-center gap-2 text-xs">
+                                                        {championship.iconUrl && <Image src={championship.iconUrl} alt="" width={14} height={14}/>}
+                                                        Líder do {championship.nome}
+                                                    </CardDescription>
+                                                    <div className="flex items-baseline gap-2">
+                                                        <CardTitle className="text-xl font-headline text-primary">
+                                                        <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
+                                                        </CardTitle>
+                                                        <p className="text-xl font-headline">{leader.pontos} pts</p>
+                                                    </div>
+                                                    <p className="font-normal text-sm text-muted-foreground">{message}</p>
+                                                </div>
+                                                <Button asChild variant="ghost" size="sm">
+                                                    <Link href={`/dashboard/leaderboard?championshipId=${championship.id}`}>
+                                                        Ver Ranking
+                                                    </Link>
+                                                </Button>
+                                            </CardHeader>
+                                            <div className="absolute -bottom-2 -right-2">
+                                                <Trophy className="w-16 h-16 text-yellow-500/20" strokeWidth={1} />
                                             </div>
-                                            <Honorifics count={leader.titulos} />
-                                        </Link>
-                                        <div className="flex-1">
-                                            <CardDescription className="flex items-center gap-2 text-xs"><Trophy className="w-4 h-4 text-yellow-500"/>Líder do Ranking</CardDescription>
-                                            <div className="flex items-baseline gap-2">
-                                                <CardTitle className="text-xl font-headline text-primary">
-                                                <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
-                                                </CardTitle>
-                                                {leader && <p className="text-xl font-headline">{leader.pontos} pts</p>}
-                                            </div>
-                                            <p className="font-normal text-sm text-muted-foreground">{getLeaderMessage()}</p>
-                                        </div>
-                                        <Button asChild variant="ghost" size="sm">
-                                            <Link href="/dashboard/leaderboard">
-                                                Ver Ranking
-                                            </Link>
-                                        </Button>
-                                    </CardHeader>
-                                    <div className="absolute -bottom-2 -right-2">
-                                        <Medal className="w-16 h-16 text-yellow-500/20" strokeWidth={1} />
-                                    </div>
-                                </Card>
+                                        </Card>
+                                    )
+                                })}
+                                </div>
                             </section>
-                        )}
+                         )}
 
                         {liveMatches.length > 0 && (
                             <section>
@@ -648,12 +658,3 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
-
-
-
-
-
-
-
-
-  
