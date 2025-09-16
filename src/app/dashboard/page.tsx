@@ -168,10 +168,11 @@ export default function DashboardPage() {
     };
     
     const leaderboards = useMemo(() => {
-        const activeChampionships = userChampionships.filter(c => c.status === 'ativo');
-        if (allUsers.length === 0 || activeChampionships.length === 0) return [];
-
-        return activeChampionships.map(championship => {
+        if (!user || allUsers.length === 0 || userChampionships.length === 0) return [];
+    
+        return userChampionships
+            .filter(championship => championship.status === 'ativo')
+            .map(championship => {
             const hasStarted = allMatches.some(m => m.campeonatoId === championship.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
             if (!hasStarted) return null;
 
@@ -259,7 +260,7 @@ export default function DashboardPage() {
             };
         }).filter(Boolean);
 
-    }, [allUsers, userChampionships, liveMatches, allPredictions, allMatches]);
+    }, [user, allUsers, userChampionships, liveMatches, allPredictions, allMatches]);
 
 
     const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
@@ -344,7 +345,7 @@ export default function DashboardPage() {
                     <div className="space-y-8">
                          {leaderboards.length > 0 && (
                             <section>
-                                <div className="grid gap-4 md:grid-cols-2">
+                                <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
                                 {leaderboards.map(lb => {
                                     if (!lb) return null;
                                     const { championship, leader, message } = lb;
@@ -478,6 +479,15 @@ export default function DashboardPage() {
                                                                         const otherUser = allUsers.find(u => u.id === p.userId);
                                                                         if (!otherUser) return null;
                                                                         const { pontos: otherLivePoints, isExact: isOtherExact } = calculateLivePoints(match, p);
+                                                                        const champ = allChampionships.find(c => c.id === match.campeonatoId);
+                                                                        const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                                                        const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
+                                                                        const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
+                                                                            const team = allTeams.find(t => t.name === teamName);
+                                                                            const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
+                                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                                        }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+
                                                                         return (
                                                                             <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(otherLivePoints, isOtherExact))}>
                                                                                 <div className="w-1/3 text-left">
@@ -486,7 +496,21 @@ export default function DashboardPage() {
                                                                                             <AvatarImage src={otherUser.fotoPerfil} alt={otherUser.apelido} />
                                                                                             <AvatarFallback>{otherUser.apelido.substring(0,2)}</AvatarFallback>
                                                                                         </Avatar>
-                                                                                        <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
+                                                                                        <div className="flex items-center gap-1.5">
+                                                                                            <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
+                                                                                            {chosenTeams.length > 0 && (
+                                                                                                <div className="flex items-center gap-1">
+                                                                                                    {chosenTeams.map(team => (
+                                                                                                        <Tooltip key={team.id}>
+                                                                                                            <TooltipTrigger>
+                                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                                            </TooltipTrigger>
+                                                                                                            <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                                        </Tooltip>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
                                                                                     </Link>
                                                                                 </div>
                                                                                 <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
@@ -614,6 +638,8 @@ export default function DashboardPage() {
                                         const champ = allChampionships.find(c => c.id === match.campeonatoId);
                                         const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
                                         const isExact = prediction?.pontos === maxPontos && maxPontos > 0;
+                                        const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
+                                        const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
 
                                         return (
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -660,6 +686,60 @@ export default function DashboardPage() {
                                                         </div>
                                                     </div>
                                                 )}
+                                                <div className="bg-background/80 border-t">
+                                                    <div className="text-center py-2">
+                                                        <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
+                                                    </div>
+                                                    <ul className="text-sm">
+                                                    {otherPredictions.map((p, i) => {
+                                                        const otherUser = allUsers.find(u => u.id === p.userId);
+                                                        if (!otherUser) return null;
+                                                        
+                                                        const otherMaxPontos = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
+                                                        const isOtherExact = p.pontos === otherMaxPoints && otherMaxPoints > 0;
+                                                        const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                                        const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
+                                                        const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
+                                                            const team = allTeams.find(t => t.name === teamName);
+                                                            const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
+                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                        }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+
+                                                        return (
+                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, isOtherExact))}>
+                                                        <div className="w-1/3 text-left">
+                                                            <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
+                                                                <Avatar className="w-8 h-8">
+                                                                    <AvatarImage src={otherUser.fotoPerfil} alt={otherUser.apelido} />
+                                                                    <AvatarFallback>{otherUser.apelido.substring(0,2)}</AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
+                                                                    {chosenTeams.length > 0 && (
+                                                                        <div className="flex items-center gap-1">
+                                                                            {chosenTeams.map(team => (
+                                                                                <Tooltip key={team.id}>
+                                                                                    <TooltipTrigger>
+                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                </Tooltip>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </Link>
+                                                        </div>
+                                                        <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                        <div className="w-1/3 text-right">
+                                                            <Badge variant={getPointsBadgeVariant(p.pontos, isOtherExact)} className='whitespace-nowrap'>
+                                                            {p.pontos} pts
+                                                            </Badge>
+                                                        </div>
+                                                        </li>
+                                                    )})}
+                                                    </ul>
+                                                </div>
                                                 </AccordionContent>
                                                 </Card>
                                             </AccordionItem>
