@@ -383,5 +383,3 @@ export default function ProfilePage() {
     </TooltipProvider>
   );
 }
-
-    

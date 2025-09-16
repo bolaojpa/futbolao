@@ -110,6 +110,7 @@ export async function updateUserStatsAfterMatch(
                     acertosExatos: isAcertoExato ? 1 : 0,
                     acertosSituacao: isAcertoSituacao ? 1 : 0,
                     erros: (isAcertoExato || isAcertoSituacao) ? 0 : 1,
+                    maiorSequencia: 0,
                 });
             } else {
                 // Se já existem, incrementa os valores
@@ -354,6 +355,14 @@ export async function addOrUpdatePrediction(predictionData: Omit<Prediction, 'id
 
     const snapshot = await getDocs(q);
     const now = serverTimestamp();
+    
+    // Also update the user's last guess info
+    const userDocRef = doc(db, 'users', predictionData.userId);
+    const ultimoPalpite = {
+      matchId: predictionData.matchId,
+      palpite: `${predictionData.palpiteUsuario.placarA}-${predictionData.palpiteUsuario.placarB}`
+    };
+
 
     if (snapshot.empty) {
         // Add new prediction
@@ -371,6 +380,9 @@ export async function addOrUpdatePrediction(predictionData: Omit<Prediction, 'id
             updatedAt: now,
         });
     }
+    
+    // Update user's last guess in a separate operation
+    await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade: now });
 }
 
 
@@ -420,4 +432,14 @@ export async function updateUserLastLogin(userId: string): Promise<void> {
         ultimoLogin: now,
         ultimaAtividade: now, // Also update last activity on login
     });
+}
+
+/**
+ * Updates the presence status of a specific user in Firestore.
+ * @param userId - The ID of the user to update.
+ * @param newStatus - The new presence status to set for the user.
+ */
+export async function updateUserPresenceStatus(userId: string, newStatus: UserType['presenceStatus']) {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, { presenceStatus: newStatus });
 }

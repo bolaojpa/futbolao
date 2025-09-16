@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,15 +20,22 @@ import {
 import { LogOut, User, Settings, LifeBuoy, Circle } from 'lucide-react';
 import Link from 'next/link';
 import { StatusIndicator } from './status-indicator';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '../ui/skeleton';
+import type { UserType } from '@/lib/types';
+import { updateUserPresenceStatus } from '@/lib/firebase/firestore';
 
 export function UserNav() {
   const { user, loading } = useAuth();
-  // Em um app real, isso seria gerenciado por um estado global (Context/Zustand) e salvo no DB
   const [currentStatus, setCurrentStatus] = useState<UserType['presenceStatus']>('Disponível');
+
+  useEffect(() => {
+    if (user?.presenceStatus) {
+      setCurrentStatus(user.presenceStatus);
+    }
+  }, [user]);
 
   if (loading) {
     return <Skeleton className="h-9 w-9 rounded-full" />;
@@ -36,9 +44,16 @@ export function UserNav() {
   if (!user) {
     return null; // Ou um botão de Login
   }
-  
+
   const { apelido, email, fotoPerfil } = user;
   const fallbackInitials = apelido.substring(0, 2).toUpperCase();
+
+  const handleStatusChange = async (newStatus: UserType['presenceStatus']) => {
+    if (user) {
+      setCurrentStatus(newStatus); // Optimistic update
+      await updateUserPresenceStatus(user.id, newStatus);
+    }
+  };
 
 
   const statuses: UserType['presenceStatus'][] = ["Disponível", "Ausente", "Ocupado", "Não perturbe", "Offline"];
@@ -89,7 +104,7 @@ export function UserNav() {
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
                  {statuses.map(status => (
-                    <DropdownMenuItem key={status} onSelect={() => setCurrentStatus(status)}>
+                    <DropdownMenuItem key={status} onSelect={() => handleStatusChange(status)}>
                         <Circle className={cn("mr-2 h-4 w-4 fill-current", statusConfig[status]?.color)} />
                         <span>{status}</span>
                     </DropdownMenuItem>
