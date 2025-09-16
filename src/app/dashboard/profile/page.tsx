@@ -244,10 +244,12 @@ export default function ProfilePage() {
   const generalStats = useMemo(() => {
     if (!userToDisplay) return [];
 
-    const playedChampionships = championships.filter(c => 
-        c.participantes.includes(userToDisplay.id) &&
-        allMatches.some(m => m.campeonatoId === c.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'))
-    ).length;
+    const championshipIdsWithPredictions = new Set(
+        userPredictions
+            .map(p => allMatches.find(m => m.id === p.matchId)?.campeonatoId)
+            .filter(Boolean)
+    );
+    const playedChampionships = championshipIdsWithPredictions.size;
 
     const totalPalpites = userPredictions.length;
     const totalTitulos = userToDisplay.titulos || 0;
@@ -257,7 +259,7 @@ export default function ProfilePage() {
       { icon: <Users className="h-4 w-4 text-muted-foreground" />, title: "Campeonatos Disputados", value: playedChampionships, description: "Total de campeonatos que participou" },
       { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Total de Palpites", value: totalPalpites, description: "Palpites enviados em todos os tempos" },
     ];
-  }, [userToDisplay, championships, allMatches, userPredictions]);
+  }, [userToDisplay, allMatches, userPredictions]);
 
 
   const getLastGuessLink = () => {
@@ -410,3 +412,4 @@ export default function ProfilePage() {
   );
 }
 
+    
