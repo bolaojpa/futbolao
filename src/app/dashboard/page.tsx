@@ -210,7 +210,7 @@ export default function DashboardPage() {
                             if (a.exatos !== b.exatos) return b.exatos - a.exatos;
                             break;
                         case 'maiorNumeroSituacoes':
-                            if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
+                            if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
                             break;
                         case 'primeiraBucha':
                             if (championship.pontuacao.tradicional) {
@@ -406,6 +406,15 @@ export default function DashboardPage() {
                                         const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
                                         const { pontos: currentUserLivePoints, isExact: isCurrentUserExact } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, isExact: false };
                                         
+                                        const champ = allChampionships.find(c => c.id === match.campeonatoId);
+                                        const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
+                                        const userChampPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                        const userChosenTeams = userChampPicks ? userChampPicks.teams.map((teamName, index) => {
+                                            const team = allTeams.find(t => t.name === teamName);
+                                            const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
+                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                        }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+
                                         let cardStatusClass = 'border-accent/50'; // Default for live
                                         if(userPrediction) {
                                             cardStatusClass = getPredictionStatusClass(currentUserLivePoints, isCurrentUserExact);
@@ -451,7 +460,21 @@ export default function DashboardPage() {
                                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
                                                                                     <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                                                                 </Avatar>
-                                                                                <span className="font-bold">Seu Palpite:</span>
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <span className="font-bold">Seu Palpite:</span>
+                                                                                    {userChosenTeams.length > 0 && (
+                                                                                        <div className="flex items-center gap-1">
+                                                                                            {userChosenTeams.map(team => (
+                                                                                                <Tooltip key={team.id}>
+                                                                                                    <TooltipTrigger>
+                                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                                    </TooltipTrigger>
+                                                                                                    <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                                </Tooltip>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
                                                                             <div className="w-1/3 text-right">
@@ -479,9 +502,7 @@ export default function DashboardPage() {
                                                                         const otherUser = allUsers.find(u => u.id === p.userId);
                                                                         if (!otherUser) return null;
                                                                         const { pontos: otherLivePoints, isExact: isOtherExact } = calculateLivePoints(match, p);
-                                                                        const champ = allChampionships.find(c => c.id === match.campeonatoId);
                                                                         const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                                        const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
                                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                                             const team = allTeams.find(t => t.name === teamName);
                                                                             const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
@@ -640,6 +661,13 @@ export default function DashboardPage() {
                                         const isExact = prediction?.pontos === maxPontos && maxPontos > 0;
                                         const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
                                         const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
+                                        const userChampPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                        const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
+                                        const userChosenTeams = isChampionshipStarted && userChampPicks ? userChampPicks.teams.map((teamName, index) => {
+                                            const team = allTeams.find(t => t.name === teamName);
+                                            const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
+                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                        }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
 
                                         return (
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -675,7 +703,21 @@ export default function DashboardPage() {
                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
                                                                     <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                                                 </Avatar>
-                                                                <span className="font-bold">Seu Palpite:</span>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="font-bold">Seu Palpite:</span>
+                                                                    {userChosenTeams.length > 0 && (
+                                                                        <div className="flex items-center gap-1">
+                                                                            {userChosenTeams.map(team => (
+                                                                                <Tooltip key={team.id}>
+                                                                                    <TooltipTrigger>
+                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                    </TooltipTrigger>
+                                                                                    <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                </Tooltip>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                                             <div className="w-1/3 text-right">
@@ -696,9 +738,8 @@ export default function DashboardPage() {
                                                         if (!otherUser) return null;
                                                         
                                                         const otherMaxPontos = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
-                                                        const isOtherExact = p.pontos === otherMaxPoints && otherMaxPoints > 0;
+                                                        const isOtherExact = p.pontos === otherMaxPontos && otherMaxPoints > 0;
                                                         const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                        const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
                                                         const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
                                                             const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
