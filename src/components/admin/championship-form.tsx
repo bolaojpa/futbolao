@@ -975,9 +975,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                             name="pontuacao.combo.pontosGols"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                <FormLabel>Acerto de Gols (Sozinho)</FormLabel>
+                                                <FormLabel>Bônus de Gols (Sozinho)</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" placeholder="Ex: 1" {...field} disabled={!isComboActive} />
+                                                    <Input type="number" placeholder="Ex: 1" {...field} disabled={!isComboActive} value={field.value ?? ''} />
                                                 </FormControl>
                                                 <FormDescription className="text-xs">Pontos se acertar apenas o total de gols.</FormDescription>
                                                 <FormMessage />
@@ -991,9 +991,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                                 <FormItem>
                                                 <FormLabel>Bônus (Bucha + Gols)</FormLabel>
                                                 <FormControl>
-                                                    <Input type="number" placeholder="Ex: 5" {...field} disabled={!isComboActive} />
+                                                    <Input type="number" placeholder="Ex: 5" {...field} disabled={!isComboActive} value={field.value ?? ''} />
                                                 </FormControl>
-                                                <FormDescription className="text-xs">Pontos SOMADOS se acertar a bucha e os gols.</FormDescription>
+                                                <FormDescription className="text-xs">Pontos SOMADOS à bucha se acertar ambos.</FormDescription>
                                                 <FormMessage />
                                                 </FormItem>
                                             )}
@@ -1029,8 +1029,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                                                             const newCotas = [...currentCotas];
                                                                             const newQuantity = newValue === '' ? 0 : parseInt(newValue, 10);
                                                                             
-                                                                            if (cotaIndex !== -1) {
-                                                                                newCotas[cotaIndex!] = { ...newCotas[cotaIndex!], quantidade: newQuantity };
+                                                                            if (cotaIndex !== -1 && cotaIndex !== undefined) {
+                                                                                newCotas[cotaIndex] = { ...newCotas[cotaIndex], quantidade: newQuantity };
                                                                             } else {
                                                                                 newCotas.push({ fase: phaseName, quantidade: newQuantity });
                                                                             }
