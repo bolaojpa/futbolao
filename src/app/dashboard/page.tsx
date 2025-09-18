@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/accordion';
 import { format, parseISO, isToday, differenceInHours, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard, ChevronDown, HelpCircle } from 'lucide-react';
+import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard, ChevronDown, HelpCircle, Gem } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -143,28 +143,49 @@ export default function DashboardPage() {
 
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
-    const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number, isExact: boolean, isSituation: boolean } => {
-        const livePlacarA = match.placarA ?? 0;
-        const livePlacarB = match.placarB ?? 0;
-        
-        const championship = allChampionships.find(c => c.id === match.campeonatoId);
-        if (!championship) return { pontos: 0, isExact: false, isSituation: false };
-
+    const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
+        const { placarA: finalA, placarB: finalB } = match;
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-        const pontuacao = championship.pontuacao.tradicional;
+        const totalGolsFinal = (finalA ?? 0) + (finalB ?? 0);
 
-        if (guessA === livePlacarA && guessB === livePlacarB) {
-            return { pontos: pontuacao.exato, isExact: true, isSituation: false }; 
+        const championship = allChampionships.find(c => c.id === match.campeonatoId);
+        const pontuacao = championship?.pontuacao;
+
+        if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) {
+            return { pontos: 0, acertoTipo: 'erro' };
         }
-
-        const liveWinner = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
+    
+        const acertouPlacarExato = guessA === finalA && guessB === finalB;
+        const finalWinner = finalA > finalB ? 'A' : finalA < finalB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+        const acertouSituacao = finalWinner === guessWinner;
+        
+        let pontosGanhos = 0;
+        let acertoTipo: Prediction['acertoTipo'] = 'erro';
 
-        if (liveWinner === guessWinner) {
-            return { pontos: pontuacao.situacao, isExact: false, isSituation: true };
+        const usouCombo = !!prediction.palpiteCombo;
+        const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+
+        if (acertouPlacarExato) {
+            pontosGanhos += pontuacao.tradicional.exato;
+            acertoTipo = 'bucha';
+            if (acertouGols) {
+                pontosGanhos += pontuacao.combo?.bonusPlacarExatoGols ?? 0;
+                acertoTipo = 'combo_bucha';
+            }
+        } else if (acertouSituacao) {
+            pontosGanhos += pontuacao.tradicional.situacao;
+            acertoTipo = 'situacao';
+             if (acertouGols) {
+                pontosGanhos += pontuacao.combo?.pontosGols ?? 0;
+                acertoTipo = 'combo_situacao';
+            }
+        } else if (acertouGols) {
+            pontosGanhos += pontuacao.combo?.pontosGols ?? 0;
+            acertoTipo = 'combo_sozinho';
         }
-
-        return { pontos: 0, isExact: false, isSituation: false };
+        
+        return { pontos: pontosGanhos, acertoTipo };
     };
     
     const leaderboards = useMemo(() => {
@@ -190,8 +211,8 @@ export default function DashboardPage() {
                         if (prediction) {
                              const result = calculateLivePoints(match, prediction);
                             basePoints += result.pontos;
-                            if (result.isExact) baseExatos++;
-                            if (result.isSituation) baseSituacoes++;
+                            if (result.acertoTipo === 'bucha' || result.acertoTipo === 'combo_bucha') baseExatos++;
+                            if (result.acertoTipo === 'situacao' || result.acertoTipo === 'combo_situacao') baseSituacoes++;
                         }
                     }
                 });
@@ -276,18 +297,33 @@ export default function DashboardPage() {
         return currentStatus;
     };
 
-    const getPredictionStatusClass = (pontos?: number, isExact?: boolean) => {
-        if (pontos === undefined) return 'bg-red-100/80 dark:bg-red-900/40';
-        if (isExact) return 'bg-green-100/80 dark:bg-green-900/40';
-        if (pontos > 0) return 'bg-blue-100/80 dark:bg-blue-900/40';
-        return 'bg-red-100/80 dark:bg-red-900/40';
+    const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
+        switch (acertoTipo) {
+            case 'combo_bucha': return 'bg-combo-gold text-black';
+            case 'combo_situacao': return 'bg-combo-silver text-black';
+            case 'bucha': return 'bg-green-100/80 dark:bg-green-900/40';
+            case 'situacao': return 'bg-blue-100/80 dark:bg-blue-900/40';
+            case 'combo_sozinho': return 'bg-combo-solo';
+            case 'erro':
+            default:
+                 return 'bg-red-100/80 dark:bg-red-900/40';
+        }
     };
-
-    const getPointsBadgeVariant = (pontos?: number, isExact?: boolean): "success" | "default" | "destructive" => {
-        if (pontos === undefined) return 'destructive';
-        if (isExact) return 'success';
-        if (pontos > 0) return 'default';
-        return 'destructive';
+    
+    const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
+        switch (acertoTipo) {
+            case 'combo_bucha':
+            case 'bucha':
+                return 'success';
+            case 'combo_situacao':
+            case 'situacao':
+                return 'default';
+            case 'combo_sozinho':
+                return 'secondary';
+            case 'erro':
+            default:
+                return 'destructive';
+        }
     };
     
     const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
@@ -404,7 +440,7 @@ export default function DashboardPage() {
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
                                         const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
-                                        const { pontos: currentUserLivePoints, isExact: isCurrentUserExact } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, isExact: false };
+                                        const { pontos: currentUserLivePoints, acertoTipo: currentUserAcertoTipo } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, acertoTipo: 'erro' };
                                         
                                         const champ = allChampionships.find(c => c.id === match.campeonatoId);
                                         const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
@@ -418,7 +454,7 @@ export default function DashboardPage() {
 
                                         let cardStatusClass = 'border-accent/50'; // Default for live
                                         if(userPrediction) {
-                                            cardStatusClass = getPredictionStatusClass(currentUserLivePoints, isCurrentUserExact);
+                                            cardStatusClass = getPredictionStatusClass(currentUserAcertoTipo);
                                         } else {
                                             cardStatusClass = 'bg-red-100/80 dark:bg-red-900/40';
                                         }
@@ -455,7 +491,7 @@ export default function DashboardPage() {
                                                                 </div>
                                                                 <ul className="text-sm">
                                                                     {userPrediction ? (
-                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(currentUserLivePoints, isCurrentUserExact))}>
+                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(currentUserAcertoTipo))}>
                                                                             <div className="w-1/3 text-left flex items-center gap-2 group">
                                                                                 <Avatar className="w-8 h-8">
                                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
@@ -478,8 +514,9 @@ export default function DashboardPage() {
                                                                                 </div>
                                                                             </div>
                                                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
-                                                                            <div className="w-1/3 text-right">
-                                                                                <Badge variant={getPointsBadgeVariant(currentUserLivePoints, isCurrentUserExact)} className='whitespace-nowrap'>
+                                                                            <div className="w-1/3 text-right flex items-center justify-end gap-2">
+                                                                                {userPrediction.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                                                <Badge variant={getPointsBadgeVariant(currentUserAcertoTipo)} className='whitespace-nowrap'>
                                                                                     {currentUserLivePoints} pts
                                                                                 </Badge>
                                                                             </div>
@@ -502,16 +539,16 @@ export default function DashboardPage() {
                                                                     {otherPredictions.map((p, i) => {
                                                                         const otherUser = allUsers.find(u => u.id === p.userId);
                                                                         if (!otherUser) return null;
-                                                                        const { pontos: otherLivePoints, isExact: isOtherExact } = calculateLivePoints(match, p);
+                                                                        const { pontos: otherLivePoints, acertoTipo: otherAcertoTipo } = calculateLivePoints(match, p);
                                                                         const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                                             const team = allTeams.find(t => t.name === teamName);
                                                                             const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
                                                                             return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
                                                                         }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
-
+                                                                        
                                                                         return (
-                                                                            <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(otherLivePoints, isOtherExact))}>
+                                                                            <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(otherAcertoTipo))}>
                                                                                 <div className="w-1/3 text-left">
                                                                                     <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
                                                                                         <Avatar className="w-8 h-8">
@@ -536,8 +573,9 @@ export default function DashboardPage() {
                                                                                     </Link>
                                                                                 </div>
                                                                                 <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
-                                                                                <div className="w-1/3 text-right">
-                                                                                    <Badge variant={getPointsBadgeVariant(otherLivePoints, isOtherExact)} className='whitespace-nowrap'>
+                                                                                <div className="w-1/3 text-right flex items-center justify-end gap-2">
+                                                                                    {p.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                                                    <Badge variant={getPointsBadgeVariant(otherAcertoTipo)} className='whitespace-nowrap'>
                                                                                         {otherLivePoints} pts
                                                                                     </Badge>
                                                                                 </div>
@@ -658,8 +696,6 @@ export default function DashboardPage() {
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
                                         const champ = allChampionships.find(c => c.id === match.campeonatoId);
-                                        const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
-                                        const isExact = prediction?.pontos === maxPontos && maxPontos > 0;
                                         const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
                                         const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
                                         const userChampPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
@@ -674,7 +710,7 @@ export default function DashboardPage() {
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
                                             <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                                                 <Card>
-                                                <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction?.pontos, isExact))}>
+                                                <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction?.acertoTipo))}>
                                                     <div className="flex flex-col items-center justify-center w-full">
                                                         <div className="flex items-center justify-center w-full">
                                                             <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
@@ -697,7 +733,7 @@ export default function DashboardPage() {
                                                 </AccordionTrigger>
                                                 <AccordionContent>
                                                 {prediction && (
-                                                    <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.pontos, isExact))}>
+                                                    <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.acertoTipo))}>
                                                         <div className="flex justify-between items-center w-full">
                                                             <div className="w-1/3 text-left flex items-center gap-2">
                                                                 <Avatar className="w-8 h-8">
@@ -721,8 +757,9 @@ export default function DashboardPage() {
                                                                 </div>
                                                             </div>
                                                             <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
-                                                            <div className="w-1/3 text-right">
-                                                                <Badge variant={getPointsBadgeVariant(prediction.pontos, isExact)} className='whitespace-nowrap'>
+                                                            <div className="w-1/3 text-right flex items-center justify-end gap-2">
+                                                                 {prediction.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                                <Badge variant={getPointsBadgeVariant(prediction.acertoTipo)} className='whitespace-nowrap'>
                                                                     {prediction.pontos} pts
                                                                 </Badge>
                                                             </div>
@@ -738,8 +775,6 @@ export default function DashboardPage() {
                                                         const otherUser = allUsers.find(u => u.id === p.userId);
                                                         if (!otherUser) return null;
                                                         
-                                                        const otherMaxPoints = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional.exato ?? 0;
-                                                        const isOtherExact = p.pontos === otherMaxPoints && otherMaxPoints > 0;
                                                         const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                                         const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
@@ -748,7 +783,7 @@ export default function DashboardPage() {
                                                         }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
 
                                                         return (
-                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.pontos, isOtherExact))}>
+                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.acertoTipo))}>
                                                         <div className="w-1/3 text-left">
                                                             <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
                                                                 <Avatar className="w-8 h-8">
@@ -773,8 +808,9 @@ export default function DashboardPage() {
                                                             </Link>
                                                         </div>
                                                         <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
-                                                        <div className="w-1/3 text-right">
-                                                            <Badge variant={getPointsBadgeVariant(p.pontos, isOtherExact)} className='whitespace-nowrap'>
+                                                        <div className="w-1/3 text-right flex items-center justify-end gap-2">
+                                                            {p.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                            <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
                                                             {p.pontos} pts
                                                             </Badge>
                                                         </div>

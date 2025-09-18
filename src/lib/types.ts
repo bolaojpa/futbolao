@@ -60,6 +60,7 @@ export interface Prediction {
       totalGols: number;
     } | null;
     pontos: number;
+    acertoTipo?: 'bucha' | 'situacao' | 'combo_bucha' | 'combo_situacao' | 'combo_sozinho' | 'erro';
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }
@@ -81,10 +82,10 @@ export interface Championship {
     regrasDesempate?: TiebreakerRule[];
     pontuacao: {
         tradicional: { ativo: boolean; exato: number; situacao: number; };
-        combo?: {
+        combo: {
             ativo: boolean;
-            bonusPlacarExatoGols: number; // Bônus para Bucha + Acerto de Gols
-            pontosGols: number; // Pontos para acerto de gols isolado
+            bonusPlacarExatoGols: number;
+            pontosGols: number;
             cotasPorFase: { fase: string; quantidade: number }[];
         };
     };

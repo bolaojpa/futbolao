@@ -124,3 +124,40 @@
 .animate-border-pulse {
   animation: border-pulse 2s infinite;
 }
+
+@keyframes gold-shimmer {
+    0% { background-position: -100% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.bg-combo-gold {
+    background-color: #ffc400;
+    background-image: linear-gradient(105deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.4) 45%,
+        rgba(255, 255, 255, 0.5) 50%,
+        rgba(255, 255, 255, 0.4) 55%,
+        transparent 60%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: gold-shimmer 3s infinite linear;
+}
+
+.bg-combo-silver {
+    background-color: #c0c0c0;
+    background-image: linear-gradient(105deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.2) 45%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.2) 55%,
+        transparent 60%,
+        transparent 100%
+    );
+}
+
+.bg-combo-solo {
+    background-color: #a855f720; /* purple-500 com 12% de opacidade */
+}

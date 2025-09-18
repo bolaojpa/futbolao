@@ -73,16 +73,14 @@ export async function deleteUsers(userIds: string[]): Promise<void> {
  * @param userId The ID of the user to update.
  * @param championshipId The ID of the championship for which to update stats.
  * @param pointsGanhos The points earned in the finalized match.
- * @param isAcertoExato Whether the prediction was an exact score match.
- * @param isAcertoSituacao Whether the prediction matched the winner/draw.
+ * @param acertoTipo The type of hit ('bucha', 'situacao', etc.)
  * @param predictionId The ID of the prediction document to update with the points.
  */
 export async function updateUserStatsAfterMatch(
     userId: string, 
     championshipId: string,
     pointsGanhos: number,
-    isAcertoExato: boolean,
-    isAcertoSituacao: boolean,
+    acertoTipo: Prediction['acertoTipo'],
     predictionId: string
 ) {
     const userRef = doc(db, 'users', userId);
@@ -95,12 +93,15 @@ export async function updateUserStatsAfterMatch(
                 throw new Error(`User with ID ${userId} does not exist!`);
             }
 
-            // 1. Update a pontuação no documento de palpite
-            transaction.update(predictionRef, { pontos: pointsGanhos });
+            // 1. Update a pontuação e o tipo de acerto no documento de palpite
+            transaction.update(predictionRef, { pontos: pointsGanhos, acertoTipo: acertoTipo });
 
             const userData = userDoc.data() as UserType;
             let champStats = [...(userData.championshipStats || [])];
             let statsIndex = champStats.findIndex(s => s.championshipId === championshipId);
+            
+            const isAcertoExato = acertoTipo === 'bucha' || acertoTipo === 'combo_bucha';
+            const isAcertoSituacao = acertoTipo === 'situacao' || acertoTipo === 'combo_situacao';
 
             if (statsIndex === -1) {
                 // Se não existem stats para este campeonato, cria um novo registro
@@ -109,7 +110,6 @@ export async function updateUserStatsAfterMatch(
                     pontos: pointsGanhos,
                     acertosExatos: isAcertoExato ? 1 : 0,
                     acertosSituacao: isAcertoSituacao ? 1 : 0,
-                    maiorSequencia: 0, // A lógica de maior sequência precisaria de mais contexto
                 });
             } else {
                 // Se já existem, incrementa os valores
@@ -383,6 +383,7 @@ export async function addOrUpdatePrediction(predictionData: Omit<Prediction, 'id
         // Add new prediction
         await addDoc(predictionsRef, {
             ...predictionData,
+            acertoTipo: 'erro',
             createdAt: now,
             updatedAt: now,
         });
@@ -392,6 +393,7 @@ export async function addOrUpdatePrediction(predictionData: Omit<Prediction, 'id
         const docRef = doc(db, 'predictions', docId);
         await updateDoc(docRef, {
             palpiteUsuario: predictionData.palpiteUsuario,
+            palpiteCombo: predictionData.palpiteCombo,
             updatedAt: now,
         });
     }
