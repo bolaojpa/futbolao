@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock } from 'lucide-react';
+import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, Gem } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion, savePrediction } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getDoc, onSnapshot, collection, doc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -40,6 +41,7 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
                 readOnly
                 value={value === null ? '' : value}
                 className="w-full h-12 text-center text-2xl font-bold bg-muted border-0 pr-6"
+                placeholder="-"
             />
             <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center h-full">
                 <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleIncrement}>
@@ -74,6 +76,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
+    const [comboScores, setComboScores] = useState<Record<string, { totalGols: number | null }>>({});
     
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -115,16 +118,20 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
             const predictionsData = allPreds.filter(p => p.userId === user.id);
             setUserPredictions(predictionsData);
 
-            // Update local state based on Firestore predictions
             const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
+            const initialComboScores: Record<string, { totalGols: number | null }> = {};
             const initialUpdates: Record<string, Date | null> = {};
             predictionsData.forEach(p => {
                 initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
+                if (p.palpiteCombo) {
+                    initialComboScores[p.matchId] = { totalGols: p.palpiteCombo.totalGols };
+                }
                 if (p.updatedAt) {
                     initialUpdates[p.matchId] = p.updatedAt.toDate();
                 }
             });
             setScores(prev => ({ ...prev, ...initialScores }));
+            setComboScores(prev => ({ ...prev, ...initialComboScores }));
             setLastUpdated(prev => ({ ...prev, ...initialUpdates }));
         });
 
@@ -157,6 +164,44 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
             },
         }));
     };
+    
+    const handleComboScoreChange = (matchId: string, value: number) => {
+        setComboScores(prev => ({
+            ...prev,
+            [matchId]: {
+                totalGols: value,
+            }
+        }));
+    };
+    
+    const comboTokensUsedByPhase = useMemo(() => {
+        const usage: Record<string, number> = {};
+         userPredictions.forEach(p => {
+            if (p.palpiteCombo) {
+                const match = allMatches.find(m => m.id === p.matchId);
+                if (match) {
+                    const phase = match.fase;
+                    if (!usage[phase]) {
+                        usage[phase] = 0;
+                    }
+                    usage[phase]++;
+                }
+            }
+        });
+        return usage;
+    }, [userPredictions, allMatches]);
+
+    const handleToggleCombo = (matchId: string) => {
+        setComboScores(prev => {
+            const newScores = { ...prev };
+            if (newScores[matchId]) {
+                delete newScores[matchId]; // Remove o palpite combo
+            } else {
+                newScores[matchId] = { totalGols: null }; // Adiciona o combo para preenchimento
+            }
+            return newScores;
+        });
+    }
 
     const handlePredictionSubmit = async (match: Match) => {
         if (!user) return;
@@ -174,7 +219,16 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
         }
 
         const currentScore = scores[match.id];
-        if (currentScore.placarA === null || currentScore.placarB === null) return;
+        if (currentScore.placarA === null || currentScore.placarB === null) {
+            toast({ title: "Palpite Incompleto", description: "Você precisa preencher o placar da partida.", variant: "destructive" });
+            return;
+        };
+
+        const comboScore = comboScores[match.id];
+        if (comboScore && comboScore.totalGols === null) {
+            toast({ title: "Palpite Combo Incompleto", description: "Você precisa preencher o total de gols para usar a ficha de combo.", variant: "destructive" });
+            return;
+        }
         
         const isEditing = !!lastUpdated[match.id];
 
@@ -185,7 +239,8 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                 palpiteUsuario: {
                     placarA: currentScore.placarA,
                     placarB: currentScore.placarB,
-                }
+                },
+                palpiteCombo: comboScore ? { totalGols: comboScore.totalGols! } : null
             });
 
             toast({
@@ -312,13 +367,30 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
     return (
         <TooltipProvider>
             <div className="space-y-8">
-                {Object.entries(groupedMatches).map(([phase, matches]) => (
+                {Object.entries(groupedMatches).map(([phase, matches]) => {
+                    const championshipForPhase = championships.find(c => c.id === matches[0]?.campeonatoId);
+                    const comboCota = championshipForPhase?.pontuacao?.combo?.cotasPorFase?.find(c => c.fase === phase);
+                    const tokensUsedInPhase = comboTokensUsedByPhase[phase] || 0;
+                    const tokensRemaining = comboCota ? comboCota.quantidade - tokensUsedInPhase : 0;
+
+                     return (
                      <div key={phase} className="space-y-4">
-                        <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
+                             {comboCota && comboCota.quantidade > 0 && (
+                                <Badge variant="secondary" className="flex items-center gap-2">
+                                    <Gem className="h-4 w-4 text-primary" />
+                                    <span>Fichas de Combo Restantes: {tokensRemaining} / {comboCota.quantidade}</span>
+                                </Badge>
+                             )}
+                        </div>
                         {matches.map((match) => {
                             const userPrediction = userPredictions.find(p => p.matchId === match.id);
                             const isEditing = !!userPrediction;
-                            const currentScore = scores[match.id] || { placarA: userPrediction?.palpiteUsuario.placarA ?? null, placarB: userPrediction?.palpiteUsuario.placarB ?? null };
+                            const currentScore = scores[match.id] || { placarA: null, placarB: null };
+                            const currentComboScore = comboScores[match.id] || { totalGols: null };
+                            const isComboActiveForMatch = !!comboScores[match.id];
+
                             const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
                             const teamA = allTeams.find(t => t.name === match.timeA);
                             const teamB = allTeams.find(t => t.name === match.timeB);
@@ -326,6 +398,8 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                             const championship = championships.find(c => c.id === match.campeonatoId);
                             const allowAiAssist = championship?.predictionAssist?.active ?? false;
                             
+                            const canUseCombo = (comboCota?.quantidade ?? 0) > 0 && (tokensRemaining > 0 || isComboActiveForMatch);
+
                             return (
                                 <Card 
                                     key={match.id} 
@@ -399,6 +473,19 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                             </div>
                                         </div>
                                     </CardContent>
+                                    
+                                     {isComboActiveForMatch && !isLocked && (
+                                        <CardContent className="pt-2 pb-4">
+                                            <Separator className="mb-4" />
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Label htmlFor={`combo-${match.id}`} className="font-semibold flex items-center gap-2 text-primary">
+                                                    <Gem className="h-4 w-4" /> Palpite Combo: Total de Gols
+                                                </Label>
+                                                <NumberInput value={currentComboScore.totalGols} onChange={(v) => handleComboScoreChange(match.id, v)} />
+                                            </div>
+                                        </CardContent>
+                                    )}
+                                    
                                     <CardFooter className="flex flex-col gap-2 p-4">
                                         <div className='text-center h-4 mb-2'>
                                              {isLocked ? (
@@ -411,6 +498,15 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                         </div>
                                         {!isLocked && (
                                             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                                {canUseCombo && (
+                                                    <Button 
+                                                        variant={isComboActiveForMatch ? "destructive" : "outline"} 
+                                                        onClick={() => handleToggleCombo(match.id)}
+                                                    >
+                                                        <Gem className="mr-2 h-4 w-4" />
+                                                        {isComboActiveForMatch ? 'Remover Ficha' : 'Usar Ficha Combo'}
+                                                    </Button>
+                                                )}
                                                 {allowAiAssist && (
                                                     <Button 
                                                         variant="outline" 
@@ -437,7 +533,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                             );
                         })}
                     </div>
-                ))}
+                )})}
             </div>
 
             <Dialog open={aiModalState.open} onOpenChange={(isOpen) => setAiModalState(prev => ({...prev, open: isOpen}))}>

@@ -56,6 +56,9 @@ export interface Prediction {
       placarA: number;
       placarB: number;
     };
+    palpiteCombo?: { // Palpite para o sistema de combo de gols
+      totalGols: number;
+    } | null;
     pontos: number;
     createdAt: Timestamp;
     updatedAt: Timestamp;
@@ -82,7 +85,7 @@ export interface Championship {
             ativo: boolean;
             bonusPlacarExatoGols: number; // Bônus para Bucha + Acerto de Gols
             pontosGols: number; // Pontos para acerto de gols isolado
-            cotasPorFase?: { fase: string; quantidade: number }[];
+            cotasPorFase: { fase: string; quantidade: number }[];
         };
     };
     predictionAssist?: {
