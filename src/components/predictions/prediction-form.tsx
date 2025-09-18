@@ -1,11 +1,10 @@
 
-
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
+import { format, parseISO, differenceInHours, isToday, isPast, isFuture } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, Gem } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -561,5 +560,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
         </TooltipProvider>
     );
 }
+
+    
 
     
