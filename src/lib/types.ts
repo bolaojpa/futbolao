@@ -78,7 +78,11 @@ export interface Championship {
     regrasDesempate?: TiebreakerRule[];
     pontuacao: {
         tradicional: { ativo: boolean; exato: number; situacao: number; };
-        combo?: { ativo: boolean; gols: number; placar: number; };
+        combo?: {
+            ativo: boolean;
+            pontosPorAcertoDeGols: number;
+            cotasPorFase?: { fase: string; quantidade: number }[];
+        };
     };
     predictionAssist?: {
         active: boolean;

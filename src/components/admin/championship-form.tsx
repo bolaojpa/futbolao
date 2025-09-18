@@ -85,8 +85,11 @@ const championshipFormSchema = z.object({
     }),
     combo: z.object({
       ativo: z.boolean().default(false),
-      gols: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(0),
-      placar: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(0),
+      pontosPorAcertoDeGols: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(7),
+      cotasPorFase: z.array(z.object({
+          fase: z.string(),
+          quantidade: z.coerce.number().int().min(0, "A quantidade não pode ser negativa."),
+      })).optional(),
     }).optional(),
   }),
   predictionAssist: z.object({
@@ -179,7 +182,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
         regrasDesempate: [],
         pontuacao: { 
             tradicional: { ativo: true, exato: 10, situacao: 5 },
-            combo: { ativo: false, gols: 3, placar: 7 },
+            combo: { ativo: false, pontosPorAcertoDeGols: 7, cotasPorFase: [] },
         },
         predictionAssist: { active: false },
         fases: [],
@@ -234,6 +237,22 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
       .sort((a, b) => a.apelido.localeCompare(b.apelido));
   }, [userSearch, allUsers]);
 
+  const availablePhasesForCombo = useMemo(() => {
+    if (tipoCampeonato === 'liga') {
+        const numRodadas = form.getValues('rodadas') || 0;
+        return Array.from({ length: numRodadas }, (_, i) => `Rodada ${i + 1}`);
+    }
+    if (formatoFases === 'fases') {
+        return fasesList.map(f => f.nome);
+    }
+    if (formatoFases === 'rodadas') {
+        const numRodadas = form.getValues('rodadas') || 0;
+        return Array.from({ length: numRodadas }, (_, i) => `Rodada ${i + 1}`);
+    }
+    return [];
+  }, [tipoCampeonato, formatoFases, fasesList, form.getValues('rodadas')]);
+
+
   useEffect(() => {
     if (isOpen) {
         const defaultData = {
@@ -250,7 +269,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
             rodadas: undefined,
             pontuacao: {
                 tradicional: { ativo: true, exato: 10, situacao: 5 },
-                combo: { ativo: false, gols: 3, placar: 7 },
+                combo: { ativo: false, pontosPorAcertoDeGols: 7, cotasPorFase: [] },
             },
             predictionAssist: { active: false },
             banner: {
@@ -929,7 +948,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                             <CardHeader className="flex flex-row items-center justify-between p-4">
                                 <div>
                                     <h3 className="text-md font-medium">Sistema de Pontuação Combo</h3>
-                                    <p className="text-sm text-muted-foreground">Pontos bônus por acertar gols ou o placar exato.</p>
+                                    <p className="text-sm text-muted-foreground">Aposta extra no total de gols da partida.</p>
                                 </div>
                                 <FormField
                                     control={form.control}
@@ -947,26 +966,13 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                 />
                             </CardHeader>
                              <CardContent className="p-4 pt-0">
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4" style={{ opacity: isComboActive ? 1 : 0.5 }}>
+                                 <div className="space-y-4 rounded-lg border p-4" style={{ opacity: isComboActive ? 1 : 0.5 }}>
                                     <FormField
                                         control={form.control}
-                                        name="pontuacao.combo.gols"
+                                        name="pontuacao.combo.pontosPorAcertoDeGols"
                                         render={({ field }) => (
                                             <FormItem>
-                                            <FormLabel>Acerto de Gols</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" placeholder="Ex: 3" {...field} disabled={!isComboActive} />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="pontuacao.combo.placar"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Combo (Gols + Placar)</FormLabel>
+                                            <FormLabel>Pontos por Acerto de Gols</FormLabel>
                                             <FormControl>
                                                 <Input type="number" placeholder="Ex: 7" {...field} disabled={!isComboActive} />
                                             </FormControl>
@@ -974,6 +980,53 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                             </FormItem>
                                         )}
                                     />
+                                    <Separator />
+                                     <div>
+                                        <h4 className="font-medium text-sm mb-2">Cotas de Combo por Fase/Rodada</h4>
+                                        <p className="text-xs text-muted-foreground mb-4">Defina quantas "Fichas de Combo" cada usuário terá disponível para usar em cada etapa do campeonato.</p>
+                                        <div className="space-y-2">
+                                            {availablePhasesForCombo.map(phaseName => (
+                                                <FormField
+                                                    key={phaseName}
+                                                    control={form.control}
+                                                    name={`pontuacao.combo.cotasPorFase`}
+                                                    render={({ field }) => {
+                                                        const cota = field.value?.find(c => c.fase === phaseName);
+                                                        const cotaIndex = field.value?.findIndex(c => c.fase === phaseName);
+                                                        
+                                                        return (
+                                                            <FormItem className="flex items-center justify-between gap-4">
+                                                                <FormLabel className="min-w-fit">{phaseName}</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="w-24 h-8"
+                                                                        placeholder="0"
+                                                                        disabled={!isComboActive}
+                                                                        value={cota?.quantidade ?? ''}
+                                                                        onChange={(e) => {
+                                                                            const newValue = e.target.value;
+                                                                            const currentCotas = field.value || [];
+                                                                            const newCotas = [...currentCotas];
+                                                                            const newQuantity = newValue === '' ? 0 : parseInt(newValue, 10);
+                                                                            
+                                                                            if (cotaIndex !== -1) {
+                                                                                newCotas[cotaIndex!] = { ...newCotas[cotaIndex!], quantidade: newQuantity };
+                                                                            } else {
+                                                                                newCotas.push({ fase: phaseName, quantidade: newQuantity });
+                                                                            }
+                                                                            
+                                                                            field.onChange(newCotas);
+                                                                        }}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
