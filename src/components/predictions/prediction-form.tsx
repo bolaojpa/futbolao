@@ -23,6 +23,7 @@ import { getDoc, onSnapshot, collection, doc, getDocs } from 'firebase/firestore
 import { db } from '@/lib/firebase';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
+import { Label } from '../ui/label';
 
 const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
     const handleIncrement = () => {
@@ -177,15 +178,14 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
     const comboTokensUsedByPhase = useMemo(() => {
         const usage: Record<string, number> = {};
          userPredictions.forEach(p => {
-            if (p.palpiteCombo) {
-                const match = allMatches.find(m => m.id === p.matchId);
-                if (match) {
-                    const phase = match.fase;
-                    if (!usage[phase]) {
-                        usage[phase] = 0;
-                    }
-                    usage[phase]++;
+            const match = allMatches.find(m => m.id === p.matchId);
+            // Considera a ficha como usada apenas se o palpite combo foi feito E a partida ainda não começou
+            if (p.palpiteCombo && match && isFuture(parseISO(match.data))) {
+                const phase = match.fase;
+                if (!usage[phase]) {
+                    usage[phase] = 0;
                 }
+                usage[phase]++;
             }
         });
         return usage;
@@ -561,3 +561,5 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
         </TooltipProvider>
     );
 }
+
+    
