@@ -110,6 +110,7 @@ export async function updateUserStatsAfterMatch(
                     pontos: pointsGanhos,
                     acertosExatos: isAcertoExato ? 1 : 0,
                     acertosSituacao: isAcertoSituacao ? 1 : 0,
+                    maiorSequencia: 0 // Inicia a maior sequência como 0
                 });
             } else {
                 // Se já existem, incrementa os valores
@@ -359,7 +360,10 @@ export async function getPredictionsForUser(userId: string): Promise<Prediction[
  * If a prediction already exists, it will be updated. Otherwise, a new one is created.
  * @param predictionData The prediction data.
  */
-export async function addOrUpdatePrediction(predictionData: Omit<Prediction, 'id' | 'createdAt' | 'updatedAt'>) {
+export async function addOrUpdatePrediction(predictionData: Partial<Omit<Prediction, 'id' | 'createdAt' | 'updatedAt'>>) {
+    if (!predictionData.userId || !predictionData.matchId) {
+        throw new Error("User ID and Match ID are required.");
+    }
     const predictionsRef = collection(db, 'predictions');
     const q = query(
         predictionsRef,
@@ -373,33 +377,34 @@ export async function addOrUpdatePrediction(predictionData: Omit<Prediction, 'id
     
     // Also update the user's last guess info
     const userDocRef = doc(db, 'users', predictionData.userId);
-    const ultimoPalpite = {
-      matchId: predictionData.matchId,
-      palpite: `${predictionData.palpiteUsuario.placarA}-${predictionData.palpiteUsuario.placarB}`
-    };
 
+    const dataToSave = { ...predictionData, updatedAt: now };
 
     if (snapshot.empty) {
         // Add new prediction
         await addDoc(predictionsRef, {
-            ...predictionData,
-            acertoTipo: 'erro',
+            ...dataToSave,
             createdAt: now,
-            updatedAt: now,
+            acertoTipo: 'erro', // default value
+            pontos: 0, // default value
         });
     } else {
         // Update existing prediction
         const docId = snapshot.docs[0].id;
         const docRef = doc(db, 'predictions', docId);
-        await updateDoc(docRef, {
-            palpiteUsuario: predictionData.palpiteUsuario,
-            palpiteCombo: predictionData.palpiteCombo,
-            updatedAt: now,
-        });
+        await updateDoc(docRef, dataToSave);
     }
     
     // Update user's last guess in a separate operation
-    await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade: now });
+    if (predictionData.palpiteUsuario) {
+         const ultimoPalpite = {
+            matchId: predictionData.matchId,
+            palpite: `${predictionData.palpiteUsuario.placarA}-${predictionData.palpiteUsuario.placarB}`
+        };
+        await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade: now });
+    } else {
+        await updateDoc(userDocRef, { ultimaAtividade: now });
+    }
 }
 
 

@@ -28,6 +28,7 @@ export interface UserType {
         pontos: number;
         acertosExatos: number;
         acertosSituacao: number;
+        maiorSequencia: number;
     }[];
 }
 
@@ -53,8 +54,8 @@ export interface Prediction {
     matchId: string;
     userId: string;
     palpiteUsuario: {
-      placarA: number;
-      placarB: number;
+      placarA: number | null;
+      placarB: number | null;
     };
     palpiteCombo?: { // Palpite para o sistema de combo de gols
       totalGols: number;

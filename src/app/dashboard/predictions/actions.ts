@@ -3,9 +3,9 @@
 'use server';
 
 import { suggestPredictions, SuggestPredictionsInput, SuggestPredictionsOutput } from '@/ai/flows/suggest-predictions';
-import { addOrUpdatePrediction } from '@/lib/firebase/firestore';
+import { addOrUpdatePrediction as dbAddOrUpdatePrediction } from '@/lib/firebase/firestore';
 import type { Prediction, UserType } from '@/lib/types';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export async function getAiSuggestion(input: SuggestPredictionsInput): Promise<SuggestPredictionsOutput | { error: string }> {
@@ -18,16 +18,91 @@ export async function getAiSuggestion(input: SuggestPredictionsInput): Promise<S
   }
 }
 
-export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' | 'updatedAt' | 'pontos'>): Promise<{ success: boolean; error?: string; }> {
+export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' | 'updatedAt' | 'pontos' | 'palpiteCombo'>): Promise<{ success: boolean; error?: string; }> {
     try {
-        await addOrUpdatePrediction({
-            ...data,
-            pontos: 0, // Pontuação inicial é sempre 0
-        });
+        const predictionsRef = collection(db, 'predictions');
+        const q = query(
+            predictionsRef,
+            where('userId', '==', data.userId),
+            where('matchId', '==', data.matchId),
+            limit(1)
+        );
+        const snapshot = await getDocs(q);
+
+        const userDocRef = doc(db, 'users', data.userId);
+        const ultimoPalpite = {
+            matchId: data.matchId,
+            palpite: `${data.palpiteUsuario.placarA}-${data.palpiteUsuario.placarB}`
+        };
+
+        if (snapshot.empty) {
+            await addDoc(predictionsRef, {
+                ...data,
+                pontos: 0,
+                acertoTipo: 'erro',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+        } else {
+            const docId = snapshot.docs[0].id;
+            const docRef = doc(db, 'predictions', docId);
+            await updateDoc(docRef, {
+                palpiteUsuario: data.palpiteUsuario,
+                updatedAt: serverTimestamp(),
+            });
+        }
+        
+        await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade: serverTimestamp() });
         return { success: true };
+
     } catch (error) {
         console.error("Error saving prediction:", error);
         return { success: false, error: "Falha ao salvar o palpite no servidor." };
+    }
+}
+
+
+export async function saveComboPick(userId: string, matchId: string, totalGols: number | null): Promise<{ success: boolean; error?: string }> {
+     try {
+        const predictionsRef = collection(db, 'predictions');
+        const q = query(
+            predictionsRef,
+            where('userId', '==', userId),
+            where('matchId', '==', matchId),
+            limit(1)
+        );
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            // Se não houver palpite, cria um com placar nulo mas com o combo
+             await addDoc(predictionsRef, {
+                matchId,
+                userId,
+                palpiteUsuario: { placarA: null, placarB: null },
+                palpiteCombo: totalGols !== null ? { totalGols } : null,
+                pontos: 0,
+                acertoTipo: 'erro',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+        } else {
+            // Se houver palpite, apenas atualiza o combo
+            const docId = snapshot.docs[0].id;
+            const docRef = doc(db, 'predictions', docId);
+            await updateDoc(docRef, {
+                palpiteCombo: totalGols !== null ? { totalGols } : null,
+                updatedAt: serverTimestamp(),
+            });
+        }
+        
+        const userDocRef = doc(db, 'users', userId);
+        await updateDoc(userDocRef, { ultimaAtividade: serverTimestamp() });
+
+        return { success: true };
+
+    } catch (error) {
+        console.error("Error saving combo pick:", error);
+        return { success: false, error: "Falha ao salvar a ficha de combo." };
     }
 }
 
