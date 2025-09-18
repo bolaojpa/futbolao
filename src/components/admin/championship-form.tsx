@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -80,12 +81,13 @@ const championshipFormSchema = z.object({
   pontuacao: z.object({
     tradicional: z.object({
         ativo: z.boolean().default(true),
-        exato: z.coerce.number().int().min(1, "A pontuação deve ser no mínimo 1."),
-        situacao: z.coerce.number().int().min(1, "A pontuação deve ser no mínimo 1."),
+        exato: z.coerce.number().int().min(0, "A pontuação deve ser positiva."),
+        situacao: z.coerce.number().int().min(0, "A pontuação deve ser positiva."),
     }),
     combo: z.object({
       ativo: z.boolean().default(false),
-      pontosPorAcertoDeGols: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(7),
+      bonusPlacarExatoGols: z.coerce.number().int().min(0).default(5),
+      pontosGols: z.coerce.number().int().min(0).default(1),
       cotasPorFase: z.array(z.object({
           fase: z.string(),
           quantidade: z.coerce.number().int().min(0, "A quantidade não pode ser negativa."),
@@ -181,8 +183,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
         participantes: [],
         regrasDesempate: [],
         pontuacao: { 
-            tradicional: { ativo: true, exato: 10, situacao: 5 },
-            combo: { ativo: false, pontosPorAcertoDeGols: 7, cotasPorFase: [] },
+            tradicional: { ativo: true, exato: 6, situacao: 3 },
+            combo: { ativo: false, bonusPlacarExatoGols: 5, pontosGols: 1, cotasPorFase: [] },
         },
         predictionAssist: { active: false },
         fases: [],
@@ -268,8 +270,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
             fases: [],
             rodadas: undefined,
             pontuacao: {
-                tradicional: { ativo: true, exato: 10, situacao: 5 },
-                combo: { ativo: false, pontosPorAcertoDeGols: 7, cotasPorFase: [] },
+                tradicional: { ativo: true, exato: 6, situacao: 3 },
+                combo: { ativo: false, bonusPlacarExatoGols: 5, pontosGols: 1, cotasPorFase: [] },
             },
             predictionAssist: { active: false },
             banner: {
@@ -922,7 +924,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                             <FormItem>
                                             <FormLabel>Placar Exato (Bucha)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" placeholder="Ex: 10" {...field} />
+                                                <Input type="number" placeholder="Ex: 6" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
@@ -935,7 +937,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                             <FormItem>
                                             <FormLabel>Situação (Vencedor/Empate)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" placeholder="Ex: 5" {...field} />
+                                                <Input type="number" placeholder="Ex: 3" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
@@ -967,23 +969,40 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                             </CardHeader>
                              <CardContent className="p-4 pt-0">
                                  <div className="space-y-4 rounded-lg border p-4" style={{ opacity: isComboActive ? 1 : 0.5 }}>
-                                    <FormField
-                                        control={form.control}
-                                        name="pontuacao.combo.pontosPorAcertoDeGols"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Pontos por Acerto de Gols</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" placeholder="Ex: 7" {...field} disabled={!isComboActive} />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="pontuacao.combo.pontosGols"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel>Acerto de Gols (Sozinho)</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="Ex: 1" {...field} disabled={!isComboActive} />
+                                                </FormControl>
+                                                <FormDescription className="text-xs">Pontos se acertar apenas o total de gols.</FormDescription>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="pontuacao.combo.bonusPlacarExatoGols"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel>Bônus (Bucha + Gols)</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="Ex: 5" {...field} disabled={!isComboActive} />
+                                                </FormControl>
+                                                <FormDescription className="text-xs">Pontos SOMADOS se acertar a bucha e os gols.</FormDescription>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                     <Separator />
                                      <div>
-                                        <h4 className="font-medium text-sm mb-2">Cotas de Combo por Fase/Rodada</h4>
-                                        <p className="text-xs text-muted-foreground mb-4">Defina quantas "Fichas de Combo" cada usuário terá disponível para usar em cada etapa do campeonato.</p>
+                                        <h4 className="font-medium text-sm mb-2">Fichas de Combo por Fase/Rodada</h4>
+                                        <p className="text-xs text-muted-foreground mb-4">Defina quantas "Fichas de Combo" cada usuário terá disponível para usar em cada etapa.</p>
                                         <div className="space-y-2">
                                             {availablePhasesForCombo.map(phaseName => (
                                                 <FormField

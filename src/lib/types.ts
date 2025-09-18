@@ -80,7 +80,8 @@ export interface Championship {
         tradicional: { ativo: boolean; exato: number; situacao: number; };
         combo?: {
             ativo: boolean;
-            pontosPorAcertoDeGols: number;
+            bonusPlacarExatoGols: number; // Bônus para Bucha + Acerto de Gols
+            pontosGols: number; // Pontos para acerto de gols isolado
             cotasPorFase?: { fase: string; quantidade: number }[];
         };
     };
