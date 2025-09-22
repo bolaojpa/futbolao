@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { format, parseISO, differenceInHours, isToday, isPast, isFuture } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, Gem, Check, X } from 'lucide-react';
+import { BrainCircuit, Loader2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, Gem, Check, X, Goal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion, savePrediction, saveComboPick } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
@@ -413,7 +412,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                             const championship = championships.find(c => c.id === match.campeonatoId);
                             const allowAiAssist = championship?.predictionAssist?.active ?? false;
                             
-                            const canUseCombo = (comboCota?.quantidade ?? 0) > 0 && (tokensRemaining > 0 || !!comboState);
+                            const canUseCombo = (comboCota?.quantidade ?? 0) > 0 && (tokensRemaining > 0 || (!!comboState && !comboState.isEditing));
 
                             return (
                                 <Card 
@@ -485,6 +484,19 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                     </TooltipContent>
                                                 </Tooltip>
                                                 <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                {comboState && !comboState.isEditing && (
+                                                     <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="flex items-center gap-1 font-bold text-primary">
+                                                                <Goal className="h-4 w-4" />
+                                                                <span>{comboState.totalGols}</span>
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Seu palpite de gols para o combo.</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                )}
                                             </div>
                                         </div>
                                     </CardContent>
@@ -499,6 +511,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                 <div className="flex items-center gap-2">
                                                     <NumberInput value={comboState.totalGols} onChange={(v) => setComboUiState(p => ({ ...p, [match.id]: { ...p[match.id], totalGols: v } }))} />
                                                     <Button variant="ghost" size="icon" className="text-green-500 hover:text-green-600 h-9 w-9" onClick={() => handleConfirmCombo(match.id)}><Check className="h-5 w-5" /></Button>
+                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80 h-9 w-9" onClick={() => handleCancelCombo(match.id)}><X className="h-5 w-5" /></Button>
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -530,7 +543,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                             !comboState.isEditing && (
                                                                 <Button variant="destructive" onClick={() => handleRemoveCombo(match.id)}>
                                                                     <X className="mr-2 h-4 w-4" />
-                                                                    Remover Ficha ({comboState.totalGols} Gols)
+                                                                    Remover Ficha
                                                                 </Button>
                                                             )
                                                         )}
@@ -567,3 +580,5 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
         </TooltipProvider>
     );
 }
+
+    
