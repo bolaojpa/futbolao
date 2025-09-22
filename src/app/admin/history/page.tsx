@@ -401,18 +401,22 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                             )}
                                           </div>
                                         </div>
-                                        <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
-                                            <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                        <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                            </div>
                                             {p.palpiteCombo && (
-                                                <Tooltip>
-                                                    <TooltipTrigger>
-                                                        <div className="flex items-center gap-1 text-primary">
-                                                            <Goal className="h-4 w-4" />
-                                                            <span>{p.palpiteCombo.totalGols}</span>
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
-                                                </Tooltip>
+                                                <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                                    <Tooltip>
+                                                        <TooltipTrigger>
+                                                            <div className="flex items-center gap-1">
+                                                                <Goal className="h-4 w-4" />
+                                                                <span>{p.palpiteCombo.totalGols}</span>
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                    </Tooltip>
+                                                </div>
                                             )}
                                         </div>
                                         <div className="w-1/3 text-right">
@@ -503,4 +507,5 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
     </div>
   );
 }
+
 

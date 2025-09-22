@@ -274,31 +274,48 @@ export default function AdminDashboardPage() {
         }
     };
     
-    const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
-        if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40';
-        if (pontos > 0) return 'bg-blue-100/80 dark:bg-blue-900/40';
-        return 'bg-red-100/80 dark:bg-red-900/40';
+    const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
+        switch (acertoTipo) {
+            case 'combo_bucha': return 'bg-combo-gold text-black';
+            case 'combo_situacao': return 'bg-combo-silver text-black';
+            case 'bucha': return 'bg-green-100/80 dark:bg-green-900/40';
+            case 'situacao': return 'bg-blue-100/80 dark:bg-blue-900/40';
+            case 'combo_sozinho': return 'bg-combo-solo';
+            case 'erro':
+            default:
+                 return 'bg-red-100/80 dark:bg-red-900/40';
+        }
     };
 
-    const getPointsBadgeVariant = (pontos: number, maxPontos: number): "success" | "default" | "destructive" => {
-        if (pontos === maxPontos && maxPontos > 0) return 'success';
-        if (pontos > 0) return 'default';
-        return 'destructive';
+    const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
+        switch (acertoTipo) {
+            case 'combo_bucha':
+            case 'bucha':
+                return 'success';
+            case 'combo_situacao':
+            case 'situacao':
+                return 'default';
+            case 'combo_sozinho':
+                return 'secondary';
+            case 'erro':
+            default:
+                return 'destructive';
+        }
     };
 
-    const calculateSimulatedPoints = (match: Match, prediction: Prediction): number => {
+    const calculateSimulatedPoints = (match: Match, prediction: Prediction): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
         const liveScore = scores[match.id];
-        if (!liveScore || liveScore.placarA === '' || liveScore.placarB === '') return 0;
+        if (!liveScore || liveScore.placarA === '' || liveScore.placarB === '') return { pontos: 0, acertoTipo: 'erro' };
         
         const livePlacarA = Number(liveScore.placarA);
         const livePlacarB = Number(liveScore.placarB);
         
-        const championship = allChampionships.find(c => c.id === match.campeonatoId);
-        const pontuacao = championship?.pontuacao;
-        if (!pontuacao) return 0;
-        
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         const totalGolsFinal = livePlacarA + livePlacarB;
+        
+        const championship = allChampionships.find(c => c.id === match.campeonatoId);
+        const pontuacao = championship?.pontuacao;
+        if (!pontuacao) return { pontos: 0, acertoTipo: 'erro' };
         
         const acertouPlacarExato = guessA === livePlacarA && guessB === livePlacarB;
         const finalWinner = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
@@ -306,25 +323,31 @@ export default function AdminDashboardPage() {
         const acertouSituacao = finalWinner === guessWinner;
         
         let pontosGanhos = 0;
+        let acertoTipo: Prediction['acertoTipo'] = 'erro';
 
         const usouCombo = !!prediction.palpiteCombo;
         const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
         if (acertouPlacarExato) {
             pontosGanhos += pontuacao.tradicional.exato;
+            acertoTipo = 'bucha';
             if (acertouGols) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
+                 acertoTipo = 'combo_bucha';
             }
         } else if (acertouSituacao) {
             pontosGanhos += pontuacao.tradicional.situacao;
+            acertoTipo = 'situacao';
             if (acertouGols) {
                 pontosGanhos += pontuacao.combo.pontosGols;
+                 acertoTipo = 'combo_situacao';
             }
         } else if (acertouGols) {
             pontosGanhos += pontuacao.combo.pontosGols;
+            acertoTipo = 'combo_sozinho';
         }
         
-        return pontosGanhos;
+        return { pontos: pontosGanhos, acertoTipo };
     };
 
 
@@ -427,17 +450,15 @@ export default function AdminDashboardPage() {
                                                         const user = allUsers.find(u => u.id === p.userId);
                                                         if (!user) return null;
                                                         
-                                                        const simulatedPoints = calculateSimulatedPoints(match, p);
+                                                        const { pontos: simulatedPoints, acertoTipo: simulatedAcertoTipo } = calculateSimulatedPoints(match, p);
                                                         const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
                                                             return team ? { ...team, pickOrder: index + 1 } : null;
                                                         }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
-                                                        const pontuacao = allChampionships.find(c => c.id === match.campeonatoId)?.pontuacao.tradicional;
-                                                        const maxPontos = pontuacao?.exato ?? 0;
-
+                                                        
                                                         return (
-                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedPoints, maxPontos))}>
+                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedAcertoTipo))}>
                                                             <div className="w-1/3 text-left flex items-center gap-2 group">
                                                                 <div className="relative">
                                                                     <Avatar className="w-8 h-8">
@@ -462,22 +483,27 @@ export default function AdminDashboardPage() {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
-                                                                <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                            <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
+                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                    <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                </div>
                                                                 {p.palpiteCombo && (
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger>
-                                                                            <div className="flex items-center gap-1 text-primary">
-                                                                                <Goal className="h-4 w-4" />
-                                                                                <span>{p.palpiteCombo.totalGols}</span>
-                                                                            </div>
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
-                                                                    </Tooltip>
+                                                                    <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger>
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <Goal className="h-4 w-4" />
+                                                                                    <span>{p.palpiteCombo.totalGols}</span>
+                                                                                </div>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                                        </Tooltip>
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                            <div className="w-1/3 text-right">
-                                                                <Badge variant={getPointsBadgeVariant(simulatedPoints, maxPontos)} className='whitespace-nowrap'>
+                                                            <div className="w-1/3 text-right flex items-center justify-end gap-2">
+                                                                {p.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                                <Badge variant={getPointsBadgeVariant(simulatedAcertoTipo)} className='whitespace-nowrap'>
                                                                 {simulatedPoints} pts
                                                                 </Badge>
                                                             </div>

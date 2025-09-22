@@ -147,8 +147,6 @@ export default function HistoryPage() {
 
         // Depois, pelo tipo de acerto
         const prediction = match.prediction!;
-        const champ = championships.find(c => c.id === match.campeonatoId);
-        const maxPontos = champ?.pontuacao.tradicional.exato ?? 0;
         const isExact = prediction.acertoTipo === 'bucha' || prediction.acertoTipo === 'combo_bucha';
         const isSituation = prediction.acertoTipo === 'situacao' || prediction.acertoTipo === 'combo_situacao';
 
@@ -362,18 +360,22 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                     </div>
                                     <span className="font-bold">Seu Palpite:</span>
                                 </div>
-                                <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
-                                    <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                    </div>
                                     {prediction.palpiteCombo && (
-                                        <Tooltip>
-                                            <TooltipTrigger>
-                                                <div className="flex items-center gap-1 text-primary">
-                                                    <Goal className="h-4 w-4" />
-                                                    <span>{prediction.palpiteCombo.totalGols}</span>
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
-                                        </Tooltip>
+                                        <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                            <Tooltip>
+                                                <TooltipTrigger>
+                                                    <div className="flex items-center gap-1">
+                                                        <Goal className="h-4 w-4" />
+                                                        <span>{prediction.palpiteCombo.totalGols}</span>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                            </Tooltip>
+                                        </div>
                                     )}
                                 </div>
                               <div className="w-1/3 text-right flex items-center justify-end gap-2">
@@ -428,20 +430,24 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                       </div>
                                     </Link>
                                   </div>
-                                  <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
-                                    <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
-                                    {p.palpiteCombo && (
-                                        <Tooltip>
-                                            <TooltipTrigger>
-                                                <div className="flex items-center gap-1 text-primary">
-                                                    <Goal className="h-4 w-4" />
-                                                    <span>{p.palpiteCombo.totalGols}</span>
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
-                                        </Tooltip>
-                                    )}
-                                  </div>
+                                  <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                        </div>
+                                        {p.palpiteCombo && (
+                                            <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <div className="flex items-center gap-1">
+                                                            <Goal className="h-4 w-4" />
+                                                            <span>{p.palpiteCombo.totalGols}</span>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                        )}
+                                    </div>
                                   <div className="w-1/3 text-right flex items-center justify-end gap-2">
                                     {p.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
                                     <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>

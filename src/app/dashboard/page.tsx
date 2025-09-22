@@ -137,7 +137,7 @@ export default function DashboardPage() {
         const userChampionshipIds = userChampionships.map(c => c.id);
         return allMatches
             .filter(match => userChampionshipIds.includes(match.campeonatoId) && match.status === 'Finalizado')
-            .sort((a, b) => new Date(b.data).getTime() - new Date(b.data).getTime())
+            .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
             .slice(0, 3);
     }, [allMatches, userChampionships]);
 
@@ -513,18 +513,22 @@ export default function DashboardPage() {
                                                                                     )}
                                                                                 </div>
                                                                             </div>
-                                                                            <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
-                                                                                <span>{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
+                                                                            <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
+                                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                                    <span>{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
+                                                                                </div>
                                                                                 {userPrediction.palpiteCombo && (
-                                                                                    <Tooltip>
-                                                                                        <TooltipTrigger>
-                                                                                            <div className="flex items-center gap-1 text-primary">
-                                                                                                <Goal className="h-4 w-4" />
-                                                                                                <span>{userPrediction.palpiteCombo.totalGols}</span>
-                                                                                            </div>
-                                                                                        </TooltipTrigger>
-                                                                                        <TooltipContent><p>Seu palpite de gols para o combo.</p></TooltipContent>
-                                                                                    </Tooltip>
+                                                                                    <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                                                                        <Tooltip>
+                                                                                            <TooltipTrigger>
+                                                                                                <div className="flex items-center gap-1">
+                                                                                                    <Goal className="h-4 w-4" />
+                                                                                                    <span>{userPrediction.palpiteCombo.totalGols}</span>
+                                                                                                </div>
+                                                                                            </TooltipTrigger>
+                                                                                            <TooltipContent><p>Seu palpite de gols para o combo.</p></TooltipContent>
+                                                                                        </Tooltip>
+                                                                                    </div>
                                                                                 )}
                                                                             </div>
                                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
@@ -585,18 +589,22 @@ export default function DashboardPage() {
                                                                                         </div>
                                                                                     </Link>
                                                                                 </div>
-                                                                                <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
-                                                                                    <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                                <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
+                                                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                                                        <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                                    </div>
                                                                                     {p.palpiteCombo && (
-                                                                                        <Tooltip>
-                                                                                            <TooltipTrigger>
-                                                                                                <div className="flex items-center gap-1 text-primary">
-                                                                                                    <Goal className="h-4 w-4" />
-                                                                                                    <span>{p.palpiteCombo.totalGols}</span>
-                                                                                                </div>
-                                                                                            </TooltipTrigger>
-                                                                                            <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
-                                                                                        </Tooltip>
+                                                                                        <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                                                                            <Tooltip>
+                                                                                                <TooltipTrigger>
+                                                                                                    <div className="flex items-center gap-1">
+                                                                                                        <Goal className="h-4 w-4" />
+                                                                                                        <span>{p.palpiteCombo.totalGols}</span>
+                                                                                                    </div>
+                                                                                                </TooltipTrigger>
+                                                                                                <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                                                            </Tooltip>
+                                                                                        </div>
                                                                                     )}
                                                                                 </div>
                                                                                 <div className="w-1/3 text-right flex items-center justify-end gap-2">
@@ -782,18 +790,22 @@ export default function DashboardPage() {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
-                                                                <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                                            <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
+                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                    <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                                                </div>
                                                                 {prediction.palpiteCombo && (
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger>
-                                                                            <div className="flex items-center gap-1 text-primary">
-                                                                                <Goal className="h-4 w-4" />
-                                                                                <span>{prediction.palpiteCombo.totalGols}</span>
-                                                                            </div>
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent><p>Seu palpite de gols (Combo)</p></TooltipContent>
-                                                                    </Tooltip>
+                                                                    <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger>
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <Goal className="h-4 w-4" />
+                                                                                    <span>{prediction.palpiteCombo.totalGols}</span>
+                                                                                </div>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent><p>Seu palpite de gols (Combo)</p></TooltipContent>
+                                                                        </Tooltip>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
@@ -846,18 +858,22 @@ export default function DashboardPage() {
                                                                 </div>
                                                             </Link>
                                                         </div>
-                                                        <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
-                                                            <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                        <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
+                                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                                <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                            </div>
                                                             {p.palpiteCombo && (
-                                                                <Tooltip>
-                                                                    <TooltipTrigger>
-                                                                        <div className="flex items-center gap-1 text-primary">
-                                                                            <Goal className="h-4 w-4" />
-                                                                            <span>{p.palpiteCombo.totalGols}</span>
-                                                                        </div>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
-                                                                </Tooltip>
+                                                                <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger>
+                                                                            <div className="flex items-center gap-1">
+                                                                                <Goal className="h-4 w-4" />
+                                                                                <span>{p.palpiteCombo.totalGols}</span>
+                                                                            </div>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                                    </Tooltip>
+                                                                </div>
                                                             )}
                                                         </div>
                                                         <div className="w-1/3 text-right flex items-center justify-end gap-2">
