@@ -105,13 +105,13 @@ export default function LeaderboardPage() {
 }, [championships, championshipIdFromQuery, authUser, authLoading]);
 
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonusSozinho: boolean; } => {
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
-      return { pontos: 0, exato: false, situacao: false, combo: false };
+      return { pontos: 0, exato: false, situacao: false, combo: false, bonusSozinho: false };
     }
 
     const pontuacao = championship.pontuacao;
@@ -124,6 +124,7 @@ export default function LeaderboardPage() {
     
     let pontosGanhos = 0;
     let acertouCombo = false;
+    let acertouBonusSozinho = false;
 
     const usouCombo = !!prediction.palpiteCombo;
     const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
@@ -142,9 +143,10 @@ export default function LeaderboardPage() {
         }
     } else if (acertouGols && pontuacao.combo) {
         pontosGanhos += pontuacao.combo.pontosGols;
+        acertouBonusSozinho = true;
     }
 
-    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo };
+    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo, bonusSozinho: acertouBonusSozinho };
   };
 
   const usersWithLiveScore = useMemo(() => {
@@ -167,12 +169,16 @@ export default function LeaderboardPage() {
         let basePoints = stats?.pontos ?? 0;
         let baseExatos = stats?.acertosExatos ?? 0;
         let baseSituacoes = stats?.acertosSituacao ?? 0;
-        let baseCombos = 0; // Inicia acertos de combo
+        let baseCombos = 0;
+        let baseBonusSozinho = 0;
 
         const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
         predictionsInChamp.forEach(p => {
              if (p.acertoTipo === 'combo_bucha' || p.acertoTipo === 'combo_situacao' || p.acertoTipo === 'combo_sozinho') {
                 baseCombos++;
+            }
+             if (p.acertoTipo === 'combo_sozinho') {
+                baseBonusSozinho++;
             }
         })
       
@@ -184,6 +190,7 @@ export default function LeaderboardPage() {
                 if (result.exato) baseExatos++;
                 if (result.situacao) baseSituacoes++;
                 if (result.combo) baseCombos++;
+                if (result.bonusSozinho) baseBonusSozinho++;
             }
         });
       
@@ -193,6 +200,7 @@ export default function LeaderboardPage() {
         exatos: baseExatos,
         situacoes: baseSituacoes,
         combos: baseCombos,
+        bonusSozinho: baseBonusSozinho,
       }
     });
   }, [allUsers, selectedChampionshipId, allMatches, allPredictions, championships]);
@@ -367,16 +375,18 @@ export default function LeaderboardPage() {
                     <Table>
                     <TableHeader>
                         <TableRow>
-                        <TableHead className='w-16 text-center'>Pos.</TableHead>
-                        <TableHead className='w-16 text-center'>Var.</TableHead>
-                        <TableHead>Jogador</TableHead>
-                        <TableHead className="text-right">{sortColumnHeader}</TableHead>
-                        <TableHead className="text-right hidden md:table-cell">
-                            {sortType === 'default' ? 'Buchas' : 'Pontos'}
-                        </TableHead>
-                        <TableHead className="text-right hidden md:table-cell">
-                            {sortType === 'situation' ? 'Buchas' : sortType === 'combo' ? 'Buchas' : 'Situação'}
-                        </TableHead>
+                          <TableHead className='w-16 text-center'>Pos.</TableHead>
+                          <TableHead className='w-16 text-center'>Var.</TableHead>
+                          <TableHead>Jogador</TableHead>
+                          <TableHead className="text-right">{sortColumnHeader}</TableHead>
+                          <TableHead className="text-right hidden md:table-cell">Buchas</TableHead>
+                          <TableHead className="text-right hidden md:table-cell">Situação</TableHead>
+                          {selectedChampionship?.pontuacao.combo?.ativo && (
+                            <>
+                              <TableHead className="text-right hidden md:table-cell">Combos</TableHead>
+                              <TableHead className="text-right hidden md:table-cell">Bônus Sozinho</TableHead>
+                            </>
+                          )}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -419,12 +429,14 @@ export default function LeaderboardPage() {
                                     </Link>
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user)}</TableCell>
-                                <TableCell className="text-right hidden md:table-cell">
-                                {sortType === 'default' ? user.exatos : user.pontos}
-                                </TableCell>
-                                <TableCell className="text-right hidden md:table-cell">
-                                {sortType === 'situation' ? user.exatos : sortType === 'combo' ? user.exatos : user.situacoes}
-                                </TableCell>
+                                <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>
+                                <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>
+                                {selectedChampionship?.pontuacao.combo?.ativo && (
+                                  <>
+                                    <TableCell className="text-right hidden md:table-cell">{user.combos}</TableCell>
+                                    <TableCell className="text-right hidden md:table-cell">{user.bonusSozinho}</TableCell>
+                                  </>
+                                )}
                             </TableRow>
                         )
                         })}
