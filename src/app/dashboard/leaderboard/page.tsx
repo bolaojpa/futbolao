@@ -392,6 +392,7 @@ export default function LeaderboardPage() {
                               {sortType !== 'bonus' && <TableHead className="text-right hidden md:table-cell">Bônus</TableHead>}
                             </>
                           )}
+                          {sortType !== 'default' && <TableHead className="text-right hidden md:table-cell">Pontos</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -442,6 +443,7 @@ export default function LeaderboardPage() {
                                     {sortType !== 'bonus' && <TableCell className="text-right hidden md:table-cell">{user.bonusSozinho}</TableCell>}
                                   </>
                                 )}
+                                {sortType !== 'default' && <TableCell className="text-right hidden md:table-cell font-semibold">{user.pontos}</TableCell>}
                             </TableRow>
                         )
                         })}
