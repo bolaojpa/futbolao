@@ -384,12 +384,12 @@ export default function LeaderboardPage() {
                           <TableHead className='w-16 text-center'>Var.</TableHead>
                           <TableHead>Jogador</TableHead>
                           <TableHead className="text-right">{sortColumnHeader}</TableHead>
-                          <TableHead className="text-right hidden md:table-cell">Buchas</TableHead>
-                          <TableHead className="text-right hidden md:table-cell">Situação</TableHead>
+                          {sortType !== 'exact' && <TableHead className="text-right hidden md:table-cell">Buchas</TableHead>}
+                          {sortType !== 'situation' && <TableHead className="text-right hidden md:table-cell">Situação</TableHead>}
                           {selectedChampionship?.pontuacao.combo?.ativo && (
                             <>
-                              <TableHead className="text-right hidden md:table-cell">Combos</TableHead>
-                              <TableHead className="text-right hidden md:table-cell">Bônus</TableHead>
+                              {sortType !== 'combo' && <TableHead className="text-right hidden md:table-cell">Combos</TableHead>}
+                              {sortType !== 'bonus' && <TableHead className="text-right hidden md:table-cell">Bônus</TableHead>}
                             </>
                           )}
                         </TableRow>
@@ -434,12 +434,12 @@ export default function LeaderboardPage() {
                                     </Link>
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user)}</TableCell>
-                                <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>
-                                <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>
+                                {sortType !== 'exact' && <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>}
+                                {sortType !== 'situation' && <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>}
                                 {selectedChampionship?.pontuacao.combo?.ativo && (
                                   <>
-                                    <TableCell className="text-right hidden md:table-cell">{user.combos}</TableCell>
-                                    <TableCell className="text-right hidden md:table-cell">{user.bonusSozinho}</TableCell>
+                                    {sortType !== 'combo' && <TableCell className="text-right hidden md:table-cell">{user.combos}</TableCell>}
+                                    {sortType !== 'bonus' && <TableCell className="text-right hidden md:table-cell">{user.bonusSozinho}</TableCell>}
                                   </>
                                 )}
                             </TableRow>
