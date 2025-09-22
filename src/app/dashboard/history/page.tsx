@@ -365,7 +365,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                         <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                     </div>
                                     {prediction.palpiteCombo && (
-                                        <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                        <div className="absolute -right-1 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
                                             <Tooltip>
                                                 <TooltipTrigger>
                                                     <div className="flex items-center gap-1">
@@ -415,17 +415,36 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                       </div>
                                       <div className="flex items-center gap-1.5">
                                         <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
-                                         {chosenTeams.length > 0 && (
-                                            <div className="flex items-center gap-1">
-                                                {chosenTeams.map(team => (
-                                                    <Tooltip key={team.id}>
+                                        {chosenTeams.length > 0 && (
+                                            <>
+                                                <div className="hidden sm:flex items-center gap-1">
+                                                    {chosenTeams.map(team => (
+                                                        <Tooltip key={team.id}>
+                                                            <TooltipTrigger>
+                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                        </Tooltip>
+                                                    ))}
+                                                </div>
+                                                <div className="sm:hidden">
+                                                    <Tooltip>
                                                         <TooltipTrigger>
-                                                              <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                            <Trophy className="w-4 h-4 text-amber-500" />
                                                         </TooltipTrigger>
-                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                        <TooltipContent>
+                                                            <div className='flex flex-col gap-1'>
+                                                                {chosenTeams.map(team => (
+                                                                    <div key={team.id} className='flex items-center gap-2'>
+                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                        <p>{team.pickOrder}º: {team.name}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </TooltipContent>
                                                     </Tooltip>
-                                                ))}
-                                            </div>
+                                                </div>
+                                            </>
                                         )}
                                       </div>
                                     </Link>
@@ -435,7 +454,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                             <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                         </div>
                                         {p.palpiteCombo && (
-                                            <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                            <div className="absolute -right-1 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
                                                 <Tooltip>
                                                     <TooltipTrigger>
                                                         <div className="flex items-center gap-1">
