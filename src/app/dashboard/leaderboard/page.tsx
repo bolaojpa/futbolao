@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2 } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2, Gem } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -41,7 +41,7 @@ export default function LeaderboardPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
   
-  type SortType = 'default' | 'exact' | 'situation';
+  type SortType = 'default' | 'exact' | 'situation' | 'combo';
 
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
@@ -50,7 +50,7 @@ export default function LeaderboardPage() {
   const [loadingData, setLoadingData] = useState(true);
 
   const [sortType, setSortType] = useState<SortType>('default');
-  const [selectedChampionship, setSelectedChampionship] = useState<string | null>(null);
+  const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchInitialStaticData() {
@@ -92,26 +92,26 @@ export default function LeaderboardPage() {
     if (authLoading || !authUser) return;
 
     if (championshipIdFromQuery) {
-        setSelectedChampionship(championshipIdFromQuery);
+        setSelectedChampionshipId(championshipIdFromQuery);
     } else {
         // Encontra o campeonato mais recente (ativo ou não) em que o usuário está
         const userChampionships = championships.filter(c => c.participantes.includes(authUser.id));
         if (userChampionships.length > 0) {
-            setSelectedChampionship(userChampionships[0].id); // O primeiro é o mais recente
+            setSelectedChampionshipId(userChampionships[0].id); // O primeiro é o mais recente
         } else {
-            setSelectedChampionship(null);
+            setSelectedChampionshipId(null);
         }
     }
 }, [championships, championshipIdFromQuery, authUser, authLoading]);
 
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean } => {
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
-      return { pontos: 0, exato: false, situacao: false };
+      return { pontos: 0, exato: false, situacao: false, combo: false };
     }
 
     const pontuacao = championship.pontuacao;
@@ -123,9 +123,12 @@ export default function LeaderboardPage() {
     const acertouSituacao = finalWinner === guessWinner;
     
     let pontosGanhos = 0;
+    let acertouCombo = false;
 
     const usouCombo = !!prediction.palpiteCombo;
     const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+
+    if (acertouGols) acertouCombo = true;
 
     if (acertouPlacarExato) {
         pontosGanhos += pontuacao.tradicional.exato;
@@ -141,17 +144,17 @@ export default function LeaderboardPage() {
         pontosGanhos += pontuacao.combo.pontosGols;
     }
 
-    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao };
+    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo };
   };
 
   const usersWithLiveScore = useMemo(() => {
-    if (!selectedChampionship) return [];
+    if (!selectedChampionshipId) return [];
 
-    const championshipDetails = championships.find(c => c.id === selectedChampionship);
+    const championshipDetails = championships.find(c => c.id === selectedChampionshipId);
     if (!championshipDetails) return [];
     
     const liveMatchesForChamp = allMatches.filter(match => 
-        match.campeonatoId === selectedChampionship &&
+        match.campeonatoId === selectedChampionshipId &&
         match.status !== 'Finalizado' && 
         match.status !== 'Cancelado' &&
         isPast(parseISO(match.data))
@@ -160,10 +163,18 @@ export default function LeaderboardPage() {
     const participantUsers = allUsers.filter(u => championshipDetails.participantes.includes(u.id));
 
     return participantUsers.map(user => {
-        const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionship);
+        const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
         let basePoints = stats?.pontos ?? 0;
         let baseExatos = stats?.acertosExatos ?? 0;
         let baseSituacoes = stats?.acertosSituacao ?? 0;
+        let baseCombos = 0; // Inicia acertos de combo
+
+        const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
+        predictionsInChamp.forEach(p => {
+             if (p.acertoTipo === 'combo_bucha' || p.acertoTipo === 'combo_situacao' || p.acertoTipo === 'combo_sozinho') {
+                baseCombos++;
+            }
+        })
       
         liveMatchesForChamp.forEach(match => {
             const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
@@ -172,6 +183,7 @@ export default function LeaderboardPage() {
                 basePoints += result.pontos;
                 if (result.exato) baseExatos++;
                 if (result.situacao) baseSituacoes++;
+                if (result.combo) baseCombos++;
             }
         });
       
@@ -180,14 +192,16 @@ export default function LeaderboardPage() {
         pontos: basePoints,
         exatos: baseExatos,
         situacoes: baseSituacoes,
+        combos: baseCombos,
       }
     });
-  }, [allUsers, selectedChampionship, allMatches, allPredictions, championships]);
+  }, [allUsers, selectedChampionshipId, allMatches, allPredictions, championships]);
+  
+  const selectedChampionship = useMemo(() => championships.find(c => c.id === selectedChampionshipId), [championships, selectedChampionshipId]);
   
   const sortedTableUsers = useMemo(() => {
-      const selectedChampionshipData = championships.find(c => c.id === selectedChampionship);
-      const tiebreakerRules = selectedChampionshipData?.regrasDesempate || [];
-      const championshipMatches = allMatches.filter(m => m.campeonatoId === selectedChampionship).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+      const tiebreakerRules = selectedChampionship?.regrasDesempate || [];
+      const championshipMatches = allMatches.filter(m => m.campeonatoId === selectedChampionshipId).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
       return [...usersWithLiveScore].sort((a, b) => {
         if (a.pontos !== b.pontos) return b.pontos - a.pontos;
@@ -198,11 +212,11 @@ export default function LeaderboardPage() {
                     if (a.exatos !== b.exatos) return b.exatos - a.exatos;
                     break;
                 case 'maiorNumeroSituacoes':
-                    if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+                    if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
                     break;
                 case 'primeiraBucha':
-                    if (selectedChampionshipData?.pontuacao.tradicional) {
-                        const maxPontos = selectedChampionshipData.pontuacao.tradicional.exato;
+                    if (selectedChampionship?.pontuacao.tradicional) {
+                        const maxPontos = selectedChampionship.pontuacao.tradicional.exato;
                         const buchasA = allPredictions.filter(p => p.userId === a.id && p.pontos === maxPontos).map(p => p.matchId);
                         const buchasB = allPredictions.filter(p => p.userId === b.id && p.pontos === maxPontos).map(p => p.matchId);
 
@@ -222,17 +236,19 @@ export default function LeaderboardPage() {
         const dateBValue = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateAValue - dateBValue;
     });
-  }, [usersWithLiveScore, selectedChampionship, championships, allMatches, allPredictions]);
+  }, [usersWithLiveScore, selectedChampionshipId, selectedChampionship, allMatches, allPredictions]);
 
 
   const getSortColumn = () => {
     switch (sortType) {
       case 'exact':
-        return { header: 'Buchas', accessor: (user: UserType & { exatos: number }) => user.exatos };
+        return { header: 'Buchas', accessor: (user: any) => user.exatos };
       case 'situation':
-        return { header: 'Situação', accessor: (user: UserType & { situacoes: number }) => user.situacoes };
+        return { header: 'Situação', accessor: (user: any) => user.situacoes };
+      case 'combo':
+        return { header: 'Combos', accessor: (user: any) => user.combos };
       default:
-        return { header: 'Pontos', accessor: (user: UserType & { pontos: number }) => user.pontos };
+        return { header: 'Pontos', accessor: (user: any) => user.pontos };
     }
   };
 
@@ -272,10 +288,10 @@ export default function LeaderboardPage() {
             </div>
         </div>
 
-        {userChampionshipOptions.length > 0 && selectedChampionship ? (
+        {userChampionshipOptions.length > 0 && selectedChampionshipId ? (
             <>
                 <div className="w-full md:w-auto mb-8">
-                    <Select value={selectedChampionship} onValueChange={setSelectedChampionship}>
+                    <Select value={selectedChampionshipId} onValueChange={setSelectedChampionshipId}>
                         <SelectTrigger className="w-full md:w-[280px]">
                             <SelectValue placeholder="Filtrar por campeonato" />
                         </SelectTrigger>
@@ -338,6 +354,9 @@ export default function LeaderboardPage() {
                                 <SelectItem value="default">Ordenar por Pontos (Padrão)</SelectItem>
                                 <SelectItem value="exact">Ordenar por Buchas</SelectItem>
                                 <SelectItem value="situation">Ordenar por Situação</SelectItem>
+                                {selectedChampionship?.pontuacao.combo?.ativo && (
+                                    <SelectItem value="combo">Ordenar por Combos</SelectItem>
+                                )}
                             </SelectContent>
                         </Select>
                     </div>
@@ -356,7 +375,7 @@ export default function LeaderboardPage() {
                             {sortType === 'default' ? 'Buchas' : 'Pontos'}
                         </TableHead>
                         <TableHead className="text-right hidden md:table-cell">
-                            {sortType === 'situation' ? 'Buchas' : 'Situação'}
+                            {sortType === 'situation' ? 'Buchas' : sortType === 'combo' ? 'Buchas' : 'Situação'}
                         </TableHead>
                         </TableRow>
                     </TableHeader>
@@ -399,12 +418,12 @@ export default function LeaderboardPage() {
                                         {getMedalIcon(rank)}
                                     </Link>
                                 </TableCell>
-                                <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user as any)}</TableCell>
+                                <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user)}</TableCell>
                                 <TableCell className="text-right hidden md:table-cell">
                                 {sortType === 'default' ? user.exatos : user.pontos}
                                 </TableCell>
                                 <TableCell className="text-right hidden md:table-cell">
-                                {sortType === 'situation' ? user.exatos : user.situacoes}
+                                {sortType === 'situation' ? user.exatos : sortType === 'combo' ? user.exatos : user.situacoes}
                                 </TableCell>
                             </TableRow>
                         )

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2 } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useEffect, useMemo } from 'react';
@@ -36,13 +36,15 @@ import { isPast, parseISO } from 'date-fns';
 export default function AdminRankingPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
-  
+  type SortType = 'default' | 'exact' | 'situation' | 'combo';
+
   const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [allMatches, setAllMatches] = useState<Match[]>([]);
   const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortType, setSortType] = useState<SortType>('default');
 
   useEffect(() => {
     async function fetchChampionships() {
@@ -86,13 +88,13 @@ export default function AdminRankingPage() {
     };
   }, [championshipIdFromQuery]);
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean } => {
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
-      return { pontos: 0, exato: false, situacao: false };
+      return { pontos: 0, exato: false, situacao: false, combo: false };
     }
 
     const pontuacao = championship.pontuacao;
@@ -104,9 +106,12 @@ export default function AdminRankingPage() {
     const acertouSituacao = finalWinner === guessWinner;
     
     let pontosGanhos = 0;
+    let acertouCombo = false;
 
     const usouCombo = !!prediction.palpiteCombo;
     const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+
+    if (acertouGols) acertouCombo = true;
 
     if (acertouPlacarExato) {
         pontosGanhos += pontuacao.tradicional.exato;
@@ -122,7 +127,7 @@ export default function AdminRankingPage() {
         pontosGanhos += pontuacao.combo.pontosGols;
     }
 
-    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao };
+    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo };
   };
   
   const usersWithStatsForChampionship = useMemo(() => {
@@ -145,6 +150,14 @@ export default function AdminRankingPage() {
       let basePoints = stats?.pontos ?? 0;
       let baseExatos = stats?.acertosExatos ?? 0;
       let baseSituacoes = stats?.acertosSituacao ?? 0;
+      let baseCombos = 0;
+
+      const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
+      predictionsInChamp.forEach(p => {
+            if (p.acertoTipo === 'combo_bucha' || p.acertoTipo === 'combo_situacao' || p.acertoTipo === 'combo_sozinho') {
+            baseCombos++;
+          }
+      })
 
       liveMatchesForChamp.forEach(match => {
           const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
@@ -153,6 +166,7 @@ export default function AdminRankingPage() {
               basePoints += result.pontos;
               if (result.exato) baseExatos++;
               if (result.situacao) baseSituacoes++;
+              if (result.combo) baseCombos++;
           }
       });
 
@@ -161,14 +175,15 @@ export default function AdminRankingPage() {
         pontos: basePoints,
         exatos: baseExatos,
         situacoes: baseSituacoes,
+        combos: baseCombos,
       }
     });
   }, [allUsers, selectedChampionshipId, allMatches, allPredictions, championships]);
 
+  const selectedChampionship = useMemo(() => championships.find(c => c.id === selectedChampionshipId), [championships, selectedChampionshipId]);
 
   const sortedTableUsers = useMemo(() => {
-      const selectedChampionshipData = championships.find(c => c.id === selectedChampionshipId);
-      const tiebreakerRules = selectedChampionshipData?.regrasDesempate || [];
+      const tiebreakerRules = selectedChampionship?.regrasDesempate || [];
       const championshipMatches = allMatches.filter(m => m.campeonatoId === selectedChampionshipId).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
       return [...usersWithStatsForChampionship].sort((a, b) => {
@@ -183,8 +198,8 @@ export default function AdminRankingPage() {
                     if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
                     break;
                 case 'primeiraBucha':
-                    if (selectedChampionshipData?.pontuacao.tradicional) {
-                        const maxPontos = selectedChampionshipData.pontuacao.tradicional.exato;
+                    if (selectedChampionship?.pontuacao.tradicional) {
+                        const maxPontos = selectedChampionship.pontuacao.tradicional.exato;
                         const buchasA = allPredictions.filter(p => p.userId === a.id && p.pontos === maxPontos).map(p => p.matchId);
                         const buchasB = allPredictions.filter(p => p.userId === b.id && p.pontos === maxPontos).map(p => p.matchId);
 
@@ -204,7 +219,7 @@ export default function AdminRankingPage() {
         const dateBValue = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateAValue - dateBValue;
     });
-  }, [usersWithStatsForChampionship, championships, selectedChampionshipId, allMatches, allPredictions]);
+  }, [usersWithStatsForChampionship, selectedChampionshipId, selectedChampionship, allMatches, allPredictions]);
 
   const getMedalIcon = (rank: number) => {
     if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500 fill-yellow-400" />;
@@ -237,6 +252,21 @@ export default function AdminRankingPage() {
         };
     }
   };
+  
+  const getSortColumn = () => {
+    switch (sortType) {
+      case 'exact':
+        return { header: 'Buchas', accessor: (user: any) => user.exatos };
+      case 'situation':
+        return { header: 'Situação', accessor: (user: any) => user.situacoes };
+      case 'combo':
+        return { header: 'Combos', accessor: (user: any) => user.combos };
+      default:
+        return { header: 'Pontos', accessor: (user: any) => user.pontos };
+    }
+  };
+
+  const { header: sortColumnHeader, accessor: sortColumnAccessor } = getSortColumn();
 
   if (loading) {
       return <div className="p-8 flex justify-center items-center h-full"><Loader2 className="w-8 h-8 animate-spin" /></div>;
@@ -266,6 +296,19 @@ export default function AdminRankingPage() {
                         ))}
                     </SelectContent>
                 </Select>
+                 <Select value={sortType} onValueChange={(v) => setSortType(v as SortType)}>
+                    <SelectTrigger className="w-full md:w-[240px]">
+                        <SelectValue placeholder="Critério de Ordenação" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="default">Ordenar por Pontos</SelectItem>
+                        <SelectItem value="exact">Ordenar por Buchas</SelectItem>
+                        <SelectItem value="situation">Ordenar por Situação</SelectItem>
+                        {selectedChampionship?.pontuacao.combo?.ativo && (
+                            <SelectItem value="combo">Ordenar por Combos</SelectItem>
+                        )}
+                    </SelectContent>
+                </Select>
             </div>
         </div>
 
@@ -278,9 +321,10 @@ export default function AdminRankingPage() {
                   <TableHead className='w-16 text-center'>Pos.</TableHead>
                   <TableHead className='w-16 text-center'>Var.</TableHead>
                   <TableHead>Jogador</TableHead>
-                  <TableHead className="text-right">Pontos</TableHead>
+                  <TableHead className="text-right">{sortColumnHeader}</TableHead>
                   <TableHead className="text-right hidden md:table-cell">Buchas</TableHead>
                    <TableHead className="text-right hidden md:table-cell">Situação</TableHead>
+                   <TableHead className="text-right hidden md:table-cell">Combos</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -321,9 +365,10 @@ export default function AdminRankingPage() {
                                 {getMedalIcon(rank)}
                             </Link>
                         </TableCell>
-                        <TableCell className="text-right font-bold text-primary">{user.pontos}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user)}</TableCell>
                         <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>
                         <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">{user.combos}</TableCell>
                       </TableRow>
                   )
                 })}
@@ -335,4 +380,3 @@ export default function AdminRankingPage() {
     </TooltipProvider>
   );
 }
-
