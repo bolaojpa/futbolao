@@ -41,7 +41,7 @@ export default function LeaderboardPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
   
-  type SortType = 'default' | 'exact' | 'situation' | 'combo';
+  type SortType = 'default' | 'exact' | 'situation' | 'combo' | 'bonus';
 
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
@@ -255,6 +255,8 @@ export default function LeaderboardPage() {
         return { header: 'Situação', accessor: (user: any) => user.situacoes };
       case 'combo':
         return { header: 'Combos', accessor: (user: any) => user.combos };
+      case 'bonus':
+        return { header: 'Bônus', accessor: (user: any) => user.bonusSozinho };
       default:
         return { header: 'Pontos', accessor: (user: any) => user.pontos };
     }
@@ -363,7 +365,10 @@ export default function LeaderboardPage() {
                                 <SelectItem value="exact">Ordenar por Buchas</SelectItem>
                                 <SelectItem value="situation">Ordenar por Situação</SelectItem>
                                 {selectedChampionship?.pontuacao.combo?.ativo && (
-                                    <SelectItem value="combo">Ordenar por Combos</SelectItem>
+                                    <>
+                                        <SelectItem value="combo">Ordenar por Combos</SelectItem>
+                                        <SelectItem value="bonus">Ordenar por Bônus</SelectItem>
+                                    </>
                                 )}
                             </SelectContent>
                         </Select>
@@ -384,7 +389,7 @@ export default function LeaderboardPage() {
                           {selectedChampionship?.pontuacao.combo?.ativo && (
                             <>
                               <TableHead className="text-right hidden md:table-cell">Combos</TableHead>
-                              <TableHead className="text-right hidden md:table-cell">Bônus Sozinho</TableHead>
+                              <TableHead className="text-right hidden md:table-cell">Bônus</TableHead>
                             </>
                           )}
                         </TableRow>
