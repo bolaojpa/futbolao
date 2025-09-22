@@ -36,7 +36,7 @@ import { isPast, parseISO } from 'date-fns';
 export default function AdminRankingPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
-  type SortType = 'default' | 'exact' | 'situation' | 'combo' | 'bonus';
+  type SortType = 'default' | 'exact' | 'situation' | 'craves' | 'gols';
 
   const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | null>(null);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
@@ -152,16 +152,16 @@ export default function AdminRankingPage() {
       let basePoints = stats?.pontos ?? 0;
       let baseExatos = stats?.acertosExatos ?? 0;
       let baseSituacoes = stats?.acertosSituacao ?? 0;
-      let baseCombos = 0;
-      let baseBonusSozinho = 0;
+      let baseCraves = 0;
+      let baseGols = 0;
 
       const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
       predictionsInChamp.forEach(p => {
-            if (p.acertoTipo === 'combo_bucha' || p.acertoTipo === 'combo_situacao' || p.acertoTipo === 'combo_sozinho') {
-              baseCombos++;
+            if (p.acertoTipo === 'combo_bucha') {
+              baseCraves++;
             }
             if (p.acertoTipo === 'combo_sozinho') {
-              baseBonusSozinho++;
+              baseGols++;
             }
       })
 
@@ -172,8 +172,6 @@ export default function AdminRankingPage() {
               basePoints += result.pontos;
               if (result.exato) baseExatos++;
               if (result.situacao) baseSituacoes++;
-              if (result.combo) baseCombos++;
-              if (result.bonusSozinho) baseBonusSozinho++;
           }
       });
 
@@ -182,8 +180,8 @@ export default function AdminRankingPage() {
         pontos: basePoints,
         exatos: baseExatos,
         situacoes: baseSituacoes,
-        combos: baseCombos,
-        bonusSozinho: baseBonusSozinho,
+        craves: baseCraves,
+        gols: baseGols,
       }
     });
   }, [allUsers, selectedChampionshipId, allMatches, allPredictions, championships]);
@@ -267,10 +265,10 @@ export default function AdminRankingPage() {
         return { header: 'Buchas', accessor: (user: any) => user.exatos };
       case 'situation':
         return { header: 'Situação', accessor: (user: any) => user.situacoes };
-      case 'combo':
-        return { header: 'Combos', accessor: (user: any) => user.combos };
-      case 'bonus':
-        return { header: 'Bônus', accessor: (user: any) => user.bonusSozinho };
+      case 'craves':
+        return { header: 'Craves', accessor: (user: any) => user.craves };
+      case 'gols':
+        return { header: 'Gols', accessor: (user: any) => user.gols };
       default:
         return { header: 'Pontos', accessor: (user: any) => user.pontos };
     }
@@ -316,8 +314,8 @@ export default function AdminRankingPage() {
                         <SelectItem value="situation">Ordenar por Situação</SelectItem>
                         {selectedChampionship?.pontuacao.combo?.ativo && (
                             <>
-                                <SelectItem value="combo">Ordenar por Combos</SelectItem>
-                                <SelectItem value="bonus">Ordenar por Bônus</SelectItem>
+                                <SelectItem value="craves">Ordenar por Craves</SelectItem>
+                                <SelectItem value="gols">Ordenar por Gols</SelectItem>
                             </>
                         )}
                     </SelectContent>
@@ -339,8 +337,8 @@ export default function AdminRankingPage() {
                   {sortType !== 'situation' && <TableHead className="text-right hidden md:table-cell">Situação</TableHead>}
                    {selectedChampionship?.pontuacao.combo?.ativo && (
                     <>
-                      {sortType !== 'combo' && <TableHead className="text-right hidden md:table-cell">Combos</TableHead>}
-                      {sortType !== 'bonus' && <TableHead className="text-right hidden md:table-cell">Bônus</TableHead>}
+                      {sortType !== 'craves' && <TableHead className="text-right hidden md:table-cell">Craves</TableHead>}
+                      {sortType !== 'gols' && <TableHead className="text-right hidden md:table-cell">Gols</TableHead>}
                     </>
                    )}
                    {sortType !== 'default' && <TableHead className="text-right hidden md:table-cell">Pontos</TableHead>}
@@ -389,8 +387,8 @@ export default function AdminRankingPage() {
                         {sortType !== 'situation' && <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>}
                         {selectedChampionship?.pontuacao.combo?.ativo && (
                             <>
-                              {sortType !== 'combo' && <TableCell className="text-right hidden md:table-cell">{user.combos}</TableCell>}
-                              {sortType !== 'bonus' && <TableCell className="text-right hidden md:table-cell">{user.bonusSozinho}</TableCell>}
+                              {sortType !== 'craves' && <TableCell className="text-right hidden md:table-cell">{user.craves}</TableCell>}
+                              {sortType !== 'gols' && <TableCell className="text-right hidden md:table-cell">{user.gols}</TableCell>}
                             </>
                         )}
                         {sortType !== 'default' && <TableCell className="text-right hidden md:table-cell font-semibold">{user.pontos}</TableCell>}
