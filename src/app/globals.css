@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -126,7 +127,7 @@
 }
 
 @keyframes gold-shimmer {
-    0% { background-position: -100% 0; }
+    0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
 }
 
@@ -135,9 +136,9 @@
     background-image: linear-gradient(105deg,
         transparent 0%,
         transparent 40%,
-        rgba(255, 255, 255, 0.4) 45%,
-        rgba(255, 255, 255, 0.5) 50%,
-        rgba(255, 255, 255, 0.4) 55%,
+        rgba(255, 230, 150, 0.5) 48%,
+        rgba(255, 230, 150, 0.8) 50%,
+        rgba(255, 230, 150, 0.5) 52%,
         transparent 60%,
         transparent 100%
     );
@@ -150,9 +151,9 @@
     background-image: linear-gradient(105deg,
         transparent 0%,
         transparent 40%,
-        rgba(255, 255, 255, 0.3) 45%,
-        rgba(255, 255, 255, 0.5) 50%,
-        rgba(255, 255, 255, 0.3) 55%,
+        rgba(255, 255, 255, 0.3) 48%,
+        rgba(255, 255, 255, 0.6) 50%,
+        rgba(255, 255, 255, 0.3) 52%,
         transparent 60%,
         transparent 100%
     );
