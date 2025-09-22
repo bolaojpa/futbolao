@@ -452,10 +452,12 @@ export default function AdminDashboardPage() {
                                                         
                                                         const { pontos: simulatedPoints, acertoTipo: simulatedAcertoTipo } = calculateSimulatedPoints(match, p);
                                                         const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                                        const finalRankingOrder = championship?.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) : [];
                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
-                                                            return team ? { ...team, pickOrder: index + 1 } : null;
-                                                        }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
+                                                            const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
+                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                        }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
                                                         
                                                         return (
                                                         <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedAcertoTipo))}>
@@ -469,17 +471,36 @@ export default function AdminDashboardPage() {
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5">
                                                                     <span className="font-bold">{user.apelido}:</span>
-                                                                    {chosenTeams.length > 0 && (
-                                                                        <div className="flex items-center gap-1">
-                                                                            {chosenTeams.map(team => (
-                                                                                <Tooltip key={team.id}>
+                                                                     {chosenTeams.length > 0 && (
+                                                                        <>
+                                                                            <div className="hidden sm:flex items-center gap-1">
+                                                                                {chosenTeams.map(team => (
+                                                                                    <Tooltip key={team.id}>
+                                                                                        <TooltipTrigger>
+                                                                                            <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                        </TooltipTrigger>
+                                                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                    </Tooltip>
+                                                                                ))}
+                                                                            </div>
+                                                                            <div className="sm:hidden">
+                                                                                <Tooltip>
                                                                                     <TooltipTrigger>
-                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
+                                                                                        <Trophy className="w-4 h-4 text-amber-500" />
                                                                                     </TooltipTrigger>
-                                                                                    <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                    <TooltipContent>
+                                                                                        <div className='flex flex-col gap-1'>
+                                                                                            {chosenTeams.map(team => (
+                                                                                                <div key={team.id} className='flex items-center gap-2'>
+                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                                    <p>{team.pickOrder}º: {team.name}</p>
+                                                                                                </div>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </TooltipContent>
                                                                                 </Tooltip>
-                                                                            ))}
-                                                                        </div>
+                                                                            </div>
+                                                                        </>
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -488,7 +509,7 @@ export default function AdminDashboardPage() {
                                                                     <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                                 </div>
                                                                 {p.palpiteCombo && (
-                                                                    <div className="absolute left-full ml-2 flex items-center gap-1 text-primary">
+                                                                    <div className="absolute -right-1 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
                                                                         <Tooltip>
                                                                             <TooltipTrigger>
                                                                                 <div className="flex items-center gap-1">
@@ -533,3 +554,4 @@ export default function AdminDashboardPage() {
 
 
     
+
