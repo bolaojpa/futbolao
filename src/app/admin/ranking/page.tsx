@@ -88,13 +88,13 @@ export default function AdminRankingPage() {
     };
   }, [championshipIdFromQuery]);
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonusSozinho: boolean; } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; cravo: boolean; golSozinho: boolean; } => {
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
-      return { pontos: 0, exato: false, situacao: false, combo: false, bonusSozinho: false };
+      return { pontos: 0, exato: false, situacao: false, cravo: false, golSozinho: false };
     }
 
     const pontuacao = championship.pontuacao;
@@ -106,18 +106,17 @@ export default function AdminRankingPage() {
     const acertouSituacao = finalWinner === guessWinner;
     
     let pontosGanhos = 0;
-    let acertouCombo = false;
-    let acertouBonusSozinho = false;
+    let acertouCravo = false;
+    let acertouGolSozinho = false;
 
     const usouCombo = !!prediction.palpiteCombo;
     const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
-
-    if (acertouGols) acertouCombo = true;
 
     if (acertouPlacarExato) {
         pontosGanhos += pontuacao.tradicional.exato;
         if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
+            acertouCravo = true;
         }
     } else if (acertouSituacao) {
         pontosGanhos += pontuacao.tradicional.situacao;
@@ -126,10 +125,10 @@ export default function AdminRankingPage() {
         }
     } else if (acertouGols && pontuacao.combo) {
         pontosGanhos += pontuacao.combo.pontosGols;
-        acertouBonusSozinho = true;
+        acertouGolSozinho = true;
     }
 
-    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo, bonusSozinho: acertouBonusSozinho };
+    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, cravo: acertouCravo, golSozinho: acertouGolSozinho };
   };
   
   const usersWithStatsForChampionship = useMemo(() => {
@@ -172,6 +171,8 @@ export default function AdminRankingPage() {
               basePoints += result.pontos;
               if (result.exato) baseExatos++;
               if (result.situacao) baseSituacoes++;
+              if (result.cravo) baseCraves++;
+              if (result.golSozinho) baseGols++;
           }
       });
 
