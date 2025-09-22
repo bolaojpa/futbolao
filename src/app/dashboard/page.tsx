@@ -513,7 +513,20 @@ export default function DashboardPage() {
                                                                                     )}
                                                                                 </div>
                                                                             </div>
-                                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
+                                                                            <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
+                                                                                <span>{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
+                                                                                {userPrediction.palpiteCombo && (
+                                                                                    <Tooltip>
+                                                                                        <TooltipTrigger>
+                                                                                            <div className="flex items-center gap-1 text-primary">
+                                                                                                <Goal className="h-4 w-4" />
+                                                                                                <span>{userPrediction.palpiteCombo.totalGols}</span>
+                                                                                            </div>
+                                                                                        </TooltipTrigger>
+                                                                                        <TooltipContent><p>Seu palpite de gols para o combo.</p></TooltipContent>
+                                                                                    </Tooltip>
+                                                                                )}
+                                                                            </div>
                                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
                                                                                 {userPrediction.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
                                                                                 <Badge variant={getPointsBadgeVariant(currentUserAcertoTipo)} className='whitespace-nowrap'>
@@ -572,7 +585,20 @@ export default function DashboardPage() {
                                                                                         </div>
                                                                                     </Link>
                                                                                 </div>
-                                                                                <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                                <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
+                                                                                    <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                                    {p.palpiteCombo && (
+                                                                                        <Tooltip>
+                                                                                            <TooltipTrigger>
+                                                                                                <div className="flex items-center gap-1 text-primary">
+                                                                                                    <Goal className="h-4 w-4" />
+                                                                                                    <span>{p.palpiteCombo.totalGols}</span>
+                                                                                                </div>
+                                                                                            </TooltipTrigger>
+                                                                                            <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                                                        </Tooltip>
+                                                                                    )}
+                                                                                </div>
                                                                                 <div className="w-1/3 text-right flex items-center justify-end gap-2">
                                                                                     {p.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
                                                                                     <Badge variant={getPointsBadgeVariant(otherAcertoTipo)} className='whitespace-nowrap'>
@@ -756,7 +782,20 @@ export default function DashboardPage() {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                                            <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
+                                                                <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                                                {prediction.palpiteCombo && (
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger>
+                                                                            <div className="flex items-center gap-1 text-primary">
+                                                                                <Goal className="h-4 w-4" />
+                                                                                <span>{prediction.palpiteCombo.totalGols}</span>
+                                                                            </div>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent><p>Seu palpite de gols (Combo)</p></TooltipContent>
+                                                                    </Tooltip>
+                                                                )}
+                                                            </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
                                                                  {prediction.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
                                                                 <Badge variant={getPointsBadgeVariant(prediction.acertoTipo)} className='whitespace-nowrap'>
@@ -807,7 +846,20 @@ export default function DashboardPage() {
                                                                 </div>
                                                             </Link>
                                                         </div>
-                                                        <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                        <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
+                                                            <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                            {p.palpiteCombo && (
+                                                                <Tooltip>
+                                                                    <TooltipTrigger>
+                                                                        <div className="flex items-center gap-1 text-primary">
+                                                                            <Goal className="h-4 w-4" />
+                                                                            <span>{p.palpiteCombo.totalGols}</span>
+                                                                        </div>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                                </Tooltip>
+                                                            )}
+                                                        </div>
                                                         <div className="w-1/3 text-right flex items-center justify-end gap-2">
                                                             {p.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
                                                             <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
