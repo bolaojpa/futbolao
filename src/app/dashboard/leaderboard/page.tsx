@@ -41,7 +41,7 @@ export default function LeaderboardPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
   
-  type SortType = 'default' | 'exact' | 'situation' | 'craves' | 'gols';
+  type SortType = 'default' | 'exact' | 'situation' | 'bonus' | 'gols';
 
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
@@ -105,13 +105,13 @@ export default function LeaderboardPage() {
 }, [championships, championshipIdFromQuery, authUser, authLoading]);
 
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; cravo: boolean; golSozinho: boolean; } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; bonus: boolean; golSozinho: boolean; } => {
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
-      return { pontos: 0, exato: false, situacao: false, cravo: false, golSozinho: false };
+      return { pontos: 0, exato: false, situacao: false, bonus: false, golSozinho: false };
     }
 
     const pontuacao = championship.pontuacao;
@@ -123,7 +123,7 @@ export default function LeaderboardPage() {
     const acertouSituacao = finalWinner === guessWinner;
     
     let pontosGanhos = 0;
-    let acertouCravo = false;
+    let acertouBonus = false;
     let acertouGolSozinho = false;
 
     const usouCombo = !!prediction.palpiteCombo;
@@ -133,7 +133,7 @@ export default function LeaderboardPage() {
         pontosGanhos += pontuacao.tradicional.exato;
         if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
-            acertouCravo = true;
+            acertouBonus = true;
         }
     } else if (acertouSituacao) {
         pontosGanhos += pontuacao.tradicional.situacao;
@@ -145,7 +145,7 @@ export default function LeaderboardPage() {
         acertouGolSozinho = true;
     }
 
-    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, cravo: acertouCravo, golSozinho: acertouGolSozinho };
+    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, bonus: acertouBonus, golSozinho: acertouGolSozinho };
   };
 
   const usersWithLiveScore = useMemo(() => {
@@ -168,13 +168,13 @@ export default function LeaderboardPage() {
         let basePoints = stats?.pontos ?? 0;
         let baseExatos = stats?.acertosExatos ?? 0;
         let baseSituacoes = stats?.acertosSituacao ?? 0;
-        let baseCraves = 0;
+        let baseBonus = 0;
         let baseGols = 0;
 
         const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
         predictionsInChamp.forEach(p => {
              if (p.acertoTipo === 'combo_bucha') {
-                baseCraves++;
+                baseBonus++;
             }
              if (p.acertoTipo === 'combo_sozinho') {
                 baseGols++;
@@ -188,7 +188,7 @@ export default function LeaderboardPage() {
                 basePoints += result.pontos;
                 if (result.exato) baseExatos++;
                 if (result.situacao) baseSituacoes++;
-                if (result.cravo) baseCraves++;
+                if (result.bonus) baseBonus++;
                 if (result.golSozinho) baseGols++;
             }
         });
@@ -198,7 +198,7 @@ export default function LeaderboardPage() {
         pontos: basePoints,
         exatos: baseExatos,
         situacoes: baseSituacoes,
-        craves: baseCraves,
+        bonus: baseBonus,
         gols: baseGols,
       }
     });
@@ -252,8 +252,8 @@ export default function LeaderboardPage() {
         return { header: 'Buchas', accessor: (user: any) => user.exatos };
       case 'situation':
         return { header: 'Situação', accessor: (user: any) => user.situacoes };
-      case 'craves':
-        return { header: 'Craves', accessor: (user: any) => user.craves };
+      case 'bonus':
+        return { header: 'Bônus', accessor: (user: any) => user.bonus };
       case 'gols':
         return { header: 'Gols', accessor: (user: any) => user.gols };
       default:
@@ -365,7 +365,7 @@ export default function LeaderboardPage() {
                                 <SelectItem value="situation">Ordenar por Situação</SelectItem>
                                 {selectedChampionship?.pontuacao.combo?.ativo && (
                                     <>
-                                        <SelectItem value="craves">Ordenar por Craves</SelectItem>
+                                        <SelectItem value="bonus">Ordenar por Bônus</SelectItem>
                                         <SelectItem value="gols">Ordenar por Gols</SelectItem>
                                     </>
                                 )}
@@ -387,7 +387,7 @@ export default function LeaderboardPage() {
                           {sortType !== 'situation' && <TableHead className="text-right hidden md:table-cell">Situação</TableHead>}
                           {selectedChampionship?.pontuacao.combo?.ativo && (
                             <>
-                              {sortType !== 'craves' && <TableHead className="text-right hidden md:table-cell">Craves</TableHead>}
+                              {sortType !== 'bonus' && <TableHead className="text-right hidden md:table-cell">Bônus</TableHead>}
                               {sortType !== 'gols' && <TableHead className="text-right hidden md:table-cell">Gols</TableHead>}
                             </>
                           )}
@@ -438,7 +438,7 @@ export default function LeaderboardPage() {
                                 {sortType !== 'situation' && <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>}
                                 {selectedChampionship?.pontuacao.combo?.ativo && (
                                   <>
-                                    {sortType !== 'craves' && <TableCell className="text-right hidden md:table-cell">{user.craves}</TableCell>}
+                                    {sortType !== 'bonus' && <TableCell className="text-right hidden md:table-cell">{user.bonus}</TableCell>}
                                     {sortType !== 'gols' && <TableCell className="text-right hidden md:table-cell">{user.gols}</TableCell>}
                                   </>
                                 )}
