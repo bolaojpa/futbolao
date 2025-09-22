@@ -132,15 +132,15 @@ export default function LeaderboardPage() {
 
     if (acertouPlacarExato) {
         pontosGanhos += pontuacao.tradicional.exato;
-        if (acertouGols) {
+        if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
         }
     } else if (acertouSituacao) {
         pontosGanhos += pontuacao.tradicional.situacao;
-        if (acertouGols) {
+        if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.pontosGols;
         }
-    } else if (acertouGols) {
+    } else if (acertouGols && pontuacao.combo) {
         pontosGanhos += pontuacao.combo.pontosGols;
     }
 

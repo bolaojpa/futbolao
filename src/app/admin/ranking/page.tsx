@@ -115,15 +115,15 @@ export default function AdminRankingPage() {
 
     if (acertouPlacarExato) {
         pontosGanhos += pontuacao.tradicional.exato;
-        if (acertouGols) {
+        if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
         }
     } else if (acertouSituacao) {
         pontosGanhos += pontuacao.tradicional.situacao;
-        if (acertouGols) {
+        if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.pontosGols;
         }
-    } else if (acertouGols) {
+    } else if (acertouGols && pontuacao.combo) {
         pontosGanhos += pontuacao.combo.pontosGols;
     }
 
@@ -324,7 +324,9 @@ export default function AdminRankingPage() {
                   <TableHead className="text-right">{sortColumnHeader}</TableHead>
                   <TableHead className="text-right hidden md:table-cell">Buchas</TableHead>
                    <TableHead className="text-right hidden md:table-cell">Situação</TableHead>
-                   <TableHead className="text-right hidden md:table-cell">Combos</TableHead>
+                   {selectedChampionship?.pontuacao.combo?.ativo && (
+                    <TableHead className="text-right hidden md:table-cell">Combos</TableHead>
+                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -368,7 +370,9 @@ export default function AdminRankingPage() {
                         <TableCell className="text-right font-bold text-primary">{sortColumnAccessor(user)}</TableCell>
                         <TableCell className="text-right hidden md:table-cell">{user.exatos}</TableCell>
                         <TableCell className="text-right hidden md:table-cell">{user.situacoes}</TableCell>
-                        <TableCell className="text-right hidden md:table-cell">{user.combos}</TableCell>
+                        {selectedChampionship?.pontuacao.combo?.ativo && (
+                            <TableCell className="text-right hidden md:table-cell">{user.combos}</TableCell>
+                        )}
                       </TableRow>
                   )
                 })}
