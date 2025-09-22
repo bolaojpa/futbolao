@@ -529,3 +529,4 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
 
 
 
+
