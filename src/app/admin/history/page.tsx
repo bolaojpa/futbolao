@@ -232,7 +232,7 @@ export default function AdminHistoryPage() {
         case 'combo_sozinho': return 'bg-combo-solo';
         case 'erro':
         default:
-             return 'bg-red-100/80 dark:bg-red-900/40';
+             return '';
     }
 };
 
@@ -387,37 +387,33 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                           </div>
                                           <div className="flex items-center gap-1.5">
                                             <span className="font-bold">{user.apelido}:</span>
-                                            {chosenTeams.length > 0 && (
-                                                <>
-                                                    <div className="hidden sm:flex items-center gap-1">
-                                                        {chosenTeams.map(team => (
-                                                            <Tooltip key={team.id}>
-                                                                <TooltipTrigger>
+                                            <div className="hidden sm:flex items-center gap-1">
+                                                {chosenTeams.map(team => (
+                                                    <Tooltip key={team.id}>
+                                                        <TooltipTrigger>
+                                                            <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                    </Tooltip>
+                                                ))}
+                                            </div>
+                                            <div className="sm:hidden">
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <Trophy className="w-4 h-4 text-amber-500" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <div className='flex flex-col gap-1'>
+                                                            {chosenTeams.map(team => (
+                                                                <div key={team.id} className='flex items-center gap-2'>
                                                                     <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
-                                                            </Tooltip>
-                                                        ))}
-                                                    </div>
-                                                    <div className="sm:hidden">
-                                                        <Tooltip>
-                                                            <TooltipTrigger>
-                                                                <Trophy className="w-4 h-4 text-amber-500" />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <div className='flex flex-col gap-1'>
-                                                                    {chosenTeams.map(team => (
-                                                                        <div key={team.id} className='flex items-center gap-2'>
-                                                                            <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                            <p>{team.pickOrder}º: {team.name}</p>
-                                                                        </div>
-                                                                    ))}
+                                                                    <p>{team.pickOrder}º: {team.name}</p>
                                                                 </div>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </div>
-                                                </>
-                                            )}
+                                                            ))}
+                                                        </div>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
                                           </div>
                                         </div>
                                         <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
@@ -526,6 +522,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
     </div>
   );
 }
+
 
 
 
