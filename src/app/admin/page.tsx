@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
 import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addNotification, updateUserStatsAfterMatch } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
-import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy } from 'lucide-react';
+import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy, Gem, Goal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -286,7 +286,7 @@ export default function AdminDashboardPage() {
         return 'destructive';
     };
 
-    const calculateSimulatedPoints = (match: Match, palpitePlacarA: number, palpitePlacarB: number): number => {
+    const calculateSimulatedPoints = (match: Match, prediction: Prediction): number => {
         const liveScore = scores[match.id];
         if (!liveScore || liveScore.placarA === '' || liveScore.placarB === '') return 0;
         
@@ -294,20 +294,37 @@ export default function AdminDashboardPage() {
         const livePlacarB = Number(liveScore.placarB);
         
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
-        const pontuacao = championship?.pontuacao.tradicional;
+        const pontuacao = championship?.pontuacao;
         if (!pontuacao) return 0;
         
-        const acertouPlacar = palpitePlacarA === livePlacarA && palpitePlacarB === livePlacarB;
-        if (acertouPlacar) return pontuacao.exato;
+        const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
+        const totalGolsFinal = livePlacarA + livePlacarB;
+        
+        const acertouPlacarExato = guessA === livePlacarA && guessB === livePlacarB;
+        const finalWinner = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
+        const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+        const acertouSituacao = finalWinner === guessWinner;
+        
+        let pontosGanhos = 0;
 
-        const liveVencedor = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
-        const palpiteVencedor = palpitePlacarA > palpitePlacarB ? 'A' : palpitePlacarA < palpitePlacarB ? 'B' : 'E';
+        const usouCombo = !!prediction.palpiteCombo;
+        const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
-        if (liveVencedor === palpiteVencedor) {
-            return pontuacao.situacao;
+        if (acertouPlacarExato) {
+            pontosGanhos += pontuacao.tradicional.exato;
+            if (acertouGols) {
+                pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
+            }
+        } else if (acertouSituacao) {
+            pontosGanhos += pontuacao.tradicional.situacao;
+            if (acertouGols) {
+                pontosGanhos += pontuacao.combo.pontosGols;
+            }
+        } else if (acertouGols) {
+            pontosGanhos += pontuacao.combo.pontosGols;
         }
-
-        return 0;
+        
+        return pontosGanhos;
     };
 
 
@@ -410,7 +427,7 @@ export default function AdminDashboardPage() {
                                                         const user = allUsers.find(u => u.id === p.userId);
                                                         if (!user) return null;
                                                         
-                                                        const simulatedPoints = calculateSimulatedPoints(match, p.palpiteUsuario.placarA, p.palpiteUsuario.placarB);
+                                                        const simulatedPoints = calculateSimulatedPoints(match, p);
                                                         const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
@@ -445,7 +462,20 @@ export default function AdminDashboardPage() {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                            <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
+                                                                <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                {p.palpiteCombo && (
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger>
+                                                                            <div className="flex items-center gap-1 text-primary">
+                                                                                <Goal className="h-4 w-4" />
+                                                                                <span>{p.palpiteCombo.totalGols}</span>
+                                                                            </div>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                                    </Tooltip>
+                                                                )}
+                                                            </div>
                                                             <div className="w-1/3 text-right">
                                                                 <Badge variant={getPointsBadgeVariant(simulatedPoints, maxPontos)} className='whitespace-nowrap'>
                                                                 {simulatedPoints} pts
@@ -477,3 +507,4 @@ export default function AdminDashboardPage() {
 
 
     
+

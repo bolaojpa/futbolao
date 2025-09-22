@@ -87,29 +87,42 @@ export default function AdminRankingPage() {
   }, [championshipIdFromQuery]);
 
   const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean } => {
-    if (match.placarA === undefined || match.placarA === null || match.placarB === undefined || match.placarB === null) {
-      return { pontos: 0, exato: false, situacao: false };
-    }
-    
-    const championship = championships.find(c => c.id === match.campeonatoId);
-    if (!championship) return { pontos: 0, exato: false, situacao: false };
-
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-    const pontuacao = championship.pontuacao.tradicional;
-
-    if (guessA === liveA && guessB === liveB) {
-        return { pontos: pontuacao.exato, exato: true, situacao: false };
+    const championship = championships.find(c => c.id === match.campeonatoId);
+    
+    if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
+      return { pontos: 0, exato: false, situacao: false };
     }
 
-    const liveWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
+    const pontuacao = championship.pontuacao;
+    const totalGolsFinal = liveA + liveB;
+    
+    const acertouPlacarExato = guessA === liveA && guessB === liveB;
+    const finalWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
     const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
+    const acertouSituacao = finalWinner === guessWinner;
+    
+    let pontosGanhos = 0;
 
-    if (liveWinner === guessWinner) {
-        return { pontos: pontuacao.situacao, exato: false, situacao: true };
+    const usouCombo = !!prediction.palpiteCombo;
+    const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+
+    if (acertouPlacarExato) {
+        pontosGanhos += pontuacao.tradicional.exato;
+        if (acertouGols) {
+            pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
+        }
+    } else if (acertouSituacao) {
+        pontosGanhos += pontuacao.tradicional.situacao;
+        if (acertouGols) {
+            pontosGanhos += pontuacao.combo.pontosGols;
+        }
+    } else if (acertouGols) {
+        pontosGanhos += pontuacao.combo.pontosGols;
     }
 
-    return { pontos: 0, exato: false, situacao: false };
+    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao };
   };
   
   const usersWithStatsForChampionship = useMemo(() => {
@@ -322,3 +335,4 @@ export default function AdminRankingPage() {
     </TooltipProvider>
   );
 }
+

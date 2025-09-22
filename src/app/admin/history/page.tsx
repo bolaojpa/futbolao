@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle, Loader2 } from 'lucide-react';
+import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle, Loader2, Goal } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -223,17 +223,34 @@ export default function AdminHistoryPage() {
     }, {} as Record<string, MatchWithPredictions[]>);
   }, [paginatedMatches]);
 
-  const getPredictionStatusClass = (pontos: number, maxPontos: number) => {
-    if (pontos === maxPontos && maxPontos > 0) return 'bg-green-100/80 dark:bg-green-900/40';
-    if (pontos > 0) return 'bg-blue-100/80 dark:bg-blue-900/40';
-    return 'bg-red-100/80 dark:bg-red-900/40';
-  };
+  const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
+    switch (acertoTipo) {
+        case 'combo_bucha': return 'bg-combo-gold text-black';
+        case 'combo_situacao': return 'bg-combo-silver text-black';
+        case 'bucha': return 'bg-green-100/80 dark:bg-green-900/40';
+        case 'situacao': return 'bg-blue-100/80 dark:bg-blue-900/40';
+        case 'combo_sozinho': return 'bg-combo-solo';
+        case 'erro':
+        default:
+             return 'bg-red-100/80 dark:bg-red-900/40';
+    }
+};
 
-  const getPointsBadgeVariant = (pontos: number, maxPontos: number): "success" | "default" | "destructive" => {
-    if (pontos === maxPontos && maxPontos > 0) return 'success';
-    if (pontos > 0) return 'default';
-    return 'destructive';
-  };
+const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
+    switch (acertoTipo) {
+        case 'combo_bucha':
+        case 'bucha':
+            return 'success';
+        case 'combo_situacao':
+        case 'situacao':
+            return 'default';
+        case 'combo_sozinho':
+            return 'secondary';
+        case 'erro':
+        default:
+            return 'destructive';
+    }
+};
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -274,7 +291,6 @@ export default function AdminHistoryPage() {
                 <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
                 {matches.map((match) => {
                   const championship = championships.find(c => c.id === match.campeonatoId);
-                  const maxPointsForMatch = championship?.pontuacao.tradicional.exato ?? 0;
                   const teamA = teams.find(t => t.name === match.timeA);
                   const teamB = teams.find(t => t.name === match.timeB);
 
@@ -352,7 +368,6 @@ export default function AdminHistoryPage() {
                                       const user = users.find(u => u.id === p.userId);
                                       if (!user) return null;
                                       
-                                      const points = calculatePoints(match, p);
                                       const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                       const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                           const team = teams.find(t => t.name === teamName);
@@ -361,7 +376,7 @@ export default function AdminHistoryPage() {
                                       }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
 
                                       return (
-                                      <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(points, maxPointsForMatch))}>
+                                      <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.acertoTipo))}>
                                         <div className="w-1/3 text-left flex items-center gap-2 group">
                                           <div className="relative">
                                               <Avatar className="w-8 h-8">
@@ -386,10 +401,23 @@ export default function AdminHistoryPage() {
                                             )}
                                           </div>
                                         </div>
-                                        <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                        <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-2">
+                                            <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                            {p.palpiteCombo && (
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <div className="flex items-center gap-1 text-primary">
+                                                            <Goal className="h-4 w-4" />
+                                                            <span>{p.palpiteCombo.totalGols}</span>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                </Tooltip>
+                                            )}
+                                        </div>
                                         <div className="w-1/3 text-right">
-                                          <Badge variant={getPointsBadgeVariant(points, maxPointsForMatch)} className='whitespace-nowrap'>
-                                            {points} pts
+                                          <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
+                                            {p.pontos} pts
                                           </Badge>
                                         </div>
                                       </li>
@@ -475,3 +503,4 @@ export default function AdminHistoryPage() {
     </div>
   );
 }
+
