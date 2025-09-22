@@ -162,3 +162,18 @@
 .bg-combo-solo {
     background-color: #a855f720; /* purple-500 com 12% de opacidade */
 }
+
+@keyframes gem-pulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px hsl(var(--primary)));
+    }
+    50% {
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 6px hsl(var(--primary)));
+    }
+}
+
+.animate-gem-pulse {
+    animation: gem-pulse 1.5s ease-in-out infinite;
+}

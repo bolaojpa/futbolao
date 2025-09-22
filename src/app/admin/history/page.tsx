@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle, Loader2, Goal } from 'lucide-react';
+import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle, Loader2, Goal, Gem } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -416,12 +416,12 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                             </div>
                                           </div>
                                         </div>
-                                        <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
-                                            <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
+                                            <div className="flex-1 text-center">
                                                 <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                             </div>
                                             {p.palpiteCombo && (
-                                                <div className="absolute -right-1 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
                                                     <Tooltip>
                                                         <TooltipTrigger>
                                                             <div className="flex items-center gap-1">
@@ -434,7 +434,8 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="w-1/3 text-right">
+                                        <div className="w-1/3 text-right flex items-center justify-end gap-2">
+                                          {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
                                           <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
                                             {p.pontos} pts
                                           </Badge>
@@ -522,6 +523,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
     </div>
   );
 }
+
 
 
 

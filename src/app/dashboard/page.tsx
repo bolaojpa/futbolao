@@ -532,12 +532,12 @@ export default function DashboardPage() {
                                                                                     )}
                                                                                 </div>
                                                                             </div>
-                                                                            <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
-                                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                            <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
+                                                                                <div className="flex-1 text-center">
                                                                                     <span>{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
                                                                                 </div>
                                                                                 {userPrediction.palpiteCombo && (
-                                                                                    <div className="absolute -right-1 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
                                                                                         <Tooltip>
                                                                                             <TooltipTrigger>
                                                                                                 <div className="flex items-center gap-1">
@@ -551,7 +551,7 @@ export default function DashboardPage() {
                                                                                 )}
                                                                             </div>
                                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                {userPrediction.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                                                {userPrediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", currentUserAcertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
                                                                                 <Badge variant={getPointsBadgeVariant(currentUserAcertoTipo)} className='whitespace-nowrap'>
                                                                                     {currentUserLivePoints} pts
                                                                                 </Badge>
@@ -627,12 +627,12 @@ export default function DashboardPage() {
                                                                                         </div>
                                                                                     </Link>
                                                                                 </div>
-                                                                                <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
-                                                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                                                <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
+                                                                                    <div className="flex-1 text-center">
                                                                                         <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                                                     </div>
                                                                                     {p.palpiteCombo && (
-                                                                                        <div className="absolute -right-1 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                                        <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
                                                                                             <Tooltip>
                                                                                                 <TooltipTrigger>
                                                                                                     <div className="flex items-center gap-1">
@@ -646,7 +646,7 @@ export default function DashboardPage() {
                                                                                     )}
                                                                                 </div>
                                                                                 <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                    {p.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", otherAcertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
                                                                                     <Badge variant={getPointsBadgeVariant(otherAcertoTipo)} className='whitespace-nowrap'>
                                                                                         {otherLivePoints} pts
                                                                                     </Badge>
@@ -847,12 +847,12 @@ export default function DashboardPage() {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
-                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                            <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
+                                                                <div className="flex-1 text-center">
                                                                     <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                                                 </div>
                                                                 {prediction.palpiteCombo && (
-                                                                    <div className="absolute -right-1 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
                                                                         <Tooltip>
                                                                             <TooltipTrigger>
                                                                                 <div className="flex items-center gap-1">
@@ -866,7 +866,7 @@ export default function DashboardPage() {
                                                                 )}
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                 {prediction.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                                 {prediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", prediction.acertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
                                                                 <Badge variant={getPointsBadgeVariant(prediction.acertoTipo)} className='whitespace-nowrap'>
                                                                     {prediction.pontos} pts
                                                                 </Badge>
@@ -934,12 +934,12 @@ export default function DashboardPage() {
                                                                 </div>
                                                             </Link>
                                                         </div>
-                                                        <div className="w-1/3 flex items-center justify-center font-mono font-semibold text-base relative">
-                                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                        <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
+                                                            <div className="flex-1 text-center">
                                                                 <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                             </div>
                                                             {p.palpiteCombo && (
-                                                                <div className="absolute -right-1 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
                                                                     <Tooltip>
                                                                         <TooltipTrigger>
                                                                             <div className="flex items-center gap-1">
@@ -953,7 +953,7 @@ export default function DashboardPage() {
                                                             )}
                                                         </div>
                                                         <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                            {p.palpiteCombo && <Gem className="h-4 w-4 text-purple-600" />}
+                                                            {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
                                                             <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
                                                             {p.pontos} pts
                                                             </Badge>
