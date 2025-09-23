@@ -126,37 +126,22 @@
   animation: border-pulse 2s infinite;
 }
 
-@keyframes gold-shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+@keyframes gold-pulse {
+    0%, 100% {
+        box-shadow: 0 0 4px 1px rgba(255, 196, 0, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 12px 3px rgba(255, 196, 0, 0.7);
+    }
 }
 
 .bg-combo-gold {
     background-color: #ffc400;
-    background-image: linear-gradient(105deg,
-        transparent 0%,
-        transparent 40%,
-        rgba(255, 230, 150, 0.5) 48%,
-        rgba(255, 230, 150, 0.8) 50%,
-        rgba(255, 230, 150, 0.5) 52%,
-        transparent 60%,
-        transparent 100%
-    );
-    background-size: 200% 100%;
-    animation: gold-shimmer 3s infinite linear;
+    animation: gold-pulse 2.5s infinite ease-in-out;
 }
 
 .bg-combo-silver {
     background-color: #e0e0e0;
-    background-image: linear-gradient(105deg,
-        transparent 0%,
-        transparent 40%,
-        rgba(255, 255, 255, 0.3) 48%,
-        rgba(255, 255, 255, 0.6) 50%,
-        rgba(255, 255, 255, 0.3) 52%,
-        transparent 60%,
-        transparent 100%
-    );
 }
 
 .bg-combo-solo {
