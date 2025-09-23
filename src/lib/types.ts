@@ -61,7 +61,7 @@ export interface Prediction {
       totalGols: number;
     } | null;
     pontos: number;
-    acertoTipo?: 'bucha' | 'situacao' | 'combo_bucha' | 'combo_situacao' | 'combo_sozinho' | 'erro';
+    acertoTipo?: 'bucha' | 'situacao' | 'combo_bucha' | 'combo_situacao' | 'bonus' | 'erro';
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }

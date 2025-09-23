@@ -159,7 +159,7 @@ export default function AdminRankingPage() {
             if (p.acertoTipo === 'combo_bucha') {
               baseCombos++;
             }
-            if (p.acertoTipo === 'combo_sozinho') {
+            if (p.acertoTipo === 'bonus') {
               baseBonus++;
             }
       })

@@ -30,7 +30,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 
-type FilterType = 'all' | 'exact' | 'situation' | 'miss';
+type FilterType = 'all' | 'exact' | 'situation' | 'bonus' | 'miss';
 const ITEMS_PER_PAGE = 5;
 
 // Componente para evitar erro de hidratação com datas
@@ -149,12 +149,15 @@ export default function HistoryPage() {
         const prediction = match.prediction!;
         const isExact = prediction.acertoTipo === 'bucha' || prediction.acertoTipo === 'combo_bucha';
         const isSituation = prediction.acertoTipo === 'situacao' || prediction.acertoTipo === 'combo_situacao';
+        const isBonus = prediction.acertoTipo === 'bonus';
 
         switch (filterType) {
             case 'exact':
                 return isExact;
             case 'situation':
                 return isSituation;
+            case 'bonus':
+                return isBonus;
             case 'miss':
                 return prediction.pontos === 0;
             case 'all':
@@ -245,7 +248,7 @@ export default function HistoryPage() {
         case 'combo_situacao': return 'bg-combo-silver text-black';
         case 'bucha': return 'bg-bucha-solid text-white';
         case 'situacao': return 'bg-situacao-solid text-white';
-        case 'combo_sozinho': return 'bg-combo-solo text-white';
+        case 'bonus': return 'bg-combo-solo text-white';
         case 'erro':
         default:
              return 'bg-erro-solid text-white';
@@ -260,7 +263,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
         case 'combo_situacao':
         case 'situacao':
             return 'default';
-        case 'combo_sozinho':
+        case 'bonus':
             return 'secondary';
         case 'erro':
         default:
@@ -303,6 +306,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                   <SelectItem value="all">Mostrar Todos</SelectItem>
                   <SelectItem value="exact">Acertos de Placar Exato</SelectItem>
                   <SelectItem value="situation">Acertos de Situação</SelectItem>
+                  <SelectItem value="bonus">Acertos de Bônus</SelectItem>
                   <SelectItem value="miss">Errados</SelectItem>
               </SelectContent>
           </Select>

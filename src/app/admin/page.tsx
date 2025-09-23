@@ -177,7 +177,7 @@ export default function AdminDashboardPage() {
             }
         } else if (acertouGols) {
             pontosGanhos += pontuacao.combo?.pontosGols ?? 0;
-            acertoTipo = 'combo_sozinho';
+            acertoTipo = 'bonus';
         }
         
         return { pontos: pontosGanhos, acertoTipo };
@@ -280,7 +280,7 @@ export default function AdminDashboardPage() {
             case 'combo_situacao': return 'bg-combo-silver text-black';
             case 'bucha': return 'bg-bucha-solid text-white';
             case 'situacao': return 'bg-situacao-solid text-white';
-            case 'combo_sozinho': return 'bg-combo-solo text-white';
+            case 'bonus': return 'bg-combo-solo text-white';
             case 'erro':
             default:
                  return 'bg-erro-solid text-white';
@@ -295,7 +295,7 @@ export default function AdminDashboardPage() {
             case 'combo_situacao':
             case 'situacao':
                 return 'default';
-            case 'combo_sozinho':
+            case 'bonus':
                 return 'secondary';
             case 'erro':
             default:
@@ -344,7 +344,7 @@ export default function AdminDashboardPage() {
             }
         } else if (acertouGols) {
             pontosGanhos += pontuacao.combo.pontosGols;
-            acertoTipo = 'combo_sozinho';
+            acertoTipo = 'bonus';
         }
         
         return { pontos: pontosGanhos, acertoTipo };
@@ -550,6 +550,7 @@ export default function AdminDashboardPage() {
 
 
     
+
 
 
 
