@@ -301,12 +301,12 @@ export default function DashboardPage() {
         switch (acertoTipo) {
             case 'combo_bucha': return 'bg-combo-gold text-black';
             case 'combo_situacao': return 'bg-combo-silver text-black';
-            case 'bucha': return 'bg-green-100/80 dark:bg-green-900/40';
-            case 'situacao': return 'bg-blue-100/80 dark:bg-blue-900/40';
-            case 'combo_sozinho': return 'bg-combo-solo';
+            case 'bucha': return 'bg-bucha-solid text-white';
+            case 'situacao': return 'bg-situacao-solid text-white';
+            case 'combo_sozinho': return 'bg-combo-solo text-white';
             case 'erro':
             default:
-                 return 'bg-red-100/80 dark:bg-red-900/40';
+                 return 'bg-erro-solid text-white';
         }
     };
     
@@ -456,7 +456,7 @@ export default function DashboardPage() {
                                         if(userPrediction) {
                                             cardStatusClass = getPredictionStatusClass(currentUserAcertoTipo);
                                         } else {
-                                            cardStatusClass = 'bg-red-100/80 dark:bg-red-900/40';
+                                            cardStatusClass = 'bg-erro-solid text-white';
                                         }
 
                                         return (
@@ -558,7 +558,7 @@ export default function DashboardPage() {
                                                                             </div>
                                                                         </li>
                                                                     ) : (
-                                                                        <li className="flex justify-between items-center p-4 border-t bg-red-100/80 dark:bg-red-900/40">
+                                                                        <li className="flex justify-between items-center p-4 border-t bg-erro-solid text-white">
                                                                             <div className="w-1/3 text-left flex items-center gap-2 group">
                                                                                 <Avatar className="w-8 h-8 opacity-70">
                                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
@@ -566,7 +566,7 @@ export default function DashboardPage() {
                                                                                 </Avatar>
                                                                                 <span className="font-bold">Seu Palpite:</span>
                                                                             </div>
-                                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap text-destructive">? - ?</span>
+                                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
                                                                             <div className="w-1/3 text-right">
                                                                                 <Badge variant="destructive">Sem Palpite</Badge>
                                                                             </div>
@@ -991,3 +991,4 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+

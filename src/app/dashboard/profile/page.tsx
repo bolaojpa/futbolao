@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -78,11 +79,11 @@ const StatCard = ({
     const variantClasses: Record<StatCardVariant, string> = {
         default: '',
         leader: 'bg-green-500/10 border-green-500/50 shadow-lg',
-        exact: 'bg-green-100/80 dark:bg-green-900/40 border-green-500/30',
-        situation: 'bg-blue-100/80 dark:bg-blue-900/40 border-blue-500/30',
+        exact: 'bg-bucha-solid text-white border-green-500/30',
+        situation: 'bg-situacao-solid text-white border-blue-500/30',
         combo: 'bg-combo-gold text-black border-yellow-600',
-        bonus: 'bg-combo-solo border-purple-500/30',
-        error: 'bg-red-100/80 dark:bg-red-900/40 border-red-500/30',
+        bonus: 'bg-combo-solo text-white border-purple-500/30',
+        error: 'bg-erro-solid text-white border-red-500/30',
     };
     
     const cardContent = (

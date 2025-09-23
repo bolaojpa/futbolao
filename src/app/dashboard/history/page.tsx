@@ -243,12 +243,12 @@ export default function HistoryPage() {
     switch (acertoTipo) {
         case 'combo_bucha': return 'bg-combo-gold text-black';
         case 'combo_situacao': return 'bg-combo-silver text-black';
-        case 'bucha': return 'bg-green-100/80 dark:bg-green-900/40';
-        case 'situacao': return 'bg-blue-100/80 dark:bg-blue-900/40';
-        case 'combo_sozinho': return 'bg-combo-solo';
+        case 'bucha': return 'bg-bucha-solid text-white';
+        case 'situacao': return 'bg-situacao-solid text-white';
+        case 'combo_sozinho': return 'bg-combo-solo text-white';
         case 'erro':
         default:
-             return 'bg-red-100/80 dark:bg-red-900/40';
+             return 'bg-erro-solid text-white';
     }
 };
 

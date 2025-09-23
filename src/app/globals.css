@@ -126,31 +126,26 @@
   animation: border-pulse 2s infinite;
 }
 
-@keyframes pulse-glow {
-    0% {
-        box-shadow: 0 0 5px 0px rgba(255, 196, 0, 0.7);
-    }
-    50% {
-        box-shadow: 0 0 20px 10px rgba(255, 196, 0, 0);
-    }
-    100% {
-        box-shadow: 0 0 5px 0px rgba(255, 196, 0, 0.7);
-    }
-}
-
 .bg-combo-gold {
     background-color: #ffc400;
-    background-image: radial-gradient(ellipse at center, #ffe066 0%, #ffc400 100%);
-    animation: pulse-glow 2.5s infinite ease-in-out;
 }
 
-
 .bg-combo-silver {
-    background: radial-gradient(ellipse at center, #f5f5f5 0%,#e0e0e0 100%);
+    background-color: #e0e0e0;
 }
 
 .bg-combo-solo {
-    background-color: #a855f720; /* purple-500 com 12% de opacidade */
+    background-color: #a855f7;
+}
+
+.bg-bucha-solid {
+    background-color: #22c55e;
+}
+.bg-situacao-solid {
+    background-color: #3b82f6;
+}
+.bg-erro-solid {
+    background-color: #ef4444;
 }
 
 @keyframes gem-pulse {
