@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -223,34 +222,34 @@ export default function AdminHistoryPage() {
     }, {} as Record<string, MatchWithPredictions[]>);
   }, [paginatedMatches]);
 
-  const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
-    switch (acertoTipo) {
-        case 'combo_bucha': return 'bg-combo-gold text-black';
-        case 'combo_situacao': return 'bg-combo-silver text-black';
-        case 'bucha': return 'bg-bucha-solid text-white';
-        case 'situacao': return 'bg-situacao-solid text-white';
-        case 'combo_sozinho': return 'bg-combo-solo text-white';
-        case 'erro':
-        default:
-             return 'bg-erro-solid text-white';
-    }
-};
+    const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
+        switch (acertoTipo) {
+            case 'combo': return 'bg-combo-gold text-black';
+            case 'bonus': return 'bg-combo-silver text-black';
+            case 'bucha': return 'bg-bucha-solid text-white';
+            case 'situacao': return 'bg-situacao-solid text-white';
+            case 'gols': return 'bg-gols-solid text-white';
+            case 'erro':
+            default:
+                 return 'bg-erro-solid text-white';
+        }
+    };
 
-const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
-    switch (acertoTipo) {
-        case 'combo_bucha':
-        case 'bucha':
-            return 'success';
-        case 'combo_situacao':
-        case 'situacao':
-            return 'default';
-        case 'combo_sozinho':
-            return 'secondary';
-        case 'erro':
-        default:
-            return 'destructive';
-    }
-};
+    const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
+        switch (acertoTipo) {
+            case 'combo':
+            case 'bucha':
+                return 'success';
+            case 'bonus':
+            case 'situacao':
+                return 'default';
+            case 'gols':
+                return 'secondary';
+            case 'erro':
+            default:
+                return 'destructive';
+        }
+    };
 
   return (
     <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -435,7 +434,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                             )}
                                         </div>
                                         <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                          {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
+                                          {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                           <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
                                             {p.pontos} pts
                                           </Badge>
@@ -523,3 +522,5 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
     </div>
   );
 }
+
+    
