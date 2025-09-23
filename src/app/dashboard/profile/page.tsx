@@ -58,12 +58,38 @@ const TimeAgo = ({ dateValue }: { dateValue: string | Date | Timestamp | undefin
     return <>{timeAgo}</>;
 };
 
-const StatCard = ({ icon, title, value, description, href, isLeader }: { icon: React.ReactNode, title: string, value: string | number, description: string, href?: string, isLeader?: boolean }) => {
+type StatCardVariant = 'default' | 'exact' | 'situation' | 'combo' | 'bonus' | 'error' | 'leader';
+
+const StatCard = ({ 
+    icon, 
+    title, 
+    value, 
+    description, 
+    href, 
+    variant = 'default' 
+}: { 
+    icon: React.ReactNode, 
+    title: string, 
+    value: string | number, 
+    description: string, 
+    href?: string, 
+    variant?: StatCardVariant 
+}) => {
+    const variantClasses: Record<StatCardVariant, string> = {
+        default: '',
+        leader: 'bg-green-500/10 border-green-500/50 shadow-lg',
+        exact: 'bg-green-100/80 dark:bg-green-900/40 border-green-500/30',
+        situation: 'bg-blue-100/80 dark:bg-blue-900/40 border-blue-500/30',
+        combo: 'bg-combo-gold text-black border-yellow-600',
+        bonus: 'bg-combo-solo border-purple-500/30',
+        error: 'bg-red-100/80 dark:bg-red-900/40 border-red-500/30',
+    };
+    
     const cardContent = (
          <Card className={cn(
             "transition-all duration-200",
              href && "hover:bg-muted/80 hover:shadow-md cursor-pointer",
-             isLeader && "bg-green-500/10 border-green-500/50 shadow-lg"
+             variantClasses[variant]
          )}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -200,11 +226,11 @@ export default function ProfilePage() {
 
   const selectedChampionshipStats = useMemo(() => {
     if (!userToDisplay || !selectedChampionshipId || !championships) {
-      return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0, combos: 0, bonus: 0 };
+      return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0, combo: 0, bonus: 0 };
     }
 
     const champ = championships.find(c => c.id === selectedChampionshipId);
-    if (!champ) return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0, combos: 0, bonus: 0 };
+    if (!champ) return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, erros: 0, combo: 0, bonus: 0 };
     
     // Stats de partidas finalizadas
     const baseStats = userToDisplay.championshipStats?.find(s => s.championshipId === selectedChampionshipId) || { pontos: 0, acertosExatos: 0, acertosSituacao: 0 };
@@ -259,7 +285,7 @@ export default function ProfilePage() {
         pontos: totalPontos,
         acertosExatos: totalExatos,
         acertosSituacao: totalSituacoes,
-        combos: totalCombos,
+        combo: totalCombos,
         bonus: totalBonus,
         erros: totalErros,
     };
@@ -327,13 +353,6 @@ export default function ProfilePage() {
   const displayName = apelido || nome;
   const displayImage = urlImagemPersonalizada || fotoPerfil;
   const fallbackInitials = displayName ? displayName.substring(0, 2).toUpperCase() : '';
-
-  const championshipSpecificStats = [
-    { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Pontos", value: selectedChampionshipStats.pontos, description: "Total de pontos no campeonato", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}`},
-    { icon: <Target className="h-4 w-4 text-muted-foreground" />, title: "Buchas", value: selectedChampionshipStats.acertosExatos, description: "Placares cravados", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`},
-    { icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />, title: "Situação", value: selectedChampionshipStats.acertosSituacao, description: "Vencedor/empate corretos", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=situation`},
-    { icon: <XCircle className="h-4 w-4 text-muted-foreground" />, title: "Erros", value: selectedChampionshipStats.erros, description: "Palpites sem pontuação", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=miss`},
-  ];
 
   return (
     <TooltipProvider>
@@ -427,16 +446,40 @@ export default function ProfilePage() {
                         </div>
                     </div>
                     {userPredictions.some(p => allMatches.find(m => m.id === p.matchId)?.campeonatoId === selectedChampionshipId) ? (
-                     <div className={cn("grid gap-4 md:grid-cols-2", selectedChampionship?.pontuacao.combo?.ativo ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
-                        {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
+                     <div className={cn("grid gap-4 sm:grid-cols-2", selectedChampionship?.pontuacao.combo?.ativo ? "lg:grid-cols-3 xl:grid-cols-6" : "lg:grid-cols-4")}>
+                        <StatCard 
+                            icon={<Gamepad2 className="h-4 w-4 text-muted-foreground" />} 
+                            title="Pontos" 
+                            value={selectedChampionshipStats.pontos} 
+                            description="Total de pontos no campeonato" 
+                            href={`/dashboard/leaderboard?championshipId=${selectedChampionshipId}`}
+                            variant='default'
+                        />
+                        <StatCard 
+                            icon={<Target className="h-4 w-4 text-muted-foreground" />} 
+                            title="Buchas" 
+                            value={selectedChampionshipStats.acertosExatos} 
+                            description="Placares cravados" 
+                            href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`}
+                            variant='exact'
+                        />
+                         <StatCard 
+                            icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />} 
+                            title="Situação" 
+                            value={selectedChampionshipStats.acertosSituacao} 
+                            description="Vencedor/empate corretos" 
+                            href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=situation`}
+                            variant='situation'
+                        />
                         {selectedChampionship?.pontuacao.combo?.ativo && (
                             <>
                                 <StatCard
                                     icon={<Gem className="h-4 w-4 text-muted-foreground" />}
                                     title="Combo"
-                                    value={selectedChampionshipStats.combos}
-                                    description="Placar exato + gols"
+                                    value={selectedChampionshipStats.combo}
+                                    description="Bucha + Gols"
                                     href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`}
+                                    variant='combo'
                                 />
                                 <StatCard
                                     icon={<Goal className="h-4 w-4 text-muted-foreground" />}
@@ -444,9 +487,18 @@ export default function ProfilePage() {
                                     value={selectedChampionshipStats.bonus}
                                     description="Acerto apenas nos gols"
                                     href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=miss`}
+                                    variant='bonus'
                                 />
                             </>
                         )}
+                        <StatCard 
+                            icon={<XCircle className="h-4 w-4 text-muted-foreground" />} 
+                            title="Erros" 
+                            value={selectedChampionshipStats.erros} 
+                            description="Palpites sem pontuação" 
+                            href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=miss`}
+                            variant='error'
+                        />
                      </div>
                     ) : (
                     <Card>
