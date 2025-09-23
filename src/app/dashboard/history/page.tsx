@@ -171,7 +171,7 @@ export default function HistoryPage() {
                 return true;
         }
     })
-    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()), [selectedChampionship, filterType, matchesWithUserPrediction, championships]);
+    .sort((a, b) => new Date(b.data).getTime() - new Date(b.data).getTime()), [selectedChampionship, filterType, matchesWithUserPrediction, championships]);
 
 
   useEffect(() => {

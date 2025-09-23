@@ -146,7 +146,7 @@
     background-image: radial-gradient(circle, #f5f5f5 0%, #d5d5d5 100%);
 }
 
-.bg-combo-solo {
+.bg-gols-solid {
     background-color: #a855f7;
 }
 
@@ -160,14 +160,14 @@
     background-color: #ef4444;
 }
 
-.bg-bucha-solid, .bg-situacao-solid, .bg-erro-solid, .bg-combo-solo {
+.bg-bucha-solid, .bg-situacao-solid, .bg-erro-solid, .bg-gols-solid {
     color: white;
 }
 
 .bg-bucha-solid .text-muted-foreground,
 .bg-situacao-solid .text-muted-foreground,
 .bg-erro-solid .text-muted-foreground,
-.bg-combo-solo .text-muted-foreground {
+.bg-gols-solid .text-muted-foreground {
     color: hsl(0 0% 100% / 0.8);
 }
 
@@ -186,4 +186,3 @@
 .animate-gem-pulse {
     animation: gem-pulse 1.5s ease-in-out infinite;
 }
-

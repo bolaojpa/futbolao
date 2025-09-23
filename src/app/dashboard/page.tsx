@@ -231,7 +231,7 @@ export default function DashboardPage() {
                             if (a.exatos !== b.exatos) return b.exatos - a.exatos;
                             break;
                         case 'maiorNumeroSituacoes':
-                            if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+                            if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
                             break;
                         case 'primeiraBucha':
                             if (championship.pontuacao.tradicional) {
@@ -799,7 +799,7 @@ export default function DashboardPage() {
                                                         </div>
                                                         <div className='flex flex-col items-center justify-center mt-2 gap-1'>
                                                             <Badge variant="secondary">{match.status}</Badge>
-                                                            <span className={cn("text-xs text-muted-foreground", getPredictionStatusClass(prediction?.acertoTipo).includes('text-white') && 'text-white/80')}>{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
+                                                            <span className={cn("text-xs", getPredictionStatusClass(prediction?.acertoTipo).includes('text-white') ? 'text-white/80' : 'text-muted-foreground')}>{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
                                                         </div>
                                                     </div>
                                                 </AccordionTrigger>
