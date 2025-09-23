@@ -34,7 +34,7 @@ type FilterType = 'all' | 'exact' | 'situation' | 'miss';
 const ITEMS_PER_PAGE = 5;
 
 // Componente para evitar erro de hidratação com datas
-const FormattedDate = ({ dateString }: { dateString: string }) => {
+const FormattedDate = ({ dateString, className }: { dateString: string, className?: string }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
@@ -47,7 +47,7 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
       return null; 
     }
   
-    return <span className="text-xs text-muted-foreground">{formattedDate}</span>;
+    return <span className={cn("text-xs text-muted-foreground", className)}>{formattedDate}</span>;
 };
 
 interface MatchWithPrediction extends Match {
@@ -343,7 +343,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                             </div>
                             <div className='flex flex-col items-center justify-center mt-2 gap-2'>
                               <Badge variant="secondary">{match.status}</Badge>
-                              <FormattedDate dateString={match.data} />
+                              <FormattedDate dateString={match.data} className={cn(getPredictionStatusClass(prediction.acertoTipo) !== 'default' && "text-white/80")} />
                             </div>
                           </div>
                         </AccordionTrigger>
@@ -521,5 +521,3 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
     </div>
   );
 }
-
-  

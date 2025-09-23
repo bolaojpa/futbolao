@@ -79,11 +79,11 @@ const StatCard = ({
     const variantClasses: Record<StatCardVariant, string> = {
         default: '',
         leader: 'bg-green-500/10 border-green-500/50 shadow-lg',
-        exact: 'bg-bucha-solid text-white border-green-500/30',
-        situation: 'bg-situacao-solid text-white border-blue-500/30',
-        combo: 'bg-combo-gold text-black border-yellow-600',
-        bonus: 'bg-combo-solo text-white border-purple-500/30',
-        error: 'bg-erro-solid text-white border-red-500/30',
+        exact: 'bg-bucha-solid text-white',
+        situation: 'bg-situacao-solid text-white',
+        combo: 'bg-combo-gold text-black',
+        bonus: 'bg-combo-solo text-white',
+        error: 'bg-erro-solid text-white',
     };
     
     const cardContent = (
@@ -100,7 +100,7 @@ const StatCard = ({
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{value}</div>
-                <p className="text-xs text-muted-foreground">
+                <p className={cn("text-xs text-muted-foreground", variant !== 'default' && variant !== 'leader' && variant !== 'combo' && "text-white/80")}>
                     {description}
                 </p>
             </CardContent>
@@ -475,7 +475,7 @@ export default function ProfilePage() {
                         {selectedChampionship?.pontuacao.combo?.ativo && (
                             <>
                                 <StatCard
-                                    icon={<Gem className="h-4 w-4 text-muted-foreground" />}
+                                    icon={<Gem className="h-4 w-4" />}
                                     title="Combo"
                                     value={selectedChampionshipStats.combo}
                                     description="Bucha + Gols"
@@ -483,7 +483,7 @@ export default function ProfilePage() {
                                     variant='combo'
                                 />
                                 <StatCard
-                                    icon={<Goal className="h-4 w-4 text-muted-foreground" />}
+                                    icon={<Goal className="h-4 w-4" />}
                                     title="Bônus"
                                     value={selectedChampionshipStats.bonus}
                                     description="Acerto apenas nos gols"
@@ -493,7 +493,7 @@ export default function ProfilePage() {
                             </>
                         )}
                         <StatCard 
-                            icon={<XCircle className="h-4 w-4 text-muted-foreground" />} 
+                            icon={<XCircle className="h-4 w-4" />} 
                             title="Erros" 
                             value={selectedChampionshipStats.erros} 
                             description="Palpites sem pontuação" 

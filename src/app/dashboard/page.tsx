@@ -799,7 +799,7 @@ export default function DashboardPage() {
                                                         </div>
                                                         <div className='flex flex-col items-center justify-center mt-2 gap-1'>
                                                             <Badge variant="secondary">{match.status}</Badge>
-                                                            <span className="text-xs text-muted-foreground">{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
+                                                            <span className={cn("text-xs", getPredictionStatusClass(prediction?.acertoTipo) !== 'default' && "text-white/80")}>{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
                                                         </div>
                                                     </div>
                                                 </AccordionTrigger>
@@ -991,4 +991,3 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
-

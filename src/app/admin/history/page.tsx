@@ -39,7 +39,7 @@ interface MatchWithPredictions extends Match {
 }
 
 // Componente para evitar erro de hidratação com datas
-const FormattedDate = ({ dateString }: { dateString: string }) => {
+const FormattedDate = ({ dateString, className }: { dateString: string, className?: string }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
@@ -50,7 +50,7 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
       return null; 
     }
   
-    return <span className="text-xs text-muted-foreground">{formattedDate}</span>;
+    return <span className={cn("text-xs text-muted-foreground", className)}>{formattedDate}</span>;
 };
 
 export default function AdminHistoryPage() {
@@ -523,10 +523,3 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
     </div>
   );
 }
-
-
-
-
-
-
-
