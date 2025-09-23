@@ -77,7 +77,7 @@ const StatCard = ({
     variant?: StatCardVariant 
 }) => {
     const variantClasses: Record<StatCardVariant, string> = {
-        default: 'hover:bg-muted/80',
+        default: 'hover:brightness-105',
         leader: 'bg-green-500/10 border-green-500/50 shadow-lg hover:brightness-110',
         exact: 'bg-bucha-solid text-white hover:brightness-110',
         situation: 'bg-situacao-solid text-white hover:brightness-110',
@@ -87,6 +87,15 @@ const StatCard = ({
         error: 'bg-erro-solid text-white hover:brightness-110',
     };
     
+    const descriptionClasses = {
+        exact: 'text-white/80',
+        situation: 'text-white/80',
+        combo: 'text-black/80',
+        bonus: 'text-black/80',
+        gols: 'text-white/80',
+        error: 'text-white/80',
+    }
+
     const cardContent = (
          <Card className={cn(
             "transition-all duration-200",
@@ -101,7 +110,7 @@ const StatCard = ({
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{value}</div>
-                <p className={cn("text-xs text-muted-foreground", (variantClasses[variant].includes('text-white') || variantClasses[variant].includes('text-black')) && "text-white/80")}>
+                <p className={cn("text-xs text-muted-foreground", descriptionClasses[variant as keyof typeof descriptionClasses])}>
                     {description}
                 </p>
             </CardContent>
@@ -205,18 +214,18 @@ export default function ProfilePage() {
     if (acertouPlacarExato) {
         pontosGanhos = pontuacao.tradicional.exato;
         acertoTipo = 'bucha';
-        if (acertouGols) {
+        if (acertouGols && pontuacao.combo.ativo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
             acertoTipo = 'combo';
         }
     } else if (acertouSituacao) {
         pontosGanhos = pontuacao.tradicional.situacao;
         acertoTipo = 'situacao';
-        if (acertouGols) {
+        if (acertouGols && pontuacao.combo.ativo) {
             pontosGanhos += pontuacao.combo.pontosGols;
             acertoTipo = 'bonus';
         }
-    } else if (acertouGols) {
+    } else if (acertouGols && pontuacao.combo.ativo) {
         pontosGanhos = pontuacao.combo.pontosGols;
         acertoTipo = 'gols';
     }
@@ -487,7 +496,7 @@ export default function ProfilePage() {
                                     title="Combo"
                                     value={selectedChampionshipStats.combo}
                                     description="Bucha + Gols"
-                                    href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`}
+                                    href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=combo`}
                                     variant='combo'
                                 />
                                 <StatCard
@@ -495,7 +504,7 @@ export default function ProfilePage() {
                                     title="Bônus"
                                     value={selectedChampionshipStats.bonus}
                                     description="Situação + Gols"
-                                    href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=situation`}
+                                    href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=bonus`}
                                     variant='bonus'
                                 />
                                 <StatCard
@@ -503,7 +512,7 @@ export default function ProfilePage() {
                                     title="Gols"
                                     value={selectedChampionshipStats.gols}
                                     description="Acerto apenas nos gols"
-                                    href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=miss`}
+                                    href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=gols`}
                                     variant='gols'
                                 />
                             </>
