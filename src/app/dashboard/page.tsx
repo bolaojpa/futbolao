@@ -782,7 +782,7 @@ export default function DashboardPage() {
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
                                             <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                                                 <Card>
-                                                <AccordionTrigger className={cn("p-4 hover:no-underline", getPredictionStatusClass(prediction?.acertoTipo))}>
+                                                <AccordionTrigger className={cn("p-4 hover:no-underline opacity-75", getPredictionStatusClass(prediction?.acertoTipo))}>
                                                     <div className="flex flex-col items-center justify-center w-full">
                                                         <div className="flex items-center justify-center w-full">
                                                             <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
