@@ -77,19 +77,19 @@ const StatCard = ({
     variant?: StatCardVariant 
 }) => {
     const variantClasses: Record<StatCardVariant, string> = {
-        default: '',
-        leader: 'bg-green-500/10 border-green-500/50 shadow-lg',
-        exact: 'bg-bucha-solid text-white',
-        situation: 'bg-situacao-solid text-white',
-        combo: 'bg-combo-gold text-black',
-        bonus: 'bg-combo-solo text-white',
-        error: 'bg-erro-solid text-white',
+        default: 'hover:bg-muted/80',
+        leader: 'bg-green-500/10 border-green-500/50 shadow-lg hover:brightness-110',
+        exact: 'bg-bucha-solid text-white hover:brightness-90',
+        situation: 'bg-situacao-solid text-white hover:brightness-90',
+        combo: 'bg-combo-gold text-black hover:brightness-110',
+        bonus: 'bg-combo-solo text-white hover:brightness-90',
+        error: 'bg-erro-solid text-white hover:brightness-90',
     };
     
     const cardContent = (
          <Card className={cn(
             "transition-all duration-200",
-             href && "hover:bg-muted/80 hover:shadow-md cursor-pointer",
+             href && "cursor-pointer",
              variantClasses[variant]
          )}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -100,7 +100,7 @@ const StatCard = ({
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{value}</div>
-                <p className={cn("text-xs text-muted-foreground", variant !== 'default' && variant !== 'leader' && variant !== 'combo' && "text-white/80")}>
+                <p className={cn("text-xs text-muted-foreground", (variant !== 'default' && variant !== 'leader' && variant !== 'combo') && "text-white/80")}>
                     {description}
                 </p>
             </CardContent>
@@ -457,7 +457,7 @@ export default function ProfilePage() {
                             variant='default'
                         />
                         <StatCard 
-                            icon={<Target className="h-4 w-4 text-muted-foreground" />} 
+                            icon={<Target className="h-4 w-4" />} 
                             title="Buchas" 
                             value={selectedChampionshipStats.acertosExatos} 
                             description="Placares cravados" 
@@ -465,7 +465,7 @@ export default function ProfilePage() {
                             variant='exact'
                         />
                          <StatCard 
-                            icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />} 
+                            icon={<CheckCircle className="h-4 w-4" />} 
                             title="Situação" 
                             value={selectedChampionshipStats.acertosSituacao} 
                             description="Vencedor/empate corretos" 
