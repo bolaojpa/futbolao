@@ -151,13 +151,13 @@ export default function ProfilePage() {
     }
   }, [championships, selectedChampionshipId]);
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonus: boolean; } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
-      return { pontos: 0, exato: false, situacao: false, combo: false, bonus: false };
+      return { pontos: 0, acertoTipo: 'erro' };
     }
 
     const pontuacao = championship.pontuacao;
@@ -169,29 +169,31 @@ export default function ProfilePage() {
     const acertouSituacao = finalWinner === guessWinner;
     
     let pontosGanhos = 0;
-    let acertouCombo = false;
-    let acertouBonus = false;
+    let acertoTipo: Prediction['acertoTipo'] = 'erro';
 
     const usouCombo = !!prediction.palpiteCombo;
     const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
     if (acertouPlacarExato) {
         pontosGanhos += pontuacao.tradicional.exato;
+        acertoTipo = 'bucha';
         if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
-            acertouCombo = true;
+            acertoTipo = 'combo_bucha';
         }
     } else if (acertouSituacao) {
         pontosGanhos += pontuacao.tradicional.situacao;
+        acertoTipo = 'situacao';
         if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.pontosGols;
+            acertoTipo = 'combo_situacao';
         }
     } else if (acertouGols && pontuacao.combo) {
         pontosGanhos += pontuacao.combo.pontosGols;
-        acertouBonus = true;
+        acertoTipo = 'combo_sozinho';
     }
 
-    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo, bonus: acertouBonus };
+    return { pontos: pontosGanhos, acertoTipo };
   };
 
   const selectedChampionship = useMemo(() => championships.find(c => c.id === selectedChampionshipId), [championships, selectedChampionshipId]);
@@ -238,10 +240,10 @@ export default function ProfilePage() {
         if (prediction) {
             const result = calculateLivePoints(match, prediction);
             livePoints += result.pontos;
-            if (result.exato) liveExatos++;
-            if (result.situacao) liveSituacoes++;
-            if (result.combo) liveCombos++;
-            if (result.bonus) liveBonus++;
+            if (result.acertoTipo === 'bucha' || result.acertoTipo === 'combo_bucha') liveExatos++;
+            if (result.acertoTipo === 'situacao' || result.acertoTipo === 'combo_situacao') liveSituacoes++;
+            if (result.acertoTipo === 'combo_bucha') liveCombos++;
+            if (result.acertoTipo === 'combo_sozinho') liveBonus++;
         }
     });
 
@@ -330,12 +332,7 @@ export default function ProfilePage() {
     { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Pontos", value: selectedChampionshipStats.pontos, description: "Total de pontos no campeonato", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}`},
     { icon: <Target className="h-4 w-4 text-muted-foreground" />, title: "Buchas", value: selectedChampionshipStats.acertosExatos, description: "Placares cravados", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`},
     { icon: <CheckCircle className="h-4 w-4 text-muted-foreground" />, title: "Situação", value: selectedChampionshipStats.acertosSituacao, description: "Vencedor/empate corretos", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=situation`},
-    ...(selectedChampionship?.pontuacao.combo?.ativo ? [
-        { icon: <Gem className="h-4 w-4 text-muted-foreground" />, title: "Combo", value: selectedChampionshipStats.combos, description: "Bucha + total de gols", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}` },
-        { icon: <Goal className="h-4 w-4 text-muted-foreground" />, title: "Bônus", value: selectedChampionshipStats.bonus, description: "Acerto apenas nos gols", href: `/dashboard/leaderboard?championshipId=${selectedChampionshipId}` },
-    ] : [
-        { icon: <XCircle className="h-4 w-4 text-muted-foreground" />, title: "Erros", value: selectedChampionshipStats.erros, description: "Palpites sem pontuação", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=miss`},
-    ]),
+    { icon: <XCircle className="h-4 w-4 text-muted-foreground" />, title: "Erros", value: selectedChampionshipStats.erros, description: "Palpites sem pontuação", href: `/dashboard/history?championshipId=${selectedChampionshipId}&filterType=miss`},
   ];
 
   return (
@@ -430,8 +427,26 @@ export default function ProfilePage() {
                         </div>
                     </div>
                     {userPredictions.some(p => allMatches.find(m => m.id === p.matchId)?.campeonatoId === selectedChampionshipId) ? (
-                     <div className={cn("grid gap-4 md:grid-cols-2", selectedChampionship?.pontuacao.combo?.ativo ? "lg:grid-cols-5" : "lg:grid-cols-4")}>
-                        {championshipSpecificStats.map(stat => stat.title === "Erros" && selectedChampionship?.pontuacao.combo?.ativo ? null : <StatCard key={stat.title} {...stat} />)}
+                     <div className={cn("grid gap-4 md:grid-cols-2", selectedChampionship?.pontuacao.combo?.ativo ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
+                        {championshipSpecificStats.map(stat => <StatCard key={stat.title} {...stat} />)}
+                        {selectedChampionship?.pontuacao.combo?.ativo && (
+                            <>
+                                <StatCard
+                                    icon={<Gem className="h-4 w-4 text-muted-foreground" />}
+                                    title="Combo"
+                                    value={selectedChampionshipStats.combos}
+                                    description="Placar exato + gols"
+                                    href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=exact`}
+                                />
+                                <StatCard
+                                    icon={<Goal className="h-4 w-4 text-muted-foreground" />}
+                                    title="Bônus"
+                                    value={selectedChampionshipStats.bonus}
+                                    description="Acerto apenas nos gols"
+                                    href={`/dashboard/history?championshipId=${selectedChampionshipId}&filterType=miss`}
+                                />
+                            </>
+                        )}
                      </div>
                     ) : (
                     <Card>
