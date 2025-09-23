@@ -140,6 +140,7 @@
 
 .bg-combo-gold {
     background-color: #ffc400;
+    background-image: radial-gradient(ellipse at center, #ffe066 0%, #ffc400 100%);
     animation: pulse-glow 2.5s infinite ease-in-out;
 }
 
@@ -166,3 +167,4 @@
 .animate-gem-pulse {
     animation: gem-pulse 1.5s ease-in-out infinite;
 }
+
