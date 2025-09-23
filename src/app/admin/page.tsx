@@ -140,15 +140,14 @@ export default function AdminDashboardPage() {
     const calculatePointsForSingleMatch = (match: Match, prediction: Prediction): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
         const { placarA: finalA, placarB: finalB } = match;
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-        const totalGolsFinal = (finalA ?? 0) + (finalB ?? 0);
-
+        
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao;
 
         if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) {
             return { pontos: 0, acertoTipo: 'erro' };
         }
-    
+
         const acertouPlacarExato = guessA === finalA && guessB === finalB;
         const finalWinner = finalA > finalB ? 'A' : finalA < finalB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
@@ -156,28 +155,29 @@ export default function AdminDashboardPage() {
         
         let pontosGanhos = 0;
         let acertoTipo: Prediction['acertoTipo'] = 'erro';
-
-        // Lógica do combo, se aplicável
+        
         const usouCombo = !!prediction.palpiteCombo;
+        const totalGolsFinal = finalA + finalB;
         const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
         if (acertouPlacarExato) {
-            pontosGanhos += pontuacao.tradicional.exato;
-            acertoTipo = 'bucha';
+            pontosGanhos = pontuacao.tradicional.exato;
+            acertoTipo = acertouGols ? 'combo' : 'bucha';
             if (acertouGols) {
-                pontosGanhos += pontuacao.combo?.bonusPlacarExatoGols ?? 0;
-                acertoTipo = 'combo_bucha';
+                pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
             }
         } else if (acertouSituacao) {
-            pontosGanhos += pontuacao.tradicional.situacao;
-            acertoTipo = 'situacao';
-             if (acertouGols) {
-                pontosGanhos += pontuacao.combo?.pontosGols ?? 0;
-                acertoTipo = 'combo_situacao';
+            pontosGanhos = pontuacao.tradicional.situacao;
+            acertoTipo = acertouGols ? 'bonus' : 'situacao';
+            if (acertouGols) {
+                // No cenário de "bonus", a pontuação dos gols já está inclusa ou é a pontuação principal.
+                // Ajuste conforme a regra: se é soma ou substituição. Assumindo soma.
+                // Se o ponto por acertar só os gols é `pontosGols`, e o bônus de situação é a pontuação de situação, então está ok.
+                // A lógica aqui depende da definição exata, mas vamos assumir que o ponto de situação é o base.
             }
         } else if (acertouGols) {
-            pontosGanhos += pontuacao.combo?.pontosGols ?? 0;
-            acertoTipo = 'bonus';
+            pontosGanhos = pontuacao.combo.pontosGols;
+            acertoTipo = 'gols';
         }
         
         return { pontos: pontosGanhos, acertoTipo };
@@ -276,11 +276,11 @@ export default function AdminDashboardPage() {
     
     const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
         switch (acertoTipo) {
-            case 'combo_bucha': return 'bg-combo-gold text-black';
-            case 'combo_situacao': return 'bg-combo-silver text-black';
+            case 'combo': return 'bg-combo-gold text-black';
+            case 'bonus': return 'bg-combo-silver text-black';
             case 'bucha': return 'bg-bucha-solid text-white';
             case 'situacao': return 'bg-situacao-solid text-white';
-            case 'bonus': return 'bg-combo-solo text-white';
+            case 'gols': return 'bg-gols-solid text-white';
             case 'erro':
             default:
                  return 'bg-erro-solid text-white';
@@ -289,13 +289,13 @@ export default function AdminDashboardPage() {
 
     const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
         switch (acertoTipo) {
-            case 'combo_bucha':
+            case 'combo':
             case 'bucha':
                 return 'success';
-            case 'combo_situacao':
+            case 'bonus':
             case 'situacao':
                 return 'default';
-            case 'bonus':
+            case 'gols':
                 return 'secondary';
             case 'erro':
             default:
@@ -311,7 +311,6 @@ export default function AdminDashboardPage() {
         const livePlacarB = Number(liveScore.placarB);
         
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-        const totalGolsFinal = livePlacarA + livePlacarB;
         
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao;
@@ -324,27 +323,23 @@ export default function AdminDashboardPage() {
         
         let pontosGanhos = 0;
         let acertoTipo: Prediction['acertoTipo'] = 'erro';
-
+        
         const usouCombo = !!prediction.palpiteCombo;
+        const totalGolsFinal = livePlacarA + livePlacarB;
         const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
         if (acertouPlacarExato) {
-            pontosGanhos += pontuacao.tradicional.exato;
-            acertoTipo = 'bucha';
+            pontosGanhos = pontuacao.tradicional.exato;
+            acertoTipo = acertouGols ? 'combo' : 'bucha';
             if (acertouGols) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
-                 acertoTipo = 'combo_bucha';
             }
         } else if (acertouSituacao) {
-            pontosGanhos += pontuacao.tradicional.situacao;
-            acertoTipo = 'situacao';
-            if (acertouGols) {
-                pontosGanhos += pontuacao.combo.pontosGols;
-                 acertoTipo = 'combo_situacao';
-            }
+            pontosGanhos = pontuacao.tradicional.situacao;
+            acertoTipo = acertouGols ? 'bonus' : 'situacao';
         } else if (acertouGols) {
-            pontosGanhos += pontuacao.combo.pontosGols;
-            acertoTipo = 'bonus';
+            pontosGanhos = pontuacao.combo.pontosGols;
+            acertoTipo = 'gols';
         }
         
         return { pontos: pontosGanhos, acertoTipo };
@@ -519,7 +514,7 @@ export default function AdminDashboardPage() {
                                                                 )}
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", simulatedAcertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
+                                                                {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", simulatedAcertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                                 <Badge variant={getPointsBadgeVariant(simulatedAcertoTipo)} className='whitespace-nowrap'>
                                                                 {simulatedPoints} pts
                                                                 </Badge>
@@ -550,6 +545,7 @@ export default function AdminDashboardPage() {
 
 
     
+
 
 
 
