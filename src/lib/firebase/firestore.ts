@@ -100,8 +100,8 @@ export async function updateUserStatsAfterMatch(
             let champStats = [...(userData.championshipStats || [])];
             let statsIndex = champStats.findIndex(s => s.championshipId === championshipId);
             
-            const isAcertoExato = acertoTipo === 'bucha' || acertoTipo === 'combo_bucha';
-            const isAcertoSituacao = acertoTipo === 'situacao' || acertoTipo === 'combo_situacao';
+            const isAcertoExato = acertoTipo === 'bucha' || acertoTipo === 'combo';
+            const isAcertoSituacao = acertoTipo === 'situacao' || acertoTipo === 'bonus';
 
             if (statsIndex === -1) {
                 // Se não existem stats para este campeonato, cria um novo registro

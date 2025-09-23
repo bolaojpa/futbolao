@@ -30,7 +30,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 
-type FilterType = 'all' | 'exact' | 'situation' | 'bonus' | 'miss';
+type FilterType = 'all' | 'exact' | 'situation' | 'combo' | 'bonus' | 'gols' | 'miss';
 const ITEMS_PER_PAGE = 5;
 
 // Componente para evitar erro de hidratação com datas
@@ -147,17 +147,23 @@ export default function HistoryPage() {
 
         // Depois, pelo tipo de acerto
         const prediction = match.prediction!;
-        const isExact = prediction.acertoTipo === 'bucha' || prediction.acertoTipo === 'combo_bucha';
-        const isSituation = prediction.acertoTipo === 'situacao' || prediction.acertoTipo === 'combo_situacao';
+        const isExact = prediction.acertoTipo === 'bucha' || prediction.acertoTipo === 'combo';
+        const isSituation = prediction.acertoTipo === 'situacao' || prediction.acertoTipo === 'bonus';
+        const isCombo = prediction.acertoTipo === 'combo';
         const isBonus = prediction.acertoTipo === 'bonus';
+        const isGols = prediction.acertoTipo === 'gols';
 
         switch (filterType) {
             case 'exact':
                 return isExact;
             case 'situation':
                 return isSituation;
+            case 'combo':
+                return isCombo;
             case 'bonus':
                 return isBonus;
+            case 'gols':
+                return isGols;
             case 'miss':
                 return prediction.pontos === 0;
             case 'all':
@@ -244,11 +250,11 @@ export default function HistoryPage() {
 
   const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
     switch (acertoTipo) {
-        case 'combo_bucha': return 'bg-combo-gold text-black';
-        case 'combo_situacao': return 'bg-combo-silver text-black';
+        case 'combo': return 'bg-combo-gold text-black';
+        case 'bonus': return 'bg-combo-silver text-black';
         case 'bucha': return 'bg-bucha-solid text-white';
         case 'situacao': return 'bg-situacao-solid text-white';
-        case 'bonus': return 'bg-combo-solo text-white';
+        case 'gols': return 'bg-gols-solid text-white';
         case 'erro':
         default:
              return 'bg-erro-solid text-white';
@@ -257,13 +263,13 @@ export default function HistoryPage() {
 
 const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
     switch (acertoTipo) {
-        case 'combo_bucha':
+        case 'combo':
         case 'bucha':
             return 'success';
-        case 'combo_situacao':
+        case 'bonus':
         case 'situacao':
             return 'default';
-        case 'bonus':
+        case 'gols':
             return 'secondary';
         case 'erro':
         default:
@@ -304,9 +310,11 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
               </SelectTrigger>
               <SelectContent>
                   <SelectItem value="all">Mostrar Todos</SelectItem>
-                  <SelectItem value="exact">Acertos de Placar Exato</SelectItem>
+                  <SelectItem value="exact">Acertos de Bucha</SelectItem>
                   <SelectItem value="situation">Acertos de Situação</SelectItem>
+                  <SelectItem value="combo">Acertos de Combo</SelectItem>
                   <SelectItem value="bonus">Acertos de Bônus</SelectItem>
+                  <SelectItem value="gols">Acertos de Gols</SelectItem>
                   <SelectItem value="miss">Errados</SelectItem>
               </SelectContent>
           </Select>
@@ -347,7 +355,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                             </div>
                             <div className='flex flex-col items-center justify-center mt-2 gap-2'>
                               <Badge variant="secondary">{match.status}</Badge>
-                              <FormattedDate dateString={match.data} className={cn(getPredictionStatusClass(prediction.acertoTipo) !== 'default' && "text-white/80")} />
+                              <FormattedDate dateString={match.data} className={cn(getPredictionStatusClass(prediction.acertoTipo).includes("text-white") && "text-white/80")} />
                             </div>
                           </div>
                         </AccordionTrigger>
@@ -383,7 +391,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                     )}
                                 </div>
                               <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                {prediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", prediction.acertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
+                                {prediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                 <Badge variant={getPointsBadgeVariant(prediction.acertoTipo)} className='whitespace-nowrap'>
                                   {prediction.pontos} pts
                                 </Badge>
@@ -472,7 +480,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                         )}
                                     </div>
                                   <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
+                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                     <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
                                       {p.pontos} pts
                                     </Badge>

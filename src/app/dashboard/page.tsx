@@ -137,7 +137,7 @@ export default function DashboardPage() {
         const userChampionshipIds = userChampionships.map(c => c.id);
         return allMatches
             .filter(match => userChampionshipIds.includes(match.campeonatoId) && match.status === 'Finalizado')
-            .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+            .sort((a, b) => new Date(b.data).getTime() - new Date(b.data).getTime())
             .slice(0, 3);
     }, [allMatches, userChampionships]);
 
@@ -146,8 +146,7 @@ export default function DashboardPage() {
     const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
         const { placarA: finalA, placarB: finalB } = match;
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-        const totalGolsFinal = (finalA ?? 0) + (finalB ?? 0);
-
+        
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao;
 
@@ -164,25 +163,26 @@ export default function DashboardPage() {
         let acertoTipo: Prediction['acertoTipo'] = 'erro';
 
         const usouCombo = !!prediction.palpiteCombo;
+        const totalGolsFinal = finalA + finalB;
         const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
         if (acertouPlacarExato) {
-            pontosGanhos += pontuacao.tradicional.exato;
+            pontosGanhos = pontuacao.tradicional.exato;
             acertoTipo = 'bucha';
             if (acertouGols) {
-                pontosGanhos += pontuacao.combo?.bonusPlacarExatoGols ?? 0;
-                acertoTipo = 'combo_bucha';
+                pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
+                acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
-            pontosGanhos += pontuacao.tradicional.situacao;
+            pontosGanhos = pontuacao.tradicional.situacao;
             acertoTipo = 'situacao';
              if (acertouGols) {
-                pontosGanhos += pontuacao.combo?.pontosGols ?? 0;
-                acertoTipo = 'combo_situacao';
+                pontosGanhos += pontuacao.combo.pontosGols;
+                acertoTipo = 'bonus';
             }
         } else if (acertouGols) {
-            pontosGanhos += pontuacao.combo?.pontosGols ?? 0;
-            acertoTipo = 'combo_sozinho';
+            pontosGanhos = pontuacao.combo.pontosGols;
+            acertoTipo = 'gols';
         }
         
         return { pontos: pontosGanhos, acertoTipo };
@@ -211,8 +211,8 @@ export default function DashboardPage() {
                         if (prediction) {
                              const result = calculateLivePoints(match, prediction);
                             basePoints += result.pontos;
-                            if (result.acertoTipo === 'bucha' || result.acertoTipo === 'combo_bucha') baseExatos++;
-                            if (result.acertoTipo === 'situacao' || result.acertoTipo === 'combo_situacao') baseSituacoes++;
+                            if (result.acertoTipo === 'bucha' || result.acertoTipo === 'combo') baseExatos++;
+                            if (result.acertoTipo === 'situacao' || result.acertoTipo === 'bonus') baseSituacoes++;
                         }
                     }
                 });
@@ -299,11 +299,11 @@ export default function DashboardPage() {
 
     const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
         switch (acertoTipo) {
-            case 'combo_bucha': return 'bg-combo-gold text-black';
-            case 'combo_situacao': return 'bg-combo-silver text-black';
+            case 'combo': return 'bg-combo-gold text-black';
+            case 'bonus': return 'bg-combo-silver text-black';
             case 'bucha': return 'bg-bucha-solid text-white';
             case 'situacao': return 'bg-situacao-solid text-white';
-            case 'combo_sozinho': return 'bg-combo-solo text-white';
+            case 'gols': return 'bg-gols-solid text-white';
             case 'erro':
             default:
                  return 'bg-erro-solid text-white';
@@ -312,13 +312,13 @@ export default function DashboardPage() {
     
     const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
         switch (acertoTipo) {
-            case 'combo_bucha':
+            case 'combo':
             case 'bucha':
                 return 'success';
-            case 'combo_situacao':
+            case 'bonus':
             case 'situacao':
                 return 'default';
-            case 'combo_sozinho':
+            case 'gols':
                 return 'secondary';
             case 'erro':
             default:
@@ -551,7 +551,7 @@ export default function DashboardPage() {
                                                                                 )}
                                                                             </div>
                                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                {userPrediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", currentUserAcertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
+                                                                                {userPrediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", currentUserAcertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                                                 <Badge variant={getPointsBadgeVariant(currentUserAcertoTipo)} className='whitespace-nowrap'>
                                                                                     {currentUserLivePoints} pts
                                                                                 </Badge>
@@ -646,7 +646,7 @@ export default function DashboardPage() {
                                                                                     )}
                                                                                 </div>
                                                                                 <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", otherAcertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
+                                                                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", otherAcertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                                                     <Badge variant={getPointsBadgeVariant(otherAcertoTipo)} className='whitespace-nowrap'>
                                                                                         {otherLivePoints} pts
                                                                                     </Badge>
@@ -799,7 +799,7 @@ export default function DashboardPage() {
                                                         </div>
                                                         <div className='flex flex-col items-center justify-center mt-2 gap-1'>
                                                             <Badge variant="secondary">{match.status}</Badge>
-                                                            <span className={cn("text-xs", getPredictionStatusClass(prediction?.acertoTipo) !== 'default' && "text-white/80")}>{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
+                                                            <span className={cn("text-xs text-muted-foreground", getPredictionStatusClass(prediction?.acertoTipo).includes('text-white') && 'text-white/80')}>{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
                                                         </div>
                                                     </div>
                                                 </AccordionTrigger>
@@ -866,7 +866,7 @@ export default function DashboardPage() {
                                                                 )}
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                 {prediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", prediction.acertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
+                                                                 {prediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                                 <Badge variant={getPointsBadgeVariant(prediction.acertoTipo)} className='whitespace-nowrap'>
                                                                     {prediction.pontos} pts
                                                                 </Badge>
@@ -953,7 +953,7 @@ export default function DashboardPage() {
                                                             )}
                                                         </div>
                                                         <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                            {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo_bucha' && "animate-gem-pulse")} />}
+                                                            {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                             <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
                                                             {p.pontos} pts
                                                             </Badge>

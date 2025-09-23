@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const calculatePointsForSingleMatch = (match: Match, prediction: Prediction): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
+     const calculatePointsForSingleMatch = (match: Match, prediction: Prediction): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
         const { placarA: finalA, placarB: finalB } = match;
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         
@@ -162,18 +162,17 @@ export default function AdminDashboardPage() {
 
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
-            acertoTipo = acertouGols ? 'combo' : 'bucha';
+            acertoTipo = 'bucha';
             if (acertouGols) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
+                acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
             pontosGanhos = pontuacao.tradicional.situacao;
-            acertoTipo = acertouGols ? 'bonus' : 'situacao';
-            if (acertouGols) {
-                // No cenário de "bonus", a pontuação dos gols já está inclusa ou é a pontuação principal.
-                // Ajuste conforme a regra: se é soma ou substituição. Assumindo soma.
-                // Se o ponto por acertar só os gols é `pontosGols`, e o bônus de situação é a pontuação de situação, então está ok.
-                // A lógica aqui depende da definição exata, mas vamos assumir que o ponto de situação é o base.
+            acertoTipo = 'situacao';
+             if (acertouGols) {
+                pontosGanhos += pontuacao.combo.pontosGols;
+                acertoTipo = 'bonus';
             }
         } else if (acertouGols) {
             pontosGanhos = pontuacao.combo.pontosGols;
@@ -330,13 +329,18 @@ export default function AdminDashboardPage() {
 
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
-            acertoTipo = acertouGols ? 'combo' : 'bucha';
+            acertoTipo = 'bucha';
             if (acertouGols) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
+                acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
             pontosGanhos = pontuacao.tradicional.situacao;
-            acertoTipo = acertouGols ? 'bonus' : 'situacao';
+            acertoTipo = 'situacao';
+             if (acertouGols) {
+                pontosGanhos += pontuacao.combo.pontosGols;
+                acertoTipo = 'bonus';
+            }
         } else if (acertouGols) {
             pontosGanhos = pontuacao.combo.pontosGols;
             acertoTipo = 'gols';
@@ -545,6 +549,7 @@ export default function AdminDashboardPage() {
 
 
     
+
 
 
 

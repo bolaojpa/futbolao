@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2, Gem } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2, Gem, Goal } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -41,7 +41,7 @@ export default function LeaderboardPage() {
   const searchParams = useSearchParams();
   const championshipIdFromQuery = searchParams.get('championshipId');
   
-  type SortType = 'default' | 'exact' | 'situation' | 'combo' | 'bonus';
+  type SortType = 'default' | 'exact' | 'situation' | 'combo' | 'bonus' | 'gols';
 
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
@@ -105,17 +105,16 @@ export default function LeaderboardPage() {
 }, [championships, championshipIdFromQuery, authUser, authLoading]);
 
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonus: boolean; } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonus: boolean; gols: boolean; } => {
     const { placarA: liveA, placarB: liveB } = match;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
-      return { pontos: 0, exato: false, situacao: false, combo: false, bonus: false };
+      return { pontos: 0, exato: false, situacao: false, combo: false, bonus: false, gols: false };
     }
 
     const pontuacao = championship.pontuacao;
-    const totalGolsFinal = liveA + liveB;
     
     const acertouPlacarExato = guessA === liveA && guessB === liveB;
     const finalWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
@@ -125,8 +124,10 @@ export default function LeaderboardPage() {
     let pontosGanhos = 0;
     let acertouCombo = false;
     let acertouBonus = false;
+    let acertouGolsSozinho = false;
 
     const usouCombo = !!prediction.palpiteCombo;
+    const totalGolsFinal = liveA + liveB;
     const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
     if (acertouPlacarExato) {
@@ -139,13 +140,14 @@ export default function LeaderboardPage() {
         pontosGanhos += pontuacao.tradicional.situacao;
         if (acertouGols && pontuacao.combo) {
             pontosGanhos += pontuacao.combo.pontosGols;
+            acertouBonus = true;
         }
     } else if (acertouGols && pontuacao.combo) {
         pontosGanhos += pontuacao.combo.pontosGols;
-        acertouBonus = true;
+        acertouGolsSozinho = true;
     }
 
-    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo, bonus: acertouBonus };
+    return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo, bonus: acertouBonus, gols: acertouGolsSozinho };
   };
 
   const usersWithLiveScore = useMemo(() => {
@@ -170,15 +172,13 @@ export default function LeaderboardPage() {
         let baseSituacoes = stats?.acertosSituacao ?? 0;
         let baseCombos = 0;
         let baseBonus = 0;
+        let baseGols = 0;
 
         const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
         predictionsInChamp.forEach(p => {
-             if (p.acertoTipo === 'combo_bucha') {
-                baseCombos++;
-            }
-             if (p.acertoTipo === 'bonus') {
-                baseBonus++;
-            }
+             if (p.acertoTipo === 'combo') baseCombos++;
+             if (p.acertoTipo === 'bonus') baseBonus++;
+             if (p.acertoTipo === 'gols') baseGols++;
         })
       
         liveMatchesForChamp.forEach(match => {
@@ -190,6 +190,7 @@ export default function LeaderboardPage() {
                 if (result.situacao) baseSituacoes++;
                 if (result.combo) baseCombos++;
                 if (result.bonus) baseBonus++;
+                if (result.gols) baseGols++;
             }
         });
       
@@ -200,6 +201,7 @@ export default function LeaderboardPage() {
         situacoes: baseSituacoes,
         combo: baseCombos,
         bonus: baseBonus,
+        gols: baseGols,
       }
     });
   }, [allUsers, selectedChampionshipId, allMatches, allPredictions, championships]);
@@ -256,6 +258,8 @@ export default function LeaderboardPage() {
         return { header: 'Combo', accessor: (user: any) => user.combo };
       case 'bonus':
         return { header: 'Bônus', accessor: (user: any) => user.bonus };
+      case 'gols':
+        return { header: 'Gols', accessor: (user: any) => user.gols };
       default:
         return { header: 'Pontos', accessor: (user: any) => user.pontos };
     }
@@ -367,6 +371,7 @@ export default function LeaderboardPage() {
                                     <>
                                         <SelectItem value="combo">Ordenar por Combo</SelectItem>
                                         <SelectItem value="bonus">Ordenar por Bônus</SelectItem>
+                                        <SelectItem value="gols">Ordenar por Gols</SelectItem>
                                     </>
                                 )}
                             </SelectContent>
@@ -389,6 +394,7 @@ export default function LeaderboardPage() {
                             <>
                               {sortType !== 'combo' && <TableHead className="text-right hidden md:table-cell">Combo</TableHead>}
                               {sortType !== 'bonus' && <TableHead className="text-right hidden md:table-cell">Bônus</TableHead>}
+                              {sortType !== 'gols' && <TableHead className="text-right hidden md:table-cell">Gols</TableHead>}
                             </>
                           )}
                           {sortType !== 'default' && <TableHead className="text-right hidden md:table-cell">Pontos</TableHead>}
@@ -440,6 +446,7 @@ export default function LeaderboardPage() {
                                   <>
                                     {sortType !== 'combo' && <TableCell className="text-right hidden md:table-cell">{user.combo}</TableCell>}
                                     {sortType !== 'bonus' && <TableCell className="text-right hidden md:table-cell">{user.bonus}</TableCell>}
+                                    {sortType !== 'gols' && <TableCell className="text-right hidden md:table-cell">{user.gols}</TableCell>}
                                   </>
                                 )}
                                 {sortType !== 'default' && <TableCell className="text-right hidden md:table-cell font-semibold">{user.pontos}</TableCell>}
