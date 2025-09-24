@@ -110,7 +110,7 @@ const StatCard = ({
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{value}</div>
-                <p className={cn("text-xs text-muted-foreground", descriptionClasses[variant as keyof typeof descriptionClasses])}>
+                <p className={cn("text-xs text-muted-foreground whitespace-nowrap", descriptionClasses[variant as keyof typeof descriptionClasses])}>
                     {description}
                 </p>
             </CardContent>
@@ -539,3 +539,4 @@ export default function ProfilePage() {
     </TooltipProvider>
   );
 }
+
