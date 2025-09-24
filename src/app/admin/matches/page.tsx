@@ -12,7 +12,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown, Trophy, Zap } from 'lucide-react';
+import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown, Trophy, Zap, Gem } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -420,7 +420,22 @@ export default function AdminMatchesPage() {
                                                 )}
                                             </div>
                                         </div>
-                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                    <div className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap flex items-center justify-center gap-4">
+                                        <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                        {championship?.pontuacao.combo?.ativo && prediction.palpiteCombo && (
+                                            <Tooltip>
+                                                <TooltipTrigger>
+                                                    <div className="flex items-center gap-1 text-primary">
+                                                        <Gem className="h-4 w-4" />
+                                                        <span>{prediction.palpiteCombo.totalGols}</span>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Palpite de Gols (Combo)</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )}
+                                    </div>
                                     <div className="w-1/3 text-right">
                                         {/* A pontuação só é exibida no histórico */}
                                     </div>
@@ -475,6 +490,7 @@ export default function AdminMatchesPage() {
     </div>
   );
 }
+
 
 
 
