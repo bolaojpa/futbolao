@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { isFuture, parseISO, isPast } from 'date-fns';
 import { CalendarCheck, Goal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Match, Prediction, Team, Championship, UserType } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { getTeams, getUsers, getChampionships as fetchChampionships } from '@/lib/firebase/firestore';
@@ -21,7 +22,10 @@ import { PredictionForm } from '@/components/predictions/prediction-form';
 export default function PredictionsPage() {
     const { toast } = useToast();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user, loading: authLoading } = useAuth();
+    
+    const championshipIdFromQuery = searchParams.get('championshipId');
 
     const [allMatches, setAllMatches] = useState<Match[]>([]);
     const [allTeams, setAllTeams] = useState<Team[]>([]);
@@ -53,7 +57,9 @@ export default function PredictionsPage() {
 
                 // Set default selected championship
                 const activeChamps = championshipsData.filter(c => c.status === 'ativo' && c.participantes.includes(user.id));
-                if (activeChamps.length > 0 && selectedChampionshipId === 'all') {
+                if (championshipIdFromQuery) {
+                    setSelectedChampionshipId(championshipIdFromQuery);
+                } else if (activeChamps.length > 0) {
                     setSelectedChampionshipId(activeChamps[0].id);
                 }
 
@@ -74,7 +80,7 @@ export default function PredictionsPage() {
             unsubMatches();
         };
 
-    }, [authLoading, user, router, toast]);
+    }, [authLoading, user, router, toast, championshipIdFromQuery]);
 
 
     if (authLoading || loadingData || !user) {

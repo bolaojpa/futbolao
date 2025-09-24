@@ -684,7 +684,7 @@ export default function DashboardPage() {
                                         const teamB = allTeams.find(t => t.name === match.timeB);
 
                                         return (
-                                            <Link href="/dashboard/predictions" key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
+                                            <Link href={`/dashboard/predictions?championshipId=${match.campeonatoId}#${match.id}`} key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
                                                 <Card className={cn(
                                                     "relative flex flex-col h-full overflow-hidden",
                                                     needsAttention && "border-accent animate-pulse"
@@ -787,7 +787,9 @@ export default function DashboardPage() {
                                                             </div>
                                                             <div className="flex items-center justify-center gap-3 md:gap-4">
                                                                 <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={48} className="object-contain" data-ai-hint="team logo" />
-                                                                <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
+                                                                <div className="rounded-md px-3 py-1 bg-black/10">
+                                                                    <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
+                                                                </div>
                                                                 <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={48} className="object-contain" data-ai-hint="team logo" />
                                                             </div>
                                                             <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
@@ -872,7 +874,7 @@ export default function DashboardPage() {
                                                     </div>
                                                 )}
                                                 <div className="bg-background/80 border-t">
-                                                    <div className="text-center py-2 text-foreground">
+                                                    <div className="text-center py-2 text-foreground" style={{color: 'black'}}>
                                                         <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                                                     </div>
                                                     <ul className="text-sm">
