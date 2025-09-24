@@ -439,7 +439,7 @@ export default function AdminDashboardPage() {
                                             <AccordionContent>
                                                  <div className="bg-background/80 border-t">
                                                     <div className="text-center py-2">
-                                                    <h4 className="font-semibold flex items-center justify-center gap-2 py-1 text-black dark:text-white"><Users className="w-4 h-4 text-black dark:text-white" /> Palpites dos Usuários</h4>
+                                                        <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                     </div>
                                                     <ul className="text-sm max-h-[40vh] overflow-y-auto">
                                                     {match.predictions.map((p, i) => {
@@ -544,3 +544,4 @@ export default function AdminDashboardPage() {
     );
 
     
+
