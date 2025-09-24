@@ -534,7 +534,7 @@ export default function DashboardPage() {
                                                                                     <span>{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
                                                                                 </div>
                                                                                 {userPrediction.palpiteCombo && (
-                                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                                         <Tooltip>
                                                                                             <TooltipTrigger>
                                                                                                 <div className="flex items-center gap-1">
@@ -548,7 +548,7 @@ export default function DashboardPage() {
                                                                                 )}
                                                                             </div>
                                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                {userPrediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", currentUserAcertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                                                {userPrediction.palpiteCombo && <Gem className={cn("h-4 w-4", currentUserAcertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                                                 <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(currentUserAcertoTipo))}>
                                                                                     {currentUserLivePoints} pts
                                                                                 </Badge>
@@ -629,7 +629,7 @@ export default function DashboardPage() {
                                                                                         <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                                                     </div>
                                                                                     {p.palpiteCombo && (
-                                                                                        <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                                        <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                                             <Tooltip>
                                                                                                 <TooltipTrigger>
                                                                                                     <div className="flex items-center gap-1">
@@ -643,7 +643,7 @@ export default function DashboardPage() {
                                                                                     )}
                                                                                 </div>
                                                                                 <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", otherAcertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4", otherAcertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                                                     <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(otherAcertoTipo))}>
                                                                                         {otherLivePoints} pts
                                                                                     </Badge>
@@ -851,7 +851,7 @@ export default function DashboardPage() {
                                                                     <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                                                 </div>
                                                                 {prediction.palpiteCombo && (
-                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                         <Tooltip>
                                                                             <TooltipTrigger>
                                                                                 <div className="flex items-center gap-1">
@@ -865,7 +865,7 @@ export default function DashboardPage() {
                                                                 )}
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                 {prediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                                 {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                                 <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(prediction.acertoTipo))}>
                                                                     {prediction.pontos} pts
                                                                 </Badge>
@@ -874,7 +874,7 @@ export default function DashboardPage() {
                                                     </div>
                                                 )}
                                                 <div className="bg-background/80 border-t">
-                                                    <div className="text-center py-2 text-foreground" style={{color: 'black'}}>
+                                                    <div className="text-center py-2 text-foreground">
                                                         <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                                                     </div>
                                                     <ul className="text-sm">
@@ -938,7 +938,7 @@ export default function DashboardPage() {
                                                                 <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                             </div>
                                                             {p.palpiteCombo && (
-                                                                <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                     <Tooltip>
                                                                         <TooltipTrigger>
                                                                             <div className="flex items-center gap-1">
@@ -952,7 +952,7 @@ export default function DashboardPage() {
                                                             )}
                                                         </div>
                                                         <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                            {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                            {p.palpiteCombo && <Gem className={cn("h-4 w-4", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                             <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(p.acertoTipo))}>
                                                                 {p.pontos} pts
                                                             </Badge>

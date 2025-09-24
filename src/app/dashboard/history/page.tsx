@@ -374,7 +374,7 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                         <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                     </div>
                                     {prediction.palpiteCombo && (
-                                        <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                        <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                             <Tooltip>
                                                 <TooltipTrigger>
                                                     <div className="flex items-center gap-1">
@@ -388,7 +388,7 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                     )}
                                 </div>
                               <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                {prediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                 <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(prediction.acertoTipo))}>
                                     {prediction.pontos} pts
                                 </Badge>
@@ -463,7 +463,7 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                             <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                         </div>
                                         {p.palpiteCombo && (
-                                            <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                            <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                 <Tooltip>
                                                     <TooltipTrigger>
                                                         <div className="flex items-center gap-1">
@@ -477,7 +477,7 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                         )}
                                     </div>
                                   <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                     <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(p.acertoTipo))}>
                                       {p.pontos} pts
                                     </Badge>

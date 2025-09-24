@@ -501,7 +501,7 @@ export default function AdminDashboardPage() {
                                                                     <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                                 </div>
                                                                 {p.palpiteCombo && (
-                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1 text-primary">
+                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                         <Tooltip>
                                                                             <TooltipTrigger>
                                                                                 <div className="flex items-center gap-1">
@@ -515,7 +515,7 @@ export default function AdminDashboardPage() {
                                                                 )}
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", simulatedAcertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                                {p.palpiteCombo && <Gem className={cn("h-4 w-4", simulatedAcertoTipo === 'combo' && "animate-gem-pulse")} />}
                                                                 <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(simulatedAcertoTipo))}>
                                                                     {simulatedPoints} pts
                                                                 </Badge>
@@ -543,6 +543,7 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
     
+
 
 
 
