@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -285,19 +286,16 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
+    const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
         switch (acertoTipo) {
-            case 'combo':
-            case 'bucha':
-                return 'success';
-            case 'bonus':
-            case 'situacao':
-                return 'default';
-            case 'gols':
-                return 'secondary';
+            case 'combo': return 'badge-combo-gold';
+            case 'bonus': return 'badge-combo-silver';
+            case 'gols': return 'badge-gols-solid';
+            case 'bucha': return 'badge-bucha-solid';
+            case 'situacao': return 'badge-situacao-solid';
             case 'erro':
             default:
-                return 'destructive';
+                return 'badge-erro-solid';
         }
     };
 
@@ -518,8 +516,8 @@ export default function AdminDashboardPage() {
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
                                                                 {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", simulatedAcertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                                                <Badge variant={getPointsBadgeVariant(simulatedAcertoTipo)} className='whitespace-nowrap'>
-                                                                {simulatedPoints} pts
+                                                                <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(simulatedAcertoTipo))}>
+                                                                    {simulatedPoints} pts
                                                                 </Badge>
                                                             </div>
                                                         </li>

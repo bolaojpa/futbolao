@@ -261,19 +261,16 @@ export default function HistoryPage() {
     }
 };
 
-const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success" | "default" | "destructive" | "secondary" => {
+const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
     switch (acertoTipo) {
-        case 'combo':
-        case 'bucha':
-            return 'success';
-        case 'bonus':
-        case 'situacao':
-            return 'default';
-        case 'gols':
-            return 'secondary';
+        case 'combo': return 'badge-combo-gold';
+        case 'bonus': return 'badge-combo-silver';
+        case 'gols': return 'badge-gols-solid';
+        case 'bucha': return 'badge-bucha-solid';
+        case 'situacao': return 'badge-situacao-solid';
         case 'erro':
         default:
-            return 'destructive';
+            return 'badge-erro-solid';
     }
 };
 
@@ -392,8 +389,8 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                 </div>
                               <div className="w-1/3 text-right flex items-center justify-end gap-2">
                                 {prediction.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                <Badge variant={getPointsBadgeVariant(prediction.acertoTipo)} className='whitespace-nowrap'>
-                                  {prediction.pontos} pts
+                                <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(prediction.acertoTipo))}>
+                                    {prediction.pontos} pts
                                 </Badge>
                               </div>
                             </div>
@@ -481,7 +478,7 @@ const getPointsBadgeVariant = (acertoTipo?: Prediction['acertoTipo']): "success"
                                     </div>
                                   <div className="w-1/3 text-right flex items-center justify-end gap-2">
                                     {p.palpiteCombo && <Gem className={cn("h-4 w-4 text-purple-600", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                    <Badge variant={getPointsBadgeVariant(p.acertoTipo)} className='whitespace-nowrap'>
+                                    <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(p.acertoTipo))}>
                                       {p.pontos} pts
                                     </Badge>
                                   </div>

@@ -187,3 +187,22 @@
     animation: gem-pulse 1.5s ease-in-out infinite;
 }
 
+/* Custom Badge Colors */
+.badge-combo-gold {
+    @apply bg-black/10 border-transparent text-black;
+}
+.badge-combo-silver {
+     @apply bg-black/10 border-transparent text-black;
+}
+.badge-gols-solid {
+    @apply bg-black/10 border-transparent text-white;
+}
+.badge-bucha-solid {
+    @apply bg-black/10 border-transparent text-white;
+}
+.badge-situacao-solid {
+    @apply bg-black/10 border-transparent text-white;
+}
+.badge-erro-solid {
+    @apply bg-black/10 border-transparent text-white;
+}
