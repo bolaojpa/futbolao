@@ -385,7 +385,7 @@ export default function AdminDashboardPage() {
                                                     {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={20} height={20} />}
                                                     <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
                                                 </div>
-                                                <div className="flex items-center justify-around w-full mt-4">
+                                                <div className="flex items-center justify-center w-full mt-4">
                                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                                         <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
                                                         <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={48} height={48} className="object-contain" data-ai-hint="team logo" />
@@ -431,7 +431,7 @@ export default function AdminDashboardPage() {
                                                     )}
                                                 </div>
                                             </div>
-                                             <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
+                                            <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
                                                 <ChevronDown className="h-4 w-4 mx-auto" />
                                             </AccordionTrigger>
                                             <AccordionContent>
