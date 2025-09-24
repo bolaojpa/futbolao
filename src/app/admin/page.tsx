@@ -380,66 +380,66 @@ export default function AdminDashboardPage() {
                                 <Accordion type="single" collapsible className="w-full" key={match.id}>
                                     <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
                                         <Card className="relative overflow-hidden border-destructive/50">
-                                             <div className="p-4 flex flex-col justify-center items-center">
-                                                 <div className="flex flex-col items-center justify-center gap-4">
-                                                    <div className="flex justify-center items-center gap-2 text-center">
-                                                        {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={20} height={20} />}
-                                                        <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
+                                            <div className="p-4 flex flex-col justify-center items-center">
+                                                <div className="flex justify-center items-center gap-2 text-center">
+                                                    {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={20} height={20} />}
+                                                    <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
+                                                </div>
+                                                <div className="flex items-center justify-around w-full mt-4">
+                                                    <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                        <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={48} height={48} className="object-contain" data-ai-hint="team logo" />
                                                     </div>
-                                                    <div className="flex items-center justify-around w-full">
-                                                        <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                            <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={48} height={48} className="object-contain" data-ai-hint="team logo" />
-                                                        </div>
-                                                        <div className="flex items-center justify-center gap-2 mx-2">
-                                                            <Input 
-                                                                type="number" 
-                                                                className="w-16 h-12 text-center text-2xl font-bold" 
-                                                                value={score.placarA}
-                                                                onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
-                                                                min="0"
-                                                            />
-                                                            <span className='text-2xl font-bold text-muted-foreground'>-</span>
-                                                            <Input 
-                                                                type="number" 
-                                                                className="w-16 h-12 text-center text-2xl font-bold" 
-                                                                value={score.placarB}
-                                                                onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
-                                                                min="0"
-                                                            />
-                                                        </div>
-                                                        <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={48} height={48} className="object-contain" data-ai-hint="team logo" />
-                                                            <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                                        </div>
+                                                    <div className="flex items-center justify-center gap-2 mx-2">
+                                                        <Input 
+                                                            type="number" 
+                                                            className="w-16 h-12 text-center text-2xl font-bold" 
+                                                            value={score.placarA}
+                                                            onChange={(e) => handleScoreChange(match.id, 'placarA', e.target.value)}
+                                                            min="0"
+                                                        />
+                                                        <span className='text-2xl font-bold text-muted-foreground'>-</span>
+                                                        <Input 
+                                                            type="number" 
+                                                            className="w-16 h-12 text-center text-2xl font-bold" 
+                                                            value={score.placarB}
+                                                            onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
+                                                            min="0"
+                                                        />
                                                     </div>
-                                                    <div className="flex flex-col items-center gap-4">
-                                                         <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
-                                                        <div className="flex flex-row gap-2 items-center">
-                                                            <Button onClick={() => handleScoreSave(match.id)} size="sm" variant="secondary">
-                                                                <Save className="h-4 w-4 md:mr-2" />
-                                                                <span className="hidden md:inline">Salvar Placar</span>
-                                                            </Button>
-                                                            <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
-                                                                <Flag className="h-4 w-4 md:mr-2" />
-                                                                <span className="hidden md:inline">Finalizar Partida</span>
-                                                            </Button>
-                                                        </div>
-                                                        {lastUpdated[match.id] && (
-                                                            <p className="text-xs text-muted-foreground">
-                                                                Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
-                                                            </p>
-                                                        )}
+                                                    <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={48} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                        <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                     </div>
-                                                 </div>
+                                                </div>
+                                                <div className="flex flex-col items-center gap-4 mt-4">
+                                                     <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
+                                                    <div className="flex flex-row gap-2 items-center">
+                                                        <Button onClick={() => handleScoreSave(match.id)} size="sm" variant="secondary">
+                                                            <Save className="h-4 w-4 md:mr-2" />
+                                                            <span className="hidden md:inline">Salvar Placar</span>
+                                                        </Button>
+                                                        <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
+                                                            <Flag className="h-4 w-4 md:mr-2" />
+                                                            <span className="hidden md:inline">Finalizar Partida</span>
+                                                        </Button>
+                                                    </div>
+                                                    {lastUpdated[match.id] && (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Alterado em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
                                              <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
                                                 <ChevronDown className="h-4 w-4 mx-auto" />
                                             </AccordionTrigger>
                                             <AccordionContent>
-                                                 <div className="bg-background/80 border-t">
-                                                    <div className="text-center py-2 text-foreground">
-                                                        <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
+                                                <div className="bg-background/80 border-t">
+                                                     <div className="text-center py-2 text-foreground">
+                                                        <h4 className="font-semibold flex items-center justify-center gap-2 py-1">
+                                                            <Users className="w-4 h-4" /> Palpites dos Usuários
+                                                        </h4>
                                                     </div>
                                                     <ul className="text-sm max-h-[40vh] overflow-y-auto">
                                                     {match.predictions.map((p, i) => {
@@ -548,3 +548,6 @@ export default function AdminDashboardPage() {
 
 
 
+
+
+  
