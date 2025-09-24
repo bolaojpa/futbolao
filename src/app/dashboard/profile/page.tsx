@@ -22,7 +22,7 @@ import Link from 'next/link';
 import { Honorifics } from '@/components/shared/honorifics';
 import { useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { HonorificsExplanationModal } from '@/components/profile/honorifics-explanation-modal';
 import type { UserType, Championship, Match, Prediction } from '@/lib/types';
@@ -110,9 +110,16 @@ const StatCard = ({
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">{value}</div>
-                <p className={cn("text-xs text-muted-foreground truncate", descriptionClasses[variant as keyof typeof descriptionClasses])}>
-                    {description}
-                </p>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <p className={cn("text-xs text-muted-foreground truncate", descriptionClasses[variant as keyof typeof descriptionClasses])}>
+                            {description}
+                        </p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{description}</p>
+                    </TooltipContent>
+                </Tooltip>
             </CardContent>
         </Card>
     );
