@@ -380,8 +380,8 @@ export default function AdminDashboardPage() {
                                 <Accordion type="single" collapsible className="w-full" key={match.id}>
                                     <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
                                         <Card className="relative overflow-hidden border-destructive/50">
-                                             <div className="p-4">
-                                                 <div className="flex flex-col items-center justify-center w-full gap-4">
+                                             <div className="p-4 flex flex-col justify-center items-center">
+                                                 <div className="flex flex-col items-center justify-center gap-4">
                                                     <div className="flex justify-center items-center gap-2 text-center">
                                                         {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={20} height={20} />}
                                                         <p className="text-sm font-semibold text-muted-foreground">{match.campeonato}</p>
@@ -500,7 +500,7 @@ export default function AdminDashboardPage() {
                                                                 <div className="flex-1 text-center">
                                                                     <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
                                                                 </div>
-                                                                {p.palpiteCombo && (
+                                                                {championship?.pontuacao.combo?.ativo && p.palpiteCombo && (
                                                                     <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                         <Tooltip>
                                                                             <TooltipTrigger>
@@ -543,6 +543,7 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
     
+
 
 
 
