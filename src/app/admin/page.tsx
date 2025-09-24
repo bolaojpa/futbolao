@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -277,12 +276,12 @@ export default function AdminDashboardPage() {
         switch (acertoTipo) {
             case 'combo': return 'bg-combo-gold text-black';
             case 'bonus': return 'bg-combo-silver text-black';
-            case 'bucha': return 'bg-bucha-solid text-white';
-            case 'situacao': return 'bg-situacao-solid text-white';
-            case 'gols': return 'bg-gols-solid text-white';
+            case 'bucha': return 'bg-bucha-solid';
+            case 'situacao': return 'bg-situacao-solid';
+            case 'gols': return 'bg-gols-solid';
             case 'erro':
             default:
-                 return 'bg-erro-solid text-white';
+                 return 'bg-erro-solid';
         }
     };
 
@@ -439,7 +438,7 @@ export default function AdminDashboardPage() {
                                             <AccordionContent>
                                                  <div className="bg-background/80 border-t">
                                                     <div className="text-center py-2">
-                                                    <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
+                                                    <h4 className="font-semibold flex items-center justify-center gap-2 py-1 text-card-foreground"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                     </div>
                                                     <ul className="text-sm max-h-[40vh] overflow-y-auto">
                                                     {match.predictions.map((p, i) => {
