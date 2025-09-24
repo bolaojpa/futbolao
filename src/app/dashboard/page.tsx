@@ -483,7 +483,7 @@ export default function DashboardPage() {
                                                         </AccordionTrigger>
                                                         <AccordionContent>
                                                             <div className="bg-background/80 border-t">
-                                                                <div className="text-center py-2">
+                                                                <div className="text-center py-2 text-foreground">
                                                                     <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                                 </div>
                                                                 <ul className="text-sm">
@@ -872,7 +872,7 @@ export default function DashboardPage() {
                                                     </div>
                                                 )}
                                                 <div className="bg-background/80 border-t">
-                                                    <div className="text-center py-2" style={{color: 'black'}}>
+                                                    <div className="text-center py-2 text-foreground">
                                                         <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                                                     </div>
                                                     <ul className="text-sm">
