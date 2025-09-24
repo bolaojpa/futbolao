@@ -10,7 +10,7 @@ import { BrainCircuit, Loader2, Save, ChevronUp, ChevronDown, AlarmClock, Calend
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion, savePrediction, saveComboPick } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
@@ -443,61 +443,64 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                         </div>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="flex items-center justify-around w-full gap-2">
-                                            <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeA}`} width={40} height={40} className="object-contain" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{match.timeA}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-
-                                            <div className="flex items-center justify-center gap-2">
-                                                {isLocked ? (
-                                                    <div className="flex items-center justify-center w-44 h-12 text-center text-2xl font-bold bg-muted/50 rounded-md">
-                                                        {currentScore.placarA !== null ? (
-                                                            <span>{currentScore.placarA} - {currentScore.placarB}</span>
-                                                        ) : (
-                                                            <Lock className="h-6 w-6 text-muted-foreground" />
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
-                                                        <span className="font-bold text-muted-foreground text-lg">x</span>
-                                                        <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
-                                                    </>
-                                                )}
-                                            </div>
-                                            
-                                            <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeB}`} width={40} height={40} className="object-contain" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{match.timeB}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                                <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                                {comboState && !comboState.isEditing && (
-                                                     <Tooltip>
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="flex items-center justify-around w-full gap-2">
+                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                    <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <div className="flex items-center gap-1 font-bold text-primary">
-                                                                <Goal className="h-4 w-4" />
-                                                                <span>{comboState.totalGols}</span>
-                                                            </div>
+                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeA}`} width={40} height={40} className="object-contain" data-ai-hint="team logo" />
                                                         </TooltipTrigger>
                                                         <TooltipContent>
-                                                            <p>Seu palpite de gols para o combo.</p>
+                                                            <p>{match.timeA}</p>
                                                         </TooltipContent>
                                                     </Tooltip>
-                                                )}
+                                                </div>
+
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {isLocked ? (
+                                                        <div className="flex items-center justify-center w-44 h-12 text-center text-2xl font-bold bg-muted/50 rounded-md">
+                                                            {currentScore.placarA !== null ? (
+                                                                <span>{currentScore.placarA} - {currentScore.placarB}</span>
+                                                            ) : (
+                                                                <Lock className="h-6 w-6 text-muted-foreground" />
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
+                                                            <span className="font-bold text-muted-foreground text-lg">x</span>
+                                                            <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
+                                                        </>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={`Bandeira ${match.timeB}`} width={40} height={40} className="object-contain" data-ai-hint="team logo" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>{match.timeB}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                </div>
                                             </div>
+                                            
+                                            {comboState && !comboState.isEditing && !isLocked && (
+                                                 <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div className="flex items-center gap-1.5 font-semibold text-sm text-primary mt-2">
+                                                            <Goal className="h-4 w-4" />
+                                                            <span>Palpite de Gols: {comboState.totalGols}</span>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>Seu palpite de gols para o combo.</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )}
                                         </div>
                                     </CardContent>
                                     
@@ -580,5 +583,3 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
         </TooltipProvider>
     );
 }
-
-    
