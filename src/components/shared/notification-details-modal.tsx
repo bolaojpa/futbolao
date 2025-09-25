@@ -16,12 +16,13 @@ import type { Notification } from "@/lib/types";
 interface NotificationDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  notification: Pick<Notification, 'title' | 'message' | 'type' | 'originalMessage'>;
+  notification: Partial<Notification>; // Tornando a prop mais flexível
 }
 
 export function NotificationDetailsModal({ isOpen, onClose, notification }: NotificationDetailsModalProps) {
     const isUrgent = notification.type === 'urgent';
-    const displayData = notification.originalMessage || notification;
+    // Se for urgente e tiver 'originalMessage', use-o. Senão, use a própria notificação.
+    const displayData = isUrgent && notification.originalMessage ? notification.originalMessage : notification;
     
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>

@@ -41,7 +41,7 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [notificationToDisplay, setNotificationToDisplay] = useState<Notification['originalMessage'] | Notification | null>(null);
+    const [notificationToDisplay, setNotificationToDisplay] = useState<Notification | null>(null);
 
     useEffect(() => {
         if (!user) return;
@@ -94,13 +94,13 @@ export default function NotificationsPage() {
     }
     
     const handleNotificationClick = (notification: Notification) => {
-        // Se a notificação tem um link de destino, navega para ele.
+        // Se for uma notificação com link e ele for válido, navega.
         if (notification.href && notification.href !== '#') {
             router.push(notification.href);
             return;
         }
         
-        // Se não, abre o modal com o conteúdo da mensagem.
+        // Para todas as outras (incluindo avisos sem link), abre o modal.
         setNotificationToDisplay(notification);
     }
 
@@ -154,7 +154,9 @@ export default function NotificationsPage() {
                                             {notification.type === 'urgent' && <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />}
                                             <div className="flex-1 min-w-0">
                                                 <p className={cn("font-semibold", !notification.read && "text-primary", notification.type === 'urgent' && "text-destructive")}>{notification.title}</p>
-                                                <p className="text-sm text-muted-foreground truncate">{notification.message}</p>
+                                                <div className="w-full">
+                                                  <p className="text-sm text-muted-foreground truncate">{notification.message}</p>
+                                                </div>
                                             </div>
                                         </div>
                                         {!notification.read && (
