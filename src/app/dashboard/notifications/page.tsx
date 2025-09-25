@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -117,69 +116,68 @@ export default function NotificationsPage() {
     return (
         <>
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
-            <div className="flex items-center gap-4">
-                <Bell className="h-8 w-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Minhas Notificações</h1>
-                    <p className="text-muted-foreground">
-                        Histórico de todas as comunicações recebidas.
-                    </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Bell className="h-8 w-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline">Minhas Notificações</h1>
+                        <p className="text-muted-foreground">
+                            Histórico de todas as comunicações recebidas.
+                        </p>
+                    </div>
                 </div>
+                 {unreadCount > 0 && (
+                    <Button variant="outline" size="sm" onClick={handleMarkAllAsRead} className="w-full sm:w-auto">
+                        <CheckCheck className="mr-2 h-4 w-4" />
+                        Marcar todas como lidas ({unreadCount})
+                    </Button>
+                )}
             </div>
 
-            <Card className="max-w-4xl">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Histórico</CardTitle>
-                     {unreadCount > 0 && (
-                        <Button variant="outline" size="sm" onClick={handleMarkAllAsRead}>
-                            <CheckCheck className="mr-2 h-4 w-4" />
-                            Marcar todas como lidas ({unreadCount})
-                        </Button>
-                    )}
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                         <div className="text-center py-10 text-muted-foreground">Carregando...</div>
-                    ) : paginatedNotifications.length > 0 ? (
-                        <ul className="space-y-2">
-                            {paginatedNotifications.map(notification => (
-                                <li key={notification.id}>
-                                    <button 
-                                        onClick={() => handleNotificationClick(notification)}
-                                        className={cn(
-                                        "block w-full text-left p-4 border rounded-lg transition-colors hover:bg-muted/80",
-                                        !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-                                        notification.type === 'urgent' && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
-                                        notification.type === 'urgent' && notification.read && "border-destructive/20 dark:border-destructive/40"
-                                    )}>
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-center gap-3">
-                                                {notification.type === 'urgent' && <AlertTriangle className="h-5 w-5 text-destructive" />}
-                                                <div>
-                                                    <p className={cn("font-semibold", !notification.read && "text-primary", notification.type === 'urgent' && "text-destructive")}>{notification.title}</p>
-                                                    <p className="text-sm text-muted-foreground truncate max-w-lg">{notification.message}</p>
-                                                </div>
+            <div className="w-full">
+                {loading ? (
+                    <div className="text-center py-10 text-muted-foreground">Carregando...</div>
+                ) : paginatedNotifications.length > 0 ? (
+                    <ul className="space-y-4">
+                        {paginatedNotifications.map(notification => (
+                            <li key={notification.id}>
+                                <button 
+                                    onClick={() => handleNotificationClick(notification)}
+                                    className={cn(
+                                    "block w-full text-left p-4 border rounded-lg transition-colors hover:bg-muted/80",
+                                    !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+                                    notification.type === 'urgent' && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
+                                    notification.type === 'urgent' && notification.read && "border-destructive/20 dark:border-destructive/40"
+                                )}>
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-3">
+                                            {notification.type === 'urgent' && <AlertTriangle className="h-5 w-5 text-destructive" />}
+                                            <div>
+                                                <p className={cn("font-semibold", !notification.read && "text-primary", notification.type === 'urgent' && "text-destructive")}>{notification.title}</p>
+                                                <p className="text-sm text-muted-foreground truncate max-w-lg">{notification.message}</p>
                                             </div>
-                                            {!notification.read && (
-                                                <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4" title="Não lida"></div>
-                                            )}
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-2 pl-8">
-                                            {notification.createdAt && <TimeAgo date={notification.createdAt as Date} />}
-                                        </p>
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <div className="text-center py-10 text-muted-foreground">
+                                        {!notification.read && (
+                                            <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4" title="Não lida"></div>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2 pl-8">
+                                        {notification.createdAt && <TimeAgo date={notification.createdAt as Date} />}
+                                    </p>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <Card>
+                        <CardContent className="py-20 text-center text-muted-foreground">
                             <Inbox className="mx-auto h-12 w-12" />
                             <h3 className="mt-4 font-semibold text-lg">Caixa de Entrada Vazia</h3>
                             <p className="text-sm">Você não tem nenhuma notificação no momento.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
 
             {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-4 mt-4">
@@ -209,7 +207,7 @@ export default function NotificationsPage() {
             <NotificationDetailsModal
                 isOpen={!!notificationToDisplay}
                 onClose={() => setNotificationToDisplay(null)}
-                notification={notificationToDisplay.originalMessage || notificationToDisplay}
+                notification={notificationToDisplay}
             />
         )}
         </>

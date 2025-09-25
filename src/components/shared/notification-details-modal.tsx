@@ -16,11 +16,12 @@ import type { Notification } from "@/lib/types";
 interface NotificationDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  notification: Pick<Notification, 'title' | 'message' | 'type'>;
+  notification: Pick<Notification, 'title' | 'message' | 'type' | 'originalMessage'>;
 }
 
 export function NotificationDetailsModal({ isOpen, onClose, notification }: NotificationDetailsModalProps) {
     const isUrgent = notification.type === 'urgent';
+    const displayData = notification.originalMessage || notification;
     
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -37,9 +38,9 @@ export function NotificationDetailsModal({ isOpen, onClose, notification }: Noti
                         </div>
                     )}
                 </div>
-                <DialogTitle className="text-center text-2xl font-headline">{notification.title}</DialogTitle>
+                <DialogTitle className="text-center text-2xl font-headline">{displayData.title}</DialogTitle>
                 <DialogDescription className="text-center text-base py-2 whitespace-pre-wrap">
-                    {notification.message}
+                    {displayData.message}
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter className="sm:justify-center">
