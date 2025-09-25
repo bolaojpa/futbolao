@@ -1,33 +1,51 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Send, Eye, Users, User, Bell, AlertTriangle, Search } from 'lucide-react';
+import { Send, Eye, Users, User, Bell, AlertTriangle, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { mockEmergencyMessage, mockUsers, mockNotifications, mockLogs, mockUser } from '@/lib/data';
+import { mockEmergencyMessage, mockNotifications, mockLogs } from '@/lib/data';
 import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import type { UserType } from '@/lib/types';
+import { getUsers } from '@/lib/firebase/firestore';
 
 
 type EmergencyMessage = typeof mockEmergencyMessage;
 
 export default function AdminMessagingPage() {
     const { toast } = useToast();
+    const [allUsers, setAllUsers] = useState<UserType[]>([]);
+    const [loading, setLoading] = useState(true);
     const [messageData, setMessageData] = useState<EmergencyMessage>({ ...mockEmergencyMessage, targetUserIds: ['all'] });
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
     const [userSearch, setUserSearch] = useState("");
+
+    useEffect(() => {
+        async function fetchUsers() {
+            try {
+                const users = await getUsers();
+                setAllUsers(users);
+            } catch (error) {
+                toast({ title: "Erro ao carregar usuários", variant: "destructive" });
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchUsers();
+    }, [toast]);
 
     const handleUserSelect = (userId: string) => {
         setSelectedUsers(prev => {
@@ -42,11 +60,11 @@ export default function AdminMessagingPage() {
     };
 
     const availableUsers = useMemo(() => {
-        return mockUsers
+        return allUsers
         .filter(user => user.status === 'ativo' && user.funcao !== 'admin')
         .filter(user => user.apelido.toLowerCase().includes(userSearch.toLowerCase()) || user.nome.toLowerCase().includes(userSearch.toLowerCase()))
         .sort((a, b) => a.apelido.localeCompare(b.apelido));
-    }, [userSearch]);
+    }, [userSearch, allUsers]);
 
     const handleSave = () => {
         let finalTargets: string[] = [];
@@ -80,12 +98,13 @@ export default function AdminMessagingPage() {
         } else {
              // Simula o envio de notificação para múltiplos usuários
             finalTargets.forEach(userId => {
-                const targetUser = mockUsers.find(u => u.id === userId);
+                const targetUser = allUsers.find(u => u.id === userId);
                 const notificationTitle = finalMessageData.title;
                 const notificationMessage = `Mensagem do Admin: ${finalMessageData.message.substring(0, 50)}...`;
 
                  mockNotifications.unshift({
                     id: `notif_${new Date().getTime()}_${userId}`,
+                    userId: userId,
                     title: notificationTitle,
                     message: notificationMessage,
                     read: false,
@@ -104,6 +123,7 @@ export default function AdminMessagingPage() {
             id: `log_${new Date().getTime()}`,
             actor: { id: 'user_11', apelido: 'Admin', type: 'admin' },
             action: 'emergency_message',
+            timestamp: new Date().toISOString(),
             details: { 
                 title: finalMessageData.title, 
                 message: finalMessageData.message, 
@@ -223,30 +243,37 @@ export default function AdminMessagingPage() {
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <ScrollArea className="h-48 w-full rounded-md border">
-                                        <div className="p-4 space-y-2">
-                                            {availableUsers.map((user) => (
-                                                <div
-                                                    key={user.id}
-                                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-muted"
-                                                >
-                                                    <Checkbox
-                                                        id={`user-${user.id}`}
-                                                        checked={selectedUsers.has(user.id)}
-                                                        onCheckedChange={() => handleUserSelect(user.id)}
-                                                    />
-                                                    <Label htmlFor={`user-${user.id}`} className="font-normal w-full flex items-center gap-3 cursor-pointer">
-                                                        <Avatar className="w-8 h-8">
-                                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                            <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold">{user.apelido}</span>
-                                                            <span className="text-xs text-muted-foreground">{user.nome}</span>
-                                                        </div>
-                                                    </Label>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        {loading ? (
+                                            <div className="flex items-center justify-center h-full text-muted-foreground">
+                                                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                                Carregando usuários...
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 space-y-2">
+                                                {availableUsers.map((user) => (
+                                                    <div
+                                                        key={user.id}
+                                                        className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-muted"
+                                                    >
+                                                        <Checkbox
+                                                            id={`user-${user.id}`}
+                                                            checked={selectedUsers.has(user.id)}
+                                                            onCheckedChange={() => handleUserSelect(user.id)}
+                                                        />
+                                                        <Label htmlFor={`user-${user.id}`} className="font-normal w-full flex items-center gap-3 cursor-pointer">
+                                                            <Avatar className="w-8 h-8">
+                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-semibold">{user.apelido}</span>
+                                                                <span className="text-xs text-muted-foreground">{user.nome}</span>
+                                                            </div>
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </ScrollArea>
                                 </CardContent>
                             </Card>
