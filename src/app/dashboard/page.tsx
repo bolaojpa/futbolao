@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -460,7 +459,7 @@ export default function DashboardPage() {
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
                                                 <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                                                     <Card className={cn(cardStatusClass)}>
-                                                         <AccordionTrigger className="p-4 hover:no-underline flex justify-between items-center w-full">
+                                                         <AccordionTrigger className="p-4 hover:no-underline flex justify-between items-center w-full relative">
                                                             <div className="flex-1 justify-center items-center">
                                                                 <div className="flex items-center justify-center w-full">
                                                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
@@ -479,7 +478,7 @@ export default function DashboardPage() {
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                                                            <ChevronDown className="absolute bottom-2 left-1/2 -translate-x-1/2 h-4 w-4 shrink-0 transition-transform duration-200" />
                                                         </AccordionTrigger>
                                                         <AccordionContent>
                                                             <div className="bg-background/80 border-t">
@@ -990,3 +989,4 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
