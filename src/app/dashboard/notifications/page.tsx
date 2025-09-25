@@ -100,12 +100,11 @@ export default function NotificationsPage() {
     }
     
     const handleNotificationClick = (notification: Notification) => {
-        if (notification.type === 'urgent') {
+       if (notification.type === 'urgent') {
             setNotificationToDisplay(notification);
-        } else if (notification.href && notification.href !== '#') {
+       } else if (notification.href && notification.href !== '#') {
             router.push(notification.href);
-        }
-        // Para notificações normais sem link, o Collapsible cuidará da expansão
+       }
     }
     
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -138,34 +137,38 @@ export default function NotificationsPage() {
                         <ul className="space-y-4">
                             {notifications.map(notification => {
                                 const isUrgent = notification.type === 'urgent';
-                                const isLongMessage = notification.message.length > NOTIFICATION_PREVIEW_LENGTH;
                                 const hasLink = notification.href && notification.href !== '#';
+                                const isLongMessage = notification.message.length > NOTIFICATION_PREVIEW_LENGTH;
                                 const isExpandable = isLongMessage && !hasLink && !isUrgent;
+
+                                const cardProps = {
+                                  className: cn(
+                                    "transition-colors",
+                                    !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+                                    isUrgent && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
+                                    isUrgent && notification.read && "border-destructive/20 dark:border-destructive/40",
+                                    (isUrgent || hasLink) && 'cursor-pointer hover:bg-muted'
+                                  ),
+                                  onClick: () => !isExpandable && handleNotificationClick(notification),
+                                };
 
                                 return (
                                     <li key={notification.id}>
                                         <Collapsible asChild>
-                                            <Card
-                                                className={cn(
-                                                    "transition-colors",
-                                                    !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-                                                    isUrgent && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
-                                                    isUrgent && notification.read && "border-destructive/20 dark:border-destructive/40",
-                                                    isUrgent && 'cursor-pointer hover:bg-muted'
-                                                )}
-                                                onClick={() => isUrgent && handleNotificationClick(notification)}
-                                            >
+                                            <Card {...cardProps}>
                                                 <CardContent className="p-4">
                                                     <div className="flex items-start justify-between gap-4">
                                                         <div className="flex-1 min-w-0">
                                                             <p className={cn("font-semibold", !notification.read && "text-primary", isUrgent && "text-destructive")}>{notification.title}</p>
                                                             <div className="w-full">
-                                                            <p className={cn("text-sm text-muted-foreground", !isExpandable && "line-clamp-2")}>
+                                                              <p className={cn("text-sm text-muted-foreground", !isExpandable && "line-clamp-2")}>
                                                                 {isExpandable ? `${notification.message.substring(0, NOTIFICATION_PREVIEW_LENGTH)}...` : notification.message}
-                                                            </p>
-                                                            <CollapsibleContent>
-                                                                <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-2">{notification.message}</p>
-                                                            </CollapsibleContent>
+                                                              </p>
+                                                              {isExpandable && (
+                                                                <CollapsibleContent>
+                                                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-2">{notification.message}</p>
+                                                                </CollapsibleContent>
+                                                              )}
                                                             </div>
                                                         </div>
                                                         {!notification.read && (
@@ -184,7 +187,7 @@ export default function NotificationsPage() {
                                                                 </Button>
                                                             </CollapsibleTrigger>
                                                         )}
-                                                        {hasLink && !isUrgent && (
+                                                        {hasLink && (
                                                             <Button variant="link" size="sm" className="h-auto p-0" onClick={() => handleNotificationClick(notification)}>
                                                                 Ir para o link
                                                             </Button>
@@ -217,4 +220,3 @@ export default function NotificationsPage() {
         </>
     );
 }
-
