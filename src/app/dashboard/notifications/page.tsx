@@ -2,28 +2,32 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, CheckCheck, Inbox, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Bell, CheckCheck, Inbox, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
 import type { Notification } from '@/lib/types';
-import { onSnapshot, collection, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
+import { onSnapshot, collection, query, where, writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { NotificationDetailsModal } from '@/components/shared/notification-details-modal';
 import { useRouter } from 'next/navigation';
-
-const ITEMS_PER_PAGE = 10;
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { Card, CardContent } from '@/components/ui/card';
 
 // Componente para evitar erro de hidratação com datas relativas
-const TimeAgo = ({ date }: { date: Date }) => {
+const TimeAgo = ({ date }: { date: Date | undefined }) => {
     const [timeAgo, setTimeAgo] = useState('');
 
     useEffect(() => {
-        setTimeAgo(formatDistanceToNow(date, { locale: ptBR, addSuffix: true }));
+        if (date) {
+            setTimeAgo(formatDistanceToNow(date, { locale: ptBR, addSuffix: true }));
+        }
     }, [date]);
 
     if (!timeAgo) {
@@ -33,6 +37,7 @@ const TimeAgo = ({ date }: { date: Date }) => {
     return <>{timeAgo}</>;
 };
 
+const NOTIFICATION_PREVIEW_LENGTH = 150; // Max characters before "Ver mais"
 
 export default function NotificationsPage() {
     const { user } = useAuth();
@@ -40,8 +45,6 @@ export default function NotificationsPage() {
     const router = useRouter();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [notificationToDisplay, setNotificationToDisplay] = useState<Notification | null>(null);
 
     useEffect(() => {
         if (!user) return;
@@ -93,28 +96,15 @@ export default function NotificationsPage() {
         }
     }
     
-    const handleNotificationClick = (notification: Notification) => {
-        // Se for uma notificação com link e ele for válido, navega.
+    const handleItemClick = (notification: Notification) => {
         if (notification.href && notification.href !== '#') {
             router.push(notification.href);
-            return;
         }
-        
-        // Para todas as outras (incluindo avisos sem link), abre o modal.
-        setNotificationToDisplay(notification);
     }
-
-    // Lógica de Paginação
-    const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
-    const paginatedNotifications = notifications.slice(
-      (currentPage - 1) * ITEMS_PER_PAGE,
-      currentPage * ITEMS_PER_PAGE
-    );
     
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <>
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -137,38 +127,62 @@ export default function NotificationsPage() {
             <div className="w-full">
                 {loading ? (
                     <div className="text-center py-10 text-muted-foreground">Carregando...</div>
-                ) : paginatedNotifications.length > 0 ? (
+                ) : notifications.length > 0 ? (
                     <ul className="space-y-4">
-                        {paginatedNotifications.map(notification => (
-                            <li key={notification.id}>
-                                <button 
-                                    onClick={() => handleNotificationClick(notification)}
-                                    className={cn(
-                                    "block w-full text-left p-4 border rounded-lg transition-colors hover:bg-muted/80",
-                                    !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-                                    notification.type === 'urgent' && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
-                                    notification.type === 'urgent' && notification.read && "border-destructive/20 dark:border-destructive/40"
-                                )}>
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                                            {notification.type === 'urgent' && <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />}
-                                            <div className="flex-1 min-w-0">
-                                                <p className={cn("font-semibold", !notification.read && "text-primary", notification.type === 'urgent' && "text-destructive")}>{notification.title}</p>
-                                                <div className="w-full">
-                                                  <p className="text-sm text-muted-foreground truncate">{notification.message}</p>
+                        {notifications.map(notification => {
+                            const isLongMessage = notification.message.length > NOTIFICATION_PREVIEW_LENGTH;
+                            const hasLink = notification.href && notification.href !== '#';
+                            
+                            return (
+                                <li key={notification.id}>
+                                    <Collapsible asChild>
+                                        <Card className={cn(
+                                            "transition-colors",
+                                            !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+                                            notification.type === 'urgent' && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
+                                            notification.type === 'urgent' && notification.read && "border-destructive/20 dark:border-destructive/40"
+                                        )}>
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={cn("font-semibold", !notification.read && "text-primary", notification.type === 'urgent' && "text-destructive")}>{notification.title}</p>
+                                                        <div className="w-full">
+                                                          <p className={cn("text-sm text-muted-foreground", !isLongMessage && "line-clamp-2")}>
+                                                            {isLongMessage ? `${notification.message.substring(0, NOTIFICATION_PREVIEW_LENGTH)}...` : notification.message}
+                                                          </p>
+                                                          <CollapsibleContent>
+                                                               <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-2">{notification.message}</p>
+                                                          </CollapsibleContent>
+                                                        </div>
+                                                    </div>
+                                                    {!notification.read && (
+                                                        <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4 shrink-0" title="Não lida"></div>
+                                                    )}
                                                 </div>
-                                            </div>
-                                        </div>
-                                        {!notification.read && (
-                                            <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4 shrink-0" title="Não lida"></div>
-                                        )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2 pl-8">
-                                        {notification.createdAt && <TimeAgo date={notification.createdAt as Date} />}
-                                    </p>
-                                </button>
-                            </li>
-                        ))}
+                                                <div className="flex items-center justify-between mt-2">
+                                                    <p className="text-xs text-muted-foreground">
+                                                        <TimeAgo date={notification.createdAt as Date} />
+                                                    </p>
+                                                    {isLongMessage && !hasLink && (
+                                                        <CollapsibleTrigger asChild>
+                                                            <Button variant="link" size="sm" className="h-auto p-0">
+                                                                Ver mais
+                                                                <ChevronDown className="h-4 w-4 ml-1 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                                                            </Button>
+                                                        </CollapsibleTrigger>
+                                                    )}
+                                                    {hasLink && (
+                                                        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => handleItemClick(notification)}>
+                                                            Ir para o link
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Collapsible>
+                                </li>
+                            )
+                        })}
                     </ul>
                 ) : (
                     <div className="text-center py-20 text-muted-foreground border rounded-lg">
@@ -178,37 +192,7 @@ export default function NotificationsPage() {
                     </div>
                 )}
             </div>
-
-            {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 mt-4">
-                    <Button 
-                        variant="outline"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                    >
-                        <ChevronLeft className="h-4 w-4 mr-2" />
-                        Anterior
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                        Página {currentPage} de {totalPages}
-                    </span>
-                    <Button 
-                        variant="outline"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                    >
-                        <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                </div>
-            )}
         </div>
-        {notificationToDisplay && (
-            <NotificationDetailsModal
-                isOpen={!!notificationToDisplay}
-                onClose={() => setNotificationToDisplay(null)}
-                notification={notificationToDisplay}
-            />
-        )}
         </>
     );
 }
