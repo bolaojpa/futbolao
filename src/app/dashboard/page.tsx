@@ -459,7 +459,7 @@ export default function DashboardPage() {
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
                                                 <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                                                     <Card className={cn(cardStatusClass)}>
-                                                         <AccordionTrigger className="p-4 hover:no-underline flex justify-between items-center w-full relative">
+                                                         <AccordionTrigger className="p-4 hover:no-underline w-full relative">
                                                             <div className="flex-1 justify-center items-center">
                                                                 <div className="flex items-center justify-center w-full">
                                                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
@@ -478,11 +478,11 @@ export default function DashboardPage() {
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 transition-transform duration-200" />
+                                                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 absolute right-4 top-1/2 -translate-y-1/2" />
                                                         </AccordionTrigger>
                                                         <AccordionContent>
-                                                            <div className="bg-background/80 border-t">
-                                                                <div className="text-center py-2 text-foreground">
+                                                            <div className="border-t">
+                                                                <div className="bg-background/80 text-center py-2 text-foreground">
                                                                     <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                                 </div>
                                                                 <ul className="text-sm">
