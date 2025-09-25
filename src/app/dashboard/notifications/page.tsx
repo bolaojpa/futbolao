@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
-import type { Notification, EmergencyMessage } from '@/lib/types';
+import type { Notification } from '@/lib/types';
 import { onSnapshot, collection, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,7 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [notificationToDisplay, setNotificationToDisplay] = useState<Notification | null>(null);
+    const [notificationToDisplay, setNotificationToDisplay] = useState<Notification['originalMessage'] | Notification | null>(null);
 
     useEffect(() => {
         if (!user) return;
@@ -94,14 +94,13 @@ export default function NotificationsPage() {
     }
     
     const handleNotificationClick = (notification: Notification) => {
-        // Se a notificação tiver um link de destino válido, navega para ele.
         if (notification.href && notification.href !== '#') {
             router.push(notification.href);
             return;
         }
         
-        // Para todas as outras (incluindo as urgentes ou avisos padrão), abre o modal.
-        setNotificationToDisplay(notification);
+        const contentToShow = notification.originalMessage || notification;
+        setNotificationToDisplay(contentToShow);
     }
 
     // Lógica de Paginação
@@ -197,7 +196,6 @@ export default function NotificationsPage() {
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
                     >
-                        Próximo
                         <ChevronRight className="h-4 w-4 ml-2" />
                     </Button>
                 </div>
