@@ -10,24 +10,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Send, Eye, Users, User, Bell, AlertTriangle, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { mockEmergencyMessage, mockNotifications, mockLogs } from '@/lib/data';
 import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import type { UserType } from '@/lib/types';
-import { getUsers } from '@/lib/firebase/firestore';
+import type { UserType, EmergencyMessage, Notification } from '@/lib/types';
+import { getUsers, updateUrgentMessage, addNotification } from '@/lib/firebase/firestore';
 
-
-type EmergencyMessage = typeof mockEmergencyMessage;
 
 export default function AdminMessagingPage() {
     const { toast } = useToast();
     const [allUsers, setAllUsers] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
-    const [messageData, setMessageData] = useState<EmergencyMessage>({ ...mockEmergencyMessage, targetUserIds: ['all'] });
+    const [messageData, setMessageData] = useState<Partial<EmergencyMessage>>({
+        active: false,
+        title: '',
+        message: '',
+        targetUserIds: ['all'],
+        type: 'normal',
+    });
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -66,9 +69,18 @@ export default function AdminMessagingPage() {
         .sort((a, b) => a.apelido.localeCompare(b.apelido));
     }, [userSearch, allUsers]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!messageData.title || !messageData.message) {
+            toast({
+                title: "Campos Incompletos",
+                description: "Por favor, preencha o título e o conteúdo da mensagem.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         let finalTargets: string[] = [];
-        let targetDescription = 'todos os usuários';
+        let targetDescription = 'todos os usuários ativos';
 
         if (targetType === 'all') {
             finalTargets = ['all'];
@@ -84,55 +96,41 @@ export default function AdminMessagingPage() {
             return;
         }
 
-        const finalMessageData: EmergencyMessage = {
+        const finalMessageData = {
             ...messageData,
             targetUserIds: finalTargets,
         };
-        
-        if (finalMessageData.type === 'urgent') {
-            Object.assign(mockEmergencyMessage, finalMessageData);
-             toast({
-                title: "Mensagem Urgente Ativada",
-                description: `A mensagem "${finalMessageData.title}" aparecerá como um pop-up para ${targetDescription}.`,
-            });
-        } else {
-             // Simula o envio de notificação para múltiplos usuários
-            finalTargets.forEach(userId => {
-                const targetUser = allUsers.find(u => u.id === userId);
-                const notificationTitle = finalMessageData.title;
-                const notificationMessage = `Mensagem do Admin: ${finalMessageData.message.substring(0, 50)}...`;
 
-                 mockNotifications.unshift({
-                    id: `notif_${new Date().getTime()}_${userId}`,
-                    userId: userId,
-                    title: notificationTitle,
-                    message: notificationMessage,
-                    read: false,
-                    createdAt: new Date(),
-                    href: '/dashboard/notifications',
+        try {
+            if (finalMessageData.type === 'urgent') {
+                await updateUrgentMessage(finalMessageData);
+                 toast({
+                    title: "Mensagem Urgente Ativada",
+                    description: `A mensagem "${finalMessageData.title}" aparecerá como um pop-up para ${targetDescription}.`,
                 });
-            });
+            } else {
+                const targetUserIds = finalTargets[0] === 'all' 
+                    ? allUsers.filter(u => u.status === 'ativo' && u.funcao !== 'admin').map(u => u.id)
+                    : finalTargets;
 
+                for (const userId of targetUserIds) {
+                    await addNotification(userId, finalMessageData.title!, `Mensagem do Admin: ${finalMessageData.message!.substring(0, 50)}...`, '/dashboard/notifications');
+                }
+
+                 toast({
+                    title: "Aviso Enviado como Notificação",
+                    description: `O aviso "${finalMessageData.title}" foi enviado para ${targetDescription}.`,
+                });
+            }
+
+            console.log("Saving message:", finalMessageData);
+        } catch (error) {
              toast({
-                title: "Aviso Enviado como Notificação",
-                description: `O aviso "${finalMessageData.title}" foi enviado para ${targetDescription}.`,
+                title: "Erro ao Enviar",
+                description: "Não foi possível salvar ou enviar a mensagem.",
+                variant: "destructive",
             });
         }
-
-        mockLogs.unshift({
-            id: `log_${new Date().getTime()}`,
-            actor: { id: 'user_11', apelido: 'Admin', type: 'admin' },
-            action: 'emergency_message',
-            timestamp: new Date().toISOString(),
-            details: { 
-                title: finalMessageData.title, 
-                message: finalMessageData.message, 
-                target: targetDescription,
-                type: finalMessageData.type
-            }
-        });
-
-        console.log("Saving message:", finalMessageData);
     };
 
     return (
@@ -207,7 +205,7 @@ export default function AdminMessagingPage() {
                                         <SelectItem value="all">
                                             <div className="flex items-center gap-2">
                                                 <Users className="h-4 w-4" />
-                                                <span>Todos os Usuários</span>
+                                                <span>Todos os Usuários Ativos</span>
                                             </div>
                                         </SelectItem>
                                         <SelectItem value="specific">

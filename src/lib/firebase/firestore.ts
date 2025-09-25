@@ -18,8 +18,9 @@ import {
   increment,
   runTransaction,
   Timestamp,
+  setDoc,
 } from 'firebase/firestore';
-import type { UserType, Team, Championship, Match, Prediction, Notification } from '../types';
+import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage } from '../types';
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -467,4 +468,13 @@ export async function updateUserPresenceStatus(userId: string, newStatus: UserTy
       presenceStatus: newStatus,
       ultimaAtividade: serverTimestamp(),
     });
+}
+
+/**
+ * Saves or clears an urgent message in a central Firestore document.
+ * @param messageData - The urgent message object. To clear the message, pass `active: false`.
+ */
+export async function updateUrgentMessage(messageData: Partial<EmergencyMessage>): Promise<void> {
+    const urgentMessageRef = doc(db, 'system_messages', 'urgent');
+    await setDoc(urgentMessageRef, messageData, { merge: true });
 }

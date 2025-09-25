@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { onSnapshot, collection, query, where, Timestamp, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { SparkleAnimation } from '@/components/shared/sparkle-animation';
+import type { EmergencyMessage } from '@/lib/types';
 
 function ToastListener() {
   const { user } = useAuth();
@@ -56,25 +57,55 @@ function ToastListener() {
 }
 
 
+function UrgentMessageListener() {
+    const { user } = useAuth();
+    const [emergencyMessage, setEmergencyMessage] = useState<EmergencyMessage | null>(null);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const urgentMessageRef = doc(db, 'system_messages', 'urgent');
+        const unsubscribe = onSnapshot(urgentMessageRef, (doc) => {
+            if (doc.exists()) {
+                const message = doc.data() as EmergencyMessage;
+                const isTarget = message.targetUserIds.includes('all') || message.targetUserIds.includes(user.id);
+                if (message.active && isTarget) {
+                    setEmergencyMessage(message);
+                } else {
+                    setEmergencyMessage(null);
+                }
+            } else {
+                setEmergencyMessage(null);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    const handleCloseEmergencyModal = () => {
+        setEmergencyMessage(null);
+    };
+
+     if (!emergencyMessage) {
+        return null;
+    }
+
+    return (
+        <EmergencyMessageModal
+            isOpen={!!emergencyMessage}
+            onClose={handleCloseEmergencyModal}
+            title={emergencyMessage.title}
+            message={emergencyMessage.message}
+        />
+    );
+}
+
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [emergencyMessage, setEmergencyMessage] = useState<{ title: string; message: string; } | null>(null);
-
-  // Esta lógica será atualizada posteriormente para buscar do Firestore
-  useEffect(() => {
-    // Exemplo de como poderia funcionar no futuro
-    // if (fetchedMessage.active && isUserInTarget(fetchedMessage.targetUserIds)) {
-    //   setEmergencyMessage(fetchedMessage);
-    // }
-  }, []);
-
-  const handleCloseEmergencyModal = () => {
-    setEmergencyMessage(null);
-  };
-
 
   return (
     <AuthProvider>
@@ -88,14 +119,7 @@ export default function DashboardLayout({
             </main>
           </div>
         </div>
-        {emergencyMessage && (
-          <EmergencyMessageModal
-            isOpen={!!emergencyMessage}
-            onClose={handleCloseEmergencyModal}
-            title={emergencyMessage.title}
-            message={emergencyMessage.message}
-          />
-        )}
+        <UrgentMessageListener />
         <ToastListener />
       </SidebarProvider>
     </AuthProvider>
