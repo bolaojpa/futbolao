@@ -787,7 +787,7 @@ export default function DashboardPage() {
                                                             </div>
                                                             <div className="flex items-center justify-center gap-3 md:gap-4">
                                                                 <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={48} className="object-contain" data-ai-hint="team logo" />
-                                                                <div className="rounded-md px-3 py-1 bg-black/10">
+                                                                <div className="px-3 py-1">
                                                                     <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
                                                                 </div>
                                                                 <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={48} className="object-contain" data-ai-hint="team logo" />
