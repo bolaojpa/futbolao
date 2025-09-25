@@ -95,9 +95,10 @@ export default function NotificationsPage() {
     const handleNotificationClick = (notification: Notification) => {
         if (notification.type === 'urgent' && notification.originalMessage) {
             setUrgentMessageToDisplay(notification.originalMessage);
-        } else if (notification.href) {
+        } else if (notification.href && notification.href !== '#') {
             window.location.href = notification.href;
         }
+        // Se não tiver href ou for '#', não faz nada, evitando o reload.
     }
 
     // Lógica de Paginação
@@ -144,8 +145,9 @@ export default function NotificationsPage() {
                                         className={cn(
                                         "block w-full text-left p-4 border rounded-lg transition-colors hover:bg-muted/80",
                                         !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+                                        notification.type === 'urgent' && "cursor-pointer",
                                         notification.type === 'urgent' && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
-                                        notification.type === 'urgent' && "cursor-pointer"
+                                        notification.type === 'urgent' && notification.read && "border-destructive/20 dark:border-destructive/40"
                                     )}>
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-center gap-3">
@@ -211,5 +213,3 @@ export default function NotificationsPage() {
         </>
     );
 }
-
-    
