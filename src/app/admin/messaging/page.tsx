@@ -73,7 +73,7 @@ export default function AdminMessagingPage() {
     const handleSave = async () => {
         setIsSubmitting(true);
 
-        // Se a mensagem estiver sendo desativada, não precisa de título ou conteúdo.
+        // Apenas exige título/mensagem se estiver ATIVANDO. Desativar não precisa.
         if (messageData.active && (!messageData.title || !messageData.message)) {
             toast({
                 title: "Campos Incompletos",
@@ -84,7 +84,6 @@ export default function AdminMessagingPage() {
             return;
         }
 
-        let finalTargets: string[] = [];
         let targetDescription = 'todos os usuários ativos';
         const targetUserIds = targetType === 'all'
             ? allUsers.filter(u => u.status === 'ativo' && u.funcao !== 'admin').map(u => u.id)
@@ -100,12 +99,8 @@ export default function AdminMessagingPage() {
             return;
         }
         
-        if (targetType === 'all') {
-            finalTargets = ['all'];
-        } else {
-            finalTargets = targetUserIds;
-            targetDescription = `${selectedUsers.size} usuário(s) específico(s)`;
-        }
+        const finalTargets = targetType === 'all' ? ['all'] : targetUserIds;
+        targetDescription = targetType === 'all' ? 'todos os usuários ativos' : `${selectedUsers.size} usuário(s) específico(s)`;
 
         const finalMessageData = {
             ...messageData,
@@ -114,11 +109,9 @@ export default function AdminMessagingPage() {
         
         try {
             if (finalMessageData.type === 'urgent') {
-                // Atualiza a mensagem de pop-up central
                 await updateUrgentMessage(finalMessageData);
 
                 if (finalMessageData.active) {
-                    // Adiciona a notificação ao histórico de cada usuário
                     for (const userId of targetUserIds) {
                         await addNotification(userId, `Aviso Urgente: ${finalMessageData.title!}`, finalMessageData.message!.substring(0, 100), '/dashboard');
                     }
@@ -149,7 +142,6 @@ export default function AdminMessagingPage() {
                 });
             }
             
-            // Limpa os campos após o envio bem-sucedido se a mensagem foi ativada
             if(finalMessageData.active) {
                 setMessageData(prev => ({ ...prev, title: '', message: ''}));
             }
