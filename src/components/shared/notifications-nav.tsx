@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -49,8 +50,12 @@ export function NotificationsNav() {
                 createdAt: doc.data().createdAt?.toDate() // Converte Timestamp para Date
             } as Notification));
             
-            // Ordena as notificações no lado do cliente
-            fetchedNotifications.sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime());
+            // Ordena as notificações no lado do cliente, com segurança
+            fetchedNotifications.sort((a, b) => {
+                const timeA = a.createdAt ? (a.createdAt as Date).getTime() : 0;
+                const timeB = b.createdAt ? (b.createdAt as Date).getTime() : 0;
+                return timeB - timeA;
+            });
 
             setNotifications(fetchedNotifications);
             setLoading(false);
