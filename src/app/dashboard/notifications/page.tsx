@@ -15,6 +15,7 @@ import { onSnapshot, collection, query, where, orderBy, writeBatch, doc } from '
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { NotificationDetailsModal } from '@/components/shared/notification-details-modal';
+import { useRouter } from 'next/navigation';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -37,6 +38,7 @@ const TimeAgo = ({ date }: { date: Date }) => {
 export default function NotificationsPage() {
     const { user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -93,13 +95,13 @@ export default function NotificationsPage() {
     }
     
     const handleNotificationClick = (notification: Notification) => {
-        // Se a notificação tiver um link de destino e NÃO for um placeholder, navega para ele.
+        // Se a notificação tiver um link de destino válido, navega para ele.
         if (notification.href && notification.href !== '#') {
-            window.location.href = notification.href;
+            router.push(notification.href);
             return;
         }
         
-        // Caso contrário, abre o modal para exibir o conteúdo completo.
+        // Para todas as outras (incluindo as urgentes ou avisos padrão), abre o modal.
         setNotificationToDisplay(notification);
     }
 
