@@ -93,13 +93,13 @@ export default function NotificationsPage() {
     }
     
     const handleNotificationClick = (notification: Notification) => {
-        // Se a notificação tiver um link de destino, navega para ele.
+        // Se a notificação tiver um link de destino e NÃO for um placeholder, navega para ele.
         if (notification.href && notification.href !== '#') {
             window.location.href = notification.href;
             return;
         }
         
-        // Se não tiver link, abre o modal para exibir o conteúdo completo.
+        // Caso contrário, abre o modal para exibir o conteúdo completo.
         setNotificationToDisplay(notification);
     }
 
@@ -163,7 +163,7 @@ export default function NotificationsPage() {
                                             )}
                                         </div>
                                         <p className="text-xs text-muted-foreground mt-2 pl-8">
-                                            <TimeAgo date={notification.createdAt as Date} />
+                                            {notification.createdAt && <TimeAgo date={notification.createdAt as Date} />}
                                         </p>
                                     </button>
                                 </li>
