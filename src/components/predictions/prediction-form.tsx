@@ -248,7 +248,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
             return;
         };
         
-        const isEditing = !!lastUpdated[match.id];
+        const isEditing = !!userPredictions.find(p => p.matchId === match.id);
 
         try {
             await savePrediction({
@@ -401,9 +401,15 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                              )}
                         </div>
                         {matches.map((match) => {
-                            const isEditingPrediction = !!userPredictions.find(p => p.matchId === match.id);
+                            const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                            const isEditingPrediction = !!userPrediction;
                             const currentScore = scores[match.id] || { placarA: null, placarB: null };
                             const comboState = comboUiState[match.id];
+
+                            const originalScore = userPrediction?.palpiteUsuario;
+                            const hasScoreChanged = isEditingPrediction ? 
+                                (currentScore.placarA !== originalScore?.placarA || currentScore.placarB !== originalScore?.placarB) :
+                                (currentScore.placarA !== null || currentScore.placarB !== null);
                             
                             const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditingPrediction;
                             const teamA = allTeams.find(t => t.name === match.timeA);
@@ -413,6 +419,9 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                             const allowAiAssist = championship?.predictionAssist?.active ?? false;
                             
                             const canUseCombo = (comboCota?.quantidade ?? 0) > 0 && (tokensRemaining > 0 || (!!comboState && !comboState.isEditing));
+                            const isButtonDisabled = isLocked || 
+                                (isEditingPrediction && !hasScoreChanged) || 
+                                (!isEditingPrediction && (currentScore.placarA === null || currentScore.placarB === null));
 
                             return (
                                 <Card 
@@ -567,7 +576,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                         Consultar IA
                                                     </Button>
                                                 )}
-                                                <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
+                                                <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isButtonDisabled}>
                                                     <Save className="mr-2 h-4 w-4" />
                                                     {isEditingPrediction ? 'Alterar Palpite' : 'Salvar Palpite'}
                                                 </Button>
