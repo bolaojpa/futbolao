@@ -380,8 +380,7 @@ export default function AdminDashboardPage() {
                                 <Accordion type="single" collapsible className="w-full" key={match.id}>
                                     <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden">
                                         <Card className="relative overflow-hidden border-destructive/50">
-                                            <div className="flex flex-col">
-                                                <AccordionTrigger className="p-4 hover:no-underline flex-1">
+                                                <div className="p-4">
                                                     <div className="flex flex-col items-center justify-center w-full">
                                                         <div className="flex justify-center items-center gap-2 text-center">
                                                             {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={20} height={20} />}
@@ -433,8 +432,10 @@ export default function AdminDashboardPage() {
                                                             )}
                                                         </div>
                                                     </div>
-                                                </AccordionTrigger>
-                                            </div>
+                                                </div>
+                                            <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
+                                                <ChevronDown className="h-4 w-4 mx-auto" />
+                                            </AccordionTrigger>
                                             <AccordionContent>
                                                 <div className="bg-background/80 border-t">
                                                      <div className="text-center py-2 text-foreground">
@@ -516,7 +517,7 @@ export default function AdminDashboardPage() {
                                                                 )}
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                {p.palpiteCombo && <Gem className={cn("h-4 w-4", simulatedAcertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                                {p.palpiteCombo && <Gem className={cn("h-4 w-4", simulatedAcertoTipo === 'combo' ? "animate-gem-pulse" : "" )} />}
                                                                 <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(simulatedAcertoTipo))}>
                                                                     {simulatedPoints} pts
                                                                 </Badge>
@@ -552,4 +553,5 @@ export default function AdminDashboardPage() {
 
 
   
+
 
