@@ -94,13 +94,14 @@ export default function NotificationsPage() {
     }
     
     const handleNotificationClick = (notification: Notification) => {
+        // Se a notificação tem um link de destino, navega para ele.
         if (notification.href && notification.href !== '#') {
             router.push(notification.href);
             return;
         }
         
-        const contentToShow = notification.originalMessage || notification;
-        setNotificationToDisplay(contentToShow);
+        // Se não, abre o modal com o conteúdo da mensagem.
+        setNotificationToDisplay(notification);
     }
 
     // Lógica de Paginação
@@ -148,16 +149,16 @@ export default function NotificationsPage() {
                                     notification.type === 'urgent' && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
                                     notification.type === 'urgent' && notification.read && "border-destructive/20 dark:border-destructive/40"
                                 )}>
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-3">
-                                            {notification.type === 'urgent' && <AlertTriangle className="h-5 w-5 text-destructive" />}
-                                            <div>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                                            {notification.type === 'urgent' && <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />}
+                                            <div className="flex-1 min-w-0">
                                                 <p className={cn("font-semibold", !notification.read && "text-primary", notification.type === 'urgent' && "text-destructive")}>{notification.title}</p>
-                                                <p className="text-sm text-muted-foreground truncate max-w-lg">{notification.message}</p>
+                                                <p className="text-sm text-muted-foreground truncate">{notification.message}</p>
                                             </div>
                                         </div>
                                         {!notification.read && (
-                                            <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4" title="Não lida"></div>
+                                            <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4 shrink-0" title="Não lida"></div>
                                         )}
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-2 pl-8">
@@ -168,13 +169,11 @@ export default function NotificationsPage() {
                         ))}
                     </ul>
                 ) : (
-                    <Card>
-                        <CardContent className="py-20 text-center text-muted-foreground">
-                            <Inbox className="mx-auto h-12 w-12" />
-                            <h3 className="mt-4 font-semibold text-lg">Caixa de Entrada Vazia</h3>
-                            <p className="text-sm">Você não tem nenhuma notificação no momento.</p>
-                        </CardContent>
-                    </Card>
+                    <div className="text-center py-20 text-muted-foreground border rounded-lg">
+                        <Inbox className="mx-auto h-12 w-12" />
+                        <h3 className="mt-4 font-semibold text-lg">Caixa de Entrada Vazia</h3>
+                        <p className="text-sm">Você não tem nenhuma notificação no momento.</p>
+                    </div>
                 )}
             </div>
 
