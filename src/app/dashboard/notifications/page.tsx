@@ -14,7 +14,7 @@ import type { Notification, EmergencyMessage } from '@/lib/types';
 import { onSnapshot, collection, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
+import { NotificationDetailsModal } from '@/components/shared/notification-details-modal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -40,7 +40,7 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [urgentMessageToDisplay, setUrgentMessageToDisplay] = useState<EmergencyMessage | null>(null);
+    const [notificationToDisplay, setNotificationToDisplay] = useState<Notification | null>(null);
 
     useEffect(() => {
         if (!user) return;
@@ -55,7 +55,7 @@ export default function NotificationsPage() {
             const fetchedNotifications = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                createdAt: doc.data().createdAt.toDate() // Converte Timestamp para Date
+                createdAt: doc.data().createdAt?.toDate() // Converte Timestamp para Date
             } as Notification));
 
             // Ordena as notificações no lado do cliente, com segurança
@@ -93,12 +93,14 @@ export default function NotificationsPage() {
     }
     
     const handleNotificationClick = (notification: Notification) => {
-        if (notification.type === 'urgent' && notification.originalMessage) {
-            setUrgentMessageToDisplay(notification.originalMessage);
-        } else if (notification.href && notification.href !== '#') {
+        // Se a notificação tiver um link de destino, navega para ele.
+        if (notification.href && notification.href !== '#') {
             window.location.href = notification.href;
+            return;
         }
-        // Se não tiver href ou for '#', não faz nada, evitando o reload.
+        
+        // Se não tiver link, abre o modal para exibir o conteúdo completo.
+        setNotificationToDisplay(notification);
     }
 
     // Lógica de Paginação
@@ -145,7 +147,6 @@ export default function NotificationsPage() {
                                         className={cn(
                                         "block w-full text-left p-4 border rounded-lg transition-colors hover:bg-muted/80",
                                         !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-                                        notification.type === 'urgent' && "cursor-pointer",
                                         notification.type === 'urgent' && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
                                         notification.type === 'urgent' && notification.read && "border-destructive/20 dark:border-destructive/40"
                                     )}>
@@ -154,7 +155,7 @@ export default function NotificationsPage() {
                                                 {notification.type === 'urgent' && <AlertTriangle className="h-5 w-5 text-destructive" />}
                                                 <div>
                                                     <p className={cn("font-semibold", !notification.read && "text-primary", notification.type === 'urgent' && "text-destructive")}>{notification.title}</p>
-                                                    <p className="text-sm text-muted-foreground">{notification.message}</p>
+                                                    <p className="text-sm text-muted-foreground truncate max-w-lg">{notification.message}</p>
                                                 </div>
                                             </div>
                                             {!notification.read && (
@@ -202,12 +203,11 @@ export default function NotificationsPage() {
                 </div>
             )}
         </div>
-        {urgentMessageToDisplay && (
-            <EmergencyMessageModal
-                isOpen={!!urgentMessageToDisplay}
-                onClose={() => setUrgentMessageToDisplay(null)}
-                title={urgentMessageToDisplay.title}
-                message={urgentMessageToDisplay.message}
+        {notificationToDisplay && (
+            <NotificationDetailsModal
+                isOpen={!!notificationToDisplay}
+                onClose={() => setNotificationToDisplay(null)}
+                notification={notificationToDisplay.originalMessage || notificationToDisplay}
             />
         )}
         </>
