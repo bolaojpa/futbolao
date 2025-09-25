@@ -481,8 +481,8 @@ export default function DashboardPage() {
                                                             <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 absolute right-4 top-1/2 -translate-y-1/2" />
                                                         </AccordionTrigger>
                                                         <AccordionContent>
-                                                            <div className="border-t">
-                                                                <div className="bg-background/80 text-center py-2 text-foreground">
+                                                            <div className="border-t bg-background/80">
+                                                                <div className="text-center py-2 text-foreground">
                                                                     <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                                 </div>
                                                                 <ul className="text-sm">
