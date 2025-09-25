@@ -461,11 +461,7 @@ export default function DashboardPage() {
                                                 <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                                                     <Card className={cn(cardStatusClass)}>
                                                          <AccordionTrigger className="p-4 hover:no-underline flex justify-between items-center w-full">
-                                                            <div className="flex items-center gap-2">
-                                                                {champ?.iconUrl && <Image src={champ.iconUrl} alt={champ.nome} width={24} height={24} />}
-                                                                <span className="font-semibold text-sm hidden sm:block">{champ?.nome}</span>
-                                                            </div>
-                                                            <div className="flex flex-1 justify-center items-center">
+                                                            <div className="flex-1 justify-center items-center">
                                                                 <div className="flex items-center justify-center w-full">
                                                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                                                         <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
