@@ -19,6 +19,7 @@ import {
   runTransaction,
   Timestamp,
   setDoc,
+  arrayUnion,
 } from 'firebase/firestore';
 import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage } from '../types';
 
@@ -497,4 +498,15 @@ export async function updateUrgentMessage(messageData: Partial<EmergencyMessage>
     await setDoc(urgentMessageRef, messageData, { merge: true });
 }
 
+/**
+ * Marks an urgent message as seen by a user.
+ * @param userId - The ID of the user.
+ * @param messageId - The ID of the urgent message that was seen.
+ */
+export async function markUrgentMessageAsSeen(userId: string, messageId: string) {
+  const userRef = doc(db, "users", userId);
+  await updateDoc(userRef, {
+    seenUrgentMessages: arrayUnion(messageId),
+  });
+}
     

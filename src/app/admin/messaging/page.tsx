@@ -24,7 +24,7 @@ export default function AdminMessagingPage() {
     const [allUsers, setAllUsers] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [messageData, setMessageData] = useState<Partial<Omit<EmergencyMessage, 'active'>>>({
+    const [messageData, setMessageData] = useState<Partial<Omit<EmergencyMessage, 'active' | 'id'>>>({
         title: '',
         message: '',
         targetUserIds: ['all'],
@@ -102,10 +102,13 @@ export default function AdminMessagingPage() {
         try {
             if (messageData.type === 'urgent') {
                 const urgentMessageContent: EmergencyMessage = {
-                    ...messageData,
+                    id: `urgent_${Date.now()}`,
                     active: true,
+                    title: messageData.title!,
+                    message: messageData.message!,
                     targetUserIds: finalTargets,
-                } as EmergencyMessage;
+                    type: 'urgent',
+                };
                 await updateUrgentMessage(urgentMessageContent);
 
                 for (const userId of targetUserIds) {
@@ -310,5 +313,3 @@ export default function AdminMessagingPage() {
         </>
     );
 }
-
-    

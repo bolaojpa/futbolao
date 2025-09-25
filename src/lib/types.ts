@@ -30,6 +30,7 @@ export interface UserType {
         acertosSituacao: number;
         maiorSequencia: number;
     }[];
+    seenUrgentMessages?: string[]; // Campo para rastrear mensagens urgentes vistas
 }
 
 export interface Match {

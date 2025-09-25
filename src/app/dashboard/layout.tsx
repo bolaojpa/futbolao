@@ -11,7 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { onSnapshot, collection, query, where, Timestamp, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { SparkleAnimation } from '@/components/shared/sparkle-animation';
-import type { EmergencyMessage } from '@/lib/types';
+import type { EmergencyMessage, UserType } from '@/lib/types';
+import { markUrgentMessageAsSeen } from '@/lib/firebase/firestore';
 
 function ToastListener() {
   const { user } = useAuth();
@@ -58,18 +59,20 @@ function ToastListener() {
 
 
 function UrgentMessageListener() {
-    const { user } = useAuth();
+    const { user, firebaseUser } = useAuth();
     const [emergencyMessage, setEmergencyMessage] = useState<EmergencyMessage | null>(null);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || !firebaseUser) return;
 
         const urgentMessageRef = doc(db, 'system_messages', 'urgent');
-        const unsubscribe = onSnapshot(urgentMessageRef, (doc) => {
-            if (doc.exists()) {
-                const message = doc.data() as EmergencyMessage;
+        const unsubscribe = onSnapshot(urgentMessageRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const message = docSnap.data() as EmergencyMessage;
+                const userHasSeenMessage = user.seenUrgentMessages?.includes(message.id);
                 const isTarget = message.targetUserIds.includes('all') || message.targetUserIds.includes(user.id);
-                if (message.active && isTarget) {
+                
+                if (message.active && isTarget && !userHasSeenMessage) {
                     setEmergencyMessage(message);
                 } else {
                     setEmergencyMessage(null);
@@ -80,9 +83,12 @@ function UrgentMessageListener() {
         });
 
         return () => unsubscribe();
-    }, [user]);
+    }, [user, firebaseUser]);
 
     const handleCloseEmergencyModal = () => {
+        if (user && emergencyMessage) {
+            markUrgentMessageAsSeen(user.id, emergencyMessage.id);
+        }
         setEmergencyMessage(null);
     };
 
