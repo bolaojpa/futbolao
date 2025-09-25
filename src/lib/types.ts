@@ -140,7 +140,10 @@ export interface Notification {
     read: boolean;
     createdAt: Date | Timestamp;
     href?: string;
+    type: 'normal' | 'urgent';
+    originalMessage?: EmergencyMessage; // Guarda o conteúdo completo da mensagem urgente
 }
+
 
 export interface HallOfFameBanner {
     id: string;
@@ -162,3 +165,5 @@ export interface EmergencyMessage {
     targetUserIds: string[]; // 'all' ou IDs de usuários
     type: 'urgent' | 'normal';
 }
+
+    

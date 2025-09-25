@@ -5,16 +5,16 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, CheckCheck, Inbox, ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import { Bell, CheckCheck, Inbox, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
-import type { Notification } from '@/lib/types';
+import type { Notification, EmergencyMessage } from '@/lib/types';
 import { onSnapshot, collection, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -40,6 +40,7 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+    const [urgentMessageToDisplay, setUrgentMessageToDisplay] = useState<EmergencyMessage | null>(null);
 
     useEffect(() => {
         if (!user) return;
@@ -90,6 +91,14 @@ export default function NotificationsPage() {
             toast({ title: 'Erro', description: 'Não foi possível marcar as notificações como lidas.', variant: 'destructive' });
         }
     }
+    
+    const handleNotificationClick = (notification: Notification) => {
+        if (notification.type === 'urgent' && notification.originalMessage) {
+            setUrgentMessageToDisplay(notification.originalMessage);
+        } else if (notification.href) {
+            window.location.href = notification.href;
+        }
+    }
 
     // Lógica de Paginação
     const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
@@ -101,6 +110,7 @@ export default function NotificationsPage() {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
+        <>
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
             <div className="flex items-center gap-4">
                 <Bell className="h-8 w-8 text-primary" />
@@ -129,23 +139,30 @@ export default function NotificationsPage() {
                         <ul className="space-y-2">
                             {paginatedNotifications.map(notification => (
                                 <li key={notification.id}>
-                                    <Link href={notification.href || '#'} className={cn(
-                                        "block w-full p-4 border rounded-lg transition-colors hover:bg-muted/80",
-                                        !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                                    <button 
+                                        onClick={() => handleNotificationClick(notification)}
+                                        className={cn(
+                                        "block w-full text-left p-4 border rounded-lg transition-colors hover:bg-muted/80",
+                                        !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+                                        notification.type === 'urgent' && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
+                                        notification.type === 'urgent' && "cursor-pointer"
                                     )}>
                                         <div className="flex items-start justify-between">
-                                            <div>
-                                                <p className={cn("font-semibold", !notification.read && "text-primary")}>{notification.title}</p>
-                                                <p className="text-sm text-muted-foreground">{notification.message}</p>
+                                            <div className="flex items-center gap-3">
+                                                {notification.type === 'urgent' && <AlertTriangle className="h-5 w-5 text-destructive" />}
+                                                <div>
+                                                    <p className={cn("font-semibold", !notification.read && "text-primary", notification.type === 'urgent' && "text-destructive")}>{notification.title}</p>
+                                                    <p className="text-sm text-muted-foreground">{notification.message}</p>
+                                                </div>
                                             </div>
                                             {!notification.read && (
                                                 <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4" title="Não lida"></div>
                                             )}
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-2">
+                                        <p className="text-xs text-muted-foreground mt-2 pl-8">
                                             <TimeAgo date={notification.createdAt as Date} />
                                         </p>
-                                    </Link>
+                                    </button>
                                 </li>
                             ))}
                         </ul>
@@ -183,5 +200,16 @@ export default function NotificationsPage() {
                 </div>
             )}
         </div>
+        {urgentMessageToDisplay && (
+            <EmergencyMessageModal
+                isOpen={!!urgentMessageToDisplay}
+                onClose={() => setUrgentMessageToDisplay(null)}
+                title={urgentMessageToDisplay.title}
+                message={urgentMessageToDisplay.message}
+            />
+        )}
+        </>
     );
 }
+
+    

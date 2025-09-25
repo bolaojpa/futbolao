@@ -431,15 +431,33 @@ export async function addToastNotification(userId: string, title: string, messag
  * @param title - The title of the notification.
  * @param message - The message content of the notification.
  * @param href - The URL the notification should link to.
+ * @param type - The type of notification ('normal' or 'urgent').
+ * @param originalMessage - The full original message content for urgent messages.
  */
-export async function addNotification(userId: string, title: string, message: string, href: string) {
+export async function addNotification(
+  userId: string,
+  title: string,
+  message: string,
+  href: string,
+  type: 'normal' | 'urgent',
+  originalMessage?: EmergencyMessage
+) {
   const notificationCollection = collection(db, 'notifications');
-  await addDoc(notificationCollection, {
+  const notificationData: Omit<Notification, 'id' | 'createdAt'> = {
     userId,
     title,
     message,
     href,
     read: false,
+    type,
+  };
+
+  if (type === 'urgent' && originalMessage) {
+    notificationData.originalMessage = originalMessage;
+  }
+
+  await addDoc(notificationCollection, {
+    ...notificationData,
     createdAt: serverTimestamp(),
   });
 }
@@ -478,3 +496,5 @@ export async function updateUrgentMessage(messageData: Partial<EmergencyMessage>
     const urgentMessageRef = doc(db, 'system_messages', 'urgent');
     await setDoc(urgentMessageRef, messageData, { merge: true });
 }
+
+    

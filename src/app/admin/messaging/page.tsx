@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Send, Eye, Users, User, Bell, AlertTriangle, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
@@ -25,8 +24,7 @@ export default function AdminMessagingPage() {
     const [allUsers, setAllUsers] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [messageData, setMessageData] = useState<Partial<EmergencyMessage>>({
-        active: false,
+    const [messageData, setMessageData] = useState<Partial<Omit<EmergencyMessage, 'active'>>>({
         title: '',
         message: '',
         targetUserIds: ['all'],
@@ -73,11 +71,10 @@ export default function AdminMessagingPage() {
     const handleSave = async () => {
         setIsSubmitting(true);
 
-        // Apenas exige título/mensagem se estiver ATIVANDO. Desativar não precisa.
-        if (messageData.active && (!messageData.title || !messageData.message)) {
+        if (!messageData.title || !messageData.message) {
             toast({
                 title: "Campos Incompletos",
-                description: "Por favor, preencha o título e o conteúdo da mensagem para ativá-la.",
+                description: "Por favor, preencha o título e o conteúdo da mensagem.",
                 variant: "destructive",
             });
             setIsSubmitting(false);
@@ -101,52 +98,37 @@ export default function AdminMessagingPage() {
         
         const finalTargets = targetType === 'all' ? ['all'] : targetUserIds;
         targetDescription = targetType === 'all' ? 'todos os usuários ativos' : `${selectedUsers.size} usuário(s) específico(s)`;
-
-        const finalMessageData = {
-            ...messageData,
-            targetUserIds: finalTargets,
-        };
         
         try {
-            if (finalMessageData.type === 'urgent') {
-                await updateUrgentMessage(finalMessageData);
-
-                if (finalMessageData.active) {
-                    for (const userId of targetUserIds) {
-                        await addNotification(userId, `Aviso Urgente: ${finalMessageData.title!}`, finalMessageData.message!.substring(0, 100), '/dashboard');
-                    }
-                    toast({
-                        title: "Mensagem Urgente Ativada",
-                        description: `A mensagem "${finalMessageData.title}" aparecerá como um pop-up para ${targetDescription} e foi salva no histórico.`,
-                    });
-                } else {
-                     toast({
-                        title: "Mensagem Urgente Desativada",
-                        description: "O pop-up de mensagem urgente foi removido para todos os usuários.",
-                    });
-                }
-
-            } else { // Tipo 'normal'
-                if (!finalMessageData.active) {
-                    toast({ title: "Ação Inválida", description: "Ative a mensagem para enviar como notificação.", variant: 'destructive'});
-                    setIsSubmitting(false);
-                    return;
-                }
+            if (messageData.type === 'urgent') {
+                const urgentMessageContent: EmergencyMessage = {
+                    ...messageData,
+                    active: true,
+                    targetUserIds: finalTargets,
+                } as EmergencyMessage;
+                await updateUrgentMessage(urgentMessageContent);
 
                 for (const userId of targetUserIds) {
-                    await addNotification(userId, finalMessageData.title!, finalMessageData.message!.substring(0, 100), '/dashboard/notifications');
+                    await addNotification(userId, `Aviso Urgente: ${messageData.title!}`, messageData.message!.substring(0, 100), '#', 'urgent', urgentMessageContent);
+                }
+                toast({
+                    title: "Mensagem Urgente Enviada",
+                    description: `O pop-up "${messageData.title}" aparecerá para ${targetDescription} e foi salvo no histórico.`,
+                });
+
+            } else { // Tipo 'normal'
+                for (const userId of targetUserIds) {
+                    await addNotification(userId, messageData.title!, messageData.message!.substring(0, 100), '/dashboard/notifications', 'normal');
                 }
                  toast({
                     title: "Aviso Enviado como Notificação",
-                    description: `O aviso "${finalMessageData.title}" foi enviado para ${targetDescription}.`,
+                    description: `O aviso "${messageData.title}" foi enviado para ${targetDescription}.`,
                 });
             }
             
-            if(finalMessageData.active) {
-                setMessageData(prev => ({ ...prev, title: '', message: ''}));
-            }
+            setMessageData(prev => ({ ...prev, title: '', message: ''}));
+            setSelectedUsers(new Set());
             
-            console.log("Saving message:", finalMessageData);
         } catch (error) {
              toast({
                 title: "Erro ao Enviar",
@@ -179,22 +161,6 @@ export default function AdminMessagingPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                             <div className="space-y-0.5">
-                                <Label htmlFor="active-message" className="text-base">
-                                    Ativar Mensagem
-                                </Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Ative para exibir/enviar a mensagem. Desative para remover o pop-up urgente.
-                                </p>
-                            </div>
-                            <Switch
-                                id="active-message"
-                                checked={messageData.active}
-                                onCheckedChange={(checked) => setMessageData(prev => ({...prev, active: checked }))}
-                                aria-label="Ativar mensagem"
-                            />
-                        </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="space-y-2">
@@ -329,7 +295,7 @@ export default function AdminMessagingPage() {
                         </Button>
                         <Button onClick={handleSave} disabled={isSubmitting}>
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                            Salvar e Enviar
+                            Enviar Mensagem
                         </Button>
                     </CardFooter>
                 </Card>
@@ -344,3 +310,5 @@ export default function AdminMessagingPage() {
         </>
     );
 }
+
+    
