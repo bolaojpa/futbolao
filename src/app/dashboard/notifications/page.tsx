@@ -135,51 +135,60 @@ export default function NotificationsPage() {
 
                                 return (
                                     <li key={notification.id}>
-                                        <Collapsible asChild>
+                                         <Collapsible asChild>
                                             <Card className={cn(
                                                 "transition-colors",
                                                 !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
                                                 isUrgent && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
                                                 isUrgent && notification.read && "border-destructive/20 dark:border-destructive/40",
                                             )}>
-                                                <div 
-                                                    className={cn((isUrgent || hasLink) && 'cursor-pointer hover:bg-muted')}
-                                                    onClick={() => !isExpandable && (isUrgent ? setNotificationToDisplay(notification) : hasLink && router.push(notification.href!))}
-                                                >
-                                                    <CardContent className="p-4">
+                                                <div className="p-4">
+                                                    <div 
+                                                        className={cn((isUrgent || hasLink) && 'cursor-pointer hover:bg-muted -m-4 p-4 rounded-t-lg')}
+                                                        onClick={() => !isExpandable && (isUrgent ? setNotificationToDisplay(notification) : hasLink && router.push(notification.href!))}
+                                                    >
                                                         <div className="flex items-start justify-between gap-4">
                                                             <div className="flex-1 min-w-0">
                                                                 <p className={cn("font-semibold", !notification.read && "text-primary", isUrgent && "text-destructive")}>{notification.title}</p>
-                                                                <div className="w-full">
-                                                                <p className={cn("text-sm text-muted-foreground", !isExpandable && "line-clamp-2")}>
-                                                                    {isExpandable ? `${notification.message.substring(0, NOTIFICATION_PREVIEW_LENGTH)}...` : notification.message}
-                                                                </p>
-                                                                {isExpandable && (
-                                                                    <CollapsibleContent>
-                                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-2">{notification.message.substring(NOTIFICATION_PREVIEW_LENGTH)}</p>
-                                                                    </CollapsibleContent>
+                                                                
+                                                                {isExpandable ? (
+                                                                    <>
+                                                                        <p className="text-sm text-muted-foreground data-[state=open]:hidden line-clamp-2">
+                                                                            {notification.message}
+                                                                        </p>
+                                                                        <CollapsibleContent>
+                                                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-2">
+                                                                                {notification.message}
+                                                                            </p>
+                                                                        </CollapsibleContent>
+                                                                    </>
+                                                                ) : (
+                                                                    <p className="text-sm text-muted-foreground line-clamp-2">
+                                                                        {notification.message}
+                                                                    </p>
                                                                 )}
-                                                                </div>
                                                             </div>
                                                             {!notification.read && (
                                                                 <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4 shrink-0" title="Não lida"></div>
                                                             )}
                                                         </div>
                                                         <div className="flex items-center justify-between mt-2">
-                                                            <p className="text-xs text-muted-foreground">
+                                                             <p className="text-xs text-muted-foreground">
                                                                 <TimeAgo date={notification.createdAt as Date} />
                                                             </p>
-                                                            {isExpandable && (
-                                                                <CollapsibleTrigger asChild>
-                                                                    <Button variant="link" size="sm" className="h-auto p-0 group">
-                                                                        <span className="group-data-[state=closed]:inline group-data-[state=open]:hidden">Ver mais</span>
-                                                                        <span className="group-data-[state=open]:inline group-data-[state=closed]:hidden">Ver menos</span>
-                                                                        <ChevronDown className="h-4 w-4 ml-1 transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                                                                    </Button>
-                                                                </CollapsibleTrigger>
-                                                            )}
                                                         </div>
-                                                    </CardContent>
+                                                    </div>
+                                                    {isExpandable && (
+                                                        <div className="flex justify-end mt-2">
+                                                            <CollapsibleTrigger asChild>
+                                                                <Button variant="link" size="sm" className="h-auto p-0 group">
+                                                                    <span className="group-data-[state=closed]:inline group-data-[state=open]:hidden">Ver mais</span>
+                                                                    <span className="group-data-[state=open]:inline group-data-[state=closed]:hidden">Ver menos</span>
+                                                                    <ChevronDown className="h-4 w-4 ml-1 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                                                                </Button>
+                                                            </CollapsibleTrigger>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </Card>
                                         </Collapsible>
@@ -207,4 +216,3 @@ export default function NotificationsPage() {
         </>
     );
 }
-
