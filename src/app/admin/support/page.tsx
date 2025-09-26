@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -62,6 +62,7 @@ export default function AdminSupportPage() {
     const [replyText, setReplyText] = useState('');
     const [isReplying, setIsReplying] = useState(false);
     const [loading, setLoading] = useState(true);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const q = query(collection(db, 'support_messages'), orderBy('lastActivityAt', 'desc'));
@@ -77,7 +78,7 @@ export default function AdminSupportPage() {
             }, {} as Record<string, SupportMessage[]>);
             
             const conversationList: Conversation[] = Object.values(groupedConversations).map(msgs => {
-                const mostRecentMessage = msgs[msgs.length - 1];
+                const mostRecentMessage = msgs.sort((a,b) => b.lastActivityAt.toMillis() - a.lastActivityAt.toMillis())[0];
                 return {
                     userId: mostRecentMessage.userId,
                     userApelido: mostRecentMessage.userApelido,
@@ -85,7 +86,7 @@ export default function AdminSupportPage() {
                     lastMessage: mostRecentMessage.message,
                     lastActivityAt: mostRecentMessage.lastActivityAt!,
                     isReadByAdmin: msgs.every(m => m.isReadByAdmin),
-                    messages: msgs,
+                    messages: msgs.sort((a,b) => a.createdAt.toMillis() - b.createdAt.toMillis()),
                     hasUnreadAdminReply: msgs.some(m => m.hasUnreadAdminReply),
                 };
             }).sort((a, b) => b.lastActivityAt.toMillis() - a.lastActivityAt.toMillis());
@@ -100,8 +101,13 @@ export default function AdminSupportPage() {
             setLoading(false);
         });
         return () => unsubscribe();
-    }, [selectedConversation]);
+    }, [selectedConversation?.userId]);
     
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [selectedConversation]);
+
+
     const filteredConversations = conversations.filter(conv => {
         return conv.userApelido.toLowerCase().includes(searchTerm.toLowerCase()) || 
                conv.lastMessage.toLowerCase().includes(searchTerm.toLowerCase());
@@ -144,7 +150,7 @@ export default function AdminSupportPage() {
         try {
             await addReplyToSupportMessage(lastMessageId, {
                 authorId: adminUser.id,
-                authorName: adminUser.apelido,
+                authorName: adminUser.apelido || 'Admin',
                 message: replyText,
             });
             setReplyText('');
@@ -269,6 +275,7 @@ export default function AdminSupportPage() {
                                         </div>
                                     )
                                })}
+                               <div ref={messagesEndRef} />
                             </div>
                             <CardFooter className="p-4 border-t bg-muted/50">
                                  <div className="flex w-full items-start gap-4">
