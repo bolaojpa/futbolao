@@ -174,6 +174,7 @@ export interface SupportReply {
     authorName: string;
     message: string;
     createdAt: Timestamp;
+    readAt?: Timestamp; // Data de leitura da resposta pelo usuário
 }
 
 export interface SupportMessage {
@@ -188,4 +189,5 @@ export interface SupportMessage {
   replies?: SupportReply[];
   isArchived?: boolean;
   lastActivityAt?: Timestamp;
+  readAt?: Timestamp; // Data de leitura da mensagem do usuário pelo admin
 }

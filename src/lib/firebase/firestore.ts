@@ -21,7 +21,7 @@ import {
   setDoc,
   arrayUnion,
 } from 'firebase/firestore';
-import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage, SupportMessage } from '../types';
+import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage, SupportMessage, SupportReply } from '../types';
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -534,7 +534,7 @@ export async function markUrgentMessageAsSeen(userId: string, messageId: string)
  * Adds a new support message to the Firestore 'support_messages' collection.
  * @param data - The data for the new support message.
  */
-export async function addSupportMessage(data: Omit<SupportMessage, 'id' | 'createdAt' | 'isReadByAdmin' | 'hasUnreadAdminReply' | 'lastActivityAt'>) {
+export async function addSupportMessage(data: Omit<SupportMessage, 'id' | 'createdAt' | 'isReadByAdmin' | 'hasUnreadAdminReply' | 'lastActivityAt' | 'readAt' | 'replies'>) {
     const supportCollection = collection(db, 'support_messages');
     const now = serverTimestamp();
     await addDoc(supportCollection, {
@@ -543,6 +543,8 @@ export async function addSupportMessage(data: Omit<SupportMessage, 'id' | 'creat
         hasUnreadAdminReply: false,
         createdAt: now,
         lastActivityAt: now,
+        readAt: null,
+        replies: [],
     });
 }
 
@@ -551,12 +553,12 @@ export async function addSupportMessage(data: Omit<SupportMessage, 'id' | 'creat
  * @param messageId - The ID of the original support message.
  * @param replyData - The data for the reply.
  */
-export async function addReplyToSupportMessage(messageId: string, replyData: { authorId: string, authorName: string, message: string }) {
+export async function addReplyToSupportMessage(messageId: string, replyData: Omit<SupportReply, 'id' | 'createdAt' | 'readAt'>) {
     const messageRef = doc(db, 'support_messages', messageId);
-    const reply = {
-        ...replyData,
+    const reply: SupportReply = {
         id: new Date().getTime().toString(), // Simple unique ID
-        createdAt: new Date(),
+        ...replyData,
+        createdAt: Timestamp.now(),
     };
     await updateDoc(messageRef, {
         replies: arrayUnion(reply),
@@ -566,30 +568,49 @@ export async function addReplyToSupportMessage(messageId: string, replyData: { a
 }
 
 /**
- * Fetches all support messages for a specific user.
- * @param userId - The ID of the user.
- */
-export async function getSupportMessagesForUser(userId: string): Promise<SupportMessage[]> {
-    const q = query(collection(db, 'support_messages'), where('userId', '==', userId), orderBy('createdAt', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupportMessage));
-}
-
-/**
- * Marks an admin's replies to a support message as read by the user.
- * @param messageId - The ID of the support message.
+ * Marks admin replies to a support message as read by the user.
+ * @param messageId - The ID of the support message document.
  */
 export async function markSupportRepliesAsRead(messageId: string) {
     const messageRef = doc(db, 'support_messages', messageId);
-    await updateDoc(messageRef, { hasUnreadAdminReply: false });
+    const now = Timestamp.now();
+    try {
+        const messageDoc = await getDoc(messageRef);
+        if (messageDoc.exists()) {
+            const messageData = messageDoc.data() as SupportMessage;
+            const updatedReplies = (messageData.replies || []).map(reply => 
+                !reply.readAt ? { ...reply, readAt: now } : reply
+            );
+            
+            await updateDoc(messageRef, {
+                replies: updatedReplies,
+                hasUnreadAdminReply: false,
+            });
+        }
+    } catch (error) {
+        console.error("Error marking replies as read: ", error);
+    }
 }
 
 
 /**
- * Marks a support message as read by the admin.
- * @param messageId - The ID of the message to mark as read.
+ * Marks a user's support message (and all its history) as read by the admin.
+ * @param conversationId - The ID of the conversation (which is the user ID).
  */
-export async function markSupportMessageAsReadByAdmin(messageId: string): Promise<void> {
-    const messageRef = doc(db, 'support_messages', messageId);
-    await updateDoc(messageRef, { isReadByAdmin: true });
+export async function markConversationAsReadByAdmin(conversationId: string) {
+    const q = query(collection(db, "support_messages"), where("userId", "==", conversationId), where("isReadByAdmin", "==", false));
+    const unreadSnapshot = await getDocs(q);
+    
+    if (unreadSnapshot.empty) return;
+
+    const batch = writeBatch(db);
+    const now = serverTimestamp();
+    unreadSnapshot.forEach(docSnap => {
+        batch.update(docSnap.ref, { 
+            isReadByAdmin: true,
+            readAt: now 
+        });
+    });
+
+    await batch.commit();
 }

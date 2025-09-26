@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { LifeBuoy, MessageSquare, Loader2, Send, CornerDownLeft, Inbox } from 'lucide-react';
+import { LifeBuoy, MessageSquare, Loader2, Send, CornerDownLeft, Inbox, CheckCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect, useRef } from 'react';
 import type { SupportMessage, SupportReply } from '@/lib/types';
@@ -15,12 +16,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
+import { Timestamp } from 'firebase/firestore';
 
 const FormattedDate = ({ date }: { date: any }) => {
     if (!date) return null;
     const dateObj = date.toDate ? date.toDate() : new Date(date);
-    return format(dateObj, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    return format(dateObj, "HH:mm", { locale: ptBR });
 };
 
 export default function SupportPage() {
@@ -88,17 +89,19 @@ export default function SupportPage() {
         if (!msg.createdAt) return []; // Ignora mensagens sem timestamp
 
         const userMessage = { 
-            type: 'user', 
+            type: 'user' as const, 
             data: { ...msg, authorId: msg.userId, authorName: msg.userApelido, authorFoto: msg.userFoto, text: msg.message }, 
-            timestamp: msg.createdAt.toDate() 
+            timestamp: msg.createdAt.toDate(),
+            readAt: msg.readAt ? msg.readAt.toDate() : null
         };
 
         const adminReplies = (msg.replies || [])
             .filter(reply => !!reply.createdAt) // Garante que a resposta tem um timestamp
             .map(reply => ({ 
-                type: 'admin', 
+                type: 'admin' as const, 
                 data: { ...reply, text: reply.message }, 
-                timestamp: reply.createdAt.toDate() 
+                timestamp: reply.createdAt.toDate(),
+                readAt: reply.readAt ? reply.readAt.toDate() : null
             }));
 
         return [userMessage, ...adminReplies];
@@ -136,13 +139,16 @@ export default function SupportPage() {
                                         </Avatar>
                                      )}
                                      <div className={cn(
-                                         "max-w-xs md:max-w-md p-3 rounded-lg", 
+                                         "max-w-xs md:max-w-md p-3 rounded-lg flex flex-col", 
                                          isUserMessage ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
                                      )}>
                                         <p className="text-sm whitespace-pre-wrap">{item.data.text}</p>
-                                        <p className={cn("text-xs mt-1", isUserMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                        <div className={cn("text-xs mt-1 self-end flex items-center gap-1", isUserMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
                                             <FormattedDate date={item.timestamp} />
-                                        </p>
+                                            {isUserMessage && (
+                                                <CheckCheck className={cn("w-4 h-4", item.readAt ? 'text-blue-400' : 'text-primary-foreground/70')} />
+                                            )}
+                                        </div>
                                     </div>
                                     {isUserMessage && user && (
                                         <Avatar className="w-8 h-8">
