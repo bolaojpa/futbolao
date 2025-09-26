@@ -167,3 +167,13 @@ export interface EmergencyMessage {
     targetUserIds: string[]; // 'all' ou IDs de usuários
     type: 'urgent' | 'normal';
 }
+
+export interface SupportMessage {
+  id: string;
+  userId: string;
+  userApelido: string;
+  userFoto: string;
+  message: string;
+  isRead: boolean;
+  createdAt: Timestamp;
+}

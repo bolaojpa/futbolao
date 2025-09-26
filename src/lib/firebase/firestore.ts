@@ -1,4 +1,5 @@
 
+
 import { db } from '../firebase';
 import {
   collection,
@@ -20,7 +21,7 @@ import {
   setDoc,
   arrayUnion,
 } from 'firebase/firestore';
-import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage } from '../types';
+import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage, SupportMessage } from '../types';
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -525,4 +526,38 @@ export async function markUrgentMessageAsSeen(userId: string, messageId: string)
   await updateDoc(userRef, {
     seenUrgentMessages: arrayUnion(messageId),
   });
+}
+
+// SUPPORT MESSAGES
+
+/**
+ * Adds a new support message to the Firestore 'support_messages' collection.
+ * @param data - The data for the new support message.
+ */
+export async function addSupportMessage(data: Omit<SupportMessage, 'id' | 'createdAt' | 'isRead'>) {
+    const supportCollection = collection(db, 'support_messages');
+    await addDoc(supportCollection, {
+        ...data,
+        isRead: false,
+        createdAt: serverTimestamp(),
+    });
+}
+
+/**
+ * Fetches all support messages from Firestore, ordered by creation date.
+ */
+export async function getSupportMessages(): Promise<SupportMessage[]> {
+    const supportCollection = collection(db, 'support_messages');
+    const q = query(supportCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupportMessage));
+}
+
+/**
+ * Marks a support message as read.
+ * @param messageId - The ID of the message to mark as read.
+ */
+export async function markSupportMessageAsRead(messageId: string): Promise<void> {
+    const messageRef = doc(db, 'support_messages', messageId);
+    await updateDoc(messageRef, { isRead: true });
 }
