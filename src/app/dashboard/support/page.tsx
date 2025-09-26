@@ -36,6 +36,8 @@ export default function SupportPage() {
         const fetchMessages = async () => {
             setLoading(true);
             const userMessages = await getSupportMessagesForUser(user.id);
+            // Sort messages to show oldest first, so the conversation flows correctly
+            userMessages.sort((a, b) => a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime());
             setMessages(userMessages);
             setLoading(false);
         };
