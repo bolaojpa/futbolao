@@ -102,6 +102,7 @@ export default function NotificationsPage() {
             }
             router.push(notification.href);
         } else {
+            // Se não tem link, sempre abre o modal
             setNotificationToDisplay(notification);
             if (!notification.read) {
                 await markNotificationAsRead(notification.id);
