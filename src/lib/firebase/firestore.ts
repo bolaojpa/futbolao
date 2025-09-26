@@ -567,7 +567,7 @@ export async function addReplyToSupportMessage(messageId: string, replyData: { a
  * @param userId - The ID of the user.
  */
 export async function getSupportMessagesForUser(userId: string): Promise<SupportMessage[]> {
-    const q = query(collection(db, 'support_messages'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'support_messages'), where('userId', '==', userId), orderBy('createdAt', 'asc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupportMessage));
 }
