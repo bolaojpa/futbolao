@@ -65,7 +65,7 @@ export default function AdminSupportPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const q = query(collection(db, 'support_messages'), orderBy('lastActivityAt', 'desc'));
+        const q = query(collection(db, 'support_messages'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SupportMessage));
             
@@ -78,7 +78,12 @@ export default function AdminSupportPage() {
             }, {} as Record<string, SupportMessage[]>);
             
             const conversationList: Conversation[] = Object.values(groupedConversations).map(msgs => {
-                const mostRecentMessage = msgs.sort((a,b) => b.lastActivityAt.toMillis() - a.lastActivityAt.toMillis())[0];
+                const mostRecentMessage = msgs.sort((a, b) => {
+                    // Safe check for lastActivityAt
+                    const timeA = a.lastActivityAt?.toMillis() || 0;
+                    const timeB = b.lastActivityAt?.toMillis() || 0;
+                    return timeB - timeA;
+                })[0];
                 return {
                     userId: mostRecentMessage.userId,
                     userApelido: mostRecentMessage.userApelido,
@@ -89,7 +94,12 @@ export default function AdminSupportPage() {
                     messages: msgs.sort((a,b) => a.createdAt.toMillis() - b.createdAt.toMillis()),
                     hasUnreadAdminReply: msgs.some(m => m.hasUnreadAdminReply),
                 };
-            }).sort((a, b) => b.lastActivityAt.toMillis() - a.lastActivityAt.toMillis());
+            }).sort((a, b) => {
+                 // Safe check for lastActivityAt
+                const timeA = a.lastActivityAt?.toMillis() || 0;
+                const timeB = b.lastActivityAt?.toMillis() || 0;
+                return timeB - timeA;
+            });
 
             setConversations(conversationList);
 
