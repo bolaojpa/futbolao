@@ -38,8 +38,6 @@ const TimeAgo = ({ date }: { date: Date | undefined }) => {
     return <>{timeAgo}</>;
 };
 
-const NOTIFICATION_PREVIEW_LENGTH = 150; // Max characters before "Ver mais"
-
 export default function NotificationsPage() {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -101,6 +99,14 @@ export default function NotificationsPage() {
     
     const unreadCount = notifications.filter(n => !n.read).length;
 
+    const handleNotificationClick = (notification: Notification) => {
+        if (notification.href && notification.href !== '#') {
+            router.push(notification.href);
+        } else {
+            setNotificationToDisplay(notification);
+        }
+    }
+
     return (
         <>
             <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
@@ -129,69 +135,37 @@ export default function NotificationsPage() {
                         <ul className="space-y-4">
                             {notifications.map(notification => {
                                 const isUrgent = notification.type === 'urgent';
-                                const hasLink = notification.href && notification.href !== '#';
-                                const isLongMessage = notification.message.length > NOTIFICATION_PREVIEW_LENGTH;
-                                const isExpandable = isLongMessage && !hasLink && !isUrgent;
 
                                 return (
                                     <li key={notification.id}>
-                                         <Collapsible asChild>
-                                            <Card className={cn(
-                                                "transition-colors",
+                                        <Card 
+                                            className={cn(
+                                                "transition-colors cursor-pointer hover:bg-muted/50",
                                                 !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
                                                 isUrgent && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
                                                 isUrgent && notification.read && "border-destructive/20 dark:border-destructive/40",
-                                            )}>
-                                                <div className="p-4">
-                                                    <div 
-                                                        className={cn((isUrgent || hasLink) && 'cursor-pointer hover:bg-muted -m-4 p-4 rounded-t-lg')}
-                                                        onClick={() => !isExpandable && (isUrgent ? setNotificationToDisplay(notification) : hasLink && router.push(notification.href!))}
-                                                    >
-                                                        <div className="flex items-start justify-between gap-4">
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className={cn("font-semibold", !notification.read && "text-primary", isUrgent && "text-destructive")}>{notification.title}</p>
-                                                                
-                                                                {isExpandable ? (
-                                                                    <>
-                                                                        <p className="text-sm text-muted-foreground data-[state=open]:hidden line-clamp-2">
-                                                                            {notification.message}
-                                                                        </p>
-                                                                        <CollapsibleContent>
-                                                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-2">
-                                                                                {notification.message}
-                                                                            </p>
-                                                                        </CollapsibleContent>
-                                                                    </>
-                                                                ) : (
-                                                                    <p className="text-sm text-muted-foreground line-clamp-2">
-                                                                        {notification.message}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                            {!notification.read && (
-                                                                <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4 shrink-0" title="Não lida"></div>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center justify-between mt-2">
-                                                             <p className="text-xs text-muted-foreground">
-                                                                <TimeAgo date={notification.createdAt as Date} />
-                                                            </p>
-                                                        </div>
+                                            )}
+                                            onClick={() => handleNotificationClick(notification)}
+                                        >
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={cn("font-semibold", !notification.read && "text-primary", isUrgent && "text-destructive")}>{notification.title}</p>
+                                                        <p className="text-sm text-muted-foreground truncate">
+                                                            {notification.message}
+                                                        </p>
                                                     </div>
-                                                    {isExpandable && (
-                                                        <div className="flex justify-end mt-2">
-                                                            <CollapsibleTrigger asChild>
-                                                                <Button variant="link" size="sm" className="h-auto p-0 group">
-                                                                    <span className="group-data-[state=closed]:inline group-data-[state=open]:hidden">Ver mais</span>
-                                                                    <span className="group-data-[state=open]:inline group-data-[state=closed]:hidden">Ver menos</span>
-                                                                    <ChevronDown className="h-4 w-4 ml-1 transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                                                                </Button>
-                                                            </CollapsibleTrigger>
-                                                        </div>
+                                                    {!notification.read && (
+                                                        <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4 shrink-0" title="Não lida"></div>
                                                     )}
                                                 </div>
-                                            </Card>
-                                        </Collapsible>
+                                                <div className="flex items-center justify-between mt-2">
+                                                        <p className="text-xs text-muted-foreground">
+                                                        <TimeAgo date={notification.createdAt as Date} />
+                                                    </p>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
                                     </li>
                                 )
                             })}
@@ -216,3 +190,5 @@ export default function NotificationsPage() {
         </>
     );
 }
+
+    

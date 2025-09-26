@@ -17,7 +17,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { UserType, EmergencyMessage, Notification } from '@/lib/types';
 import { getUsers, updateUrgentMessage, addNotification } from '@/lib/firebase/firestore';
+import { cn } from '@/lib/utils';
 
+const MAX_NORMAL_MESSAGE_LENGTH = 200;
 
 export default function AdminMessagingPage() {
     const { toast } = useToast();
@@ -112,7 +114,7 @@ export default function AdminMessagingPage() {
                 await updateUrgentMessage(urgentMessageContent);
 
                 for (const userId of targetUserIds) {
-                    await addNotification(userId, `Aviso Urgente: ${messageData.title!}`, messageData.message!.substring(0, 100), '#', 'urgent', urgentMessageContent);
+                    await addNotification(userId, `Aviso Urgente: ${messageData.title!}`, messageData.message!, '#', 'urgent', urgentMessageContent);
                 }
                 toast({
                     title: "Mensagem Urgente Enviada",
@@ -142,6 +144,9 @@ export default function AdminMessagingPage() {
             setIsSubmitting(false);
         }
     };
+
+    const messageLength = messageData.message?.length || 0;
+    const isNormalMessageType = messageData.type === 'normal';
 
     return (
         <>
@@ -280,7 +285,7 @@ export default function AdminMessagingPage() {
                                 onChange={(e) => setMessageData(prev => ({ ...prev, title: e.target.value }))}
                             />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                             <Label htmlFor="message-content">Conteúdo da Mensagem</Label>
                             <Textarea
                                 id="message-content"
@@ -288,7 +293,16 @@ export default function AdminMessagingPage() {
                                 className="min-h-[120px]"
                                 value={messageData.message}
                                 onChange={(e) => setMessageData(prev => ({ ...prev, message: e.target.value }))}
+                                maxLength={isNormalMessageType ? MAX_NORMAL_MESSAGE_LENGTH : undefined}
                             />
+                             {isNormalMessageType && (
+                                <div className={cn(
+                                    "text-xs text-right",
+                                    messageLength > MAX_NORMAL_MESSAGE_LENGTH ? "text-destructive" : "text-muted-foreground"
+                                )}>
+                                    {messageLength} / {MAX_NORMAL_MESSAGE_LENGTH}
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-end gap-2">
@@ -313,3 +327,5 @@ export default function AdminMessagingPage() {
         </>
     );
 }
+
+    
