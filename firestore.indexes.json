@@ -42,6 +42,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "support_messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "hasUnreadAdminReply",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
