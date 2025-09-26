@@ -84,10 +84,25 @@ export default function SupportPage() {
         }
     };
     
-    const allConversationItems = messages.flatMap(msg => [
-        { type: 'user', data: { ...msg, authorId: msg.userId, authorName: msg.userApelido, authorFoto: msg.userFoto, text: msg.message }, timestamp: msg.createdAt.toDate() },
-        ...(msg.replies || []).map(reply => ({ type: 'admin', data: { ...reply, text: reply.message }, timestamp: reply.createdAt.toDate() }))
-    ]).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const allConversationItems = messages.flatMap(msg => {
+        if (!msg.createdAt) return []; // Ignora mensagens sem timestamp
+
+        const userMessage = { 
+            type: 'user', 
+            data: { ...msg, authorId: msg.userId, authorName: msg.userApelido, authorFoto: msg.userFoto, text: msg.message }, 
+            timestamp: msg.createdAt.toDate() 
+        };
+
+        const adminReplies = (msg.replies || [])
+            .filter(reply => !!reply.createdAt) // Garante que a resposta tem um timestamp
+            .map(reply => ({ 
+                type: 'admin', 
+                data: { ...reply, text: reply.message }, 
+                timestamp: reply.createdAt.toDate() 
+            }));
+
+        return [userMessage, ...adminReplies];
+    }).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
@@ -177,4 +192,3 @@ export default function SupportPage() {
         </div>
     );
 }
-
