@@ -99,14 +99,6 @@ export default function NotificationsPage() {
         }
     }
     
-    const handleNotificationClick = (notification: Notification) => {
-       if (notification.type === 'urgent') {
-            setNotificationToDisplay(notification);
-       } else if (notification.href && notification.href !== '#') {
-            router.push(notification.href);
-       }
-    }
-    
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
@@ -141,59 +133,54 @@ export default function NotificationsPage() {
                                 const isLongMessage = notification.message.length > NOTIFICATION_PREVIEW_LENGTH;
                                 const isExpandable = isLongMessage && !hasLink && !isUrgent;
 
-                                const cardProps = {
-                                  className: cn(
-                                    "transition-colors",
-                                    !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-                                    isUrgent && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
-                                    isUrgent && notification.read && "border-destructive/20 dark:border-destructive/40",
-                                    (isUrgent || hasLink) && 'cursor-pointer hover:bg-muted'
-                                  ),
-                                  onClick: () => !isExpandable && handleNotificationClick(notification),
-                                };
-
                                 return (
                                     <li key={notification.id}>
                                         <Collapsible asChild>
-                                            <Card {...cardProps}>
-                                                <CardContent className="p-4">
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className={cn("font-semibold", !notification.read && "text-primary", isUrgent && "text-destructive")}>{notification.title}</p>
-                                                            <div className="w-full">
-                                                              <p className={cn("text-sm text-muted-foreground", !isExpandable && "line-clamp-2")}>
-                                                                {isExpandable ? `${notification.message.substring(0, NOTIFICATION_PREVIEW_LENGTH)}...` : notification.message}
-                                                              </p>
-                                                              {isExpandable && (
-                                                                <CollapsibleContent>
-                                                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-2">{notification.message}</p>
-                                                                </CollapsibleContent>
-                                                              )}
+                                            <Card className={cn(
+                                                "transition-colors",
+                                                !notification.read && "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+                                                isUrgent && !notification.read && "border-destructive/50 bg-destructive/10 dark:bg-destructive/20",
+                                                isUrgent && notification.read && "border-destructive/20 dark:border-destructive/40",
+                                            )}>
+                                                <div 
+                                                    className={cn((isUrgent || hasLink) && 'cursor-pointer hover:bg-muted')}
+                                                    onClick={() => !isExpandable && (isUrgent ? setNotificationToDisplay(notification) : hasLink && router.push(notification.href!))}
+                                                >
+                                                    <CardContent className="p-4">
+                                                        <div className="flex items-start justify-between gap-4">
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className={cn("font-semibold", !notification.read && "text-primary", isUrgent && "text-destructive")}>{notification.title}</p>
+                                                                <div className="w-full">
+                                                                <p className={cn("text-sm text-muted-foreground", !isExpandable && "line-clamp-2")}>
+                                                                    {isExpandable ? `${notification.message.substring(0, NOTIFICATION_PREVIEW_LENGTH)}...` : notification.message}
+                                                                </p>
+                                                                {isExpandable && (
+                                                                    <CollapsibleContent>
+                                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-2">{notification.message.substring(NOTIFICATION_PREVIEW_LENGTH)}</p>
+                                                                    </CollapsibleContent>
+                                                                )}
+                                                                </div>
                                                             </div>
+                                                            {!notification.read && (
+                                                                <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4 shrink-0" title="Não lida"></div>
+                                                            )}
                                                         </div>
-                                                        {!notification.read && (
-                                                            <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-4 shrink-0" title="Não lida"></div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center justify-between mt-2">
-                                                        <p className="text-xs text-muted-foreground">
-                                                            <TimeAgo date={notification.createdAt as Date} />
-                                                        </p>
-                                                        {isExpandable && (
-                                                            <CollapsibleTrigger asChild>
-                                                                <Button variant="link" size="sm" className="h-auto p-0">
-                                                                    Ver mais
-                                                                    <ChevronDown className="h-4 w-4 ml-1 transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                                                                </Button>
-                                                            </CollapsibleTrigger>
-                                                        )}
-                                                        {hasLink && (
-                                                            <Button variant="link" size="sm" className="h-auto p-0" onClick={() => handleNotificationClick(notification)}>
-                                                                Ir para o link
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </CardContent>
+                                                        <div className="flex items-center justify-between mt-2">
+                                                            <p className="text-xs text-muted-foreground">
+                                                                <TimeAgo date={notification.createdAt as Date} />
+                                                            </p>
+                                                            {isExpandable && (
+                                                                <CollapsibleTrigger asChild>
+                                                                    <Button variant="link" size="sm" className="h-auto p-0 group">
+                                                                        <span className="group-data-[state=closed]:inline group-data-[state=open]:hidden">Ver mais</span>
+                                                                        <span className="group-data-[state=open]:inline group-data-[state=closed]:hidden">Ver menos</span>
+                                                                        <ChevronDown className="h-4 w-4 ml-1 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                                                                    </Button>
+                                                                </CollapsibleTrigger>
+                                                            )}
+                                                        </div>
+                                                    </CardContent>
+                                                </div>
                                             </Card>
                                         </Collapsible>
                                     </li>
@@ -220,3 +207,4 @@ export default function NotificationsPage() {
         </>
     );
 }
+
