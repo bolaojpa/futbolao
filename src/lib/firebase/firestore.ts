@@ -1,5 +1,4 @@
 
-
 import { db } from '../firebase';
 import {
   collection,
@@ -461,6 +460,20 @@ export async function addNotification(
     ...notificationData,
     createdAt: serverTimestamp(),
   });
+}
+
+/**
+ * Marks a specific notification as read.
+ * @param notificationId - The ID of the notification to update.
+ */
+export async function markNotificationAsRead(notificationId: string): Promise<void> {
+  const notifDocRef = doc(db, 'notifications', notificationId);
+  try {
+    await updateDoc(notifDocRef, { read: true });
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    // Em uma aplicação real, você poderia tratar o erro, talvez com um toast.
+  }
 }
 
 /**

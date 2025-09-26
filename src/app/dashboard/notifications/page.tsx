@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell, CheckCheck, Inbox, ChevronDown } from 'lucide-react';
+import { Bell, CheckCheck, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -13,13 +13,9 @@ import { onSnapshot, collection, query, where, writeBatch, doc } from 'firebase/
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import { Card, CardContent } from '@/components/ui/card';
 import { NotificationDetailsModal } from '@/components/shared/notification-details-modal';
+import { markNotificationAsRead } from '@/lib/firebase/firestore';
 
 // Componente para evitar erro de hidratação com datas relativas
 const TimeAgo = ({ date }: { date: Date | undefined }) => {
@@ -46,7 +42,6 @@ export default function NotificationsPage() {
     const [loading, setLoading] = useState(true);
     const [notificationToDisplay, setNotificationToDisplay] = useState<Notification | null>(null);
 
-
     useEffect(() => {
         if (!user) return;
 
@@ -63,7 +58,6 @@ export default function NotificationsPage() {
                 createdAt: doc.data().createdAt?.toDate() // Converte Timestamp para Date
             } as Notification));
 
-            // Ordena as notificações no lado do cliente, com segurança
             fetchedNotifications.sort((a, b) => {
                 const timeA = a.createdAt ? (a.createdAt as Date).getTime() : 0;
                 const timeB = b.createdAt ? (b.createdAt as Date).getTime() : 0;
@@ -100,14 +94,19 @@ export default function NotificationsPage() {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const handleNotificationClick = (notification: Notification) => {
-        // Se a notificação tem um link válido, navega
+        // Se a notificação tiver um link, navega.
         if (notification.href && notification.href !== '#') {
             router.push(notification.href);
         } else {
-            // Caso contrário, sempre abre o modal
+            // Caso contrário, sempre abre o modal.
             setNotificationToDisplay(notification);
         }
-    }
+
+        // Marca como lida se ainda não estiver
+        if (!notification.read) {
+            markNotificationAsRead(notification.id);
+        }
+    };
 
     return (
         <>
@@ -137,6 +136,7 @@ export default function NotificationsPage() {
                         <ul className="space-y-4">
                             {notifications.map(notification => {
                                 const isUrgent = notification.type === 'urgent';
+                                const hasLink = notification.href && notification.href !== '#';
 
                                 return (
                                     <li key={notification.id}>
@@ -153,7 +153,7 @@ export default function NotificationsPage() {
                                                 <div className="flex items-start justify-between gap-4">
                                                     <div className="flex-1 min-w-0">
                                                         <p className={cn("font-semibold", !notification.read && "text-primary", isUrgent && "text-destructive")}>{notification.title}</p>
-                                                        <p className="text-sm text-muted-foreground break-words">
+                                                        <p className="text-sm text-muted-foreground break-words line-clamp-2">
                                                             {notification.message}
                                                         </p>
                                                     </div>
@@ -162,9 +162,12 @@ export default function NotificationsPage() {
                                                     )}
                                                 </div>
                                                 <div className="flex items-center justify-between mt-2">
-                                                        <p className="text-xs text-muted-foreground">
+                                                    <p className="text-xs text-muted-foreground">
                                                         <TimeAgo date={notification.createdAt as Date} />
                                                     </p>
+                                                    {hasLink && (
+                                                        <Button variant="link" size="sm" className="h-auto p-0 text-xs">Ir para o link</Button>
+                                                    )}
                                                 </div>
                                             </CardContent>
                                         </Card>
