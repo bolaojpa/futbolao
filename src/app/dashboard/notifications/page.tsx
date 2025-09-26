@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, CheckCheck, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
 import type { Notification, Timestamp } from '@/lib/types';
-import { onSnapshot, collection, query, where, writeBatch, doc, serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
+import { onSnapshot, collection, query, where, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -96,18 +96,20 @@ export default function NotificationsPage() {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const handleNotificationClick = async (notification: Notification) => {
-        // Se tiver link, navega
+        // Se tiver um link válido, navega.
         if (notification.href && notification.href !== '#') {
+            if (!notification.read) {
+                await markNotificationAsRead(notification.id);
+            }
             router.push(notification.href);
         } else {
-            // Senão, sempre abre o modal
+            // Caso contrário, sempre abre o modal.
             setNotificationToDisplay(notification);
-        }
-
-        // Marca como lida se ainda não estiver e atualiza o estado localmente para refletir a data de leitura
-        if (!notification.read) {
-            await markNotificationAsRead(notification.id);
-            setNotificationToDisplay(prev => prev ? { ...prev, read: true, readAt: new Date() } : null);
+             if (!notification.read) {
+                // Atualiza o estado local para refletir a leitura imediatamente no modal
+                setNotificationToDisplay(prev => prev ? { ...prev, read: true, readAt: new Date() } : null);
+                await markNotificationAsRead(notification.id);
+            }
         }
     };
 
@@ -139,7 +141,6 @@ export default function NotificationsPage() {
                         <ul className="space-y-4">
                             {notifications.map(notification => {
                                 const isUrgent = notification.type === 'urgent';
-                                const hasLink = notification.href && notification.href !== '#';
 
                                 return (
                                     <li key={notification.id}>

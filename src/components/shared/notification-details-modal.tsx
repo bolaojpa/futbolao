@@ -37,6 +37,7 @@ export function NotificationDetailsModal({ isOpen, onClose, notification }: Noti
     }
 
     const isUrgent = notification.type === 'urgent';
+    // Se for urgente e tiver a mensagem original (do popup), use-a. Senão, use a própria notificação.
     const displayData = isUrgent && notification.originalMessage ? notification.originalMessage : notification;
     
     return (
