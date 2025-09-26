@@ -590,3 +590,4 @@ export async function markSupportMessageAsReadByAdmin(messageId: string): Promis
     const messageRef = doc(db, 'support_messages', messageId);
     await updateDoc(messageRef, { isReadByAdmin: true });
 }
+
