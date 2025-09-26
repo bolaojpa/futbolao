@@ -21,13 +21,37 @@ import {
   User,
   LifeBuoy,
   ShieldCheck,
+  Mail,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
+import { useState, useEffect } from 'react';
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { SupportMessage } from '@/lib/types';
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const { user } = useAuth();
+  const [hasUnreadSupport, setHasUnreadSupport] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(
+      collection(db, "support_messages"),
+      where("userId", "==", user.id),
+      where("hasUnreadAdminReply", "==", true)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setHasUnreadSupport(!snapshot.empty);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const handleLinkClick = () => {
     setOpenMobile(false);
@@ -44,7 +68,7 @@ export function AppSidebar() {
   const bottomMenuItems = [
       { href: '/dashboard/profile', label: 'Meu Perfil', icon: User },
       { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
-      { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy },
+      { href: '/dashboard/support', label: 'Suporte', icon: LifeBuoy, notification: hasUnreadSupport },
   ]
 
   return (
@@ -98,9 +122,12 @@ export function AppSidebar() {
                             isActive={pathname === item.href}
                             tooltip={{ children: item.label, side: 'right' }}
                         >
-                            <div>
+                            <div className="relative">
                               <item.icon />
                               <span>{item.label}</span>
+                              {item.notification && (
+                                <Mail className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-primary animate-pulse" />
+                              )}
                             </div>
                         </SidebarMenuButton>
                     </Link>

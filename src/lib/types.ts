@@ -168,12 +168,23 @@ export interface EmergencyMessage {
     type: 'urgent' | 'normal';
 }
 
+export interface SupportReply {
+    id: string;
+    authorId: string;
+    authorName: string;
+    message: string;
+    createdAt: Timestamp;
+}
+
 export interface SupportMessage {
   id: string;
   userId: string;
   userApelido: string;
   userFoto: string;
   message: string;
-  isRead: boolean;
+  isReadByAdmin: boolean;
+  hasUnreadAdminReply: boolean;
   createdAt: Timestamp;
+  replies?: SupportReply[];
+  isArchived?: boolean;
 }
