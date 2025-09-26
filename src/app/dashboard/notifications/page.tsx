@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, CheckCheck, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
-import type { Notification } from '@/lib/types';
-import { onSnapshot, collection, query, where, writeBatch, doc } from 'firebase/firestore';
+import type { Notification, Timestamp } from '@/lib/types';
+import { onSnapshot, collection, query, where, writeBatch, doc, serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -55,7 +55,8 @@ export default function NotificationsPage() {
             const fetchedNotifications = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate() // Converte Timestamp para Date
+                createdAt: (doc.data().createdAt as Timestamp)?.toDate(), // Converte Timestamp para Date
+                readAt: (doc.data().readAt as Timestamp)?.toDate(), // Converte Timestamp para Date
             } as Notification));
 
             fetchedNotifications.sort((a, b) => {
@@ -78,9 +79,10 @@ export default function NotificationsPage() {
         if (unreadNotifs.length === 0) return;
 
         const batch = writeBatch(db);
+        const readTimestamp = serverTimestamp();
         unreadNotifs.forEach(notif => {
             const notifRef = doc(db, 'notifications', notif.id);
-            batch.update(notifRef, { read: true });
+            batch.update(notifRef, { read: true, readAt: readTimestamp });
         });
 
         try {
@@ -93,18 +95,19 @@ export default function NotificationsPage() {
     
     const unreadCount = notifications.filter(n => !n.read).length;
 
-    const handleNotificationClick = (notification: Notification) => {
-        // Se a notificação tiver um link, navega.
+    const handleNotificationClick = async (notification: Notification) => {
+        // Se tiver link, navega
         if (notification.href && notification.href !== '#') {
             router.push(notification.href);
         } else {
-            // Caso contrário, sempre abre o modal.
+            // Senão, sempre abre o modal
             setNotificationToDisplay(notification);
         }
 
-        // Marca como lida se ainda não estiver
+        // Marca como lida se ainda não estiver e atualiza o estado localmente para refletir a data de leitura
         if (!notification.read) {
-            markNotificationAsRead(notification.id);
+            await markNotificationAsRead(notification.id);
+            setNotificationToDisplay(prev => prev ? { ...prev, read: true, readAt: new Date() } : null);
         }
     };
 
@@ -165,9 +168,6 @@ export default function NotificationsPage() {
                                                     <p className="text-xs text-muted-foreground">
                                                         <TimeAgo date={notification.createdAt as Date} />
                                                     </p>
-                                                    {hasLink && (
-                                                        <Button variant="link" size="sm" className="h-auto p-0 text-xs">Ir para o link</Button>
-                                                    )}
                                                 </div>
                                             </CardContent>
                                         </Card>

@@ -143,6 +143,7 @@ export interface Notification {
     href?: string;
     type: 'normal' | 'urgent';
     originalMessage?: EmergencyMessage; // Guarda o conteúdo completo da mensagem urgente
+    readAt?: Date | Timestamp; // Novo campo para data de leitura
 }
 
 
@@ -166,5 +167,3 @@ export interface EmergencyMessage {
     targetUserIds: string[]; // 'all' ou IDs de usuários
     type: 'urgent' | 'normal';
 }
-
-    

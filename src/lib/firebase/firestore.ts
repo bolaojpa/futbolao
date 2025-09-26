@@ -443,36 +443,40 @@ export async function addNotification(
   originalMessage?: EmergencyMessage
 ) {
   const notificationCollection = collection(db, 'notifications');
-  const notificationData: Omit<Notification, 'id' | 'createdAt'> = {
+  const notificationData: Partial<Notification> = { // Usando Partial para montar o objeto
     userId,
     title,
     message,
     href,
     read: false,
     type,
+    createdAt: serverTimestamp() as Timestamp,
   };
 
   if (type === 'urgent' && originalMessage) {
     notificationData.originalMessage = originalMessage;
   }
 
-  await addDoc(notificationCollection, {
-    ...notificationData,
-    createdAt: serverTimestamp(),
-  });
+  await addDoc(notificationCollection, notificationData);
 }
 
 /**
- * Marks a specific notification as read.
+ * Marks a specific notification as read and sets the read timestamp.
  * @param notificationId - The ID of the notification to update.
  */
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
   const notifDocRef = doc(db, 'notifications', notificationId);
   try {
-    await updateDoc(notifDocRef, { read: true });
+    const notifDoc = await getDoc(notifDocRef);
+    // Only update if it hasn't been read yet to avoid multiple timestamps.
+    if (notifDoc.exists() && !notifDoc.data().read) {
+        await updateDoc(notifDocRef, { 
+            read: true,
+            readAt: serverTimestamp(),
+        });
+    }
   } catch (error) {
     console.error("Error marking notification as read:", error);
-    // Em uma aplicação real, você poderia tratar o erro, talvez com um toast.
   }
 }
 
@@ -522,4 +526,3 @@ export async function markUrgentMessageAsSeen(userId: string, messageId: string)
     seenUrgentMessages: arrayUnion(messageId),
   });
 }
-    
