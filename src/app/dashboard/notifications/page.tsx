@@ -100,9 +100,11 @@ export default function NotificationsPage() {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const handleNotificationClick = (notification: Notification) => {
+        // Se a notificação tem um link válido, navega
         if (notification.href && notification.href !== '#') {
             router.push(notification.href);
         } else {
+            // Caso contrário, sempre abre o modal
             setNotificationToDisplay(notification);
         }
     }
@@ -151,7 +153,7 @@ export default function NotificationsPage() {
                                                 <div className="flex items-start justify-between gap-4">
                                                     <div className="flex-1 min-w-0">
                                                         <p className={cn("font-semibold", !notification.read && "text-primary", isUrgent && "text-destructive")}>{notification.title}</p>
-                                                        <p className="text-sm text-muted-foreground truncate">
+                                                        <p className="text-sm text-muted-foreground break-words">
                                                             {notification.message}
                                                         </p>
                                                     </div>
@@ -190,5 +192,3 @@ export default function NotificationsPage() {
         </>
     );
 }
-
-    
