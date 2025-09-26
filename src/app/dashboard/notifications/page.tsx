@@ -14,7 +14,7 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { NotificationDetailsModal } from '@/components/shared/notification-details-modal';
+import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
 import { markNotificationAsRead } from '@/lib/firebase/firestore';
 
 // Componente para evitar erro de hidratação com datas relativas
@@ -96,18 +96,14 @@ export default function NotificationsPage() {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const handleNotificationClick = async (notification: Notification) => {
-        // Se tiver um link válido, navega.
         if (notification.href && notification.href !== '#') {
             if (!notification.read) {
                 await markNotificationAsRead(notification.id);
             }
             router.push(notification.href);
         } else {
-            // Caso contrário, sempre abre o modal.
             setNotificationToDisplay(notification);
-             if (!notification.read) {
-                // Atualiza o estado local para refletir a leitura imediatamente no modal
-                setNotificationToDisplay(prev => prev ? { ...prev, read: true, readAt: new Date() } : null);
+            if (!notification.read) {
                 await markNotificationAsRead(notification.id);
             }
         }
@@ -187,10 +183,11 @@ export default function NotificationsPage() {
             </div>
             
             {notificationToDisplay && (
-                <NotificationDetailsModal
+                <EmergencyMessageModal
                     isOpen={!!notificationToDisplay}
                     onClose={() => setNotificationToDisplay(null)}
-                    notification={notificationToDisplay}
+                    title={notificationToDisplay.title}
+                    message={notificationToDisplay.message}
                 />
             )}
         </>
