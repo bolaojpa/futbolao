@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { onSnapshot, collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { onSnapshot, collection, query, orderBy, doc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { SupportMessage, UserType, SupportReply } from '@/lib/types';
 import { addReplyToSupportMessage, markSupportMessageAsReadByAdmin } from '@/lib/firebase/firestore';
