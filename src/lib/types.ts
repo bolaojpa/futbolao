@@ -187,4 +187,5 @@ export interface SupportMessage {
   createdAt: Timestamp;
   replies?: SupportReply[];
   isArchived?: boolean;
+  lastActivityAt?: Timestamp;
 }

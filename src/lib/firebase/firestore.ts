@@ -534,13 +534,15 @@ export async function markUrgentMessageAsSeen(userId: string, messageId: string)
  * Adds a new support message to the Firestore 'support_messages' collection.
  * @param data - The data for the new support message.
  */
-export async function addSupportMessage(data: Omit<SupportMessage, 'id' | 'createdAt' | 'isReadByAdmin' | 'hasUnreadAdminReply'>) {
+export async function addSupportMessage(data: Omit<SupportMessage, 'id' | 'createdAt' | 'isReadByAdmin' | 'hasUnreadAdminReply' | 'lastActivityAt'>) {
     const supportCollection = collection(db, 'support_messages');
+    const now = serverTimestamp();
     await addDoc(supportCollection, {
         ...data,
         isReadByAdmin: false,
         hasUnreadAdminReply: false,
-        createdAt: serverTimestamp(),
+        createdAt: now,
+        lastActivityAt: now,
     });
 }
 
@@ -559,6 +561,7 @@ export async function addReplyToSupportMessage(messageId: string, replyData: { a
     await updateDoc(messageRef, {
         replies: arrayUnion(reply),
         hasUnreadAdminReply: true,
+        lastActivityAt: serverTimestamp(),
     });
 }
 
@@ -590,4 +593,3 @@ export async function markSupportMessageAsReadByAdmin(messageId: string): Promis
     const messageRef = doc(db, 'support_messages', messageId);
     await updateDoc(messageRef, { isReadByAdmin: true });
 }
-
