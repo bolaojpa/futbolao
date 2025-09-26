@@ -296,7 +296,7 @@ export default function AdminSupportPage() {
                                <div ref={messagesEndRef} />
                             </div>
                             <CardFooter className="p-4 border-t bg-muted/50">
-                                 <div className="flex w-full items-start gap-4">
+                                 <div className="relative flex w-full items-start gap-4">
                                      <Textarea 
                                         placeholder="Digite sua resposta aqui..."
                                         className="flex-1 bg-background pr-20"
@@ -310,7 +310,7 @@ export default function AdminSupportPage() {
                                         }}
                                         disabled={isReplying}
                                      />
-                                     <Button onClick={handleSendReply} disabled={!replyText.trim() || isReplying} size="icon" className="absolute right-6 top-1/2 -translate-y-1/2">
+                                     <Button onClick={handleSendReply} disabled={!replyText.trim() || isReplying} size="icon" className="absolute right-2 top-1/2 -translate-y-1/2">
                                         {isReplying ? <Loader2 className="h-5 w-5 animate-spin"/> : <CornerDownLeft className="h-5 w-5"/>}
                                      </Button>
                                  </div>
