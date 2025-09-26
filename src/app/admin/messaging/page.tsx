@@ -121,7 +121,7 @@ export default function AdminMessagingPage() {
 
             } else { // Tipo 'normal'
                 for (const userId of targetUserIds) {
-                    await addNotification(userId, messageData.title!, messageData.message!.substring(0, 100), '/dashboard/notifications', 'normal');
+                    await addNotification(userId, messageData.title!, messageData.message!, '/dashboard/notifications', 'normal');
                 }
                  toast({
                     title: "Aviso Enviado como Notificação",
