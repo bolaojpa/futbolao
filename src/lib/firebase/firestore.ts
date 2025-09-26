@@ -554,7 +554,7 @@ export async function addReplyToSupportMessage(messageId: string, replyData: { a
     const reply = {
         ...replyData,
         id: new Date().getTime().toString(), // Simple unique ID
-        createdAt: serverTimestamp(),
+        createdAt: new Date(),
     };
     await updateDoc(messageRef, {
         replies: arrayUnion(reply),
