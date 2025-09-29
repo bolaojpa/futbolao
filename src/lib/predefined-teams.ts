@@ -67,15 +67,24 @@ export const predefinedTeams = [
     { name: 'Wolverhampton Wanderers', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/76.svg' },
 
     // EFL Championship (Série B Inglesa)
+    { name: 'Blackburn Rovers', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/60.svg' },
+    { name: 'Bristol City', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/387.svg' },
     { name: 'Burnley', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/328.svg' },
-    { name: 'Luton Town', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/341.svg' },
-    { name: 'Sheffield United', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/356.svg' },
+    { name: 'Coventry City', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/335.svg' },
+    { name: 'Derby County', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/343.svg' },
+    { name: 'Hull City', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/322.svg' },
     { name: 'Leeds United', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/347.svg' },
-    { name: 'West Bromwich Albion', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/74.svg' },
+    { name: 'Luton Town', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/341.svg' },
+    { name: 'Millwall', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/69.svg' },
     { name: 'Norwich City', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/342.svg' },
+    { name: 'Queens Park Rangers', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/349.svg' },
+    { name: 'Sheffield United', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/356.svg' },
+    { name: 'Sheffield Wednesday', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/344.svg' },
     { name: 'Sunderland', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/71.svg' },
+    { name: 'West Bromwich Albion', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/74.svg' },
     { name: 'Birmingham City', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/59.svg' },
-
+    { name: 'Huddersfield Town', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/385.svg' },
+    { name: 'Bristol Rovers', type: 'club', countryOrConfederation: 'Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/388.svg' },
 
     // La Liga
     { name: 'Alavés', type: 'club', countryOrConfederation: 'Espanha', league: 'La Liga', crestUrl: 'https://crests.football-data.org/263.svg' },
