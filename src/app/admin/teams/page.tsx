@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Shield, PlusCircle, Import, Trash2, Loader2, AlertTriangle, Database, DatabaseZap, Pencil, Save, X } from 'lucide-react';
+import { Shield, PlusCircle, Import, Trash2, Loader2, AlertTriangle, Database, DatabaseZap, Pencil, Save, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -20,6 +20,8 @@ import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { predefinedTeams } from '@/lib/predefined-teams';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+
+const ITEMS_PER_PAGE = 10;
 
 export default function AdminTeamsPage() {
     const { toast } = useToast();
@@ -35,6 +37,11 @@ export default function AdminTeamsPage() {
     
     const [clubFilter, setClubFilter] = useState('all');
     const [nationalFilter, setNationalFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const [currentPageClubs, setCurrentPageClubs] = useState(1);
+    const [currentPageNationals, setCurrentPageNationals] = useState(1);
+
 
     const fetchTeams = async () => {
         setIsFetching(true);
@@ -112,14 +119,13 @@ export default function AdminTeamsPage() {
         });
     };
 
-    const handleSelectAllOnPage = (type: 'club' | 'national', checked: boolean | 'indeterminate') => {
-        const pageTeams = teams.filter(t => t.type === type);
+    const handleSelectAllOnPage = (type: 'club' | 'national', paginatedTeams: Team[], checked: boolean | 'indeterminate') => {
         if (checked) {
-            setSelectedTeams(prev => new Set([...prev, ...pageTeams.map(t => t.id)]));
+            setSelectedTeams(prev => new Set([...prev, ...paginatedTeams.map(t => t.id)]));
         } else {
              setSelectedTeams(prev => {
                 const newSelection = new Set(prev);
-                pageTeams.forEach(t => newSelection.delete(t.id));
+                paginatedTeams.forEach(t => newSelection.delete(t.id));
                 return newSelection;
             });
         }
@@ -168,13 +174,23 @@ export default function AdminTeamsPage() {
 
     const renderTeamTable = (type: 'club' | 'national') => {
         const currentFilter = type === 'club' ? clubFilter : nationalFilter;
+        const currentPage = type === 'club' ? currentPageClubs : currentPageNationals;
+        const setCurrentPage = type === 'club' ? setCurrentPageClubs : setCurrentPageNationals;
+
         const filteredTeams = teams.filter(t => {
             if (t.type !== type) return false;
-            if (currentFilter === 'all') return true;
-            return t.countryOrConfederation === currentFilter || t.league === currentFilter;
+            const leagueMatch = currentFilter === 'all' || t.countryOrConfederation === currentFilter || t.league === currentFilter;
+            const searchMatch = searchTerm === '' || t.name.toLowerCase().includes(searchTerm.toLowerCase());
+            return leagueMatch && searchMatch;
         });
+
+        const totalPages = Math.ceil(filteredTeams.length / ITEMS_PER_PAGE);
+        const paginatedTeams = filteredTeams.slice(
+            (currentPage - 1) * ITEMS_PER_PAGE,
+            currentPage * ITEMS_PER_PAGE
+        );
         
-        const allOnPageSelected = filteredTeams.length > 0 && filteredTeams.every(t => selectedTeams.has(t.id));
+        const allOnPageSelected = paginatedTeams.length > 0 && paginatedTeams.every(t => selectedTeams.has(t.id));
         
         const filterOptions = Array.from(new Set(
             teams.filter(t => t.type === type).flatMap(t => [t.countryOrConfederation, t.league]).filter(Boolean)
@@ -187,10 +203,10 @@ export default function AdminTeamsPage() {
                         <div>
                             <CardTitle className="capitalize">{type === 'club' ? 'Clubes' : 'Seleções'} Cadastrados</CardTitle>
                             <CardDescription>
-                                Exibindo {filteredTeams.length} de {teams.filter(t => t.type === type).length} equipes.
+                                Exibindo {paginatedTeams.length} de {filteredTeams.length} equipes.
                             </CardDescription>
                         </div>
-                         {selectedTeams.size > 0 && (
+                         {selectedTeams.size > 0 && teams.some(t => selectedTeams.has(t.id) && t.type === type) && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="destructive" className="w-full sm:w-auto">
@@ -213,9 +229,19 @@ export default function AdminTeamsPage() {
                             </AlertDialog>
                         )}
                     </div>
-                     <div className="pt-4">
-                        <Select value={currentFilter} onValueChange={type === 'club' ? setClubFilter : setNationalFilter}>
-                            <SelectTrigger className="w-full sm:w-[280px]">
+                     <div className="pt-4 flex flex-col md:flex-row gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Buscar por nome..."
+                                className="pl-8 w-full"
+                                value={searchTerm}
+                                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                            />
+                        </div>
+                        <Select value={currentFilter} onValueChange={type === 'club' ? (v) => {setClubFilter(v); setCurrentPage(1);} : (v) => {setNationalFilter(v); setCurrentPage(1);}}>
+                            <SelectTrigger className="w-full md:w-[280px]">
                                 <SelectValue placeholder="Filtrar..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -233,7 +259,7 @@ export default function AdminTeamsPage() {
                             <TableRow>
                                 <TableHead className="w-12">
                                      <Checkbox 
-                                        onCheckedChange={(checked) => handleSelectAllOnPage(type, checked)}
+                                        onCheckedChange={(checked) => handleSelectAllOnPage(type, paginatedTeams, checked)}
                                         checked={allOnPageSelected}
                                         aria-label="Selecionar todas as equipes nesta página"
                                     />
@@ -250,8 +276,8 @@ export default function AdminTeamsPage() {
                                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                                     </TableCell>
                                 </TableRow>
-                            ) : filteredTeams.length > 0 ? (
-                                filteredTeams.map(team => (
+                            ) : paginatedTeams.length > 0 ? (
+                                paginatedTeams.map(team => (
                                     <TableRow key={team.id} data-state={selectedTeams.has(team.id) ? "selected" : ""}>
                                         <TableCell>
                                              <Checkbox 
@@ -283,6 +309,31 @@ export default function AdminTeamsPage() {
                         </TableBody>
                     </Table>
                 </CardContent>
+                {totalPages > 1 && (
+                    <CardContent>
+                         <div className="flex items-center justify-center gap-4 mt-4">
+                            <Button 
+                                variant="outline"
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                <ChevronLeft className="h-4 w-4 mr-2" />
+                                Anterior
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
+                                Página {currentPage} de {totalPages}
+                            </span>
+                            <Button 
+                                variant="outline"
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                            >
+                                Próximo
+                                <ChevronRight className="h-4 w-4 ml-2" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                )}
             </Card>
         );
     }
