@@ -71,6 +71,9 @@ export const predefinedTeams = [
     { name: 'Tottenham Hotspur FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/73.svg' },
     { name: 'West Ham United FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/563.svg' },
     { name: 'Wolverhampton Wanderers FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/76.svg' },
+    { name: 'Luton Town FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/341.svg' },
+    { name: 'Sheffield United FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/356.svg' },
+    { name: 'Birmingham City FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/59.svg' },
     
     // EFL Championship (Série B Inglesa)
     { name: 'Blackburn Rovers FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/60.svg' },
@@ -80,17 +83,14 @@ export const predefinedTeams = [
     { name: 'Derby County FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/343.svg' },
     { name: 'Hull City AFC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/322.svg' },
     { name: 'Leeds United FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/347.svg' },
-    { name: 'Luton Town FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/341.svg' },
     { name: 'Millwall FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/69.svg' },
     { name: 'Norwich City FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/342.svg' },
     { name: 'Queens Park Rangers FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/349.svg' },
-    { name: 'Sheffield United FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/356.svg' },
     { name: 'Sheffield Wednesday FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/344.svg' },
     { name: 'Sunderland AFC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/71.svg' },
     { name: 'West Bromwich Albion FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/74.svg' },
     
     // League One (Inglaterra)
-    { name: 'Birmingham City FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/59.svg' },
     { name: 'Huddersfield Town AFC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/385.svg' },
     { name: 'Bristol Rovers FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/388.svg' },
 
@@ -206,7 +206,16 @@ export const predefinedTeams = [
     { name: 'Argentinos Juniors', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Argentinos_juniors_logo.svg/1200px-Argentinos_juniors_logo.svg.png' },
     { name: 'Belgrano', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e8/Club_Atl%C3%A9tico_Belgrano_logo.svg/1200px-Club_Atl%C3%A9tico_Belgrano_logo.svg.png' },
 
-    
+    // Chile
+    { name: 'Colo-Colo', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://crests.football-data.org/4312.svg' },
+    { name: 'Universidad de Chile', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://crests.football-data.org/4313.svg' },
+    { name: 'Universidad Católica', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://crests.football-data.org/4314.svg' },
+    { name: 'Unión Española', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Escudo_Uni%C3%B3n_Espa%C3%B1ola.svg/1200px-Escudo_Uni%C3%B3n_Espa%C3%B1ola.svg.png' },
+    { name: 'O\'Higgins', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Escudo_Club_Deportivo_O%27Higgins.svg/1200px-Escudo_Club_Deportivo_O%27Higgins.svg.png' },
+    { name: 'Everton de Viña del Mar', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Everton_de_Vi%C3%B1a_del_Mar_logo.svg/1200px-Everton_de_Vi%C3%B1a_del_Mar_logo.svg.png' },
+    { name: 'Cobresal', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c0/Cobresal_logo.svg/1200px-Cobresal_logo.svg.png' },
+    { name: 'Deportes Iquique', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9f/Deportes_Iquique_logo.svg/1200px-Deportes_Iquique_logo.svg.png' },
+
     // MLS
     { name: 'Inter Miami CF', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1607.svg' },
     { name: 'LA Galaxy', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1598.svg' },
