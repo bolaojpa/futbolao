@@ -158,6 +158,18 @@ export const predefinedTeams = [
     { name: '1. FC Heidenheim 1846', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/21.svg' },
     { name: '1. FC Köln', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: '2. Bundesliga', crestUrl: 'https://crests.football-data.org/1.svg' },
 
+    // Ligue 1 (França)
+    { name: 'AS Saint-Étienne', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/527.svg' },
+    { name: 'Lille OSC', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/521.svg' },
+    { name: 'FC Lorient', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/525.svg' },
+    { name: 'Montpellier HSC', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/523.svg' },
+    { name: 'FC Nantes', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/547.svg' },
+    { name: 'OGC Nice', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/522.svg' },
+    { name: 'RC Lens', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/546.svg' },
+    { name: 'Stade Brestois 29', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/556.svg' },
+    { name: 'Stade Rennais FC', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/529.svg' },
+    { name: 'Toulouse FC', type: 'club', countryOrConfederation: 'UEFA / França', league: 'Ligue 1', crestUrl: 'https://crests.football-data.org/543.svg' },
+    
     // Liga Portugal
     { name: 'SL Benfica', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/1903.svg' },
     { name: 'FC Porto', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/503.svg' },
