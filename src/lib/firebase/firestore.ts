@@ -190,6 +190,16 @@ export async function addTeam(teamData: Omit<Team, 'id'>): Promise<Team> {
 }
 
 /**
+ * Updates an existing team in Firestore.
+ * @param teamId - The ID of the team to update.
+ * @param teamData - An object containing the fields to update.
+ */
+export async function updateTeam(teamId: string, teamData: Partial<Omit<Team, 'id'>>): Promise<void> {
+    const teamDocRef = doc(db, 'teams', teamId);
+    await updateDoc(teamDocRef, teamData);
+}
+
+/**
  * Deletes multiple teams from Firestore in a single batch operation.
  * @param teamIds - An array of team IDs to delete.
  */

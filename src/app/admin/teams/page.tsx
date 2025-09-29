@@ -9,12 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Shield, PlusCircle, Import, Trash2, Loader2, AlertTriangle, Database, DatabaseZap } from 'lucide-react';
+import { Shield, PlusCircle, Import, Trash2, Loader2, AlertTriangle, Database, DatabaseZap, Pencil, Save, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { Team } from '@/lib/types';
-import { getTeams, addTeam, deleteTeams } from '@/lib/firebase/firestore';
+import { getTeams, addTeam, deleteTeams, updateTeam } from '@/lib/firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { predefinedTeams } from '@/lib/predefined-teams';
@@ -29,6 +30,9 @@ export default function AdminTeamsPage() {
     const [manualTeamCrest, setManualTeamCrest] = useState('');
     const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
 
+    const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    
     const [clubFilter, setClubFilter] = useState('all');
     const [nationalFilter, setNationalFilter] = useState('all');
 
@@ -52,10 +56,11 @@ export default function AdminTeamsPage() {
         setIsLoading(true);
         let teamsAdded = 0;
         let teamsSkipped = 0;
+        const currentTeams = await getTeams();
 
         try {
             for (const teamData of predefinedTeams) {
-                if (!teams.some(et => et.name === teamData.name)) {
+                if (!currentTeams.some(et => et.name === teamData.name)) {
                     await addTeam(teamData);
                     teamsAdded++;
                 } else {
@@ -139,6 +144,28 @@ export default function AdminTeamsPage() {
         }
     };
 
+    const handleOpenEditModal = (team: Team) => {
+        setEditingTeam(team);
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingTeam) return;
+
+        try {
+            await updateTeam(editingTeam.id, {
+                name: editingTeam.name,
+                crestUrl: editingTeam.crestUrl,
+            });
+            await fetchTeams();
+            toast({ title: "Equipe Atualizada", description: `Os dados de "${editingTeam.name}" foram salvos.` });
+            setIsEditModalOpen(false);
+            setEditingTeam(null);
+        } catch (error) {
+            toast({ title: "Erro ao atualizar", description: "Não foi possível salvar as alterações.", variant: "destructive" });
+        }
+    };
+
     const renderTeamTable = (type: 'club' | 'national') => {
         const currentFilter = type === 'club' ? clubFilter : nationalFilter;
         const filteredTeams = teams.filter(t => {
@@ -213,12 +240,13 @@ export default function AdminTeamsPage() {
                                 </TableHead>
                                 <TableHead className="w-[80px]">Escudo</TableHead>
                                 <TableHead>Nome da Equipe</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isFetching ? (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">
+                                    <TableCell colSpan={4} className="h-24 text-center">
                                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                                     </TableCell>
                                 </TableRow>
@@ -236,11 +264,17 @@ export default function AdminTeamsPage() {
                                             <Image src={team.crestUrl} alt={`Escudo do ${team.name}`} width={40} height={32} className="object-contain" />
                                         </TableCell>
                                         <TableCell className="font-medium">{team.name}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleOpenEditModal(team)}>
+                                                <Pencil className="h-4 w-4" />
+                                                <span className="sr-only">Editar</span>
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">
+                                    <TableCell colSpan={4} className="h-24 text-center">
                                         <p className="font-semibold">Nenhuma equipe encontrada.</p>
                                         <p className="text-sm text-muted-foreground">Adicione uma equipe manualmente ou importe de uma competição.</p>
                                     </TableCell>
@@ -259,7 +293,7 @@ export default function AdminTeamsPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><PlusCircle /> Adicionar Manualmente</CardTitle>
                     <CardDescription>
-                        Adicione uma equipe que não está disponível na API ou para casos específicos.
+                        Adicione uma equipe que não está disponível na lista pré-definida.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -281,48 +315,91 @@ export default function AdminTeamsPage() {
     );
 
     return (
-        <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
-            <div className="flex items-center gap-4">
-                <Shield className="h-8 w-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">Gerenciar Equipes</h1>
-                    <p className="text-muted-foreground">
-                        Adicione, importe e gerencie os times e seleções do seu bolão.
-                    </p>
+        <>
+            <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
+                <div className="flex items-center gap-4">
+                    <Shield className="h-8 w-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline">Gerenciar Equipes</h1>
+                        <p className="text-muted-foreground">
+                            Adicione, importe e gerencie os times e seleções do seu bolão.
+                        </p>
+                    </div>
                 </div>
+
+                <Card className="border-dashed">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><DatabaseZap /> Carga Inicial de Dados</CardTitle>
+                        <CardDescription>
+                            Clique no botão abaixo para popular o banco de dados com uma lista extensa de equipes. Equipes existentes não serão duplicadas.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={handleInitialLoad} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                            Fazer Carga Inicial de Equipes
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Tabs defaultValue="clubs">
+                    <TabsList className="grid w-full grid-cols-2 max-w-sm">
+                        <TabsTrigger value="clubs">Times (Clubes)</TabsTrigger>
+                        <TabsTrigger value="national">Seleções</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="clubs" className="space-y-8 mt-6">
+                        {renderTeamManagement('club')}
+                        <Separator />
+                        {renderTeamTable('club')}
+                    </TabsContent>
+                    <TabsContent value="national" className="space-y-8 mt-6">
+                        {renderTeamManagement('national')}
+                        <Separator />
+                        {renderTeamTable('national')}
+                    </TabsContent>
+                </Tabs>
             </div>
-
-             <Card className="border-dashed">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><DatabaseZap /> Carga Inicial de Dados</CardTitle>
-                    <CardDescription>
-                        Clique no botão abaixo para popular o banco de dados com uma lista extensa de equipes do mundo todo. Isso só precisa ser feito uma vez. Equipes existentes não serão duplicadas.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={handleInitialLoad} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
-                        Fazer Carga Inicial de Equipes
-                    </Button>
-                </CardContent>
-            </Card>
-
-            <Tabs defaultValue="clubs">
-                <TabsList className="grid w-full grid-cols-2 max-w-sm">
-                    <TabsTrigger value="clubs">Times (Clubes)</TabsTrigger>
-                    <TabsTrigger value="national">Seleções</TabsTrigger>
-                </TabsList>
-                <TabsContent value="clubs" className="space-y-8 mt-6">
-                    {renderTeamManagement('club')}
-                    <Separator />
-                    {renderTeamTable('club')}
-                </TabsContent>
-                <TabsContent value="national" className="space-y-8 mt-6">
-                    {renderTeamManagement('national')}
-                    <Separator />
-                    {renderTeamTable('national')}
-                </TabsContent>
-            </Tabs>
-        </div>
+            
+            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar Equipe</DialogTitle>
+                        <DialogDescription>
+                            Altere o nome e o escudo da equipe selecionada.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {editingTeam && (
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <Label htmlFor="edit-team-name">Nome da Equipe</Label>
+                                <Input
+                                    id="edit-team-name"
+                                    value={editingTeam.name}
+                                    onChange={(e) => setEditingTeam({ ...editingTeam, name: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-team-crest">URL do Escudo</Label>
+                                <Input
+                                    id="edit-team-crest"
+                                    value={editingTeam.crestUrl}
+                                    onChange={(e) => setEditingTeam({ ...editingTeam, crestUrl: e.target.value })}
+                                />
+                            </div>
+                             <div className="text-center">
+                                <Image src={editingTeam.crestUrl} alt={`Escudo do ${editingTeam.name}`} width={80} height={80} className="object-contain inline-block bg-muted p-2 rounded-md" />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleSaveEdit}>
+                            <Save className="mr-2 h-4 w-4"/>
+                            Salvar Alterações
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
