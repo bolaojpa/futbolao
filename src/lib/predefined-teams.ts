@@ -261,4 +261,3 @@ export const predefinedTeams = [
     { name: 'Japão', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/766.svg' },
     { name: 'Qatar', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/8026.svg' },
 ];
-
