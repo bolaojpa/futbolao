@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Shield, PlusCircle, Import, Trash2, Loader2, AlertTriangle, Database, DatabaseZap, Pencil, Save, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shield, PlusCircle, Import, Trash2, Loader2, AlertTriangle, Database, DatabaseZap, Pencil, Save, X, Search, ChevronLeft, ChevronRight, Globe, Flag } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -162,6 +162,8 @@ export default function AdminTeamsPage() {
             await updateTeam(editingTeam.id, {
                 name: editingTeam.name,
                 crestUrl: editingTeam.crestUrl,
+                countryOrConfederation: editingTeam.countryOrConfederation,
+                league: editingTeam.league,
             });
             await fetchTeams();
             toast({ title: "Equipe Atualizada", description: `Os dados de "${editingTeam.name}" foram salvos.` });
@@ -194,7 +196,7 @@ export default function AdminTeamsPage() {
         
         const filterOptions = Array.from(new Set(
             teams.filter(t => t.type === type).map(t => t.countryOrConfederation).filter(Boolean)
-        ));
+        )).sort();
 
         return (
             <Card>
@@ -416,7 +418,7 @@ export default function AdminTeamsPage() {
                     <DialogHeader>
                         <DialogTitle>Editar Equipe</DialogTitle>
                         <DialogDescription>
-                            Altere o nome e o escudo da equipe selecionada.
+                            Altere os dados da equipe selecionada.
                         </DialogDescription>
                     </DialogHeader>
                     {editingTeam && (
@@ -437,9 +439,31 @@ export default function AdminTeamsPage() {
                                     onChange={(e) => setEditingTeam({ ...editingTeam, crestUrl: e.target.value })}
                                 />
                             </div>
-                             <div className="text-center">
+                            <div className="text-center">
                                 <Image src={editingTeam.crestUrl} alt={`Escudo do ${editingTeam.name}`} width={80} height={80} className="object-contain inline-block bg-muted p-2 rounded-md" />
                             </div>
+                             <div>
+                                <Label htmlFor="edit-team-country">
+                                    {editingTeam.type === 'club' ? 'País' : 'Confederação'}
+                                </Label>
+                                <Input
+                                    id="edit-team-country"
+                                    value={editingTeam.countryOrConfederation || ''}
+                                    onChange={(e) => setEditingTeam({ ...editingTeam, countryOrConfederation: e.target.value })}
+                                    placeholder={editingTeam.type === 'club' ? 'Ex: Brasil' : 'Ex: CONMEBOL'}
+                                />
+                            </div>
+                             {editingTeam.type === 'club' && (
+                                <div>
+                                    <Label htmlFor="edit-team-league">Liga (Opcional)</Label>
+                                    <Input
+                                        id="edit-team-league"
+                                        value={editingTeam.league || ''}
+                                        onChange={(e) => setEditingTeam({ ...editingTeam, league: e.target.value })}
+                                        placeholder="Ex: Brasileirão Série A"
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                     <DialogFooter>

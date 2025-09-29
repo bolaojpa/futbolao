@@ -472,9 +472,9 @@ export async function addNotification(
 }
 
 /**
- * Marks a specific notification as read and sets the read timestamp.
- * @param notificationId - The ID of the notification to update.
- */
+* Marks a specific notification as read and sets the read timestamp.
+* @param notificationId - The ID of the notification to update.
+*/
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
   const notifDocRef = doc(db, 'notifications', notificationId);
   try {
