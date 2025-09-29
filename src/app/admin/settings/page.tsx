@@ -2,34 +2,68 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Settings, Shield, Trash2, UserPlus, Save, Bot, BrainCircuit, Bell } from 'lucide-react';
+import { Settings, Shield, Trash2, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { getSystemSettings, updateSystemSettings } from '@/lib/firebase/firestore';
+
+interface SystemSettings {
+    allowRegistrations: boolean;
+    enablePerformanceNotifications: boolean;
+    enablePredictionConsultation: boolean;
+}
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
-    const [allowRegistrations, setAllowRegistrations] = useState(true);
-    const [enablePerformanceNotifications, setEnablePerformanceNotifications] = useState(true);
-    const [enablePredictionConsultation, setEnablePredictionConsultation] = useState(true);
+    const [settings, setSettings] = useState<SystemSettings>({
+        allowRegistrations: true,
+        enablePerformanceNotifications: true,
+        enablePredictionConsultation: true,
+    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
-    const handleSaveSettings = () => {
-        // Em uma aplicação real, estes dados seriam salvos no Firestore
-        // e recuperados no início do ciclo de vida do aplicativo.
-        // Por agora, apenas simulamos a ação de salvar.
-        console.log({
-            allowRegistrations,
-            enablePerformanceNotifications,
-            enablePredictionConsultation,
-        });
-        toast({
-            title: "Configurações Salvas!",
-            description: "As configurações gerais do bolão foram atualizadas com sucesso.",
-        })
+    useEffect(() => {
+        async function fetchSettings() {
+            setLoading(true);
+            try {
+                const fetchedSettings = await getSystemSettings();
+                setSettings(fetchedSettings);
+            } catch (error) {
+                toast({ title: "Erro ao carregar configurações", variant: "destructive" });
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchSettings();
+    }, [toast]);
+
+    const handleSaveSettings = async () => {
+        setSaving(true);
+        try {
+            await updateSystemSettings(settings);
+            toast({
+                title: "Configurações Salvas!",
+                description: "As configurações gerais do bolão foram atualizadas com sucesso.",
+            });
+        } catch (error) {
+            toast({ title: "Erro ao salvar", description: "Não foi possível salvar as configurações.", variant: "destructive" });
+        } finally {
+            setSaving(false);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
+    }
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
@@ -66,8 +100,8 @@ export default function AdminSettingsPage() {
                         </div>
                         <Switch
                             id="allow-registrations"
-                            checked={allowRegistrations}
-                            onCheckedChange={setAllowRegistrations}
+                            checked={settings.allowRegistrations}
+                            onCheckedChange={(checked) => setSettings(prev => ({...prev, allowRegistrations: checked}))}
                             aria-label="Permitir novos cadastros"
                         />
                     </div>
@@ -97,8 +131,8 @@ export default function AdminSettingsPage() {
                         </div>
                         <Switch
                             id="enable-performance-notifications"
-                            checked={enablePerformanceNotifications}
-                            onCheckedChange={setEnablePerformanceNotifications}
+                            checked={settings.enablePerformanceNotifications}
+                            onCheckedChange={(checked) => setSettings(prev => ({...prev, enablePerformanceNotifications: checked}))}
                             aria-label="Ativar notificações de desempenho por IA"
                         />
                     </div>
@@ -114,8 +148,8 @@ export default function AdminSettingsPage() {
                         </div>
                         <Switch
                             id="enable-prediction-consultation"
-                            checked={enablePredictionConsultation}
-                            onCheckedChange={setEnablePredictionConsultation}
+                            checked={settings.enablePredictionConsultation}
+                            onCheckedChange={(checked) => setSettings(prev => ({...prev, enablePredictionConsultation: checked}))}
                             aria-label="Ativar consulta de IA nos palpites"
                         />
                     </div>
@@ -123,8 +157,8 @@ export default function AdminSettingsPage() {
             </Card>
             
              <div className="max-w-2xl">
-                <Button onClick={handleSaveSettings}>
-                    <Save className="mr-2 h-4 w-4"/>
+                <Button onClick={handleSaveSettings} disabled={saving}>
+                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4"/>}
                     Salvar Todas as Configurações
                 </Button>
             </div>

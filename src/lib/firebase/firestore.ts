@@ -614,3 +614,41 @@ export async function markConversationAsReadByAdmin(conversationId: string) {
 
     await batch.commit();
 }
+
+
+// SYSTEM SETTINGS
+
+interface SystemSettings {
+    allowRegistrations: boolean;
+    enablePerformanceNotifications: boolean;
+    enablePredictionConsultation: boolean;
+}
+
+/**
+ * Fetches the global system settings from Firestore.
+ * Returns default settings if the document doesn't exist.
+ */
+export async function getSystemSettings(): Promise<SystemSettings> {
+    const settingsRef = doc(db, 'system_settings', 'global');
+    const docSnap = await getDoc(settingsRef);
+
+    if (docSnap.exists()) {
+        return docSnap.data() as SystemSettings;
+    } else {
+        // Return default settings if document doesn't exist
+        return {
+            allowRegistrations: true,
+            enablePerformanceNotifications: true,
+            enablePredictionConsultation: true,
+        };
+    }
+}
+
+/**
+ * Updates the global system settings in Firestore.
+ * @param settings - An object containing the settings to update.
+ */
+export async function updateSystemSettings(settings: Partial<SystemSettings>): Promise<void> {
+    const settingsRef = doc(db, 'system_settings', 'global');
+    await setDoc(settingsRef, settings, { merge: true });
+}

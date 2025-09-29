@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
-import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addNotification, updateUserStatsAfterMatch } from '@/lib/firebase/firestore';
+import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch, getSystemSettings } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
 import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy, Gem, Goal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,9 +37,7 @@ export default function AdminDashboardPage() {
     const [scores, setScores] = useState<Record<string, { placarA: string; placarB: string; }>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [isLoading, setIsLoading] = useState(true);
-    // Simula a busca da configuração do admin. Em um app real, isso viria do DB.
-    const [enableAiNotifications, setEnableAiNotifications] = useState(true);
-
+    
     const { toast } = useToast();
 
     const fetchData = async () => {
@@ -233,6 +231,9 @@ export default function AdminDashboardPage() {
             setAllUsers(usersAfterUpdate);
 
              // 4. (Opcional) Envia notificação por IA
+            const systemSettings = await getSystemSettings();
+            const enableAiNotifications = systemSettings.enablePerformanceNotifications ?? true;
+            
             if (enableAiNotifications && championship.predictionAssist?.active) {
                 for (const prediction of match.predictions) {
                     const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
@@ -258,7 +259,7 @@ export default function AdminDashboardPage() {
                         };
 
                         generatePerformanceUpdate(notificationData).then(result => {
-                            addNotification(userAfter.id, result.titulo, result.mensagem, '/dashboard/leaderboard');
+                            addToastNotification(userAfter.id, result.titulo, result.mensagem);
                         }).catch(err => {
                             console.error("Falha ao gerar notificação de IA para", userAfter.apelido, err);
                         });
@@ -553,5 +554,6 @@ export default function AdminDashboardPage() {
 
 
   
+
 
 
