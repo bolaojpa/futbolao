@@ -136,6 +136,26 @@ export const predefinedTeams = [
     { name: 'Pisa SC', type: 'club', countryOrConfederation: 'UEFA / Itália', league: 'Serie B', crestUrl: 'https://crests.football-data.org/474.svg' },
     { name: 'US Sassuolo Calcio', type: 'club', countryOrConfederation: 'UEFA / Itália', league: 'Serie B', crestUrl: 'https://crests.football-data.org/471.svg' },
 
+    // Bundesliga (Alemanha)
+    { name: 'FC Augsburg', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/1.svg' },
+    { name: 'Bayer 04 Leverkusen', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/3.svg' },
+    { name: 'FC Bayern München', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/5.svg' },
+    { name: 'Borussia Dortmund', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/4.svg' },
+    { name: 'Borussia Mönchengladbach', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/18.svg' },
+    { name: 'Eintracht Frankfurt', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/19.svg' },
+    { name: 'SC Freiburg', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/17.svg' },
+    { name: 'TSG 1899 Hoffenheim', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/2.svg' },
+    { name: 'FC St. Pauli', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/20.svg' },
+    { name: 'Holstein Kiel', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/30.svg' },
+    { name: 'FSV Mainz 05', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/15.svg' },
+    { name: 'RB Leipzig', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/721.svg' },
+    { name: 'VfB Stuttgart', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/10.svg' },
+    { name: '1. FC Union Berlin', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/28.svg' },
+    { name: 'SV Werder Bremen', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/12.svg' },
+    { name: 'VfL Wolfsburg', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/11.svg' },
+    { name: '1. FC Heidenheim 1846', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: 'Bundesliga', crestUrl: 'https://crests.football-data.org/21.svg' },
+    { name: '1. FC Köln', type: 'club', countryOrConfederation: 'UEFA / Alemanha', league: '2. Bundesliga', crestUrl: 'https://crests.football-data.org/1.svg' },
+
     // Liga Portugal
     { name: 'SL Benfica', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/1903.svg' },
     { name: 'FC Porto', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/503.svg' },
@@ -147,6 +167,8 @@ export const predefinedTeams = [
     { name: 'River Plate', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://crests.football-data.org/2068.svg' },
     { name: 'Racing Club', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://crests.football-data.org/2067.svg' },
     { name: 'Independiente', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://crests.football-data.org/2064.svg' },
+    { name: 'San Lorenzo', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Logo_del_Club_Atl%C3%A9tico_San_Lorenzo_de_Almagro.svg' },
+    { name: 'Estudiantes', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Escudo_de_Estudiantes_de_La_Plata.svg' },
     
     // MLS
     { name: 'Inter Miami CF', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1607.svg' },
@@ -155,6 +177,8 @@ export const predefinedTeams = [
     // México
     { name: 'Club América', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1620.svg' },
     { name: 'Chivas Guadalajara', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1621.svg' },
+    { name: 'Cruz Azul', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Cruz_Azul_logo.svg/1200px-Cruz_Azul_logo.svg.png' },
+    { name: 'Pumas UNAM', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Pumas_UNAM_logo.svg/1200px-Pumas_UNAM_logo.svg.png' },
 
     // Outros
     { name: 'Al-Nassr', type: 'club', countryOrConfederation: 'AFC / Arábia Saudita', league: 'Saudi Pro League', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Al-Nassr_FC.svg' },
