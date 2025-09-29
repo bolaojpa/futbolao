@@ -2,32 +2,35 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Shield, PlusCircle, Import, Trash2, Loader2, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { Shield, PlusCircle, Import, Trash2, Loader2, AlertTriangle, Database, DatabaseZap } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { fetchTeamsFromApi } from './actions';
 import type { Team } from '@/lib/types';
 import { getTeams, addTeam, deleteTeams } from '@/lib/firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
+import { predefinedTeams } from '@/lib/predefined-teams';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export default function AdminTeamsPage() {
     const { toast } = useToast();
     const [teams, setTeams] = useState<Team[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
-    const [competitionCode, setCompetitionCode] = useState('');
     const [manualTeamName, setManualTeamName] = useState('');
     const [manualTeamCrest, setManualTeamCrest] = useState('');
     const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
+
+    const [clubFilter, setClubFilter] = useState('all');
+    const [nationalFilter, setNationalFilter] = useState('all');
 
     const fetchTeams = async () => {
         setIsFetching(true);
@@ -45,51 +48,40 @@ export default function AdminTeamsPage() {
         fetchTeams();
     }, []);
 
-    const handleFetchTeams = async (type: 'club' | 'national') => {
-        if (!competitionCode) {
-            toast({ title: "Código da Competição Inválido", description: "Por favor, insira um código de competição válido.", variant: "destructive" });
-            return;
-        }
+    const handleInitialLoad = async () => {
         setIsLoading(true);
-        const result = await fetchTeamsFromApi(competitionCode);
-        
-        if (result.error) {
-            toast({ title: "Erro ao Importar", description: result.error, variant: "destructive" });
-            setIsLoading(false);
-        } else if (result.teams) {
-            const newTeams = result.teams.map(team => ({
-                name: team.name,
-                crestUrl: team.crestUrl,
-                type: type,
-            }));
+        let teamsAdded = 0;
+        let teamsSkipped = 0;
 
-            // Adiciona as equipes ao Firestore uma a uma
-            try {
-                for (const teamData of newTeams) {
-                    // Evita duplicados pelo nome
-                    if (!teams.some(et => et.name === teamData.name)) {
-                       await addTeam(teamData);
-                    }
+        try {
+            for (const teamData of predefinedTeams) {
+                if (!teams.some(et => et.name === teamData.name)) {
+                    await addTeam(teamData);
+                    teamsAdded++;
+                } else {
+                    teamsSkipped++;
                 }
-                await fetchTeams(); // Re-fetch para atualizar a lista
-                toast({ title: "Importação Concluída!", description: `${newTeams.length} equipes foram processadas.` });
-            } catch (error) {
-                toast({ title: "Erro ao Salvar Equipes", description: "Não foi possível salvar as equipes no banco de dados.", variant: "destructive" });
-            } finally {
-                setCompetitionCode('');
-                 setIsLoading(false);
             }
+            await fetchTeams();
+            toast({ 
+                title: "Carga Inicial Concluída!", 
+                description: `${teamsAdded} equipes adicionadas. ${teamsSkipped} equipes já existentes foram ignoradas.`
+            });
+        } catch (error) {
+            toast({ title: "Erro na Carga Inicial", description: "Ocorreu um erro ao salvar as equipes pré-definidas.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleAddManualTeam = async (type: 'club' | 'national') => {
-        if (!manualTeamName || !manualTeamCrest) {
-            toast({ title: "Dados Incompletos", description: "Preencha o nome e a URL do escudo.", variant: "destructive" });
+        if (!manualTeamName) {
+            toast({ title: "Dados Incompletos", description: "Preencha o nome da equipe.", variant: "destructive" });
             return;
         }
         const newTeam: Omit<Team, 'id'> = {
             name: manualTeamName,
-            crestUrl: manualTeamCrest,
+            crestUrl: manualTeamCrest || `https://ui-avatars.com/api/?name=${manualTeamName.charAt(0)}&background=random&size=128`,
             type: type,
         };
         try {
@@ -148,8 +140,18 @@ export default function AdminTeamsPage() {
     };
 
     const renderTeamTable = (type: 'club' | 'national') => {
-        const filteredTeams = teams.filter(t => t.type === type);
+        const currentFilter = type === 'club' ? clubFilter : nationalFilter;
+        const filteredTeams = teams.filter(t => {
+            if (t.type !== type) return false;
+            if (currentFilter === 'all') return true;
+            return t.countryOrConfederation === currentFilter || t.league === currentFilter;
+        });
+        
         const allOnPageSelected = filteredTeams.length > 0 && filteredTeams.every(t => selectedTeams.has(t.id));
+        
+        const filterOptions = Array.from(new Set(
+            teams.filter(t => t.type === type).flatMap(t => [t.countryOrConfederation, t.league]).filter(Boolean)
+        ));
 
         return (
             <Card>
@@ -158,7 +160,7 @@ export default function AdminTeamsPage() {
                         <div>
                             <CardTitle className="capitalize">{type === 'club' ? 'Clubes' : 'Seleções'} Cadastrados</CardTitle>
                             <CardDescription>
-                                Total de {filteredTeams.length} equipes.
+                                Exibindo {filteredTeams.length} de {teams.filter(t => t.type === type).length} equipes.
                             </CardDescription>
                         </div>
                          {selectedTeams.size > 0 && (
@@ -183,6 +185,19 @@ export default function AdminTeamsPage() {
                                 </AlertDialogContent>
                             </AlertDialog>
                         )}
+                    </div>
+                     <div className="pt-4">
+                        <Select value={currentFilter} onValueChange={type === 'club' ? setClubFilter : setNationalFilter}>
+                            <SelectTrigger className="w-full sm:w-[280px]">
+                                <SelectValue placeholder="Filtrar..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Mostrar Todos</SelectItem>
+                                {filterOptions.map(option => (
+                                    <SelectItem key={option} value={option!}>{option}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -239,29 +254,7 @@ export default function AdminTeamsPage() {
     }
     
     const renderTeamManagement = (type: 'club' | 'national') => (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Import /> Importar via API</CardTitle>
-                    <CardDescription>
-                        Adicione equipes de uma competição usando o código do football-data.org (ex: BSA, PL, WC).
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <Label htmlFor={`competition-code-${type}`}>Código da Competição</Label>
-                        <Input id={`competition-code-${type}`} placeholder="Ex: BSA" value={competitionCode} onChange={(e) => setCompetitionCode(e.target.value.toUpperCase())} />
-                    </div>
-                    <Button onClick={() => handleFetchTeams(type)} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 animate-spin" /> : <Import className="mr-2" />}
-                        Importar {type === 'club' ? 'Times' : 'Seleções'}
-                    </Button>
-                     <div className="text-xs text-muted-foreground pt-2">
-                        <AlertTriangle className="inline-block h-4 w-4 mr-1" />
-                        A importação pode não funcionar para todas as competições devido a limitações do plano da API.
-                    </div>
-                </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 gap-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><PlusCircle /> Adicionar Manualmente</CardTitle>
@@ -275,7 +268,7 @@ export default function AdminTeamsPage() {
                         <Input id={`team-name-${type}`} placeholder="Ex: Real Madrid CF" value={manualTeamName} onChange={(e) => setManualTeamName(e.target.value)} />
                     </div>
                     <div>
-                        <Label htmlFor={`team-crest-${type}`}>URL do Escudo</Label>
+                        <Label htmlFor={`team-crest-${type}`}>URL do Escudo (Opcional)</Label>
                         <Input id={`team-crest-${type}`} placeholder="https://example.com/escudo.png" value={manualTeamCrest} onChange={(e) => setManualTeamCrest(e.target.value)} />
                     </div>
                     <Button variant="secondary" onClick={() => handleAddManualTeam(type)}>
@@ -298,6 +291,21 @@ export default function AdminTeamsPage() {
                     </p>
                 </div>
             </div>
+
+             <Card className="border-dashed">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><DatabaseZap /> Carga Inicial de Dados</CardTitle>
+                    <CardDescription>
+                        Clique no botão abaixo para popular o banco de dados com uma lista extensa de equipes do mundo todo. Isso só precisa ser feito uma vez. Equipes existentes não serão duplicadas.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button onClick={handleInitialLoad} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                        Fazer Carga Inicial de Equipes
+                    </Button>
+                </CardContent>
+            </Card>
 
             <Tabs defaultValue="clubs">
                 <TabsList className="grid w-full grid-cols-2 max-w-sm">

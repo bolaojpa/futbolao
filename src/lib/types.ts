@@ -119,7 +119,10 @@ export interface Team {
     name: string;
     crestUrl: string;
     type: 'club' | 'national';
+    countryOrConfederation?: string;
+    league?: string;
 }
+
 
 export interface Log {
     id: string;
@@ -127,7 +130,7 @@ export interface Log {
     actor: {
         id: string;
         apelido: string;
-        type: 'admin' | 'moderator' | 'user';
+        type: 'admin' | 'moderador' | 'user';
     };
     action: 'login' | 'login_fail' | 'prediction_update' | 'profile_update' | 'user_management' | 'championship_create' | 'emergency_message' | 'ai_notification';
     details: string | object;
