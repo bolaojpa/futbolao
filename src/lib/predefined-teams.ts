@@ -47,9 +47,9 @@ export const predefinedTeams = [
     // Premier League & FA Cup
     { name: 'Arsenal', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/57.svg' },
     { name: 'Aston Villa', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/58.svg' },
-    { name: 'Bournemouth', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/1044.svg' },
+    { name: 'AFC Bournemouth', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/1044.svg' },
     { name: 'Brentford', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/402.svg' },
-    { name: 'Brighton', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/397.svg' },
+    { name: 'Brighton & Hove Albion', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/397.svg' },
     { name: 'Chelsea', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/61.svg' },
     { name: 'Crystal Palace', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/354.svg' },
     { name: 'Everton', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/62.svg' },
@@ -64,7 +64,7 @@ export const predefinedTeams = [
     { name: 'Southampton', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/340.svg' },
     { name: 'Tottenham Hotspur', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/73.svg' },
     { name: 'West Ham United', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/563.svg' },
-    { name: 'Wolverhampton', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/76.svg' },
+    { name: 'Wolverhampton Wanderers', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/76.svg' },
 
     // EFL Championship (Série B Inglesa)
     { name: 'Burnley', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/328.svg' },
@@ -73,7 +73,10 @@ export const predefinedTeams = [
     { name: 'Leeds United', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/347.svg' },
     { name: 'West Bromwich Albion', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/74.svg' },
     { name: 'Norwich City', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/342.svg' },
-    
+    { name: 'Sunderland', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/71.svg' },
+    { name: 'Birmingham City', type: 'club', countryOrConfederation: 'Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/59.svg' },
+
+
     // La Liga
     { name: 'Alavés', type: 'club', countryOrConfederation: 'Espanha', league: 'La Liga', crestUrl: 'https://crests.football-data.org/263.svg' },
     { name: 'Athletic Bilbao', type: 'club', countryOrConfederation: 'Espanha', league: 'La Liga', crestUrl: 'https://crests.football-data.org/77.svg' },
