@@ -242,9 +242,15 @@ export const predefinedTeams = [
     
     // México
     { name: 'Club América', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1620.svg' },
-    { name: 'Chivas Guadalajara', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1621.svg' },
+    { name: 'Guadalajara (Chivas)', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1621.svg' },
     { name: 'Cruz Azul', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Cruz_Azul_logo.svg/1200px-Cruz_Azul_logo.svg.png' },
     { name: 'Pumas UNAM', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Pumas_UNAM_logo.svg/1200px-Pumas_UNAM_logo.svg.png' },
+    { name: 'C.F. Monterrey (Rayados)', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Club_de_F%C3%BAtbol_Monterrey_logo.svg/1200px-Club_de_F%C3%BAtbol_Monterrey_logo.svg.png' },
+    { name: 'C.F. Pachuca', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Pachuca_logo.svg/1200px-Pachuca_logo.svg.png' },
+    { name: 'Tigres UANL', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f0/Tigres_UANL_logo.svg/1200px-Tigres_UANL_logo.svg.png' },
+    { name: 'Santos Laguna', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/bb/Santos_Laguna_logo.svg/1200px-Santos_Laguna_logo.svg.png' },
+    { name: 'Atlas', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/91/Club_Atlas.svg/1200px-Club_Atlas.svg.png' },
+    { name: 'Toluca', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Deportivo_Toluca_F.C._logo.svg/1200px-Deportivo_Toluca_F.C._logo.svg.png' },
 
     // Outros
     { name: 'Al-Nassr', type: 'club', countryOrConfederation: 'AFC / Arábia Saudita', league: 'Saudi Pro League', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Al-Nassr_FC.svg' },
@@ -304,4 +310,3 @@ export const predefinedTeams = [
     { name: 'Japão', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/766.svg' },
     { name: 'Qatar', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/8026.svg' },
 ];
-
