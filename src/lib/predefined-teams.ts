@@ -197,7 +197,15 @@ export const predefinedTeams = [
     { name: 'Racing Club', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://crests.football-data.org/2067.svg' },
     { name: 'Independiente', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://crests.football-data.org/2064.svg' },
     { name: 'San Lorenzo', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Logo_del_Club_Atl%C3%A9tico_San_Lorenzo_de_Almagro.svg' },
-    { name: 'Estudiantes', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Escudo_de_Estudiantes_de_La_Plata.svg' },
+    { name: 'Estudiantes (LP)', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Escudo_de_Estudiantes_de_La_Plata.svg' },
+    { name: 'Gimnasia y Esgrima (LP)', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/26/Escudo_del_Club_de_Gimnasia_y_Esgrima_La_Plata.svg' },
+    { name: 'Lanús', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/2/21/Club_Atl%C3%A9tico_Lan%C3%BAs_logo.svg' },
+    { name: 'Newell\'s Old Boys', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/0b/Escudo_del_Club_Atl%C3%A9tico_Newell%27s_Old_Boys.svg' },
+    { name: 'Rosario Central', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Escudo_del_Club_Atl%C3%A9tico_Rosario_Central.svg' },
+    { name: 'Vélez Sarsfield', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/1/1f/Club_Atl%C3%A9tico_V%C3%A9lez_Sarsfield_logo.svg' },
+    { name: 'Argentinos Juniors', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Argentinos_juniors_logo.svg/1200px-Argentinos_juniors_logo.svg.png' },
+    { name: 'Belgrano', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e8/Club_Atl%C3%A9tico_Belgrano_logo.svg/1200px-Club_Atl%C3%A9tico_Belgrano_logo.svg.png' },
+
     
     // MLS
     { name: 'Inter Miami CF', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1607.svg' },
