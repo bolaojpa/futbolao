@@ -206,6 +206,15 @@ export const predefinedTeams = [
     { name: 'Argentinos Juniors', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Argentinos_juniors_logo.svg/1200px-Argentinos_juniors_logo.svg.png' },
     { name: 'Belgrano', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e8/Club_Atl%C3%A9tico_Belgrano_logo.svg/1200px-Club_Atl%C3%A9tico_Belgrano_logo.svg.png' },
 
+    // Bolivia
+    { name: 'The Strongest', type: 'club', countryOrConfederation: 'CONMEBOL / Bolivia', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Escudo_del_Club_The_Strongest.svg/1200px-Escudo_del_Club_The_Strongest.svg.png' },
+    { name: 'Bolívar', type: 'club', countryOrConfederation: 'CONMEBOL / Bolivia', league: 'División Profesional', crestUrl: 'https://crests.football-data.org/4330.svg' },
+    { name: 'Oriente Petrolero', type: 'club', countryOrConfederation: 'CONMEBOL / Bolivia', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/90/Oriente_Petrolero_logo.svg/1200px-Oriente_Petrolero_logo.svg.png' },
+    { name: 'Blooming', type: 'club', countryOrConfederation: 'CONMEBOL / Bolivia', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d4/Club_Blooming_logo.svg/1200px-Club_Blooming_logo.svg.png' },
+    { name: 'Club Jorge Wilstermann', type: 'club', countryOrConfederation: 'CONMEBOL / Bolivia', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/Club_Jorge_Wilstermann_logo.svg/1200px-Club_Jorge_Wilstermann_logo.svg.png' },
+    { name: 'Guabirá', type: 'club', countryOrConfederation: 'CONMEBOL / Bolivia', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/4b/Club_Guabir%C3%A1_logo.svg/1200px-Club_Guabir%C3%A1_logo.svg.png' },
+    { name: 'Royal Pari', type: 'club', countryOrConfederation: 'CONMEBOL / Bolivia', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/Royal_Pari_FC_logo.svg/1200px-Royal_Pari_FC_logo.svg.png' },
+
     // Chile
     { name: 'Colo-Colo', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://crests.football-data.org/4312.svg' },
     { name: 'Universidad de Chile', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://crests.football-data.org/4313.svg' },
@@ -295,3 +304,4 @@ export const predefinedTeams = [
     { name: 'Japão', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/766.svg' },
     { name: 'Qatar', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/8026.svg' },
 ];
+
