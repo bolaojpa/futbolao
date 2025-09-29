@@ -179,9 +179,9 @@ export default function AdminTeamsPage() {
 
         const filteredTeams = teams.filter(t => {
             if (t.type !== type) return false;
-            const leagueMatch = currentFilter === 'all' || t.countryOrConfederation === currentFilter || t.league === currentFilter;
+            const filterMatch = currentFilter === 'all' || t.countryOrConfederation === currentFilter;
             const searchMatch = searchTerm === '' || t.name.toLowerCase().includes(searchTerm.toLowerCase());
-            return leagueMatch && searchMatch;
+            return filterMatch && searchMatch;
         });
 
         const totalPages = Math.ceil(filteredTeams.length / ITEMS_PER_PAGE);
@@ -193,7 +193,7 @@ export default function AdminTeamsPage() {
         const allOnPageSelected = paginatedTeams.length > 0 && paginatedTeams.every(t => selectedTeams.has(t.id));
         
         const filterOptions = Array.from(new Set(
-            teams.filter(t => t.type === type).flatMap(t => [t.countryOrConfederation, t.league]).filter(Boolean)
+            teams.filter(t => t.type === type).map(t => t.countryOrConfederation).filter(Boolean)
         ));
 
         return (
