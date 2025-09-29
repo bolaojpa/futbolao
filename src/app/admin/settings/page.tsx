@@ -32,7 +32,9 @@ export default function AdminSettingsPage() {
             setLoading(true);
             try {
                 const fetchedSettings = await getSystemSettings();
-                setSettings(fetchedSettings);
+                if (fetchedSettings) {
+                    setSettings(fetchedSettings);
+                }
             } catch (error) {
                 toast({ title: "Erro ao carregar configurações", variant: "destructive" });
             } finally {
