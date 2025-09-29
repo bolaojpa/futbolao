@@ -216,6 +216,17 @@ export const predefinedTeams = [
     { name: 'Cobresal', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c0/Cobresal_logo.svg/1200px-Cobresal_logo.svg.png' },
     { name: 'Deportes Iquique', type: 'club', countryOrConfederation: 'CONMEBOL / Chile', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9f/Deportes_Iquique_logo.svg/1200px-Deportes_Iquique_logo.svg.png' },
 
+    // Colombia
+    { name: 'Atlético Nacional', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://crests.football-data.org/4335.svg' },
+    { name: 'Millonarios', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://crests.football-data.org/4336.svg' },
+    { name: 'Deportivo Cali', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/c/ce/Deportivo_Cali_logo.svg' },
+    { name: 'Independiente Medellín', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/3/30/Escudo_de_Independiente_Medellin.png' },
+    { name: 'Junior Barranquilla', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/52/Junior_de_Barranquilla_logo.svg/1200px-Junior_de_Barranquilla_logo.svg.png' },
+    { name: 'América de Cali', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5f/America_de_Cali_logo.svg/1200px-America_de_Cali_logo.svg.png' },
+    { name: 'Once Caldas', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Once_Caldas_logo.svg/1200px-Once_Caldas_logo.svg.png' },
+    { name: 'La Equidad', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/La_Equidad_logo.svg/1200px-La_Equidad_logo.svg.png' },
+    { name: 'Deportes Tolima', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/85/Deportes_Tolima_logo.svg/1200px-Deportes_Tolima_logo.svg.png' },
+
     // MLS
     { name: 'Inter Miami CF', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1607.svg' },
     { name: 'LA Galaxy', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1598.svg' },
