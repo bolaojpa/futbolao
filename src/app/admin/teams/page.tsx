@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { predefinedTeams } from '@/lib/predefined-teams';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -28,14 +29,15 @@ export default function AdminTeamsPage() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
-    const [manualTeamName, setManualTeamName] = useState('');
+    const [manualTeamNames, setManualTeamNames] = useState('');
     const [manualTeamCrest, setManualTeamCrest] = useState('');
     const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
 
     const [editingTeam, setEditingTeam] = useState<Team | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     
-    const [clubFilter, setClubFilter] = useState('all');
+    const [clubConfederationFilter, setClubConfederationFilter] = useState('all');
+    const [clubCountryFilter, setClubCountryFilter] = useState('all');
     const [nationalFilter, setNationalFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -87,23 +89,30 @@ export default function AdminTeamsPage() {
     };
 
     const handleAddManualTeam = async (type: 'club' | 'national') => {
-        if (!manualTeamName) {
-            toast({ title: "Dados Incompletos", description: "Preencha o nome da equipe.", variant: "destructive" });
+        if (!manualTeamNames.trim()) {
+            toast({ title: "Dados Incompletos", description: "Preencha o nome da(s) equipe(s).", variant: "destructive" });
             return;
         }
-        const newTeam: Omit<Team, 'id'> = {
-            name: manualTeamName,
-            crestUrl: manualTeamCrest || `https://ui-avatars.com/api/?name=${manualTeamName.charAt(0)}&background=random&size=128`,
-            type: type,
-        };
+
+        const teamNames = manualTeamNames.split('\n').map(name => name.trim()).filter(name => name.length > 0);
+        
+        let teamsAddedCount = 0;
         try {
-            await addTeam(newTeam);
+            for (const teamName of teamNames) {
+                const newTeam: Omit<Team, 'id'> = {
+                    name: teamName,
+                    crestUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(teamName)}&background=random&size=128`,
+                    type: type,
+                };
+                await addTeam(newTeam);
+                teamsAddedCount++;
+            }
+            
             await fetchTeams();
-            toast({ title: "Equipe Adicionada!", description: `A equipe "${manualTeamName}" foi adicionada com sucesso.` });
-            setManualTeamName('');
-            setManualTeamCrest('');
+            toast({ title: "Equipe(s) Adicionada(s)!", description: `${teamsAddedCount} equipe(s) foram adicionadas com sucesso.` });
+            setManualTeamNames('');
         } catch (error) {
-            toast({ title: "Erro ao Adicionar Equipe", description: "Não foi possível salvar a equipe.", variant: "destructive" });
+            toast({ title: "Erro ao Adicionar Equipe(s)", description: "Não foi possível salvar uma ou mais equipes.", variant: "destructive" });
         }
     };
     
@@ -173,17 +182,49 @@ export default function AdminTeamsPage() {
             toast({ title: "Erro ao atualizar", description: "Não foi possível salvar as alterações.", variant: "destructive" });
         }
     };
+    
+    const clubConfederationOptions = useMemo(() => Array.from(new Set(
+        teams.filter(t => t.type === 'club' && t.countryOrConfederation).map(t => {
+             const parts = (t.countryOrConfederation || '').split('/');
+             return parts.length > 1 ? parts[0].trim() : 'Outros';
+        })
+    )).sort(), [teams]);
+
+    const clubCountryOptions = useMemo(() => {
+        if (clubConfederationFilter === 'all') return [];
+        return Array.from(new Set(
+            teams.filter(t => t.type === 'club' && t.countryOrConfederation && (t.countryOrConfederation.startsWith(clubConfederationFilter) || (clubConfederationFilter === 'Outros' && !t.countryOrConfederation.includes('/'))))
+            .map(t => {
+                const parts = (t.countryOrConfederation || '').split('/');
+                return parts.length > 1 ? parts[1].trim() : parts[0].trim();
+            })
+        )).sort();
+    }, [teams, clubConfederationFilter]);
+
 
     const renderTeamTable = (type: 'club' | 'national') => {
-        const currentFilter = type === 'club' ? clubFilter : nationalFilter;
-        const currentPage = type === 'club' ? currentPageClubs : currentPageNationals;
-        const setCurrentPage = type === 'club' ? setCurrentPageClubs : setCurrentPageNationals;
+        const isClub = type === 'club';
+        const currentPage = isClub ? currentPageClubs : currentPageNationals;
+        const setCurrentPage = isClub ? setCurrentPageClubs : setCurrentPageNationals;
 
         const filteredTeams = teams.filter(t => {
             if (t.type !== type) return false;
-            const filterMatch = currentFilter === 'all' || t.countryOrConfederation === currentFilter;
+            
+            let confederationMatch = true;
+            let countryMatch = true;
+
+            if (isClub) {
+                confederationMatch = clubConfederationFilter === 'all' || 
+                                     (t.countryOrConfederation && t.countryOrConfederation.startsWith(clubConfederationFilter)) ||
+                                     (clubConfederationFilter === 'Outros' && t.countryOrConfederation && !t.countryOrConfederation.includes('/'));
+                countryMatch = clubCountryFilter === 'all' || 
+                               (t.countryOrConfederation && t.countryOrConfederation.includes(clubCountryFilter));
+            } else {
+                confederationMatch = nationalFilter === 'all' || t.countryOrConfederation === nationalFilter;
+            }
+
             const searchMatch = searchTerm === '' || t.name.toLowerCase().includes(searchTerm.toLowerCase());
-            return filterMatch && searchMatch;
+            return confederationMatch && countryMatch && searchMatch;
         });
 
         const totalPages = Math.ceil(filteredTeams.length / ITEMS_PER_PAGE);
@@ -242,17 +283,44 @@ export default function AdminTeamsPage() {
                                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             />
                         </div>
-                        <Select value={currentFilter} onValueChange={type === 'club' ? (v) => {setClubFilter(v); setCurrentPage(1);} : (v) => {setNationalFilter(v); setCurrentPage(1);}}>
-                            <SelectTrigger className="w-full md:w-[280px]">
-                                <SelectValue placeholder="Filtrar..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Mostrar Todos</SelectItem>
-                                {filterOptions.map(option => (
-                                    <SelectItem key={option} value={option!}>{option}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                         {isClub ? (
+                            <>
+                                <Select value={clubConfederationFilter} onValueChange={(v) => {setClubConfederationFilter(v); setClubCountryFilter('all'); setCurrentPage(1);}}>
+                                    <SelectTrigger className="w-full md:w-[220px]">
+                                        <SelectValue placeholder="Filtrar Confederação..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todas as Confederações</SelectItem>
+                                        {clubConfederationOptions.map(option => (
+                                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                 <Select value={clubCountryFilter} onValueChange={(v) => {setClubCountryFilter(v); setCurrentPage(1);}} disabled={clubConfederationFilter === 'all'}>
+                                    <SelectTrigger className="w-full md:w-[220px]">
+                                        <SelectValue placeholder="Filtrar País..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos os Países</SelectItem>
+                                        {clubCountryOptions.map(option => (
+                                            <SelectItem key={option} value={option!}>{option}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </>
+                        ) : (
+                             <Select value={nationalFilter} onValueChange={(v) => {setNationalFilter(v); setCurrentPage(1);}}>
+                                <SelectTrigger className="w-full md:w-[280px]">
+                                    <SelectValue placeholder="Filtrar por Confederação..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas as Confederações</SelectItem>
+                                    {filterOptions.map(option => (
+                                        <SelectItem key={option} value={option!}>{option}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -341,30 +409,30 @@ export default function AdminTeamsPage() {
     }
     
     const renderTeamManagement = (type: 'club' | 'national') => (
-        <div className="grid grid-cols-1 gap-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><PlusCircle /> Adicionar Manualmente</CardTitle>
-                    <CardDescription>
-                        Adicione uma equipe que não está disponível na lista pré-definida.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <Label htmlFor={`team-name-${type}`}>Nome da Equipe</Label>
-                        <Input id={`team-name-${type}`} placeholder="Ex: Real Madrid CF" value={manualTeamName} onChange={(e) => setManualTeamName(e.target.value)} />
-                    </div>
-                    <div>
-                        <Label htmlFor={`team-crest-${type}`}>URL do Escudo (Opcional)</Label>
-                        <Input id={`team-crest-${type}`} placeholder="https://example.com/escudo.png" value={manualTeamCrest} onChange={(e) => setManualTeamCrest(e.target.value)} />
-                    </div>
-                    <Button variant="secondary" onClick={() => handleAddManualTeam(type)}>
-                        <PlusCircle className="mr-2" />
-                        Adicionar {type === 'club' ? 'Time' : 'Seleção'}
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><PlusCircle /> Adicionar em Lote</CardTitle>
+                <CardDescription>
+                    Adicione múltiplas equipes de uma vez, colando uma lista de nomes (um por linha).
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div>
+                    <Label htmlFor={`team-names-${type}`}>Nomes das Equipes (uma por linha)</Label>
+                    <Textarea 
+                        id={`team-names-${type}`} 
+                        placeholder="Ex:&#10;Real Madrid CF&#10;FC Barcelona&#10;Manchester United" 
+                        value={manualTeamNames} 
+                        onChange={(e) => setManualTeamNames(e.target.value)}
+                        className="min-h-[120px]"
+                    />
+                </div>
+                <Button variant="secondary" onClick={() => handleAddManualTeam(type)}>
+                    <PlusCircle className="mr-2" />
+                    Adicionar {type === 'club' ? 'Clubes' : 'Seleções'}
+                </Button>
+            </CardContent>
+        </Card>
     );
 
     return (
@@ -444,13 +512,13 @@ export default function AdminTeamsPage() {
                             </div>
                              <div>
                                 <Label htmlFor="edit-team-country">
-                                    {editingTeam.type === 'club' ? 'País' : 'Confederação'}
+                                    {editingTeam.type === 'club' ? 'Confederação/País' : 'Confederação'}
                                 </Label>
                                 <Input
                                     id="edit-team-country"
                                     value={editingTeam.countryOrConfederation || ''}
                                     onChange={(e) => setEditingTeam({ ...editingTeam, countryOrConfederation: e.target.value })}
-                                    placeholder={editingTeam.type === 'club' ? 'Ex: Brasil' : 'Ex: CONMEBOL'}
+                                    placeholder={editingTeam.type === 'club' ? 'Ex: CONMEBOL / Brasil' : 'Ex: CONMEBOL'}
                                 />
                             </div>
                              {editingTeam.type === 'club' && (
