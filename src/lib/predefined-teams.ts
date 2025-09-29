@@ -237,8 +237,16 @@ export const predefinedTeams = [
     { name: 'Deportes Tolima', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/85/Deportes_Tolima_logo.svg/1200px-Deportes_Tolima_logo.svg.png' },
 
     // MLS
+    { name: 'Atlanta United FC', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1604.svg' },
+    { name: 'FC Cincinnati', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1597.svg' },
     { name: 'Inter Miami CF', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1607.svg' },
     { name: 'LA Galaxy', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1598.svg' },
+    { name: 'Los Angeles FC', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1601.svg' },
+    { name: 'New England Revolution', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1594.svg' },
+    { name: 'New York City FC', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1603.svg' },
+    { name: 'Seattle Sounders FC', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1596.svg' },
+    { name: 'Toronto FC', type: 'club', countryOrConfederation: 'CONCACAF / Canadá', league: 'MLS', crestUrl: 'https://crests.football-data.org/1600.svg' },
+    { name: 'Vancouver Whitecaps FC', type: 'club', countryOrConfederation: 'CONCACAF / Canadá', league: 'MLS', crestUrl: 'https://crests.football-data.org/1599.svg' },
     
     // México
     { name: 'Club América', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1620.svg' },
