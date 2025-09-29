@@ -65,9 +65,6 @@ export const predefinedTeams = [
     { name: 'Tottenham Hotspur FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/73.svg' },
     { name: 'West Ham United FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/563.svg' },
     { name: 'Wolverhampton Wanderers FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/76.svg' },
-    { name: 'Luton Town FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/341.svg' },
-    { name: 'Sheffield United FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/356.svg' },
-    { name: 'Birmingham City FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/59.svg' },
     
     // EFL Championship (Série B Inglesa)
     { name: 'Blackburn Rovers FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/60.svg' },
@@ -77,12 +74,17 @@ export const predefinedTeams = [
     { name: 'Derby County FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/343.svg' },
     { name: 'Hull City AFC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/322.svg' },
     { name: 'Leeds United FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/347.svg' },
+    { name: 'Luton Town FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/341.svg' },
     { name: 'Millwall FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/69.svg' },
     { name: 'Norwich City FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/342.svg' },
     { name: 'Queens Park Rangers FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/349.svg' },
+    { name: 'Sheffield United FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/356.svg' },
     { name: 'Sheffield Wednesday FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/344.svg' },
     { name: 'Sunderland AFC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/71.svg' },
     { name: 'West Bromwich Albion FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Championship', crestUrl: 'https://crests.football-data.org/74.svg' },
+    
+    // League One (Inglaterra)
+    { name: 'Birmingham City FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/59.svg' },
     { name: 'Huddersfield Town AFC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/385.svg' },
     { name: 'Bristol Rovers FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'League One', crestUrl: 'https://crests.football-data.org/388.svg' },
 
@@ -161,7 +163,16 @@ export const predefinedTeams = [
     { name: 'FC Porto', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/503.svg' },
     { name: 'Sporting CP', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/507.svg' },
     { name: 'SC Braga', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/502.svg' },
-
+    { name: 'Gil Vicente FC', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/5573.svg' },
+    { name: 'CD Nacional', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/5531.svg' },
+    { name: 'AVS', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://upload.wikimedia.org/wikipedia/pt/9/91/AVS_Futebol_SAD.png' },
+    { name: 'Moreirense FC', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/5615.svg' },
+    { name: 'FC Famalicão', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/5575.svg' },
+    { name: 'Vitória SC', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/498.svg' },
+    { name: 'CD Santa Clara', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/5529.svg' },
+    { name: 'Portimonense SC', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/5611.svg' },
+    { name: 'Estoril Praia', type: 'club', countryOrConfederation: 'UEFA / Portugal', league: 'Liga Portugal', crestUrl: 'https://crests.football-data.org/496.svg' },
+    
     // Argentina
     { name: 'Boca Juniors', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://crests.football-data.org/2061.svg' },
     { name: 'River Plate', type: 'club', countryOrConfederation: 'CONMEBOL / Argentina', league: 'Primera División', crestUrl: 'https://crests.football-data.org/2068.svg' },
@@ -238,3 +249,4 @@ export const predefinedTeams = [
     { name: 'Japão', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/766.svg' },
     { name: 'Qatar', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/8026.svg' },
 ];
+
