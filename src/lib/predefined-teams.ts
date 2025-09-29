@@ -235,6 +235,15 @@ export const predefinedTeams = [
     { name: 'Once Caldas', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Once_Caldas_logo.svg/1200px-Once_Caldas_logo.svg.png' },
     { name: 'La Equidad', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/La_Equidad_logo.svg/1200px-La_Equidad_logo.svg.png' },
     { name: 'Deportes Tolima', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/85/Deportes_Tolima_logo.svg/1200px-Deportes_Tolima_logo.svg.png' },
+    
+    // Uruguai
+    { name: 'Peñarol', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/C.A._Pe%C3%B1arol_logo.svg/1200px-C.A._Pe%C3%B1arol_logo.svg.png' },
+    { name: 'Nacional', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Club_Nacional_de_Football_logo.svg/1200px-Club_Nacional_de_Football_logo.svg.png' },
+    { name: 'Defensor Sporting', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/07/Defensor_Sporting_logo.svg/1200px-Defensor_Sporting_logo.svg.png' },
+    { name: 'Danubio', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f1/Danubio_F.C._logo.svg/1200px-Danubio_F.C._logo.svg.png' },
+    { name: 'Liverpool Montevideo', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/4b/Liverpool_F.C._(Montevideo)_logo.svg/1200px-Liverpool_F.C._(Montevideo)_logo.svg.png' },
+    { name: 'Fénix', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/1/1f/Centro_Atl%C3%A9tico_F%C3%A9nix_logo.svg/1200px-Centro_Atl%C3%A9tico_F%C3%A9nix_logo.svg.png' },
+    { name: 'Boston River', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/C.A._Boston_River_logo.svg/1200px-C.A._Boston_River_logo.svg.png' },
 
     // MLS
     { name: 'Atlanta United FC', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1604.svg' },
