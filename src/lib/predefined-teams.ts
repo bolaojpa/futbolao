@@ -43,6 +43,12 @@ export const predefinedTeams = [
     { name: 'Santos', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série B', crestUrl: 'https://crests.football-data.org/1783.png' },
     { name: 'Sport Recife', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série B', crestUrl: 'https://crests.football-data.org/1781.png' },
     { name: 'Vila Nova', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série B', crestUrl: 'https://crests.football-data.org/4293.png' },
+    { name: 'ABC', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série C', crestUrl: 'https://crests.football-data.org/4292.png' },
+    { name: 'CSA', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série C', crestUrl: 'https://crests.football-data.org/4297.png' },
+    { name: 'Joinville', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série D', crestUrl: 'https://crests.football-data.org/4301.png' },
+    { name: 'Náutico', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série C', crestUrl: 'https://crests.football-data.org/1782.png' },
+    { name: 'Sampaio Corrêa', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série C', crestUrl: 'https://crests.football-data.org/4295.png' },
+    { name: 'Tombense', type: 'club', countryOrConfederation: 'CONMEBOL / Brasil', league: 'Brasileirão Série C', crestUrl: 'https://crests.football-data.org/6685.png' },
 
     // Premier League & FA Cup
     { name: 'Arsenal FC', type: 'club', countryOrConfederation: 'UEFA / Inglaterra', league: 'Premier League', crestUrl: 'https://crests.football-data.org/57.svg' },
