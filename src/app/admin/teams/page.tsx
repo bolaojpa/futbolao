@@ -29,12 +29,10 @@ export default function AdminTeamsPage() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
-    const [manualTeamNames, setManualTeamNames] = useState('');
-    const [manualTeamCrest, setManualTeamCrest] = useState('');
     const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
 
     const [editingTeam, setEditingTeam] = useState<Team | null>(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
     
     const [clubConfederationFilter, setClubConfederationFilter] = useState('all');
     const [clubCountryFilter, setClubCountryFilter] = useState('all');
@@ -88,32 +86,9 @@ export default function AdminTeamsPage() {
         }
     };
 
-    const handleAddManualTeam = async (type: 'club' | 'national') => {
-        if (!manualTeamNames.trim()) {
-            toast({ title: "Dados Incompletos", description: "Preencha o nome da(s) equipe(s).", variant: "destructive" });
-            return;
-        }
-
-        const teamNames = manualTeamNames.split('\n').map(name => name.trim()).filter(name => name.length > 0);
-        
-        let teamsAddedCount = 0;
-        try {
-            for (const teamName of teamNames) {
-                const newTeam: Omit<Team, 'id'> = {
-                    name: teamName,
-                    crestUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(teamName)}&background=random&size=128`,
-                    type: type,
-                };
-                await addTeam(newTeam);
-                teamsAddedCount++;
-            }
-            
-            await fetchTeams();
-            toast({ title: "Equipe(s) Adicionada(s)!", description: `${teamsAddedCount} equipe(s) foram adicionadas com sucesso.` });
-            setManualTeamNames('');
-        } catch (error) {
-            toast({ title: "Erro ao Adicionar Equipe(s)", description: "Não foi possível salvar uma ou mais equipes.", variant: "destructive" });
-        }
+    const handleAddClick = () => {
+        setEditingTeam(null);
+        setIsFormOpen(true);
     };
     
     const handleSelectTeam = (teamId: string) => {
@@ -161,25 +136,26 @@ export default function AdminTeamsPage() {
 
     const handleOpenEditModal = (team: Team) => {
         setEditingTeam(team);
-        setIsEditModalOpen(true);
+        setIsFormOpen(true);
     };
 
-    const handleSaveEdit = async () => {
-        if (!editingTeam) return;
-
+    const handleFormSubmit = async (teamData: Omit<Team, 'id' | 'type'>, type: 'club' | 'national') => {
         try {
-            await updateTeam(editingTeam.id, {
-                name: editingTeam.name,
-                crestUrl: editingTeam.crestUrl,
-                countryOrConfederation: editingTeam.countryOrConfederation,
-                league: editingTeam.league,
-            });
+            if (editingTeam) {
+                // Update
+                await updateTeam(editingTeam.id, { ...teamData, type });
+                toast({ title: "Equipe Atualizada", description: `Os dados de "${teamData.name}" foram salvos.` });
+            } else {
+                // Create
+                const crestUrl = teamData.crestUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(teamData.name)}&background=random&size=128`;
+                await addTeam({ ...teamData, crestUrl, type });
+                toast({ title: "Equipe Adicionada!", description: `A equipe "${teamData.name}" foi adicionada com sucesso.` });
+            }
             await fetchTeams();
-            toast({ title: "Equipe Atualizada", description: `Os dados de "${editingTeam.name}" foram salvos.` });
-            setIsEditModalOpen(false);
-            setEditingTeam(null);
+            return true; // Indicate success
         } catch (error) {
-            toast({ title: "Erro ao atualizar", description: "Não foi possível salvar as alterações.", variant: "destructive" });
+            toast({ title: `Erro ao salvar equipe`, description: "Não foi possível salvar os dados.", variant: "destructive" });
+            return false; // Indicate failure
         }
     };
     
@@ -249,28 +225,34 @@ export default function AdminTeamsPage() {
                                 Exibindo {paginatedTeams.length} de {filteredTeams.length} equipes.
                             </CardDescription>
                         </div>
-                         {selectedTeams.size > 0 && teams.some(t => selectedTeams.has(t.id) && t.type === type) && (
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full sm:w-auto">
-                                        <Trash2 className="mr-2 h-4 w-4"/>
-                                        Excluir Selecionados ({selectedTeams.size})
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Esta ação removerá permanentemente os {selectedTeams.size} registro(s) selecionado(s). Esta ação não pode ser desfeita.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            {selectedTeams.size > 0 && teams.some(t => selectedTeams.has(t.id) && t.type === type) && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full sm:w-auto">
+                                            <Trash2 className="mr-2 h-4 w-4"/>
+                                            Excluir Selecionados ({selectedTeams.size})
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta ação removerá permanentemente os {selectedTeams.size} registro(s) selecionado(s). Esta ação não pode ser desfeita.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                             <Button onClick={handleAddClick} className="w-full sm:w-auto">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adicionar Equipe
+                            </Button>
+                        </div>
                     </div>
                      <div className="pt-4 flex flex-col md:flex-row gap-2">
                         <div className="relative flex-1">
@@ -407,33 +389,6 @@ export default function AdminTeamsPage() {
             </Card>
         );
     }
-    
-    const renderTeamManagement = (type: 'club' | 'national') => (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><PlusCircle /> Adicionar em Lote</CardTitle>
-                <CardDescription>
-                    Adicione múltiplas equipes de uma vez, colando uma lista de nomes (um por linha).
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div>
-                    <Label htmlFor={`team-names-${type}`}>Nomes das Equipes (uma por linha)</Label>
-                    <Textarea 
-                        id={`team-names-${type}`} 
-                        placeholder="Ex:&#10;Real Madrid CF&#10;FC Barcelona&#10;Manchester United" 
-                        value={manualTeamNames} 
-                        onChange={(e) => setManualTeamNames(e.target.value)}
-                        className="min-h-[120px]"
-                    />
-                </div>
-                <Button variant="secondary" onClick={() => handleAddManualTeam(type)}>
-                    <PlusCircle className="mr-2" />
-                    Adicionar {type === 'club' ? 'Clubes' : 'Seleções'}
-                </Button>
-            </CardContent>
-        </Card>
-    );
 
     return (
         <>
@@ -469,80 +424,153 @@ export default function AdminTeamsPage() {
                         <TabsTrigger value="national">Seleções</TabsTrigger>
                     </TabsList>
                     <TabsContent value="clubs" className="space-y-8 mt-6">
-                        {renderTeamManagement('club')}
-                        <Separator />
                         {renderTeamTable('club')}
                     </TabsContent>
                     <TabsContent value="national" className="space-y-8 mt-6">
-                        {renderTeamManagement('national')}
-                        <Separator />
                         {renderTeamTable('national')}
                     </TabsContent>
                 </Tabs>
             </div>
             
-            <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Editar Equipe</DialogTitle>
-                        <DialogDescription>
-                            Altere os dados da equipe selecionada.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {editingTeam && (
-                        <div className="space-y-4 py-4">
-                            <div>
-                                <Label htmlFor="edit-team-name">Nome da Equipe</Label>
-                                <Input
-                                    id="edit-team-name"
-                                    value={editingTeam.name}
-                                    onChange={(e) => setEditingTeam({ ...editingTeam, name: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-team-crest">URL do Escudo</Label>
-                                <Input
-                                    id="edit-team-crest"
-                                    value={editingTeam.crestUrl}
-                                    onChange={(e) => setEditingTeam({ ...editingTeam, crestUrl: e.target.value })}
-                                />
-                            </div>
-                            <div className="text-center">
-                                <Image src={editingTeam.crestUrl} alt={`Escudo do ${editingTeam.name}`} width={80} height={80} className="object-contain inline-block bg-muted p-2 rounded-md" />
-                            </div>
-                             <div>
-                                <Label htmlFor="edit-team-country">
-                                    {editingTeam.type === 'club' ? 'Confederação/País' : 'Confederação'}
-                                </Label>
-                                <Input
-                                    id="edit-team-country"
-                                    value={editingTeam.countryOrConfederation || ''}
-                                    onChange={(e) => setEditingTeam({ ...editingTeam, countryOrConfederation: e.target.value })}
-                                    placeholder={editingTeam.type === 'club' ? 'Ex: CONMEBOL / Brasil' : 'Ex: CONMEBOL'}
-                                />
-                            </div>
-                             {editingTeam.type === 'club' && (
-                                <div>
-                                    <Label htmlFor="edit-team-league">Liga (Opcional)</Label>
-                                    <Input
-                                        id="edit-team-league"
-                                        value={editingTeam.league || ''}
-                                        onChange={(e) => setEditingTeam({ ...editingTeam, league: e.target.value })}
-                                        placeholder="Ex: Brasileirão Série A"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleSaveEdit}>
-                            <Save className="mr-2 h-4 w-4"/>
-                            Salvar Alterações
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <TeamFormDialog 
+                isOpen={isFormOpen} 
+                setIsOpen={setIsFormOpen} 
+                team={editingTeam}
+                onSubmit={handleFormSubmit}
+            />
         </>
+    );
+}
+
+// Separate component for the form dialog
+interface TeamFormDialogProps {
+    isOpen: boolean;
+    setIsOpen: (open: boolean) => void;
+    team: Team | null;
+    onSubmit: (data: Omit<Team, 'id'|'type'>, type: 'club' | 'national') => Promise<boolean>;
+}
+
+function TeamFormDialog({ isOpen, setIsOpen, team, onSubmit }: TeamFormDialogProps) {
+    const [teamType, setTeamType] = useState<'club' | 'national'>('club');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const formSchema = z.object({
+        name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres."),
+        crestUrl: z.string().url("Por favor, insira uma URL válida.").optional().or(z.literal('')),
+        countryOrConfederation: z.string().min(1, "Este campo é obrigatório."),
+        league: z.string().optional(),
+    });
+
+    type FormValues = z.infer<typeof formSchema>;
+    
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: { name: '', crestUrl: '', countryOrConfederation: '', league: '' },
+    });
+
+    useEffect(() => {
+        if (team) {
+            setTeamType(team.type);
+            form.reset({
+                name: team.name,
+                crestUrl: team.crestUrl,
+                countryOrConfederation: team.countryOrConfederation,
+                league: team.league
+            });
+        } else {
+            form.reset({ name: '', crestUrl: '', countryOrConfederation: '', league: '' });
+            setTeamType('club');
+        }
+    }, [team, form, isOpen]);
+
+    const title = team ? 'Editar Equipe' : 'Adicionar Nova Equipe';
+    const description = team ? 'Altere os dados da equipe selecionada.' : 'Preencha os dados para adicionar uma nova equipe.';
+    
+    const handleFormSubmit = async (data: FormValues) => {
+        setIsLoading(true);
+        const success = await onSubmit(data, teamType);
+        if (success) {
+            setIsOpen(false);
+        }
+        setIsLoading(false);
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
+                        {!team && (
+                             <Select value={teamType} onValueChange={(v) => setTeamType(v as 'club' | 'national')}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Tipo de Equipe" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="club">Clube</SelectItem>
+                                    <SelectItem value="national">Seleção Nacional</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nome da Equipe</FormLabel>
+                                    <Input {...field} />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="crestUrl"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>URL do Escudo</FormLabel>
+                                    <Input {...field} />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="countryOrConfederation"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{teamType === 'club' ? 'Confederação / País' : 'Confederação'}</FormLabel>
+                                    <Input {...field} placeholder={teamType === 'club' ? 'Ex: CONMEBOL / Brasil' : 'Ex: CONMEBOL'}/>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         {teamType === 'club' && (
+                            <FormField
+                                control={form.control}
+                                name="league"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Liga (Opcional)</FormLabel>
+                                        <Input {...field} placeholder="Ex: Brasileirão Série A" />
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+                         <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>Cancelar</Button>
+                            <Button type="submit" disabled={isLoading}>
+                               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+                                Salvar
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
     );
 }
