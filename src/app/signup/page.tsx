@@ -10,10 +10,11 @@ import { Mail, Lock, User, AtSign } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { updateUserLastLogin } from '@/lib/firebase/firestore';
 
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -64,7 +65,7 @@ export default function SignupPage() {
                 nome,
                 apelido,
                 email: user.email,
-                fotoPerfil: user.photoURL || `https://picsum.photos/100/100?text=${apelido.charAt(0)}`,
+                fotoPerfil: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(apelido || nome)}&background=random`,
                 status: 'pendente',
                 funcao: 'usuario',
                 dataCadastro: serverTimestamp(),
