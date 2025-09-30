@@ -180,6 +180,7 @@ export const predefinedTeams: Omit<Team, 'id'>[] = [
   { name: 'Beşiktaş', type: 'club', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Besiktas_JK_logo.svg/1200px-Besiktas_JK_logo.svg.png', countryOrConfederation: 'UEFA / Turkey', league: 'Süper Lig' },
   { name: 'Club Brugge', type: 'club', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d0/Club_Brugge_KV_logo.svg/1200px-Club_Brugge_KV_logo.svg.png', countryOrConfederation: 'UEFA / Belgium', league: 'Jupiler Pro League' },
   { name: 'Anderlecht', type: 'club', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/62/R.S.C._Anderlecht_logo.svg/1200px-R.S.C._Anderlecht_logo.svg.png', countryOrConfederation: 'UEFA / Belgium', league: 'Jupiler Pro League' },
+  { name: 'Kairat', type: 'club', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/3/35/FC_Kairat_logo.png', countryOrConfederation: 'UEFA / Kazakhstan', league: 'Kazakhstan Premier League' },
   
   // ===============================================================================================
   // CONCACAF Clubs
