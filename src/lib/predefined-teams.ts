@@ -257,7 +257,7 @@ export const predefinedTeams = [
     { name: 'Atlanta United FC', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1604.svg' },
     { name: 'FC Cincinnati', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1597.svg' },
     { name: 'Inter Miami CF', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1607.svg' },
-    { name: 'LA Galaxy', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1598.svg' },
+    { name: 'Los Angeles Galaxy', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1598.svg' },
     { name: 'Los Angeles FC', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1601.svg' },
     { name: 'New England Revolution', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1594.svg' },
     { name: 'New York City FC', type: 'club', countryOrConfederation: 'CONCACAF / EUA', league: 'MLS', crestUrl: 'https://crests.football-data.org/1603.svg' },
@@ -267,10 +267,10 @@ export const predefinedTeams = [
     
     // México
     { name: 'Club América', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1620.svg' },
-    { name: 'Guadalajara (Chivas)', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1621.svg' },
+    { name: 'Guadalajara', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://crests.football-data.org/1621.svg' },
     { name: 'Cruz Azul', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Cruz_Azul_logo.svg/1200px-Cruz_Azul_logo.svg.png' },
     { name: 'Pumas UNAM', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Pumas_UNAM_logo.svg/1200px-Pumas_UNAM_logo.svg.png' },
-    { name: 'C.F. Monterrey (Rayados)', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Club_de_F%C3%BAtbol_Monterrey_logo.svg/1200px-Club_de_F%C3%BAtbol_Monterrey_logo.svg.png' },
+    { name: 'C.F. Monterrey', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Club_de_F%C3%BAtbol_Monterrey_logo.svg/1200px-Club_de_F%C3%BAtbol_Monterrey_logo.svg.png' },
     { name: 'C.F. Pachuca', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c5/Pachuca_logo.svg/1200px-Pachuca_logo.svg.png' },
     { name: 'Tigres UANL', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f0/Tigres_UANL_logo.svg/1200px-Tigres_UANL_logo.svg.png' },
     { name: 'Santos Laguna', type: 'club', countryOrConfederation: 'CONCACAF / México', league: 'Liga MX', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/bb/Santos_Laguna_logo.svg/1200px-Santos_Laguna_logo.svg.png' },
@@ -330,34 +330,6 @@ export const predefinedTeams = [
     { name: 'Grécia', type: 'national', countryOrConfederation: 'UEFA', crestUrl: 'https://crests.football-data.org/783.svg' },
     { name: 'Geórgia', type: 'national', countryOrConfederation: 'UEFA', crestUrl: 'https://crests.football-data.org/817.svg' },
     { name: 'Ucrânia', type: 'national', countryOrConfederation: 'UEFA', crestUrl: 'https://crests.football-data.org/809.svg' },
-
-    // Seleções - CONCACAF
-    { name: 'Canadá', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/786.svg' },
-    { name: 'Costa Rica', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/821.svg' },
-    { name: 'Estados Unidos', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/779.svg' },
-    { name: 'Honduras', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/840.svg' },
-    { name: 'México', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/780.svg' },
-    { name: 'Panamá', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/822.svg' },
-    
-    // Seleções - CAF (África)
-    { name: 'África do Sul', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/801.svg' },
-    { name: 'Argélia', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/812.svg' },
-    { name: 'Camarões', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/794.svg' },
-    { name: 'Costa do Marfim', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/795.svg' },
-    { name: 'Egito', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/804.svg' },
-    { name: 'Gana', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/789.svg' },
-    { name: 'Marrocos', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/815.svg' },
-    { name: 'Nigéria', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/776.svg' },
-    { name: 'Senegal', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/803.svg' },
-    { name: 'Tunísia', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/814.svg' },
-
-    // Seleções - AFC (Ásia)
-    { name: 'Arábia Saudita', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/802.svg' },
-    { name: 'Austrália', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/778.svg' },
-    { name: 'Coreia do Sul', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/772.svg' },
-    { name: 'Irã', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/841.svg' },
-    { name: 'Japão', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/766.svg' },
-    { name: 'Qatar', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/8026.svg' },
 ];
 
     
