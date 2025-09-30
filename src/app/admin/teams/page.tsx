@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { Team } from '@/lib/types';
-import { getTeams, addTeam, deleteTeams, updateTeam } from '@/lib/firebase/firestore';
+import { getTeams, addTeam, deleteTeams, updateTeam, deleteAllTeams } from '@/lib/firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { predefinedTeams } from '@/lib/predefined-teams';
@@ -134,6 +134,27 @@ export default function AdminTeamsPage() {
                 description: "Não foi possível remover as equipes selecionadas.",
                 variant: "destructive",
             });
+        }
+    };
+
+    const handleDeleteAll = async () => {
+        setIsLoading(true);
+        try {
+            await deleteAllTeams();
+            await fetchTeams();
+            toast({
+                title: "Operação Concluída",
+                description: "Todas as equipes foram removidas do banco de dados.",
+                variant: "destructive",
+            });
+        } catch (error) {
+             toast({
+                title: "Erro ao Apagar Tudo",
+                description: "Não foi possível remover todas as equipes.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -433,6 +454,37 @@ export default function AdminTeamsPage() {
                         {renderTeamTable('national')}
                     </TabsContent>
                 </Tabs>
+
+                <Card className="border-destructive/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle/> Ações de Risco</CardTitle>
+                        <CardDescription>
+                            Use estas ações com cuidado, pois elas são permanentes e podem afetar todo o sistema.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                    Apagar Todas as Equipes
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta ação removerá permanentemente TODAS as equipes do banco de dados. Isso não poderá ser desfeito.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteAll}>Sim, apagar tudo</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
             </div>
             
             <TeamFormDialog 

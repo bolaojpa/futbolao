@@ -215,6 +215,21 @@ export async function deleteTeams(teamIds: string[]): Promise<void> {
 }
 
 /**
+ * Deletes all teams from the 'teams' collection in Firestore.
+ */
+export async function deleteAllTeams(): Promise<void> {
+    const teamsCollection = collection(db, 'teams');
+    const teamSnapshot = await getDocs(teamsCollection);
+    const batch = writeBatch(db);
+
+    teamSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+}
+
+/**
  * Fetches all championships from the Firestore 'championships' collection,
  * sorted by creation date (newest first).
  */
