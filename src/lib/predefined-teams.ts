@@ -236,6 +236,14 @@ export const predefinedTeams = [
     { name: 'La Equidad', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/La_Equidad_logo.svg/1200px-La_Equidad_logo.svg.png' },
     { name: 'Deportes Tolima', type: 'club', countryOrConfederation: 'CONMEBOL / Colombia', league: 'Categoría Primera A', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/85/Deportes_Tolima_logo.svg/1200px-Deportes_Tolima_logo.svg.png' },
     
+    // Paraguai
+    { name: 'Olimpia', type: 'club', countryOrConfederation: 'CONMEBOL / Paraguai', league: 'División Profesional', crestUrl: 'https://crests.football-data.org/4333.svg' },
+    { name: 'Cerro Porteño', type: 'club', countryOrConfederation: 'CONMEBOL / Paraguai', league: 'División Profesional', crestUrl: 'https://crests.football-data.org/4332.svg' },
+    { name: 'Libertad', type: 'club', countryOrConfederation: 'CONMEBOL / Paraguai', league: 'División Profesional', crestUrl: 'https://crests.football-data.org/4477.svg' },
+    { name: 'Guaraní', type: 'club', countryOrConfederation: 'CONMEBOL / Paraguai', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Club_Guaran%C3%AD_logo.svg/1200px-Club_Guaran%C3%AD_logo.svg.png' },
+    { name: 'Sportivo Luqueño', type: 'club', countryOrConfederation: 'CONMEBOL / Paraguai', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Escudo_del_Club_Sportivo_Luque%C3%B1o.svg/1200px-Escudo_del_Club_Sportivo_Luque%C3%B1o.svg.png' },
+    { name: 'Sol de América', type: 'club', countryOrConfederation: 'CONMEBOL / Paraguai', league: 'División Profesional', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Soldeamerica.svg/1200px-Soldeamerica.svg.png' },
+    
     // Uruguai
     { name: 'Peñarol', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/C.A._Pe%C3%B1arol_logo.svg/1200px-C.A._Pe%C3%B1arol_logo.svg.png' },
     { name: 'Nacional', type: 'club', countryOrConfederation: 'CONMEBOL / Uruguai', league: 'Primera División', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Club_Nacional_de_Football_logo.svg/1200px-Club_Nacional_de_Football_logo.svg.png' },
