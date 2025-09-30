@@ -401,18 +401,20 @@ export default function AdminUsersPage() {
                                                                     <span>Desbloquear Usuário</span>
                                                                 </DropdownMenuItem>
                                                             )}
-                                                            {user.funcao === 'usuario' && (
-                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'moderador')}>
-                                                                    <ShieldCheck className="mr-2 h-4 w-4 text-blue-500"/>
-                                                                    <span>Promover a Moderador</span>
-                                                                </DropdownMenuItem>
-                                                            )}
-                                                            {user.funcao === 'moderador' && (
-                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'usuario')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                                                    <ShieldX className="mr-2 h-4 w-4" />
-                                                                    <span>Rebaixar a Usuário</span>
-                                                                </DropdownMenuItem>
-                                                            )}
+                                                            <DropdownMenuSeparator />
+                                                             <DropdownMenuLabel>Funções</DropdownMenuLabel>
+                                                             <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'usuario')} disabled={user.funcao === 'usuario'}>
+                                                                <Users className="mr-2 h-4 w-4" />
+                                                                <span>Definir como Usuário</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'moderador')} disabled={user.funcao === 'moderador'}>
+                                                                <ShieldCheck className="mr-2 h-4 w-4 text-blue-500"/>
+                                                                <span>Promover a Moderador</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'admin')} disabled={user.funcao === 'admin'}>
+                                                                <ShieldX className="mr-2 h-4 w-4 text-destructive"/>
+                                                                <span>Promover a Admin</span>
+                                                            </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                              <AlertDialog>
                                                                 <AlertDialogTrigger asChild>
