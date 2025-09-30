@@ -338,6 +338,20 @@ export const predefinedTeams = [
     { name: 'México', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/780.svg' },
     { name: 'Estados Unidos', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/779.svg' },
     { name: 'Canadá', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/787.svg' },
+
+    // Seleções - CAF
+    { name: 'Nigéria', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/801.svg' },
+    { name: 'Camarões', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/796.svg' },
+    { name: 'Costa do Marfim', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/795.svg' },
+    { name: 'Gana', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/789.svg' },
+    { name: 'Senegal', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/780.svg' },
+    { name: 'Mali', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Mali_FA.png' },
+    { name: 'Togo', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Embl%C3%A8me_de_la_F%C3%A9d%C3%A9ration_Togolaise_de_Football.svg/1200px-Embl%C3%A8me_de_la_F%C3%A9d%C3%A9ration_Togolaise_de_Football.svg.png' },
+    { name: 'Tunísia', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/803.svg' },
+    { name: 'Argélia', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/815.svg' },
+    { name: 'Egito', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/804.svg' },
+    { name: 'Marrocos', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/814.svg' },
+    { name: 'África do Sul', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/821.svg' },
 ];
 
     
