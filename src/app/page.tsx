@@ -80,10 +80,8 @@ export default function LoginPage() {
               router.push('/dashboard');
           }
       } else {
-           // Se o documento não existe, o usuário pode ter acabado de se cadastrar
-           // A lógica de criação de usuário tratará disso.
-           // Se o usuário já autenticado chegar aqui sem doc, o melhor é ir para uma página de erro ou perfil incompleto.
-           // Mas por segurança, vamos para a página de aprovação, que é o fluxo de novo usuário.
+           // Se o documento não existe (o fluxo de login deveria ter criado),
+           // redireciona para a página de aprovação como um fallback seguro.
            router.push('/pending-approval');
       }
     } catch (error) {
