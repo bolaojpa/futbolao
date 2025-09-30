@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { updateUserLastLogin } from '@/lib/firebase/firestore';
@@ -65,7 +65,7 @@ export default function LoginPage() {
   const handleRedirectBasedOnUser = async (user: FirebaseUser) => {
     const userDocRef = doc(db, "users", user.uid);
     try {
-      await updateUserLastLogin(user.uid); // Atualiza o último login
+      await updateUserLastLogin(user.uid);
       const userDoc = await getDoc(userDocRef);
       
       if (userDoc.exists()) {
@@ -80,7 +80,11 @@ export default function LoginPage() {
               router.push('/dashboard');
           }
       } else {
-           router.push('/dashboard');
+           // Se o documento não existe, o usuário pode ter acabado de se cadastrar
+           // A lógica de criação de usuário tratará disso.
+           // Se o usuário já autenticado chegar aqui sem doc, o melhor é ir para uma página de erro ou perfil incompleto.
+           // Mas por segurança, vamos para a página de aprovação, que é o fluxo de novo usuário.
+           router.push('/pending-approval');
       }
     } catch (error) {
        console.error("Error fetching user data for redirect:", error);
@@ -115,7 +119,29 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        await handleRedirectBasedOnUser(result.user);
+        const user = result.user;
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+            // Se o usuário não existe no Firestore, cria um novo
+            await setDoc(userDocRef, {
+                id: user.uid,
+                nome: user.displayName,
+                apelido: user.displayName?.split(' ')[0] || user.email,
+                email: user.email,
+                fotoPerfil: user.photoURL,
+                status: 'pendente',
+                funcao: 'usuario',
+                dataCadastro: serverTimestamp(),
+                titulos: 0,
+                totalJogos: 0,
+                championshipStats: [],
+            });
+        }
+        
+        await handleRedirectBasedOnUser(user);
+
     } catch (error: any) {
          toast({
             variant: "destructive",
