@@ -14,6 +14,7 @@ import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, Us
 import { auth, db } from '@/lib/firebase';
 import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import { updateUserLastLogin } from '@/lib/firebase/firestore';
 
 
