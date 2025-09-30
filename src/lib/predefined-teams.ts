@@ -330,6 +330,14 @@ export const predefinedTeams = [
     { name: 'Grécia', type: 'national', countryOrConfederation: 'UEFA', crestUrl: 'https://crests.football-data.org/783.svg' },
     { name: 'Geórgia', type: 'national', countryOrConfederation: 'UEFA', crestUrl: 'https://crests.football-data.org/817.svg' },
     { name: 'Ucrânia', type: 'national', countryOrConfederation: 'UEFA', crestUrl: 'https://crests.football-data.org/809.svg' },
+
+    // Seleções - CONCACAF
+    { name: 'Costa Rica', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/785.svg' },
+    { name: 'Honduras', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/841.svg' },
+    { name: 'Panamá', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/786.svg' },
+    { name: 'México', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/780.svg' },
+    { name: 'Estados Unidos', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/779.svg' },
+    { name: 'Canadá', type: 'national', countryOrConfederation: 'CONCACAF', crestUrl: 'https://crests.football-data.org/787.svg' },
 ];
 
     
