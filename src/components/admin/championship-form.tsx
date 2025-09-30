@@ -198,9 +198,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
             active: false,
             numberOfPicks: 3,
         },
-        finalRanking: {
-            pos1: '', pos2: '', pos3: '', pos4: '', pos5: ''
-        }
+        finalRanking: { pos1: '', pos2: '', pos3: '', pos4: '', pos5: '' }
     },
   });
 
@@ -802,7 +800,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                                             />
                                                             </FormControl>
                                                             <Label className="font-normal w-full flex items-center gap-3">
-                                                                <Image src={team.crestUrl} alt={team.name} width={24} height={24} className="object-contain" />
+                                                                <Image src={team.crestUrl} alt="" width={24} height={24} className="object-contain" />
                                                                 {team.name}
                                                             </Label>
                                                         </FormItem>

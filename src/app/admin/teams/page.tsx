@@ -342,7 +342,7 @@ export default function AdminTeamsPage() {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Image src={team.crestUrl} alt={`Escudo do ${team.name}`} width={40} height={32} className="object-contain" />
+                                            <Image src={team.crestUrl} alt="" width={40} height={32} className="object-contain" />
                                         </TableCell>
                                         <TableCell className="font-medium">{team.name}</TableCell>
                                         <TableCell className="text-right">

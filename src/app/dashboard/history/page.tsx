@@ -342,9 +342,9 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                 {match.timeA}
                               </div>
                               <div className="flex items-center justify-center gap-3 md:gap-4">
-                                <Image src={teamA?.crestUrl || "https://picsum.photos/48/48"} alt={`Bandeira ${match.timeA}`} width={48} height={40} className="object-contain" data-ai-hint="team logo" />
+                                <Image src={teamA?.crestUrl || "https://picsum.photos/48/48"} alt="" width={48} height={40} className="object-contain" data-ai-hint="team logo" />
                                 <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                <Image src={teamB?.crestUrl || "https://picsum.photos/48/48"} alt={`Bandeira ${match.timeB}`} width={48} height={40} className="object-contain" data-ai-hint="team logo" />
+                                <Image src={teamB?.crestUrl || "https://picsum.photos/48/48"} alt="" width={48} height={40} className="object-contain" data-ai-hint="team logo" />
                               </div>
                               <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                 {match.timeB}
@@ -408,7 +408,7 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                 const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
                                     const team = allTeams.find(t => t.name === teamName);
                                     const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
-                                    return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                    return team ? { ...team, pickOrder: index + 1, isEliminated: boolean } : null;
                                 }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
 
                                 return (
