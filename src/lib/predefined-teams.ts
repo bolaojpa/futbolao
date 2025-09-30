@@ -352,6 +352,18 @@ export const predefinedTeams = [
     { name: 'Egito', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/804.svg' },
     { name: 'Marrocos', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/814.svg' },
     { name: 'África do Sul', type: 'national', countryOrConfederation: 'CAF', crestUrl: 'https://crests.football-data.org/821.svg' },
-];
 
-    
+    // Seleções - AFC
+    { name: 'Japão', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/767.svg' },
+    { name: 'Coreia do Sul', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/776.svg' },
+    { name: 'Coreia do Norte', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/PRK_fa.svg/1200px-PRK_fa.svg.png' },
+    { name: 'Arábia Saudita', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/802.svg' },
+    { name: 'Irã', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/789.svg' },
+    { name: 'Iraque', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Iraq_FA.svg/1200px-Iraq_FA.svg.png' },
+    { name: 'Catar', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/Qatar_Football_Association_logo.svg/1200px-Qatar_Football_Association_logo.svg.png' },
+    { name: 'Austrália', type: 'national', countryOrConfederation: 'AFC', crestUrl: 'https://crests.football-data.org/777.svg' },
+
+    // Seleções - OFC
+    { name: 'Nova Zelândia', type: 'national', countryOrConfederation: 'OFC', crestUrl: 'https://crests.football-data.org/811.svg' },
+
+];
