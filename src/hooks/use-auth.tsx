@@ -1,8 +1,7 @@
-
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser, onIdTokenChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserType } from '@/lib/types';
@@ -21,7 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
         setFirebaseUser(user);
@@ -35,6 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setFirebaseUser(null);
         setUser(null);
+        // Se o usuário foi deslogado, força um reload para limpar o estado
+        if (window.location.pathname !== '/' && window.location.pathname !== '/signup') {
+            window.location.href = '/';
+        }
       }
       setLoading(false);
     });

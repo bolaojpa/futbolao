@@ -1,4 +1,3 @@
-
 'use client';
 
 import { AppSidebar } from '@/components/shared/app-sidebar';
@@ -13,6 +12,49 @@ import { db } from '@/lib/firebase';
 import { SparkleAnimation } from '@/components/shared/sparkle-animation';
 import type { EmergencyMessage, UserType } from '@/lib/types';
 import { markUrgentMessageAsSeen } from '@/lib/firebase/firestore';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
+
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+  
+  if (user.status === 'pendente') {
+      router.push('/pending-approval');
+      return (
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      );
+  }
+
+  if (user.status === 'bloqueado') {
+      router.push('/account-blocked');
+       return (
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      );
+  }
+
+  return <>{children}</>;
+}
+
 
 function ToastListener() {
   const { user } = useAuth();
@@ -114,6 +156,7 @@ export default function DashboardLayout({
 }) {
 
   return (
+    <AuthGuard>
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
           <AppSidebar />
@@ -127,5 +170,6 @@ export default function DashboardLayout({
         <UrgentMessageListener />
         <ToastListener />
       </SidebarProvider>
+    </AuthGuard>
   );
 }

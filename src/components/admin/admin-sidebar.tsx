@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import {
@@ -27,14 +25,15 @@ import {
   LifeBuoy,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { setOpenMobile } = useSidebar();
   const [hasPendingUsers, setHasPendingUsers] = useState(false);
 
@@ -49,6 +48,12 @@ export function AdminSidebar() {
 
   const handleLinkClick = () => {
     setOpenMobile(false);
+  };
+  
+  const handleLogout = async () => {
+    setOpenMobile(false);
+    await auth.signOut();
+    router.push('/');
   };
 
   const menuItems = [
@@ -124,14 +129,12 @@ export function AdminSidebar() {
                 </SidebarMenuItem>
             ))}
             <SidebarMenuItem>
-                <Link href="/" passHref onClick={handleLinkClick}>
-                    <SidebarMenuButton asChild tooltip={{ children: "Sair", side: 'right' }}>
-                        <div>
-                          <LogOut />
-                          <span>Sair</span>
-                        </div>
-                    </SidebarMenuButton>
-                </Link>
+                <SidebarMenuButton onClick={handleLogout} asChild tooltip={{ children: "Sair", side: 'right' }}>
+                    <div>
+                      <LogOut />
+                      <span>Sair</span>
+                    </div>
+                </SidebarMenuButton>
             </SidebarMenuItem>
          </SidebarMenu>
       </SidebarFooter>

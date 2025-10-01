@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,9 +24,12 @@ import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '../ui/skeleton';
 import type { UserType } from '@/lib/types';
 import { updateUserPresenceStatus } from '@/lib/firebase/firestore';
+import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
   const { user, loading } = useAuth();
+  const router = useRouter();
   const [currentStatus, setCurrentStatus] = useState<UserType['presenceStatus']>('Disponível');
 
   useEffect(() => {
@@ -53,6 +54,11 @@ export function UserNav() {
       setCurrentStatus(newStatus); // Optimistic update
       await updateUserPresenceStatus(user.id, newStatus);
     }
+  };
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/');
   };
 
 
@@ -133,14 +139,10 @@ export function UserNav() {
             </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <Link href="/" passHref>
-          <DropdownMenuItem asChild>
-              <div>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sair</span>
-              </div>
-          </DropdownMenuItem>
-        </Link>
+        <DropdownMenuItem onSelect={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sair</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
