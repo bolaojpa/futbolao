@@ -4,7 +4,7 @@
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { Header } from '@/components/shared/header';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -37,20 +37,18 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
-        <AdminAuthGuard>
-            <SidebarProvider>
-                <div className='flex min-h-screen w-full'>
-                <AdminSidebar />
-                <div className="flex flex-col w-full">
-                    <Header /> 
-                    <main className="flex-1 bg-blue-50/50 dark:bg-gray-900/50">
-                    {children}
-                    </main>
-                </div>
-                </div>
-            </SidebarProvider>
-        </AdminAuthGuard>
-    </AuthProvider>
+    <AdminAuthGuard>
+        <SidebarProvider>
+            <div className='flex min-h-screen w-full'>
+            <AdminSidebar />
+            <div className="flex flex-col w-full">
+                <Header /> 
+                <main className="flex-1 bg-blue-50/50 dark:bg-gray-900/50">
+                {children}
+                </main>
+            </div>
+            </div>
+        </SidebarProvider>
+    </AdminAuthGuard>
   );
 }

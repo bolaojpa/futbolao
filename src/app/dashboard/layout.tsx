@@ -6,7 +6,7 @@ import { Header } from '@/components/shared/header';
 import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { onSnapshot, collection, query, where, Timestamp, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -114,7 +114,6 @@ export default function DashboardLayout({
 }) {
 
   return (
-    <AuthProvider>
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
           <AppSidebar />
@@ -128,6 +127,5 @@ export default function DashboardLayout({
         <UrgentMessageListener />
         <ToastListener />
       </SidebarProvider>
-    </AuthProvider>
   );
 }
