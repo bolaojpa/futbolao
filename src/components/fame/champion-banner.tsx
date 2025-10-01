@@ -16,6 +16,7 @@ export interface ChampionBannerProps {
   palpiteiroNome: string;
   palpiteiroAvatarUrl: string;
   displayMode?: 'photo_and_names' | 'names_only';
+  backgroundUrl?: string; // Adicionado para receber a URL de fundo
 }
 
 const Section = ({
@@ -41,6 +42,7 @@ export function ChampionBanner({
   palpiteiroNome,
   palpiteiroAvatarUrl,
   displayMode = 'photo_and_names',
+  backgroundUrl, // Adicionado
 }: ChampionBannerProps) {
   const showPhotos = displayMode === 'photo_and_names';
   const hasMultipleCampeoes = campeaoGeralNome.includes(",");
@@ -48,8 +50,11 @@ export function ChampionBanner({
 
   return (
     <div
-      className="w-full h-full aspect-[857/828] bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-[0.33%] text-white relative overflow-hidden [container-type:inline-size] rounded-lg"
-      style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}
+      className="w-full h-full aspect-[857/828] bg-cover bg-center bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-[0.33%] text-white relative overflow-hidden [container-type:inline-size] rounded-lg"
+      style={{
+        textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
+        backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined, // Aplica a imagem de fundo
+      }}
     >
       {/* Decorative elements */}
       <Crown
@@ -83,7 +88,7 @@ export function ChampionBanner({
           CAMPEÃO GERAL
         </h3>
         <div className={cn("flex items-center justify-center gap-[2%]", showPhotos ? "flex-row" : "flex-col")}>
-          {showPhotos && (
+          {showPhotos && campeaoGeralAvatarUrl && (
             <Image
               src={campeaoGeralAvatarUrl}
               alt={`Avatar de ${campeaoGeralNome}`}
@@ -105,7 +110,7 @@ export function ChampionBanner({
           {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
         </h3>
         <div className={cn("flex items-center justify-center gap-[2%]", showPhotos ? "flex-row" : "flex-col")}>
-          {showPhotos && (
+          {showPhotos && palpiteiroAvatarUrl && (
             <Image
               src={palpiteiroAvatarUrl}
               alt={`Avatar de ${palpiteiroNome}`}

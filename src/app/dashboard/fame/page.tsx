@@ -23,14 +23,14 @@ export default function FamePage() {
                 const bannerData: ChampionBannerProps[] = hallOfFameChamps.map(champ => {
                     const findUser = (userId?: string) => users.find(u => u.id === userId);
                     
-                    let campeaoGeralNome = '?';
+                    let campeaoGeralNome = '';
                     let campeaoGeralAvatarUrl = '';
-                    let palpiteiroNome = '?';
+                    let palpiteiroNome = '';
                     let palpiteiroAvatarUrl = '';
 
                     if (champ.status === 'arquivado') {
                         const firstPlaceUser = findUser(champ.finalRanking?.pos1);
-                        campeaoGeralNome = firstPlaceUser?.apelido || '?';
+                        campeaoGeralNome = firstPlaceUser?.apelido || '';
                         campeaoGeralAvatarUrl = firstPlaceUser?.fotoPerfil || '';
                         // Lógica simplificada, pode ser expandida
                         palpiteiroNome = campeaoGeralNome;
@@ -46,7 +46,8 @@ export default function FamePage() {
                         modoEquipes: champ.modoEquipes,
                         palpiteiroNome: palpiteiroNome,
                         palpiteiroAvatarUrl: palpiteiroAvatarUrl,
-                        displayMode: champ.banner?.displayMode || 'photo_and_names'
+                        displayMode: champ.banner?.displayMode || 'photo_and_names',
+                        backgroundUrl: champ.banner?.backgroundUrl,
                     };
                 });
 

@@ -361,6 +361,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
     palpiteiroNome: 'Melhor Palpiteiro, Segundo Melhor, Terceiro Melhor Colocado',
     palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
     displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
+    backgroundUrl: watchAllFields.banner?.backgroundUrl,
   };
   
   const rankingPositions = [
@@ -1269,11 +1270,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                 <DialogTitle className="sr-only">Pré-visualização do Banner</DialogTitle>
                 </DialogHeader>
                 <div 
-                    className="relative" 
+                    className="relative bg-cover bg-center"
                     style={{ 
-                        backgroundImage: `url(${watchAllFields.banner?.backgroundUrl || 'https://picsum.photos/857/828'})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
+                        backgroundImage: `url(${watchAllFields.banner?.backgroundUrl || 'https://images.unsplash.com/photo-1517433670267-382b363a7de4?q=80&w=2070&auto=format&fit=crop'})`,
                     }}
                 >
                     <ChampionBanner {...bannerPreviewProps} />
