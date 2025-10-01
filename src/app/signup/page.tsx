@@ -15,7 +15,7 @@ import { auth, db } from '@/lib/firebase';
 import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { updateUserLastLogin } from '@/lib/firebase/firestore';
+import { getSystemSettings, updateUserLastLogin } from '@/lib/firebase/firestore';
 
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -47,6 +47,17 @@ export default function SignupPage() {
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const settings = await getSystemSettings();
+        if (!settings.allowRegistrations) {
+            toast({
+                variant: "destructive",
+                title: "Cadastro Desabilitado",
+                description: "O cadastro de novos usuários está temporariamente desabilitado. Fale com o administrador.",
+            });
+            return;
+        }
+
         if (password !== confirmPassword) {
             toast({
                 variant: "destructive",
@@ -64,9 +75,9 @@ export default function SignupPage() {
             await setDoc(doc(db, "users", user.uid), {
                 id: user.uid,
                 nome,
-                apelido,
+                apelido: apelido || '', // Garante que seja uma string vazia se não preenchido
                 email: user.email,
-                fotoPerfil: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(apelido || nome)}&background=random`,
+                fotoPerfil: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=random`,
                 status: 'pendente',
                 funcao: 'usuario',
                 dataCadastro: serverTimestamp(),
@@ -96,6 +107,17 @@ export default function SignupPage() {
 
     const handleGoogleSignup = async () => {
         setIsLoading(true);
+         const settings = await getSystemSettings();
+        if (!settings.allowRegistrations) {
+            toast({
+                variant: "destructive",
+                title: "Cadastro Desabilitado",
+                description: "O cadastro de novos usuários está temporariamente desabilitado. Fale com o administrador.",
+            });
+             setIsLoading(false);
+            return;
+        }
+
         const provider = new GoogleAuthProvider();
         try {
             const result = await signInWithPopup(auth, provider);
@@ -104,7 +126,7 @@ export default function SignupPage() {
              await setDoc(doc(db, "users", user.uid), {
                 id: user.uid,
                 nome: user.displayName,
-                apelido: user.displayName?.split(' ')[0] || user.email, // Use first name as nickname
+                apelido: '', // Apelido começa em branco
                 email: user.email,
                 fotoPerfil: user.photoURL,
                 status: 'pendente',

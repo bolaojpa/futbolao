@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -14,11 +15,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { mockUser } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { User, AtSign, Heart, Link as LinkIcon, Save } from 'lucide-react';
+import { User, AtSign, Heart, Link as LinkIcon, Save, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState } from 'react';
+import { updateUserProfile } from '@/lib/firebase/firestore';
 
 
 const profileFormSchema = z.object({
@@ -30,31 +33,60 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-// Em um app real, isso viria do estado de autenticação
-const loginMethod: 'google' | 'email' = 'email'; 
-
 export function EditProfileForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const { user, firebaseUser } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      nome: mockUser.nome || '',
-      apelido: mockUser.apelido || '',
-      timeCoracao: mockUser.timeCoracao || '',
-      urlImagemPersonalizada: mockUser.urlImagemPersonalizada || '',
+      nome: '',
+      apelido: '',
+      timeCoracao: '',
+      urlImagemPersonalizada: '',
     },
     mode: "onChange",
   });
+  
+  useEffect(() => {
+    if (user) {
+        form.reset({
+            nome: user.nome || '',
+            apelido: user.apelido || '',
+            timeCoracao: user.timeCoracao || '',
+            urlImagemPersonalizada: user.urlImagemPersonalizada || '',
+        })
+    }
+  }, [user, form])
 
-  function onSubmit(data: ProfileFormValues) {
-    console.log("Profile data submitted:", data);
-    toast({
-      title: "Perfil Atualizado!",
-      description: "Suas informações foram salvas com sucesso.",
-    });
-    router.push('/dashboard/profile');
+  const loginMethod = firebaseUser?.providerData.some(p => p.providerId === 'google.com') ? 'google' : 'email';
+
+  async function onSubmit(data: ProfileFormValues) {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+        await updateUserProfile(user.id, data);
+        toast({
+            title: "Perfil Atualizado!",
+            description: "Suas informações foram salvas com sucesso.",
+        });
+        router.push('/dashboard/profile');
+    } catch (error) {
+        toast({
+            title: "Erro ao Salvar",
+            description: "Não foi possível atualizar seu perfil. Tente novamente.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  if (!user) {
+    return <div className="flex justify-center"><Loader2 className="animate-spin" /></div>;
   }
 
   return (
@@ -97,7 +129,7 @@ export function EditProfileForm() {
                 </FormControl>
               </div>
               <FormDescription>
-                Este será seu nome de exibição nos rankings. Se vazio, seu nome completo será usado.
+                Este será seu nome de exibição nos rankings.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -128,11 +160,14 @@ export function EditProfileForm() {
                <div className="relative">
                     <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <FormControl>
-                        <Input placeholder="https://exemplo.com/sua-foto.png" {...field} className="pl-10" />
+                        <Input placeholder="https://exemplo.com/sua-foto.png" {...field} className="pl-10" disabled={loginMethod === 'google'} />
                     </FormControl>
                 </div>
               <FormDescription>
-                Cole a URL de uma imagem para usar como foto de perfil. Deixe em branco para usar a imagem padrão.
+                {loginMethod === 'email' 
+                    ? <>Cole a URL de uma imagem para usar como foto. Use um site como <a href="https://postimages.org/" target="_blank" rel="noopener noreferrer" className="underline text-primary">Postimages</a> para hospedar sua imagem.</>
+                    : "Sua foto de perfil é sincronizada com sua conta Google."
+                }
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -142,8 +177,8 @@ export function EditProfileForm() {
             <Button type="button" variant="outline" asChild>
                 <Link href="/dashboard/profile">Cancelar</Link>
             </Button>
-            <Button type="submit">
-                <Save className="mr-2 h-4 w-4" />
+            <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Salvar Alterações
             </Button>
         </div>

@@ -34,6 +34,16 @@ export async function getUsers(): Promise<UserType[]> {
 }
 
 /**
+ * Updates the profile information for a specific user.
+ * @param userId - The ID of the user to update.
+ * @param data - The profile data to update.
+ */
+export async function updateUserProfile(userId: string, data: Partial<Pick<UserType, 'nome' | 'apelido' | 'timeCoracao' | 'urlImagemPersonalizada'>>): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, { ...data, ultimaAtividade: serverTimestamp() });
+}
+
+/**
  * Updates the status of a specific user in Firestore.
  * If the user is being approved (status changes to 'ativo'),
  * it also triggers a welcome notification.
@@ -49,7 +59,7 @@ export async function updateUserStatus(userId: string, newStatus: UserType['stat
         const userData = userDoc.data() as UserType;
         await addToastNotification(
             userId, 
-            `Bem-vindo(a), ${userData.apelido}!`,
+            `Bem-vindo(a), ${userData.apelido || userData.nome}!`,
             'Seu cadastro foi aprovado. Dê seus palpites e boa sorte!'
         );
     }
@@ -692,4 +702,3 @@ export async function updateSystemSettings(settings: Partial<SystemSettings>): P
     const settingsRef = doc(db, 'system_settings', 'global');
     await setDoc(settingsRef, settings, { merge: true });
 }
-
