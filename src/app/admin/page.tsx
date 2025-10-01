@@ -20,7 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-update';
-import { doc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface MatchWithPredictions extends Match {
@@ -30,6 +30,7 @@ interface MatchWithPredictions extends Match {
 
 export default function AdminDashboardPage() {
     const [allMatches, setAllMatches] = useState<Match[]>([]);
+    const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
     const [liveMatchesWithPredictions, setLiveMatchesWithPredictions] = useState<MatchWithPredictions[]>([]);
     const [allUsers, setAllUsers] = useState<UserType[]>([]);
     const [allChampionships, setAllChampionships] = useState<Championship[]>([]);
@@ -40,31 +41,42 @@ export default function AdminDashboardPage() {
     
     const { toast } = useToast();
 
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            const [matchesData, usersData, championshipsData, teamsData] = await Promise.all([
-                getMatches(),
-                getUsers(),
-                getChampionships(),
-                getTeams(),
-            ]);
-
-            setAllMatches(matchesData);
-            setAllUsers(usersData);
-            setAllChampionships(championshipsData);
-            setAllTeams(teamsData);
-
-        } catch (error) {
-            toast({ title: 'Erro ao carregar dados', variant: 'destructive' });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
     useEffect(() => {
-        fetchData();
-    }, []);
+        setIsLoading(true);
+        const fetchInitialData = async () => {
+            try {
+                const [usersData, championshipsData, teamsData] = await Promise.all([
+                    getUsers(),
+                    getChampionships(),
+                    getTeams(),
+                ]);
+                setAllUsers(usersData);
+                setAllChampionships(championshipsData);
+                setAllTeams(teamsData);
+            } catch (error) {
+                toast({ title: 'Erro ao carregar dados iniciais', variant: 'destructive' });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchInitialData();
+
+        const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
+            const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
+            setAllMatches(matchesData);
+        });
+
+        const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
+            const predictionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+            setAllPredictions(predictionsData);
+        });
+
+        return () => {
+            unsubMatches();
+            unsubPredictions();
+        };
+    }, [toast]);
+    
 
     useEffect(() => {
         const updateLiveMatches = async () => {
@@ -74,12 +86,10 @@ export default function AdminDashboardPage() {
                 isPast(parseISO(match.data))
             ).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
-            const matchesWithPredictions: MatchWithPredictions[] = await Promise.all(
-                live.map(async (match) => {
-                    const predictions = await getPredictionsForMatch(match.id);
-                    return { ...match, predictions };
-                })
-            );
+            const matchesWithPredictions: MatchWithPredictions[] = live.map(match => ({
+                ...match,
+                predictions: allPredictions.filter(p => p.matchId === match.id)
+            }));
             
             setLiveMatchesWithPredictions(matchesWithPredictions);
 
@@ -94,11 +104,10 @@ export default function AdminDashboardPage() {
             setScores(prevScores => ({ ...initialScores, ...prevScores }));
         };
 
-        updateLiveMatches();
-        const interval = setInterval(updateLiveMatches, 30000); 
-
-        return () => clearInterval(interval);
-    }, [allMatches]);
+        if (allMatches.length > 0) {
+            updateLiveMatches();
+        }
+    }, [allMatches, allPredictions]);
     
 
     const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: string) => {
