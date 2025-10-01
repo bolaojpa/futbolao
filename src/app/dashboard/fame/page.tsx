@@ -32,7 +32,10 @@ export default function FamePage() {
                         const firstPlaceUser = findUser(champ.finalRanking?.pos1);
                         campeaoGeralNome = firstPlaceUser?.apelido || '';
                         campeaoGeralAvatarUrl = firstPlaceUser?.fotoPerfil || '';
+                        
                         // Lógica simplificada, pode ser expandida
+                        // Para o palpiteiro, estamos usando o mesmo do campeão geral por enquanto.
+                        // Em uma implementação futura, isso seria calculado com base em regras específicas.
                         palpiteiroNome = campeaoGeralNome;
                         palpiteiroAvatarUrl = campeaoGeralAvatarUrl;
                     }
@@ -100,3 +103,4 @@ export default function FamePage() {
         </div>
     );
 }
+
