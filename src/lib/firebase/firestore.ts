@@ -35,13 +35,28 @@ export async function getUsers(): Promise<UserType[]> {
 
 /**
  * Updates the status of a specific user in Firestore.
+ * If the user is being approved (status changes to 'ativo'),
+ * it also triggers a welcome notification.
  * @param userId - The ID of the user to update.
  * @param newStatus - The new status to set for the user.
  */
 export async function updateUserStatus(userId: string, newStatus: UserType['status']) {
-  const userDocRef = doc(db, 'users', userId);
-  await updateDoc(userDocRef, { status: newStatus });
+    const userDocRef = doc(db, 'users', userId);
+    
+    // Check if user is being approved to send a welcome notification
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists() && userDoc.data().status === 'pendente' && newStatus === 'ativo') {
+        const userData = userDoc.data() as UserType;
+        await addToastNotification(
+            userId, 
+            `Bem-vindo(a), ${userData.apelido}!`,
+            'Seu cadastro foi aprovado. Dê seus palpites e boa sorte!'
+        );
+    }
+    
+    await updateDoc(userDocRef, { status: newStatus });
 }
+
 
 /**
  * Updates the role of a specific user in Firestore.
@@ -677,3 +692,4 @@ export async function updateSystemSettings(settings: Partial<SystemSettings>): P
     const settingsRef = doc(db, 'system_settings', 'global');
     await setDoc(settingsRef, settings, { merge: true });
 }
+
