@@ -1,9 +1,65 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import { HallOfFameCarousel } from '@/components/fame/hall-of-fame-carousel';
-import { mockHallOfFame } from '@/lib/data';
-import { ShieldCheck, Trophy } from 'lucide-react';
+import { ShieldCheck, Trophy, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import type { Championship, UserType } from '@/lib/types';
+import { getChampionships, getUsers } from '@/lib/firebase/firestore';
+import type { ChampionBannerProps } from '@/components/fame/champion-banner';
 
 export default function FamePage() {
+    const [banners, setBanners] = useState<ChampionBannerProps[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchHallOfFameData = async () => {
+            try {
+                const [championships, users] = await Promise.all([getChampionships(), getUsers()]);
+                
+                const hallOfFameChamps = championships.filter(c => c.status === 'arquivado' && c.banner?.ativo);
+
+                const bannerData: ChampionBannerProps[] = hallOfFameChamps.map(champ => {
+                    const findUser = (userId?: string) => users.find(u => u.id === userId);
+                    
+                    const firstPlaceUser = findUser(champ.finalRanking?.pos1);
+                    
+                    // Lógica simplificada para nome do campeão
+                    const campeaoGeralNome = firstPlaceUser?.apelido || '?';
+
+                    return {
+                        id: champ.id,
+                        campeonatoLogoUrl: champ.banner?.campeonatoLogoUrl || champ.iconUrl || '',
+                        campeonatoNome: champ.nome,
+                        campeaoGeralNome: campeaoGeralNome,
+                        campeaoGeralAvatarUrl: firstPlaceUser?.fotoPerfil || '',
+                        modoEquipes: champ.modoEquipes,
+                        palpiteiroNome: campeaoGeralNome,
+                        palpiteiroAvatarUrl: firstPlaceUser?.fotoPerfil || '',
+                        displayMode: champ.banner?.displayMode || 'photo_and_names'
+                    };
+                });
+
+                setBanners(bannerData);
+            } catch (error) {
+                console.error("Failed to fetch hall of fame data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchHallOfFameData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
             <div className="flex items-center gap-4 mb-8">
@@ -16,8 +72,8 @@ export default function FamePage() {
                 </div>
             </div>
 
-            {mockHallOfFame.length > 0 ? (
-                <HallOfFameCarousel banners={mockHallOfFame} />
+            {banners.length > 0 ? (
+                <HallOfFameCarousel banners={banners} />
             ) : (
                 <Card>
                     <CardContent className="p-10 text-center">
