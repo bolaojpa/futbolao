@@ -296,13 +296,16 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
         const usersSnapshot = await getDocs(collection(db, 'users'));
         const allUsersData = usersSnapshot.docs.map(doc => doc.data() as UserType);
 
-        const predictionDataForAPI = predictionsForMatch.map(p => {
-            const predictor = allUsersData.find(u => u.id === p.userId);
-            return {
-                userNickname: predictor?.apelido || 'Anônimo',
-                prediction: `${p.palpiteUsuario.placarA}-${p.palpiteUsuario.placarB}`,
-            };
-        });
+        const aggregatedPredictions = predictionsForMatch.reduce((acc, p) => {
+            const predictionKey = `${p.palpiteUsuario.placarA}-${p.palpiteUsuario.placarB}`;
+            if (!acc[predictionKey]) {
+                acc[predictionKey] = { prediction: predictionKey, count: 0 };
+            }
+            acc[predictionKey].count++;
+            return acc;
+        }, {} as Record<string, { prediction: string; count: number }>);
+
+        const predictionDataForAPI = Object.values(aggregatedPredictions);
 
         const sortedUsers = [...allUsersData].sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0));
         const userRank = sortedUsers.findIndex(u => u.id === user.id) + 1;

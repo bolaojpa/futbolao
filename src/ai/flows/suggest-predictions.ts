@@ -18,10 +18,10 @@ const SuggestPredictionsInputSchema = z.object({
   totalParticipants: z.number().describe("O número total de participantes no campeonato."),
   predictionData: z
     .array(z.object({
-      userNickname: z.string(),
-      prediction: z.string(),
+      prediction: z.string().describe('O placar apostado, no formato "X-Y".'),
+      count: z.number().describe('O número de usuários que apostaram neste placar.'),
     }))
-    .describe('Uma lista de palpites de outros usuários para a partida.'),
+    .describe('Uma lista de palpites agregados de outros usuários para a partida.'),
 });
 export type SuggestPredictionsInput = z.infer<typeof SuggestPredictionsInputSchema>;
 
@@ -47,9 +47,9 @@ const suggestPredictionsPrompt = ai.definePrompt({
   - Apelido: {{userNickname}}
   - Posição no Ranking: {{userPosition}}º de {{totalParticipants}} participantes.
 
-  Palpites de outros jogadores:
+  Tendências de palpites de outros jogadores (agregado):
   {{#each predictionData}}
-  - {{this.userNickname}}: {{this.prediction}}
+  - Palpite "{{this.prediction}}": {{this.count}} aposta(s)
   {{/each}}
 
   Siga estas regras para formular sua sugestão:
@@ -59,7 +59,7 @@ const suggestPredictionsPrompt = ai.definePrompt({
       - Se ele estiver no meio da tabela, sugira uma aposta um pouco diferente da maioria para tentar ganhar posições.
       - Se ele estiver na parte de baixo do ranking (últimos 25%), sugira uma aposta mais arriscada, uma "zebra". Um resultado que poucos apostaram, pois ele precisa de um resultado diferente para subir.
   3.  A sua sugestão de placar DEVE estar no formato "Placar Time A-Placar Time B". Por exemplo: "2-1".
-  4.  Forneça uma justificativa curta, amigável e estratégica para sua sugestão. Explique o porquê da sua escolha (arriscar ou jogar seguro).
+  4.  Forneça uma justificativa curta, amigável e estratégica para sua sugestão. Explique o porquê da sua escolha (arriscar ou jogar seguro). NÃO mencione os palpites dos outros usuários diretamente na sua justificativa.
 
   Exemplo de Justificativa: "Como você está na liderança, o mais seguro é apostar na vitória do favorito. Um 2 a 0 garante bons pontos se a maioria acertar."
   Exemplo de Justificativa 2: "Para sair das últimas posições, precisamos de uma zebra! Que tal um 1 a 0 para o time visitante? Se acontecer, você vai pular no ranking!"
