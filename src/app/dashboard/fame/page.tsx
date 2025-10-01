@@ -18,25 +18,34 @@ export default function FamePage() {
             try {
                 const [championships, users] = await Promise.all([getChampionships(), getUsers()]);
                 
-                const hallOfFameChamps = championships.filter(c => c.status === 'arquivado' && c.banner?.ativo);
+                const hallOfFameChamps = championships.filter(c => c.banner?.ativo);
 
                 const bannerData: ChampionBannerProps[] = hallOfFameChamps.map(champ => {
                     const findUser = (userId?: string) => users.find(u => u.id === userId);
                     
-                    const firstPlaceUser = findUser(champ.finalRanking?.pos1);
-                    
-                    // Lógica simplificada para nome do campeão
-                    const campeaoGeralNome = firstPlaceUser?.apelido || '?';
+                    let campeaoGeralNome = '?';
+                    let campeaoGeralAvatarUrl = '';
+                    let palpiteiroNome = '?';
+                    let palpiteiroAvatarUrl = '';
+
+                    if (champ.status === 'arquivado') {
+                        const firstPlaceUser = findUser(champ.finalRanking?.pos1);
+                        campeaoGeralNome = firstPlaceUser?.apelido || '?';
+                        campeaoGeralAvatarUrl = firstPlaceUser?.fotoPerfil || '';
+                        // Lógica simplificada, pode ser expandida
+                        palpiteiroNome = campeaoGeralNome;
+                        palpiteiroAvatarUrl = campeaoGeralAvatarUrl;
+                    }
 
                     return {
                         id: champ.id,
                         campeonatoLogoUrl: champ.banner?.campeonatoLogoUrl || champ.iconUrl || '',
                         campeonatoNome: champ.nome,
                         campeaoGeralNome: campeaoGeralNome,
-                        campeaoGeralAvatarUrl: firstPlaceUser?.fotoPerfil || '',
+                        campeaoGeralAvatarUrl: campeaoGeralAvatarUrl,
                         modoEquipes: champ.modoEquipes,
-                        palpiteiroNome: campeaoGeralNome,
-                        palpiteiroAvatarUrl: firstPlaceUser?.fotoPerfil || '',
+                        palpiteiroNome: palpiteiroNome,
+                        palpiteiroAvatarUrl: palpiteiroAvatarUrl,
                         displayMode: champ.banner?.displayMode || 'photo_and_names'
                     };
                 });
