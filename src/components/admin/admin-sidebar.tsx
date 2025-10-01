@@ -28,10 +28,24 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { cn } from '@/lib/utils';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const [pendingUsersCount, setPendingUsersCount] = useState(0);
+
+  useEffect(() => {
+    const q = query(collection(db, "users"), where("status", "==", "pendente"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      setPendingUsersCount(querySnapshot.size);
+    });
+    return () => unsubscribe();
+  }, []);
+
 
   const handleLinkClick = () => {
     setOpenMobile(false);
@@ -39,7 +53,7 @@ export function AdminSidebar() {
 
   const menuItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/users', label: 'Usuários', icon: Users },
+    { href: '/admin/users', label: 'Usuários', icon: Users, notificationCount: pendingUsersCount },
     { href: '/admin/championships', label: 'Campeonatos', icon: Trophy },
     { href: '/admin/teams', label: 'Equipes', icon: Shield },
     { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
@@ -73,9 +87,17 @@ export function AdminSidebar() {
                 isActive={pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin')}
                 tooltip={{ children: item.label, side: 'right' }}
               >
-                <div>
+                <div className="relative">
                   <item.icon />
                   <span>{item.label}</span>
+                   {item.notificationCount && item.notificationCount > 0 && (
+                    <span className={cn(
+                      "absolute top-1 right-1 h-2 w-2 rounded-full bg-accent animate-pulse",
+                      "group-data-[state=collapsed]:top-0"
+                    )}>
+                       <span className="sr-only">{item.notificationCount} novas notificações</span>
+                    </span>
+                  )}
                 </div>
               </SidebarMenuButton>
             </Link>
