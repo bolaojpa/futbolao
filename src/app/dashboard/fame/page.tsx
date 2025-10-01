@@ -27,38 +27,35 @@ export default function FamePage() {
                     let palpiteiroAvatarUrl = '';
 
                     if (champ.status === 'arquivado') {
-                        let winnerUser: UserType | undefined;
+                        // Lógica para Campeão Geral (maior pontuador)
+                        const participants = users.filter(u => champ.participantes.includes(u.id));
+                        if (participants.length > 0) {
+                            const winnerByPoints = participants.sort((a, b) => {
+                                const pointsA = a.championshipStats?.find(s => s.championshipId === champ.id)?.pontos ?? 0;
+                                const pointsB = b.championshipStats?.find(s => s.championshipId === champ.id)?.pontos ?? 0;
+                                return pointsB - pointsA;
+                            })[0];
+                            
+                            if (winnerByPoints) {
+                                campeaoGeralNome = winnerByPoints.apelido || '';
+                                campeaoGeralAvatarUrl = winnerByPoints.fotoPerfil || '';
+                            }
+                        }
 
-                        // 1. Tenta encontrar o vencedor pelo palpite de campeão
+                        // Lógica para Palpiteiro (quem acertou o campeão)
                         if (champ.finalRanking?.pos1 && champ.championPredictionSettings?.active) {
                             const winningTeamName = champ.finalRanking.pos1;
-                            winnerUser = users.find(u => 
+                            const winnersByPick = users.filter(u => 
                                 u.championPicks?.some(p => 
                                     p.championshipId === champ.id && p.teams[0] === winningTeamName
                                 )
                             );
-                        }
 
-                        // 2. Se não encontrou (ou a função não estava ativa), busca o usuário com mais pontos
-                        if (!winnerUser) {
-                            const participants = users.filter(u => champ.participantes.includes(u.id));
-                            if (participants.length > 0) {
-                                winnerUser = participants.sort((a, b) => {
-                                    const pointsA = a.championshipStats?.find(s => s.championshipId === champ.id)?.pontos ?? 0;
-                                    const pointsB = b.championshipStats?.find(s => s.championshipId === champ.id)?.pontos ?? 0;
-                                    return pointsB - pointsA;
-                                })[0];
+                            if (winnersByPick.length > 0) {
+                                palpiteiroNome = winnersByPick.map(u => u.apelido).join(', ');
+                                palpiteiroAvatarUrl = winnersByPick[0].fotoPerfil || ''; // Pega o avatar do primeiro vencedor
                             }
                         }
-                        
-                        if (winnerUser) {
-                            campeaoGeralNome = winnerUser.apelido || '';
-                            campeaoGeralAvatarUrl = winnerUser.fotoPerfil || '';
-                        }
-                        
-                        // Lógica simplificada, pode ser expandida. Usando o mesmo campeão por enquanto.
-                        palpiteiroNome = campeaoGeralNome;
-                        palpiteiroAvatarUrl = campeaoGeralAvatarUrl;
                     }
 
                     return {
