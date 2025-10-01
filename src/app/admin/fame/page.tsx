@@ -21,18 +21,25 @@ export default function AdminFamePage() {
                 const hallOfFameChamps = championships.filter(c => c.banner?.ativo);
 
                 const bannerData: ChampionBannerProps[] = hallOfFameChamps.map(champ => {
-                    const findUser = (userId?: string) => users.find(u => u.id === userId);
-                    
                     let campeaoGeralNome = '';
                     let campeaoGeralAvatarUrl = '';
                     let palpiteiroNome = '';
                     let palpiteiroAvatarUrl = '';
 
-                    if (champ.status === 'arquivado') {
-                        const firstPlaceUser = findUser(champ.finalRanking?.pos1);
-                        campeaoGeralNome = firstPlaceUser?.apelido || '';
-                        campeaoGeralAvatarUrl = firstPlaceUser?.fotoPerfil || '';
-                        // Lógica simplificada, pode ser expandida
+                    if (champ.status === 'arquivado' && champ.finalRanking?.pos1) {
+                         const winningTeamName = champ.finalRanking.pos1;
+                         const winnerUser = users.find(u => 
+                             u.championPicks?.some(p => 
+                                 p.championshipId === champ.id && p.teams[0] === winningTeamName
+                             )
+                         );
+
+                        if (winnerUser) {
+                            campeaoGeralNome = winnerUser.apelido || '';
+                            campeaoGeralAvatarUrl = winnerUser.fotoPerfil || '';
+                        }
+                        
+                        // Lógica simplificada, pode ser expandida. Usando o mesmo campeão por enquanto.
                         palpiteiroNome = campeaoGeralNome;
                         palpiteiroAvatarUrl = campeaoGeralAvatarUrl;
                     }
