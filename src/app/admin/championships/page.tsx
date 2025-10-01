@@ -153,6 +153,9 @@ export default function AdminChampionshipsPage() {
             if (dataToSave.rodadas === undefined) {
                 delete dataToSave.rodadas;
             }
+            if (dataToSave.formatoFases === undefined) {
+                delete dataToSave.formatoFases;
+            }
 
             if (dataToSave.id) {
                 await updateChampionship(dataToSave.id, {
@@ -186,7 +189,7 @@ export default function AdminChampionshipsPage() {
     const filteredChampionships = useMemo(() => 
         [...championships]
             .filter(c => c.status === activeTab)
-            .sort((a, b) => new Date(b.dataInicio as string).getTime() - new Date(a.dataInicio as string).getTime())
+            .sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime())
     , [championships, activeTab]);
 
     const totalPages = Math.ceil(filteredChampionships.length / ITEMS_PER_PAGE);
