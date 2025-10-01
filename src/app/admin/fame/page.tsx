@@ -26,14 +26,31 @@ export default function AdminFamePage() {
                     let palpiteiroNome = '';
                     let palpiteiroAvatarUrl = '';
 
-                    if (champ.status === 'arquivado' && champ.finalRanking?.pos1) {
-                         const winningTeamName = champ.finalRanking.pos1;
-                         const winnerUser = users.find(u => 
-                             u.championPicks?.some(p => 
-                                 p.championshipId === champ.id && p.teams[0] === winningTeamName
-                             )
-                         );
+                    if (champ.status === 'arquivado') {
+                        let winnerUser: UserType | undefined;
 
+                        // 1. Tenta encontrar o vencedor pelo palpite de campeão
+                        if (champ.finalRanking?.pos1 && champ.championPredictionSettings?.active) {
+                            const winningTeamName = champ.finalRanking.pos1;
+                            winnerUser = users.find(u => 
+                                u.championPicks?.some(p => 
+                                    p.championshipId === champ.id && p.teams[0] === winningTeamName
+                                )
+                            );
+                        }
+
+                        // 2. Se não encontrou (ou a função não estava ativa), busca o usuário com mais pontos
+                        if (!winnerUser) {
+                            const participants = users.filter(u => champ.participantes.includes(u.id));
+                            if (participants.length > 0) {
+                                winnerUser = participants.sort((a, b) => {
+                                    const pointsA = a.championshipStats?.find(s => s.championshipId === champ.id)?.pontos ?? 0;
+                                    const pointsB = b.championshipStats?.find(s => s.championshipId === champ.id)?.pontos ?? 0;
+                                    return pointsB - pointsA;
+                                })[0];
+                            }
+                        }
+                        
                         if (winnerUser) {
                             campeaoGeralNome = winnerUser.apelido || '';
                             campeaoGeralAvatarUrl = winnerUser.fotoPerfil || '';
@@ -43,6 +60,7 @@ export default function AdminFamePage() {
                         palpiteiroNome = campeaoGeralNome;
                         palpiteiroAvatarUrl = campeaoGeralAvatarUrl;
                     }
+
 
                     return {
                         id: champ.id,
