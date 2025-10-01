@@ -36,12 +36,12 @@ import { cn } from '@/lib/utils';
 export function AdminSidebar() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const [pendingUsersCount, setPendingUsersCount] = useState(0);
+  const [hasPendingUsers, setHasPendingUsers] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, "users"), where("status", "==", "pendente"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      setPendingUsersCount(querySnapshot.size);
+      setHasPendingUsers(!querySnapshot.empty);
     });
     return () => unsubscribe();
   }, []);
@@ -53,7 +53,7 @@ export function AdminSidebar() {
 
   const menuItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/users', label: 'Usuários', icon: Users, notificationCount: pendingUsersCount },
+    { href: '/admin/users', label: 'Usuários', icon: Users, hasNotification: hasPendingUsers },
     { href: '/admin/championships', label: 'Campeonatos', icon: Trophy },
     { href: '/admin/teams', label: 'Equipes', icon: Shield },
     { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
@@ -90,12 +90,12 @@ export function AdminSidebar() {
                 <div className="relative">
                   <item.icon />
                   <span>{item.label}</span>
-                   {item.notificationCount && item.notificationCount > 0 && (
+                   {item.hasNotification && (
                     <span className={cn(
                       "absolute top-1 right-1 h-2 w-2 rounded-full bg-accent animate-pulse",
                       "group-data-[state=collapsed]:top-0"
                     )}>
-                       <span className="sr-only">{item.notificationCount} novas notificações</span>
+                       <span className="sr-only">Novas notificações</span>
                     </span>
                   )}
                 </div>
