@@ -384,40 +384,41 @@ export default function DashboardPage() {
                                     if (!lb) return null;
                                     const { championship, leader, message } = lb;
                                     return (
-                                        <Card key={championship.id} className="bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
-                                            <CardHeader className="flex flex-row items-center gap-4 p-4">
-                                                <Link href={`/dashboard/profile?userId=${leader.id}`} className="relative block w-12 h-12">
-                                                    <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
-                                                        <Avatar className="w-full h-full border-2 border-background">
-                                                            <AvatarImage src={leader.fotoPerfil} alt={leader.apelido} />
-                                                            <AvatarFallback>{leader.apelido.substring(0, 2)}</AvatarFallback>
-                                                        </Avatar>
+                                        <Link
+                                            key={championship.id}
+                                            href={`/dashboard/leaderboard?championshipId=${championship.id}`}
+                                            className="block hover:scale-[1.02] transition-transform duration-200"
+                                        >
+                                            <Card className="h-full bg-gradient-to-tr from-yellow-400/20 via-background to-background relative overflow-hidden border-yellow-500/50">
+                                                <CardHeader className="flex flex-row items-center gap-4 p-4">
+                                                    <div className="relative block w-12 h-12">
+                                                        <div className="w-12 h-12 rounded-full p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
+                                                            <Avatar className="w-full h-full border-2 border-background">
+                                                                <AvatarImage src={leader.fotoPerfil} alt={leader.apelido} />
+                                                                <AvatarFallback>{leader.apelido.substring(0, 2)}</AvatarFallback>
+                                                            </Avatar>
+                                                        </div>
+                                                        <Honorifics count={leader.titulos} />
                                                     </div>
-                                                    <Honorifics count={leader.titulos} />
-                                                </Link>
-                                                <div className="flex-1">
-                                                    <CardDescription className="flex items-center gap-2 text-xs">
-                                                        {championship.iconUrl && <Image src={championship.iconUrl} alt="" width={14} height={14}/>}
-                                                        Líder do {championship.nome}
-                                                    </CardDescription>
-                                                    <div className="flex items-baseline gap-2">
-                                                        <CardTitle className="text-xl font-headline text-primary">
-                                                        <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">{leader.apelido}</Link>
-                                                        </CardTitle>
-                                                        <p className="text-xl font-headline">{leader.pontos} pts</p>
+                                                    <div className="flex-1">
+                                                        <CardDescription className="flex items-center gap-2 text-xs">
+                                                            {championship.iconUrl && <Image src={championship.iconUrl} alt="" width={14} height={14}/>}
+                                                            Líder do {championship.nome}
+                                                        </CardDescription>
+                                                        <div className="flex items-baseline gap-2">
+                                                            <CardTitle className="text-xl font-headline text-primary">
+                                                                {leader.apelido}
+                                                            </CardTitle>
+                                                            <p className="text-xl font-headline">{leader.pontos} pts</p>
+                                                        </div>
+                                                        <p className="font-normal text-sm text-muted-foreground">{message}</p>
                                                     </div>
-                                                    <p className="font-normal text-sm text-muted-foreground">{message}</p>
+                                                </CardHeader>
+                                                <div className="absolute -bottom-2 -right-2">
+                                                    <Trophy className="w-16 h-16 text-yellow-500/20" strokeWidth={1} />
                                                 </div>
-                                                <Button asChild variant="ghost" size="sm">
-                                                    <Link href={`/dashboard/leaderboard?championshipId=${championship.id}`}>
-                                                        Ver Ranking
-                                                    </Link>
-                                                </Button>
-                                            </CardHeader>
-                                            <div className="absolute -bottom-2 -right-2">
-                                                <Trophy className="w-16 h-16 text-yellow-500/20" strokeWidth={1} />
-                                            </div>
-                                        </Card>
+                                            </Card>
+                                        </Link>
                                     )
                                 })}
                                 </div>
@@ -517,7 +518,7 @@ export default function DashboardPage() {
                                                                                                 </div>
                                                                                                 <Popover>
                                                                                                     <PopoverTrigger asChild>
-                                                                                                        <div className="sm:hidden flex items-center gap-1 cursor-pointer">
+                                                                                                        <div className="flex flex-col items-center sm:hidden cursor-pointer">
                                                                                                             <Trophy className="w-4 h-4 text-amber-500" />
                                                                                                         </div>
                                                                                                     </PopoverTrigger>
@@ -617,7 +618,7 @@ export default function DashboardPage() {
                                                                                                         </div>
                                                                                                         <Popover>
                                                                                                             <PopoverTrigger asChild>
-                                                                                                                <div className="sm:hidden flex items-center gap-1 cursor-pointer">
+                                                                                                                <div className="flex flex-col items-center sm:hidden cursor-pointer">
                                                                                                                     <Trophy className="w-4 h-4 text-amber-500" />
                                                                                                                 </div>
                                                                                                             </PopoverTrigger>
@@ -852,7 +853,7 @@ export default function DashboardPage() {
                                                                                 </div>
                                                                                 <Popover>
                                                                                     <PopoverTrigger asChild>
-                                                                                        <div className="sm:hidden flex items-center gap-1 cursor-pointer">
+                                                                                        <div className="flex flex-col items-center sm:hidden cursor-pointer">
                                                                                             <Trophy className="w-4 h-4 text-amber-500" />
                                                                                         </div>
                                                                                     </PopoverTrigger>
@@ -943,7 +944,7 @@ export default function DashboardPage() {
                                                                                 </div>
                                                                                 <Popover>
                                                                                     <PopoverTrigger asChild>
-                                                                                        <div className="sm:hidden flex items-center gap-1 cursor-pointer">
+                                                                                        <div className="flex flex-col items-center sm:hidden cursor-pointer">
                                                                                             <Trophy className="w-4 h-4 text-amber-500" />
                                                                                         </div>
                                                                                     </PopoverTrigger>
