@@ -172,18 +172,18 @@ export default function AdminDashboardPage() {
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
             acertoTipo = 'bucha';
-            if (acertouGols) {
+            if (acertouGols && pontuacao.combo.ativo) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
                 acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
             pontosGanhos = pontuacao.tradicional.situacao;
             acertoTipo = 'situacao';
-             if (acertouGols) {
+             if (acertouGols && pontuacao.combo.ativo) {
                 pontosGanhos += pontuacao.combo.pontosGols;
                 acertoTipo = 'bonus';
             }
-        } else if (acertouGols) {
+        } else if (acertouGols && pontuacao.combo.ativo) {
             pontosGanhos = pontuacao.combo.pontosGols;
             acertoTipo = 'gols';
         }
@@ -339,18 +339,18 @@ export default function AdminDashboardPage() {
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
             acertoTipo = 'bucha';
-            if (acertouGols) {
+            if (acertouGols && pontuacao.combo.ativo) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
                 acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
             pontosGanhos = pontuacao.tradicional.situacao;
             acertoTipo = 'situacao';
-             if (acertouGols) {
+             if (acertouGols && pontuacao.combo.ativo) {
                 pontosGanhos += pontuacao.combo.pontosGols;
                 acertoTipo = 'bonus';
             }
-        } else if (acertouGols) {
+        } else if (acertouGols && pontuacao.combo.ativo) {
             pontosGanhos = pontuacao.combo.pontosGols;
             acertoTipo = 'gols';
         }
@@ -492,14 +492,14 @@ export default function AdminDashboardPage() {
                                                                     </Avatar>
                                                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                                                 </div>
-                                                                 <div className="flex items-center gap-1.5">
+                                                                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                                                     <span className="font-bold">{user.apelido}:</span>
                                                                      {championship?.championPredictionSettings?.active && (() => {
                                                                         const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                                             const team = allTeams.find(t => t.name === teamName);
                                                                             const isEliminated = (championship.finalRanking ? Object.values(championship.finalRanking) : []).length > 0 && !(championship.finalRanking ? Object.values(championship.finalRanking) : []).includes(teamName);
-                                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                                            return team ? { ...team, pickOrder: index + 1, isEliminated: isEliminated } : null;
                                                                         }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
 
                                                                         if (chosenTeams.length === 0) return null;

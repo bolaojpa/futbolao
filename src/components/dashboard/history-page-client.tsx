@@ -418,14 +418,14 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                         </Avatar>
                                         <StatusIndicator status={otherUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                       </div>
-                                      <div className="flex items-center gap-1.5">
+                                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                         <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
                                         {champ?.championPredictionSettings?.active && (() => {
                                             const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                             const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                 const team = allTeams.find(t => t.name === teamName);
                                                 const isEliminated = (champ.finalRanking ? Object.values(champ.finalRanking) : []).length > 0 && !(champ.finalRanking ? Object.values(champ.finalRanking) : []).includes(teamName);
-                                                return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                return team ? { ...team, pickOrder: index + 1, isEliminated: isEliminated } : null;
                                             }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 
                                             if (chosenTeams.length === 0) return null;

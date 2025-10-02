@@ -383,7 +383,7 @@ export function AdminMatchesPageClient() {
                                                 </Avatar>
                                                 <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                             </div>
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                                 <span className="font-bold">{user.apelido}:</span>
                                                  {championship?.championPredictionSettings?.active && (() => {
                                                     const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);

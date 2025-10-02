@@ -374,7 +374,7 @@ export function AdminHistoryPageClient() {
                                       const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                           const team = teams.find(t => t.name === teamName);
                                           const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
-                                          return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                          return team ? { ...team, pickOrder: index + 1, isEliminated: isEliminated } : null;
                                       }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 
                                       return (
@@ -387,7 +387,7 @@ export function AdminHistoryPageClient() {
                                               </Avatar>
                                               <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                           </div>
-                                          <div className="flex items-center gap-1.5">
+                                          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                             <span className="font-bold">{user.apelido}:</span>
                                             {chosenTeams.length > 0 && (
                                                 <>
