@@ -25,7 +25,7 @@ import { MatchForm } from '@/components/admin/match-form';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
 import { getChampionships, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
@@ -372,12 +372,6 @@ export function AdminMatchesPageClient() {
                                 {match.predictions.map((prediction, i) => {
                                     const user = users.find(u => u.id === prediction.userId);
                                     if (!user) return null;
-                                    
-                                    const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                    const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
-                                        const team = teams.find(t => t.name === teamName);
-                                        return team ? { ...team, pickOrder: index + 1 } : null;
-                                    }).filter((t): t is Team & { pickOrder: number } => t !== null) : [];
 
                                     return (
                                     <li key={i} className="flex justify-between items-center p-4 border-t">
@@ -391,29 +385,49 @@ export function AdminMatchesPageClient() {
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <span className="font-bold">{user.apelido}:</span>
-                                                {chosenTeams.length > 0 && (
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <div className="flex items-center gap-1 cursor-pointer">
-                                                                {chosenTeams.slice(0,2).map(team => (
-                                                                    <Image key={team.id} src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
-                                                                ))}
-                                                                {chosenTeams.length > 2 && <span className='text-xs'>+{chosenTeams.length-2}</span>}
-                                                            </div>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className='w-auto p-2'>
-                                                            <div className='flex flex-col gap-1'>
-                                                                <p className='font-semibold text-sm'>Palpites de Campeão</p>
+                                                 {championship?.championPredictionSettings?.active && (() => {
+                                                    const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                                    const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
+                                                        const team = teams.find(t => t.name === teamName);
+                                                        const isEliminated = (championship.finalRanking ? Object.values(championship.finalRanking) : []).length > 0 && !(championship.finalRanking ? Object.values(championship.finalRanking) : []).includes(teamName);
+                                                        return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                    }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+
+                                                    if (chosenTeams.length === 0) return null;
+
+                                                    return (
+                                                        <>
+                                                            <div className="hidden sm:flex items-center gap-1">
                                                                 {chosenTeams.map(team => (
-                                                                    <div key={team.id} className='flex items-center gap-2'>
-                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
-                                                                        <p className="text-xs">{team.pickOrder}º: {team.name}</p>
-                                                                    </div>
+                                                                    <Tooltip key={team.id}>
+                                                                        <TooltipTrigger>
+                                                                            <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                    </Tooltip>
                                                                 ))}
                                                             </div>
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                )}
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <div className="sm:hidden flex items-center gap-1 cursor-pointer">
+                                                                        <Trophy className="w-4 h-4 text-amber-500" />
+                                                                    </div>
+                                                                </PopoverTrigger>
+                                                                <PopoverContent className='w-auto p-2'>
+                                                                    <div className='flex flex-col gap-1'>
+                                                                        <p className="font-semibold text-sm">Palpites de Campeão</p>
+                                                                        {chosenTeams.map(team => (
+                                                                            <div key={team.id} className='flex items-center gap-2'>
+                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </PopoverContent>
+                                                            </Popover>
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">

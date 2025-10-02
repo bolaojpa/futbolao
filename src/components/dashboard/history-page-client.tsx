@@ -329,8 +329,6 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                 const teamA = allTeams.find(t => t.name === match.timeA);
                 const teamB = allTeams.find(t => t.name === match.timeB);
                 const champ = championships.find(c => c.id === match.campeonatoId);
-                const isChampionshipStarted = allMatches.some(m => m.campeonatoId === champ?.id && (m.status === 'Ao Vivo' || m.status === 'Finalizado'));
-                const finalRankingOrder = champ?.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) : [];
 
                 return (
                   <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -409,13 +407,6 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                 const otherUser = allUsers.find(u => u.id === p.userId);
                                 if (!otherUser) return null;
                                 
-                                const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                const chosenTeams = isChampionshipStarted && champPicks ? champPicks.teams.map((teamName, index) => {
-                                    const team = allTeams.find(t => t.name === teamName);
-                                    const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
-                                    return team ? { ...team, pickOrder: index + 1, isEliminated: boolean } : null;
-                                }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
-
                                 return (
                                 <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.acertoTipo))}>
                                   <div className="w-1/3 text-left">
@@ -429,38 +420,49 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                       </div>
                                       <div className="flex items-center gap-1.5">
                                         <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
-                                        {chosenTeams.length > 0 && (
-                                            <>
-                                                <div className="hidden sm:flex items-center gap-1">
-                                                    {chosenTeams.map(team => (
-                                                        <Tooltip key={team.id}>
-                                                            <TooltipTrigger>
-                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
-                                                        </Tooltip>
-                                                    ))}
-                                                </div>
-                                                 <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <div className="sm:hidden flex items-center gap-1 cursor-pointer">
-                                                            <Trophy className="w-4 h-4 text-amber-500" />
-                                                        </div>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className='w-auto p-2'>
-                                                        <div className='flex flex-col gap-1'>
-                                                            <p className="font-semibold text-sm">Palpites de Campeão</p>
-                                                            {chosenTeams.map(team => (
-                                                                <div key={team.id} className='flex items-center gap-2'>
+                                        {champ?.championPredictionSettings?.active && (() => {
+                                            const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
+                                            const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
+                                                const team = allTeams.find(t => t.name === teamName);
+                                                const isEliminated = (champ.finalRanking ? Object.values(champ.finalRanking) : []).length > 0 && !(champ.finalRanking ? Object.values(champ.finalRanking) : []).includes(teamName);
+                                                return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                            }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+
+                                            if (chosenTeams.length === 0) return null;
+
+                                            return (
+                                                <>
+                                                    <div className="hidden sm:flex items-center gap-1">
+                                                        {chosenTeams.map(team => (
+                                                            <Tooltip key={team.id}>
+                                                                <TooltipTrigger>
                                                                     <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                    <p className="text-xs">{team.pickOrder}º: {team.name}</p>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </>
-                                        )}
+                                                                </TooltipTrigger>
+                                                                <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                            </Tooltip>
+                                                        ))}
+                                                    </div>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <div className="sm:hidden flex items-center gap-1 cursor-pointer">
+                                                                <Trophy className="w-4 h-4 text-amber-500" />
+                                                            </div>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className='w-auto p-2'>
+                                                            <div className='flex flex-col gap-1'>
+                                                                <p className="font-semibold text-sm">Palpites de Campeão</p>
+                                                                {chosenTeams.map(team => (
+                                                                    <div key={team.id} className='flex items-center gap-2'>
+                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                        <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </>
+                                            );
+                                        })()}
                                       </div>
                                     </Link>
                                   </div>
@@ -483,7 +485,7 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                         )}
                                     </div>
                                   <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                    {p.palpiteCombo && <Gem className={cn("h-4w-4", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
                                     <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(p.acertoTipo))}>
                                       {p.pontos} pts
                                     </Badge>
