@@ -182,14 +182,11 @@ export function EditProfileForm() {
                <div className="relative">
                     <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <FormControl>
-                        <Input placeholder="https://exemplo.com/sua-foto.png" {...field} className="pl-10" disabled={loginMethod === 'google'} />
+                        <Input placeholder="https://exemplo.com/sua-foto.png" {...field} className="pl-10" />
                     </FormControl>
                 </div>
               <FormDescription>
-                {loginMethod === 'email' 
-                    ? <>Cole a URL de uma imagem para usar como foto. Use um site como <a href="https://postimages.org/" target="_blank" rel="noopener noreferrer" className="underline text-primary">Postimages</a> para hospedar sua imagem.</>
-                    : "Sua foto de perfil é sincronizada com sua conta Google."
-                }
+                Cole a URL de uma imagem para usar como foto. Se preenchido, substituirá a imagem da sua conta Google ou o avatar padrão.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -208,4 +205,3 @@ export function EditProfileForm() {
     </Form>
   );
 }
-

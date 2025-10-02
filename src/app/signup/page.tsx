@@ -101,6 +101,7 @@ export default function SignupPage() {
                 titulos: 0,
                 totalJogos: 0,
                 championshipStats: [],
+                urlImagemPersonalizada: '',
             });
             
             router.push('/pending-approval');
@@ -152,6 +153,7 @@ export default function SignupPage() {
                 titulos: 0,
                 totalJogos: 0,
                 championshipStats: [],
+                urlImagemPersonalizada: '',
             }, { merge: true }); // Merge to not overwrite existing data if user logs in again
 
             router.push('/pending-approval');
@@ -235,4 +237,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

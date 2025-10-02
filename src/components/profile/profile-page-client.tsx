@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -374,7 +375,7 @@ export function ProfilePageClient() {
   } = userToDisplay;
   
   const displayName = apelido || nome;
-  const displayImage = urlImagemPersonalizada || fotoPerfil;
+  const displayImage = urlImagemPersonalizada || fotoPerfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
   const fallbackInitials = displayName ? displayName.substring(0, 2).toUpperCase() : '';
 
   return (
