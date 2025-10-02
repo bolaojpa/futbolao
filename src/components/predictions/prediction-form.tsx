@@ -34,12 +34,12 @@ const NumberInput = ({ value, onChange, disabled }: { value: number | null; onCh
     };
 
     return (
-        <div className="relative w-20">
+        <div className="relative w-16">
             <Input
                 type="text"
                 readOnly
                 value={value === null ? '' : value}
-                className="w-full h-12 text-center text-2xl font-bold bg-muted border-0 pr-6 disabled:opacity-75"
+                className="w-full h-11 text-center text-xl font-bold bg-muted border-0 pr-6 disabled:opacity-75"
                 placeholder="-"
                 disabled={disabled}
             />
@@ -418,7 +418,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                     <Badge variant="secondary" className="flex items-center gap-2">
                                         <Gem className="h-4 w-4 text-primary" />
                                         <span>
-                                            {tokensRemaining === 1 ? 'Ficha Restante' : 'Fichas Restantes'}: {tokensRemaining} / {comboCota.quantidade}
+                                             {tokensRemaining === 1 ? 'Ficha Restante' : 'Fichas Restantes'}: {tokensRemaining} / {comboCota.quantidade}
                                         </span>
                                     </Badge>
                                 )}
@@ -493,7 +493,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
 
                                                     <div className="flex items-center justify-center gap-2">
                                                         {isLocked ? (
-                                                            <div className="flex items-center justify-center w-full min-w-44 h-12 text-center text-2xl font-bold bg-muted/50 rounded-md">
+                                                            <div className="flex items-center justify-center w-full min-w-44 h-11 text-center text-2xl font-bold bg-muted/50 rounded-md">
                                                                 {currentScore.placarA !== null ? (
                                                                     <span>{currentScore.placarA} - {currentScore.placarB}</span>
                                                                 ) : (
