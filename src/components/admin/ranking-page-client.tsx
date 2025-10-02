@@ -202,7 +202,7 @@ export function AdminRankingPageClient() {
                     if (a.exatos !== b.exatos) return b.exatos - a.exatos;
                     break;
                 case 'maiorNumeroSituacoes':
-                    if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
+                    if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
                     break;
                 case 'primeiraBucha':
                     if (selectedChampionship?.pontuacao.tradicional) {
@@ -333,8 +333,8 @@ export function AdminRankingPageClient() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className='w-12 text-center'>Pos.</TableHead>
-                  <TableHead className='w-12 text-center'>Var.</TableHead>
+                  <TableHead className='w-10 px-2 text-center'>Pos.</TableHead>
+                  <TableHead className='w-10 px-2 text-center'>Var.</TableHead>
                   <TableHead>Jogador</TableHead>
                   <TableHead className="text-right">{sortColumnHeader}</TableHead>
                   {sortType !== 'exact' && <TableHead className="text-right hidden md:table-cell">Buchas</TableHead>}
@@ -360,8 +360,8 @@ export function AdminRankingPageClient() {
                             rank === 1 && "bg-gradient-to-r from-yellow-400/20 via-yellow-300/10 to-yellow-400/20 dark:from-yellow-500/20 dark:via-yellow-400/10 dark:to-yellow-500/20"
                         )}
                       >
-                        <TableCell className="font-medium text-center">{rank}º</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="font-medium text-center px-2">{rank}º</TableCell>
+                        <TableCell className="text-center px-2">
                           <Tooltip>
                               <TooltipTrigger>
                                   <div className={`flex items-center justify-center`}>
