@@ -272,8 +272,8 @@ export function EditProfileForm() {
                     />
                     <FormItem>
                         <FormLabel>Imagem de Perfil</FormLabel>
-                        <div className="relative">
-                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <div className="relative flex items-center">
+                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                             <FormControl>
                                 <Input 
                                     type="file" 
