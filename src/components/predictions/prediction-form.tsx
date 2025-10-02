@@ -309,12 +309,17 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
 
         const sortedUsers = [...allUsersData].sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0));
         const userRank = sortedUsers.findIndex(u => u.id === user.id) + 1;
+        
+        const totalMatchesInChampionship = allMatches.filter(m => m.campeonatoId === championship.id).length;
+        const userMatchesPlayed = userPredictions.filter(p => allMatches.some(m => m.id === p.matchId && m.campeonatoId === championship.id)).length;
 
         const res = await getAiSuggestion({
             userNickname: user.apelido,
             userPosition: userRank,
             totalParticipants: championship.participantes.length,
             predictionData: predictionDataForAPI,
+            currentUserMatches: userMatchesPlayed,
+            totalUserMatches: totalMatchesInChampionship
         });
 
         if ('error' in res || !res.suggestedPrediction) {
@@ -461,7 +466,9 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                     <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={40} height={40} className="object-contain" data-ai-hint="team logo" />
+                                                            <div className="flex h-12 w-12 items-center justify-center">
+                                                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={48} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                            </div>
                                                         </TooltipTrigger>
                                                         <TooltipContent>
                                                             <p>{match.timeA}</p>
@@ -490,7 +497,9 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                 <div className='flex-1 flex flex-row items-center justify-start gap-3'>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={40} height={40} className="object-contain" data-ai-hint="team logo" />
+                                                            <div className="flex h-12 w-12 items-center justify-center">
+                                                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={48} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                            </div>
                                                         </TooltipTrigger>
                                                         <TooltipContent>
                                                             <p>{match.timeB}</p>
