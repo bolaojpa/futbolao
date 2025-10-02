@@ -465,7 +465,9 @@ export default function DashboardPage() {
                                                                 <div className="flex items-center justify-center w-full">
                                                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                                                         <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                                        <div className='h-12 w-14 flex items-center justify-center'>
+                                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                                        </div>
                                                                     </div>
                                                                     <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
                                                                         <span>{`${match.placarA ?? 0} - ${match.placarB ?? 0}`}</span>
@@ -474,7 +476,9 @@ export default function DashboardPage() {
                                                                         </Badge>
                                                                     </div>
                                                                     <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                                        <div className='h-12 w-14 flex items-center justify-center'>
+                                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                                        </div>
                                                                         <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                                     </div>
                                                                 </div>
@@ -710,7 +714,9 @@ export default function DashboardPage() {
                                                         </div>
                                                         <div className="flex items-center justify-around w-full text-center">
                                                             <div className='flex flex-col items-center gap-2 w-1/3'>
-                                                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={40} className="object-contain" data-ai-hint="team logo" />
+                                                                 <div className="h-10 w-12 flex items-center justify-center">
+                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={40} className="object-contain" data-ai-hint="team logo" />
+                                                                </div>
                                                                 <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
                                                             </div>
                                                             <div className="flex flex-col items-center justify-center gap-1 mx-2">
@@ -720,7 +726,9 @@ export default function DashboardPage() {
                                                                 <span className="text-2xl font-bold text-muted-foreground">vs</span>
                                                             </div>
                                                             <div className='flex flex-col items-center gap-2 w-1/3'>
-                                                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={40} className="object-contain" data-ai-hint="team logo" />
+                                                                <div className="h-10 w-12 flex items-center justify-center">
+                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={40} className="object-contain" data-ai-hint="team logo" />
+                                                                </div>
                                                                 <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
                                                             </div>
                                                         </div>
@@ -786,11 +794,15 @@ export default function DashboardPage() {
                                                                 {match.timeA}
                                                             </div>
                                                             <div className="flex items-center justify-center gap-3 md:gap-4">
-                                                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                                <div className='h-12 w-14 flex items-center justify-center'>
+                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                                </div>
                                                                 <div className="px-3 py-1">
                                                                     <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
                                                                 </div>
-                                                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                                <div className='h-12 w-14 flex items-center justify-center'>
+                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={48} className="object-contain" data-ai-hint="team logo" />
+                                                                </div>
                                                             </div>
                                                             <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
                                                                 {match.timeB}

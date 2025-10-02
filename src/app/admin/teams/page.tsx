@@ -363,7 +363,9 @@ export default function AdminTeamsPage() {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Image src={team.crestUrl} alt="" width={40} height={32} className="object-contain" />
+                                            <div className='w-10 h-8 flex items-center justify-center'>
+                                                <Image src={team.crestUrl} alt="" width={40} height={32} className="object-contain" />
+                                            </div>
                                         </TableCell>
                                         <TableCell className="font-medium">{team.name}</TableCell>
                                         <TableCell className="text-right">

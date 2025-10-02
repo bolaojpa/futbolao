@@ -322,13 +322,17 @@ export function AdminMatchesPageClient() {
                         <div className="flex items-center justify-center w-full">
                             <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                 <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={40} height={40} className="object-contain" data-ai-hint="team logo" />
+                                <div className="h-10 w-12 flex items-center justify-center">
+                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={40} height={40} className="object-contain" data-ai-hint="team logo" />
+                                </div>
                             </div>
                              <div className="flex items-center justify-center text-muted-foreground mx-4">
                                 <Swords className="h-6 w-6" />
                             </div>
                             <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={40} height={40} className="object-contain" data-ai-hint="team logo" />
+                                <div className="h-10 w-12 flex items-center justify-center">
+                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={40} height={40} className="object-contain" data-ai-hint="team logo" />
+                                </div>
                                 <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                             </div>
                         </div>
