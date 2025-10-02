@@ -13,10 +13,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs, updateDoc as firestoreUpdateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { updateUserLastLogin } from '@/lib/firebase/firestore';
+import type { UserType } from '@/lib/types';
 
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -117,28 +118,40 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        const userDocRef = doc(db, "users", user.uid);
+        const googleUser = result.user;
+        const userDocRef = doc(db, "users", googleUser.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-            // Se o usuário não existe no Firestore, cria um novo
+            // New user via Google, create document
             await setDoc(userDocRef, {
-                id: user.uid,
-                nome: user.displayName,
-                apelido: user.displayName?.split(' ')[0] || user.email,
-                email: user.email,
-                fotoPerfil: user.photoURL,
+                id: googleUser.uid,
+                nome: googleUser.displayName,
+                apelido: googleUser.displayName?.split(' ')[0] || googleUser.email,
+                email: googleUser.email,
+                fotoPerfil: googleUser.photoURL,
                 status: 'pendente',
                 funcao: 'usuario',
                 dataCadastro: serverTimestamp(),
                 titulos: 0,
                 totalJogos: 0,
                 championshipStats: [],
+                urlImagemPersonalizada: '',
             });
+        } else {
+            // User already exists, maybe from email/pass. Let's update their info.
+            const existingData = userDoc.data() as UserType;
+            const updates: Partial<UserType> = {
+                nome: googleUser.displayName || existingData.nome,
+            };
+            // Only update fotoPerfil if there is no custom URL set
+            if (!existingData.urlImagemPersonalizada) {
+                updates.fotoPerfil = googleUser.photoURL || existingData.fotoPerfil;
+            }
+            await firestoreUpdateDoc(userDocRef, updates);
         }
         
-        await handleRedirectBasedOnUser(user);
+        await handleRedirectBasedOnUser(googleUser);
 
     } catch (error: any) {
          toast({

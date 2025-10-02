@@ -12,11 +12,11 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getSystemSettings, updateUserLastLogin, getTeams } from '@/lib/firebase/firestore';
-import type { Team } from '@/lib/types';
+import type { Team, UserType } from '@/lib/types';
 import { Combobox } from '@/components/ui/combobox';
 
 
@@ -139,22 +139,36 @@ export default function SignupPage() {
         const provider = new GoogleAuthProvider();
         try {
             const result = await signInWithPopup(auth, provider);
-            const user = result.user;
+            const googleUser = result.user;
+            const userDocRef = doc(db, "users", googleUser.uid);
+            const userDoc = await getDoc(userDocRef);
 
-             await setDoc(doc(db, "users", user.uid), {
-                id: user.uid,
-                nome: user.displayName,
-                apelido: '', // Apelido começa em branco
-                email: user.email,
-                fotoPerfil: user.photoURL,
-                status: 'pendente',
-                funcao: 'usuario',
-                dataCadastro: serverTimestamp(),
-                titulos: 0,
-                totalJogos: 0,
-                championshipStats: [],
-                urlImagemPersonalizada: '',
-            }, { merge: true }); // Merge to not overwrite existing data if user logs in again
+            if (!userDoc.exists()) {
+                await setDoc(userDocRef, {
+                    id: googleUser.uid,
+                    nome: googleUser.displayName,
+                    apelido: googleUser.displayName?.split(' ')[0] || googleUser.email,
+                    email: googleUser.email,
+                    fotoPerfil: googleUser.photoURL,
+                    status: 'pendente',
+                    funcao: 'usuario',
+                    dataCadastro: serverTimestamp(),
+                    titulos: 0,
+                    totalJogos: 0,
+                    championshipStats: [],
+                    urlImagemPersonalizada: '',
+                });
+            } else {
+                // User already exists, merge info
+                const existingData = userDoc.data() as UserType;
+                const updates: Partial<UserType> = {
+                    nome: googleUser.displayName || existingData.nome,
+                };
+                if (!existingData.urlImagemPersonalizada) {
+                    updates.fotoPerfil = googleUser.photoURL || existingData.fotoPerfil;
+                }
+                await updateDoc(userDocRef, updates);
+            }
 
             router.push('/pending-approval');
         } catch (error: any) {
