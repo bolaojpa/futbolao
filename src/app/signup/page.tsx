@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { setDoc, doc, serverTimestamp, getDoc, updateDoc } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp, getDoc, updateDoc as firestoreUpdateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getSystemSettings, updateUserLastLogin, getTeams } from '@/lib/firebase/firestore';
@@ -164,10 +164,13 @@ export default function SignupPage() {
                 const updates: Partial<UserType> = {
                     nome: googleUser.displayName || existingData.nome,
                 };
-                if (!existingData.urlImagemPersonalizada) {
-                    updates.fotoPerfil = googleUser.photoURL || existingData.fotoPerfil;
+                // Only update fotoPerfil if there is no custom URL set and Google provides one
+                if (!existingData.urlImagemPersonalizada && googleUser.photoURL) {
+                    updates.fotoPerfil = googleUser.photoURL;
                 }
-                await updateDoc(userDocRef, updates);
+                if (Object.keys(updates).length > 0) {
+                    await firestoreUpdateDoc(userDocRef, updates);
+                }
             }
 
             router.push('/pending-approval');

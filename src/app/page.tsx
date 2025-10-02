@@ -144,11 +144,13 @@ export default function LoginPage() {
             const updates: Partial<UserType> = {
                 nome: googleUser.displayName || existingData.nome,
             };
-            // Only update fotoPerfil if there is no custom URL set
-            if (!existingData.urlImagemPersonalizada) {
-                updates.fotoPerfil = googleUser.photoURL || existingData.fotoPerfil;
+            // Only update fotoPerfil if there is no custom URL set and Google provides one
+            if (!existingData.urlImagemPersonalizada && googleUser.photoURL) {
+                updates.fotoPerfil = googleUser.photoURL;
             }
-            await firestoreUpdateDoc(userDocRef, updates);
+            if (Object.keys(updates).length > 0) {
+              await firestoreUpdateDoc(userDocRef, updates);
+            }
         }
         
         await handleRedirectBasedOnUser(googleUser);
