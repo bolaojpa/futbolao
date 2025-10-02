@@ -27,6 +27,7 @@ interface ComboboxProps {
     placeholder?: string;
     searchPlaceholder?: string;
     notFoundMessage?: string;
+    className?: string;
 }
 
 export function Combobox({ 
@@ -35,7 +36,8 @@ export function Combobox({
     onChange, 
     placeholder = "Select option...",
     searchPlaceholder = "Search...",
-    notFoundMessage = "No option found."
+    notFoundMessage = "No option found.",
+    className
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -46,7 +48,7 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className={cn("w-full justify-between", className)}
         >
           <span className="truncate">
             {value

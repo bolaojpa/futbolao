@@ -166,6 +166,7 @@ export function EditProfileForm() {
                         placeholder="Selecione seu time do coração"
                         searchPlaceholder="Buscar time..."
                         notFoundMessage="Nenhum time encontrado."
+                        className="pl-10"
                     />
                 </FormControl>
                </div>
