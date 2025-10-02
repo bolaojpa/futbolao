@@ -213,7 +213,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
             [matchId]: { ...prev[matchId], isEditing: false }
         }));
          toast({
-            title: "Ficha de Combo Salva!",
+            title: "Ficha Salva!",
             description: "Seu palpite de gols foi confirmado para esta partida.",
         });
     };
@@ -223,7 +223,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
         await saveComboPick(user.id, matchId, null); // Salva como null para remover
         handleCancelCombo(matchId); // Remove do estado da UI
         toast({
-            title: "Ficha de Combo Removida",
+            title: "Ficha Removida",
             description: "Sua ficha está disponível para ser usada em outra partida.",
             variant: "destructive"
         });
@@ -418,7 +418,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                     <Badge variant="secondary" className="flex items-center gap-2">
                                         <Gem className="h-4 w-4 text-primary" />
                                         <span>
-                                            {tokensRemaining === 1 ? 'Ficha de Combo Restante' : 'Fichas de Combo Restantes'}: {tokensRemaining} / {comboCota.quantidade}
+                                            {tokensRemaining === 1 ? 'Ficha Restante' : 'Fichas Restantes'}: {tokensRemaining} / {comboCota.quantidade}
                                         </span>
                                     </Badge>
                                 )}
@@ -576,7 +576,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                                     onClick={() => handleUseComboToken(match.id)}
                                                                 >
                                                                     <Gem className="mr-2 h-4 w-4" />
-                                                                    Usar Ficha Combo
+                                                                    Usar Ficha
                                                                 </Button>
                                                             ) : (
                                                                 !comboState.isEditing && (
