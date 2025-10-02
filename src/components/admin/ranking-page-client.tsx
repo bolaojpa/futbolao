@@ -374,7 +374,7 @@ export function AdminRankingPageClient() {
                           </Tooltip>
                         </TableCell>
                         <TableCell>
-                            <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group min-w-0">
+                            <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
                                 <div className="relative">
                                     <Avatar className="w-9 h-9">
                                       <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
@@ -383,7 +383,7 @@ export function AdminRankingPageClient() {
                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                     <Honorifics count={user.titulos ?? 0} variant="badge" />
                                 </div>
-                                <span className="font-medium group-hover:underline truncate">{user.apelido || user.nome}</span>
+                                <span className="font-medium group-hover:underline break-words">{user.apelido || user.nome}</span>
                                 {getMedalIcon(rank)}
                             </Link>
                         </TableCell>
