@@ -81,9 +81,9 @@ const ChampionPredictionForm = ({ champ, teams, user, onSave }: { champ: Champio
                 </div>
             ))}
             <div className="flex justify-end">
-                <Button onClick={handleSaveClick} disabled={!arePicksComplete}>
-                    <Save className="mr-2 h-4 w-4" />
-                    Salvar Palpites
+                <Button onClick={handleSaveClick} disabled={!arePicksComplete} size="icon">
+                    <Save className="h-4 w-4" />
+                    <span className="sr-only">Salvar Palpites</span>
                 </Button>
             </div>
         </div>
@@ -180,13 +180,15 @@ export function ChampionPrediction({ championships, teams, user, allMatches }: C
             {openForPrediction.length > 0 && (
                  <Card>
                     <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <Trophy className="h-6 w-6 text-amber-500" />
-                            <div>
-                                <CardTitle>Palpites de Campeão (Abertos)</CardTitle>
-                                <CardDescription>
-                                    Faça sua aposta no ranking final. Você pode alterar até 15 minutos antes da primeira partida.
-                                </CardDescription>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <Trophy className="h-6 w-6 text-amber-500" />
+                                <div>
+                                    <CardTitle>Palpites de Campeão</CardTitle>
+                                    <CardDescription>
+                                        Faça sua aposta no ranking final.
+                                    </CardDescription>
+                                </div>
                             </div>
                         </div>
                     </CardHeader>
@@ -209,10 +211,10 @@ export function ChampionPrediction({ championships, teams, user, allMatches }: C
                                                     {userHasPicks ? (
                                                         <div className="flex items-center gap-2 text-sm text-green-600">
                                                             <CheckCircle className="h-4 w-4" />
-                                                            <span>Palpite Salvo</span>
+                                                            <span className='hidden sm:inline'>Palpite Salvo</span>
                                                         </div>
                                                     ) : (
-                                                        <Badge variant="warning">Palpite Pendente</Badge>
+                                                        <Badge variant="warning">Pendente</Badge>
                                                     )}
                                                     <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                                                 </div>
