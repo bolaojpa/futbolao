@@ -5,8 +5,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { isFuture, parseISO, subMinutes } from 'date-fns';
-import { Trophy, Save, CheckCircle, ChevronDown } from 'lucide-react';
+import { isFuture, parseISO, subMinutes, format, differenceInHours } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Trophy, Save, CheckCircle, ChevronDown, AlarmClock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,7 @@ import { Separator } from '../ui/separator';
 import type { Championship, Team, UserType, Match } from '@/lib/types';
 import { saveChampionPicks } from '@/app/dashboard/predictions/actions';
 import { cn } from '@/lib/utils';
+import { Countdown } from '../shared/countdown';
 
 interface ChampionPredictionProps {
     championships: Championship[];
@@ -147,6 +149,31 @@ export function ChampionPrediction({ championships, teams, user, allMatches }: C
     if (!user || (openForPrediction.length === 0 && lockedPredictions.length === 0)) {
         return null;
     }
+    
+    const DeadlineDisplay = ({ champ }: { champ: Championship }) => {
+        const firstMatch = allMatches
+            .filter(m => m.campeonatoId === champ.id)
+            .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0];
+
+        if (!firstMatch) return null;
+
+        const closingTime = subMinutes(parseISO(firstMatch.data), 15);
+        
+        if (!isFuture(closingTime)) return null;
+
+        const hoursDiff = differenceInHours(closingTime, new Date());
+
+        return (
+            <div className="text-xs font-semibold text-accent flex items-center justify-center gap-2 mt-2">
+                <AlarmClock className="w-4 h-4" />
+                {hoursDiff < 1 ? (
+                    <Countdown targetDate={closingTime.toISOString()} prefix="Encerra em: " />
+                ) : (
+                    <span>Encerra em: {format(closingTime, "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className="space-y-6">
@@ -158,7 +185,7 @@ export function ChampionPrediction({ championships, teams, user, allMatches }: C
                             <div>
                                 <CardTitle>Palpites de Campeão (Abertos)</CardTitle>
                                 <CardDescription>
-                                    Faça sua aposta no ranking final. Você pode alterar até o início do campeonato.
+                                    Faça sua aposta no ranking final. Você pode alterar até 15 minutos antes da primeira partida.
                                 </CardDescription>
                             </div>
                         </div>
@@ -171,9 +198,12 @@ export function ChampionPrediction({ championships, teams, user, allMatches }: C
                                     <AccordionItem value={champ.id} key={champ.id} className="border rounded-md">
                                         <AccordionTrigger className={cn("p-3 hover:no-underline rounded-md bg-muted/50 hover:bg-muted")}>
                                              <div className="flex items-center justify-between w-full">
-                                                <div className="flex items-center gap-3">
-                                                    {champ.iconUrl && <Image src={champ.iconUrl} alt="" width={24} height={24} />}
-                                                    <span className="font-semibold">{champ.nome}</span>
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <div className="flex items-center gap-3">
+                                                        {champ.iconUrl && <Image src={champ.iconUrl} alt="" width={24} height={24} />}
+                                                        <span className="font-semibold">{champ.nome}</span>
+                                                    </div>
+                                                    <DeadlineDisplay champ={champ} />
                                                 </div>
                                                 <div className="flex items-center gap-2 mr-2">
                                                     {userHasPicks ? (
