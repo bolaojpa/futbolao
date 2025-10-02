@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
 import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch, getSystemSettings } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
-import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy, Gem, Goal } from 'lucide-react';
+import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy, Gem, Goal, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-update';
 import { doc, updateDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface MatchWithPredictions extends Match {
     predictions: Prediction[];
@@ -429,15 +430,31 @@ export default function AdminDashboardPage() {
                                                         </div>
                                                         <div className="flex flex-col items-center gap-4 mt-4">
                                                              <Badge variant='destructive' className='animate-pulse'>Ao Vivo</Badge>
-                                                            <div className="flex flex-row gap-2 items-center">
+                                                            <div className="flex flex-col sm:flex-row gap-2 items-center">
                                                                 <Button onClick={() => handleScoreSave(match.id)} size="sm" variant="secondary">
                                                                     <Save className="h-4 w-4 md:mr-2" />
                                                                     <span className="hidden md:inline">Salvar Placar</span>
                                                                 </Button>
-                                                                <Button onClick={() => handleFinalizeMatch(match)} disabled={score.placarA === '' || score.placarB === ''} size="sm">
-                                                                    <Flag className="h-4 w-4 md:mr-2" />
-                                                                    <span className="hidden md:inline">Finalizar Partida</span>
-                                                                </Button>
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                         <Button disabled={score.placarA === '' || score.placarB === ''} size="sm">
+                                                                            <Flag className="h-4 w-4 md:mr-2" />
+                                                                            <span className="hidden md:inline">Finalizar Partida</span>
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Finalizar esta partida?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                Esta ação é irreversível. A partida será movida para o histórico, e os pontos dos usuários serão consolidados permanentemente.
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                            <AlertDialogAction onClick={() => handleFinalizeMatch(match)}>Sim, finalizar</AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
                                                             </div>
                                                             {lastUpdated[match.id] && (
                                                                 <p className="text-xs text-muted-foreground">
@@ -468,7 +485,7 @@ export default function AdminDashboardPage() {
                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                             const team = allTeams.find(t => t.name === teamName);
                                                             const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
-                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                            return team ? { ...team, pickOrder: index + 1, isEliminated: boolean } : null;
                                                         }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
                                                         
                                                         return (
@@ -559,3 +576,4 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
