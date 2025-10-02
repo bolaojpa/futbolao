@@ -501,27 +501,38 @@ export default function AdminDashboardPage() {
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5">
                                                                     <span className="font-bold">{user.apelido}:</span>
-                                                                    <Popover>
-                                                                        <PopoverTrigger asChild>
-                                                                            <div className="flex items-center gap-1 cursor-pointer">
-                                                                                {chosenTeams.slice(0,2).map(team => (
-                                                                                    <Image key={team.id} src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                                ))}
-                                                                                {chosenTeams.length > 2 && <span className='text-xs'>+{chosenTeams.length-2}</span>}
-                                                                            </div>
-                                                                        </PopoverTrigger>
-                                                                        <PopoverContent className='w-auto p-2'>
-                                                                            <div className='flex flex-col gap-2'>
-                                                                                <p className='font-semibold text-sm'>Palpites de Campeão</p>
+                                                                    {chosenTeams.length > 0 && (
+                                                                        <>
+                                                                            <div className="hidden sm:flex items-center gap-1">
                                                                                 {chosenTeams.map(team => (
-                                                                                    <div key={team.id} className='flex items-center gap-2'>
-                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                                        <p className='text-xs'>{team.pickOrder}º: {team.name}</p>
-                                                                                    </div>
+                                                                                    <Tooltip key={team.id}>
+                                                                                        <TooltipTrigger>
+                                                                                            <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                        </TooltipTrigger>
+                                                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                    </Tooltip>
                                                                                 ))}
                                                                             </div>
-                                                                        </PopoverContent>
-                                                                    </Popover>
+                                                                            <Popover>
+                                                                                <PopoverTrigger asChild>
+                                                                                    <div className="sm:hidden flex items-center gap-1 cursor-pointer">
+                                                                                        <Trophy className="w-4 h-4 text-amber-500" />
+                                                                                    </div>
+                                                                                </PopoverTrigger>
+                                                                                <PopoverContent className='w-auto p-2'>
+                                                                                    <div className='flex flex-col gap-1'>
+                                                                                        <p className="font-semibold text-sm">Palpites de Campeão</p>
+                                                                                        {chosenTeams.map(team => (
+                                                                                            <div key={team.id} className='flex items-center gap-2'>
+                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                                <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </PopoverContent>
+                                                                            </Popover>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                             <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">

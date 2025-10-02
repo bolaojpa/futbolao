@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getChampionships, getMatches, getPredictionsForUser, getUsers, getTeams } from '@/lib/firebase/firestore';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
 type FilterType = 'all' | 'exact' | 'situation' | 'combo' | 'bonus' | 'gols' | 'miss';
@@ -342,12 +343,12 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                 {match.timeA}
                               </div>
                               <div className="flex items-center justify-center gap-3 md:gap-4">
-                                <div className="h-10 w-12 flex items-center justify-center">
-                                  <Image src={teamA?.crestUrl || "https://picsum.photos/48/48"} alt="" width={40} height={40} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                <div className="h-14 w-14 flex items-center justify-center">
+                                  <Image src={teamA?.crestUrl || "https://picsum.photos/48/48"} alt={match.timeA} width={40} height={40} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                 </div>
                                 <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
-                                <div className="h-10 w-12 flex items-center justify-center">
-                                  <Image src={teamB?.crestUrl || "https://picsum.photos/48/48"} alt="" width={40} height={40} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                <div className="h-14 w-14 flex items-center justify-center">
+                                  <Image src={teamB?.crestUrl || "https://picsum.photos/48/48"} alt={match.timeB} width={40} height={40} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                 </div>
                               </div>
                               <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
@@ -440,23 +441,24 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                                         </Tooltip>
                                                     ))}
                                                 </div>
-                                                <div className="sm:hidden">
-                                                    <Tooltip>
-                                                        <TooltipTrigger>
+                                                 <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <div className="sm:hidden flex items-center gap-1 cursor-pointer">
                                                             <Trophy className="w-4 h-4 text-amber-500" />
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <div className='flex flex-col gap-1'>
-                                                                {chosenTeams.map(team => (
-                                                                    <div key={team.id} className='flex items-center gap-2'>
-                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                        <p>{team.pickOrder}º: {team.name}</p>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </div>
+                                                        </div>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className='w-auto p-2'>
+                                                        <div className='flex flex-col gap-1'>
+                                                            <p className="font-semibold text-sm">Palpites de Campeão</p>
+                                                            {chosenTeams.map(team => (
+                                                                <div key={team.id} className='flex items-center gap-2'>
+                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                    <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </PopoverContent>
+                                                </Popover>
                                             </>
                                         )}
                                       </div>

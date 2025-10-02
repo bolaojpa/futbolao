@@ -36,6 +36,7 @@ import { getChampionships, getTeams } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
@@ -465,8 +466,8 @@ export default function DashboardPage() {
                                                                 <div className="flex items-center justify-center w-full">
                                                                     <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                                                         <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                                        <div className='h-16 w-16 flex items-center justify-center'>
-                                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                        <div className='flex h-14 w-14 items-center justify-center'>
+                                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
@@ -476,8 +477,8 @@ export default function DashboardPage() {
                                                                         </Badge>
                                                                     </div>
                                                                     <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                                        <div className='h-16 w-16 flex items-center justify-center'>
-                                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                        <div className='flex h-14 w-14 items-center justify-center'>
+                                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                         </div>
                                                                         <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                                     </div>
@@ -512,23 +513,24 @@ export default function DashboardPage() {
                                                                                                     </Tooltip>
                                                                                                 ))}
                                                                                             </div>
-                                                                                            <div className="sm:hidden">
-                                                                                                <Tooltip>
-                                                                                                    <TooltipTrigger>
+                                                                                            <Popover>
+                                                                                                <PopoverTrigger asChild>
+                                                                                                    <div className="sm:hidden flex items-center gap-1 cursor-pointer">
                                                                                                         <Trophy className="w-4 h-4 text-amber-500" />
-                                                                                                    </TooltipTrigger>
-                                                                                                    <TooltipContent>
-                                                                                                        <div className='flex flex-col gap-1'>
-                                                                                                            {userChosenTeams.map(team => (
-                                                                                                                <div key={team.id} className='flex items-center gap-2'>
-                                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                                                                    <p>{team.pickOrder}º: {team.name}</p>
-                                                                                                                </div>
-                                                                                                            ))}
-                                                                                                        </div>
-                                                                                                    </TooltipContent>
-                                                                                                </Tooltip>
-                                                                                            </div>
+                                                                                                    </div>
+                                                                                                </PopoverTrigger>
+                                                                                                <PopoverContent className='w-auto p-2'>
+                                                                                                    <div className='flex flex-col gap-1'>
+                                                                                                        <p className="font-semibold text-sm">Palpites de Campeão</p>
+                                                                                                        {userChosenTeams.map(team => (
+                                                                                                            <div key={team.id} className='flex items-center gap-2'>
+                                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                                                <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                                                            </div>
+                                                                                                        ))}
+                                                                                                    </div>
+                                                                                                </PopoverContent>
+                                                                                            </Popover>
                                                                                         </>
                                                                                     )}
                                                                                 </div>
@@ -606,23 +608,24 @@ export default function DashboardPage() {
                                                                                                             </Tooltip>
                                                                                                         ))}
                                                                                                     </div>
-                                                                                                    <div className="sm:hidden">
-                                                                                                        <Tooltip>
-                                                                                                            <TooltipTrigger>
+                                                                                                    <Popover>
+                                                                                                        <PopoverTrigger asChild>
+                                                                                                            <div className="sm:hidden flex items-center gap-1 cursor-pointer">
                                                                                                                 <Trophy className="w-4 h-4 text-amber-500" />
-                                                                                                            </TooltipTrigger>
-                                                                                                            <TooltipContent>
-                                                                                                                <div className='flex flex-col gap-1'>
-                                                                                                                    {chosenTeams.map(team => (
-                                                                                                                        <div key={team.id} className='flex items-center gap-2'>
-                                                                                                                            <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                                                                            <p>{team.pickOrder}º: {team.name}</p>
-                                                                                                                        </div>
-                                                                                                                    ))}
-                                                                                                                </div>
-                                                                                                            </TooltipContent>
-                                                                                                        </Tooltip>
-                                                                                                    </div>
+                                                                                                            </div>
+                                                                                                        </PopoverTrigger>
+                                                                                                        <PopoverContent className='w-auto p-2'>
+                                                                                                            <div className='flex flex-col gap-1'>
+                                                                                                                <p className="font-semibold text-sm">Palpites de Campeão</p>
+                                                                                                                {chosenTeams.map(team => (
+                                                                                                                    <div key={team.id} className='flex items-center gap-2'>
+                                                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                                                        <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                                                                    </div>
+                                                                                                                ))}
+                                                                                                            </div>
+                                                                                                        </PopoverContent>
+                                                                                                    </Popover>
                                                                                                 </>
                                                                                             )}
                                                                                         </div>
@@ -714,8 +717,8 @@ export default function DashboardPage() {
                                                         </div>
                                                         <div className="flex items-center justify-around w-full text-center">
                                                             <div className='flex flex-col items-center gap-2 w-1/3'>
-                                                                 <div className="h-16 w-16 flex items-center justify-center">
-                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={56} className="object-contain h-full" data-ai-hint="team logo" />
+                                                                 <div className="h-14 w-14 flex items-center justify-center">
+                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                 </div>
                                                                 <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
                                                             </div>
@@ -726,8 +729,8 @@ export default function DashboardPage() {
                                                                 <span className="text-2xl font-bold text-muted-foreground">vs</span>
                                                             </div>
                                                             <div className='flex flex-col items-center gap-2 w-1/3'>
-                                                                <div className="h-16 w-16 flex items-center justify-center">
-                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={56} className="object-contain h-full" data-ai-hint="team logo" />
+                                                                <div className="h-14 w-14 flex items-center justify-center">
+                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                 </div>
                                                                 <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
                                                             </div>
@@ -794,14 +797,14 @@ export default function DashboardPage() {
                                                                 {match.timeA}
                                                             </div>
                                                             <div className="flex items-center justify-center gap-3 md:gap-4">
-                                                                <div className='h-16 w-16 flex items-center justify-center'>
-                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                <div className='h-14 w-14 flex items-center justify-center'>
+                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                 </div>
                                                                 <div className="px-3 py-1">
                                                                     <span className="text-lg md:text-xl font-bold whitespace-nowrap">{`${match.placarA}-${match.placarB}`}</span>
                                                                 </div>
-                                                                <div className='h-16 w-16 flex items-center justify-center'>
-                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                <div className='h-14 w-14 flex items-center justify-center'>
+                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                 </div>
                                                             </div>
                                                             <div className='hidden md:block flex-shrink-0 w-1/3 text-left font-semibold text-sm md:text-base pl-2'>
@@ -837,23 +840,24 @@ export default function DashboardPage() {
                                                                                     </Tooltip>
                                                                                 ))}
                                                                             </div>
-                                                                            <div className="sm:hidden">
-                                                                                <Tooltip>
-                                                                                    <TooltipTrigger>
+                                                                            <Popover>
+                                                                                <PopoverTrigger asChild>
+                                                                                    <div className="sm:hidden flex items-center gap-1 cursor-pointer">
                                                                                         <Trophy className="w-4 h-4 text-amber-500" />
-                                                                                    </TooltipTrigger>
-                                                                                    <TooltipContent>
-                                                                                        <div className='flex flex-col gap-1'>
-                                                                                            {userChosenTeams.map(team => (
-                                                                                                <div key={team.id} className='flex items-center gap-2'>
-                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                                                    <p>{team.pickOrder}º: {team.name}</p>
-                                                                                                </div>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </TooltipContent>
-                                                                                </Tooltip>
-                                                                            </div>
+                                                                                    </div>
+                                                                                </PopoverTrigger>
+                                                                                <PopoverContent className='w-auto p-2'>
+                                                                                    <div className='flex flex-col gap-1'>
+                                                                                         <p className="font-semibold text-sm">Palpites de Campeão</p>
+                                                                                        {userChosenTeams.map(team => (
+                                                                                            <div key={team.id} className='flex items-center gap-2'>
+                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                                <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </PopoverContent>
+                                                                            </Popover>
                                                                         </>
                                                                     )}
                                                                 </div>
@@ -923,23 +927,24 @@ export default function DashboardPage() {
                                                                                     </Tooltip>
                                                                                 ))}
                                                                             </div>
-                                                                            <div className="sm:hidden">
-                                                                                <Tooltip>
-                                                                                    <TooltipTrigger>
+                                                                            <Popover>
+                                                                                <PopoverTrigger asChild>
+                                                                                    <div className="sm:hidden flex items-center gap-1 cursor-pointer">
                                                                                         <Trophy className="w-4 h-4 text-amber-500" />
-                                                                                    </TooltipTrigger>
-                                                                                    <TooltipContent>
-                                                                                        <div className='flex flex-col gap-1'>
-                                                                                            {chosenTeams.map(team => (
-                                                                                                <div key={team.id} className='flex items-center gap-2'>
-                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                                                    <p>{team.pickOrder}º: {team.name}</p>
-                                                                                                </div>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </TooltipContent>
-                                                                                </Tooltip>
-                                                                            </div>
+                                                                                    </div>
+                                                                                </PopoverTrigger>
+                                                                                <PopoverContent className='w-auto p-2'>
+                                                                                    <div className='flex flex-col gap-1'>
+                                                                                         <p className="font-semibold text-sm">Palpites de Campeão</p>
+                                                                                        {chosenTeams.map(team => (
+                                                                                            <div key={team.id} className='flex items-center gap-2'>
+                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                                                                <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </PopoverContent>
+                                                                            </Popover>
                                                                         </>
                                                                     )}
                                                                 </div>
