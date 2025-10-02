@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user) {
         setUser(null);
         setLoading(false);
-         if (window.location.pathname !== '/' && window.location.pathname !== '/signup') {
+         if (window.location.pathname !== '/' && window.location.pathname !== '/signup' && window.location.pathname !== '/forgot-password') {
             window.location.href = '/';
         }
       }

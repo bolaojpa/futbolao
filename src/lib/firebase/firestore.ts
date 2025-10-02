@@ -40,7 +40,14 @@ export async function getUsers(): Promise<UserType[]> {
  */
 export async function updateUserProfile(userId: string, data: Partial<Pick<UserType, 'nome' | 'apelido' | 'timeCoracao' | 'urlImagemPersonalizada'>>): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, { ...data, ultimaAtividade: serverTimestamp() });
+    const updateData: Partial<UserType> = { ...data, ultimaAtividade: serverTimestamp() };
+    
+    // Se uma nova URL personalizada for fornecida, atualiza também a foto de perfil principal.
+    if (data.urlImagemPersonalizada) {
+        updateData.fotoPerfil = data.urlImagemPersonalizada;
+    }
+
+    await updateDoc(userDocRef, updateData);
 }
 
 /**
