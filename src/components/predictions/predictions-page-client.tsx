@@ -110,7 +110,8 @@ export function PredictionsPageClient() {
             return isFuture(closingTime);
         }
         
-        return isFuture(parseISO(c.dataInicio as string));
+        const startDate = c.dataInicio ? (typeof c.dataInicio === 'string' ? parseISO(c.dataInicio) : c.dataInicio) : null;
+        return startDate ? isFuture(startDate) : false;
     });
     
     const hasOpenMatches = allMatches.some(m =>
@@ -149,7 +150,7 @@ export function PredictionsPageClient() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                  <div className="flex items-center gap-4">
                     <CalendarCheck className="h-8 w-8 text-primary" />
-                    <div>
+                    <div className='flex-1'>
                         <h1 className="text-3xl font-bold font-headline">Meus Palpites</h1>
                         <p className="text-muted-foreground">
                             Registre ou altere seus palpites para as próximas partidas.

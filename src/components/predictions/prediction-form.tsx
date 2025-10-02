@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -478,7 +479,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                     <div className='flex-1 flex flex-row items-center justify-end gap-2 sm:gap-3'>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <div className="flex h-14 w-14 items-center justify-center">
+                                                                <div className="flex h-12 w-12 items-center justify-center">
                                                                     <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={48} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                 </div>
                                                             </TooltipTrigger>
@@ -510,7 +511,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                     <div className='flex-1 flex flex-row items-center justify-start gap-2 sm:gap-3'>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <div className="flex h-14 w-14 items-center justify-center">
+                                                                <div className="flex h-12 w-12 items-center justify-center">
                                                                     <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={48} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                 </div>
                                                             </TooltipTrigger>
