@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -17,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { User, AtSign, Heart, Link as LinkIcon, Save, Loader2, Upload, Crop, Trash2 } from 'lucide-react';
+import { User, AtSign, Heart, Link as LinkIcon, Save, Loader2, Upload, Crop, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState, useRef } from 'react';
@@ -25,6 +26,7 @@ import { updateUserProfile, getTeams } from '@/lib/firebase/firestore';
 import type { Team } from '@/lib/types';
 import { Combobox } from '../ui/combobox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { cn } from '@/lib/utils';
@@ -320,10 +322,29 @@ export function EditProfileForm() {
                                     Escolher Imagem
                                 </label>
                                 {form.getValues('urlImagemPersonalizada') && (
-                                     <Button variant="destructive" size="icon" type="button" onClick={handleRemoveImage}>
-                                        <Trash2 className="h-4 w-4" />
-                                        <span className="sr-only">Remover Imagem</span>
-                                    </Button>
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="icon" type="button">
+                                                <Trash2 className="h-4 w-4" />
+                                                <span className="sr-only">Remover Imagem Personalizada</span>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle className="flex items-center gap-2">
+                                                    <AlertTriangle className="text-destructive"/>
+                                                    Remover Imagem?
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Tem certeza de que deseja remover sua imagem personalizada? Sua foto de perfil reverterá para a imagem da sua conta Google (se disponível) ou um avatar padrão.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleRemoveImage}>Sim, remover</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 )}
                             </div>
                          <FormDescription>
@@ -381,3 +402,4 @@ export function EditProfileForm() {
         </>
     );
 }
+
