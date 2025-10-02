@@ -21,7 +21,9 @@ import { User, AtSign, Heart, Link as LinkIcon, Save, Loader2 } from 'lucide-rea
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState } from 'react';
-import { updateUserProfile } from '@/lib/firebase/firestore';
+import { updateUserProfile, getTeams } from '@/lib/firebase/firestore';
+import type { Team } from '@/lib/types';
+import { Combobox } from '../ui/combobox';
 
 
 const profileFormSchema = z.object({
@@ -38,6 +40,19 @@ export function EditProfileForm() {
   const router = useRouter();
   const { user, firebaseUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [teams, setTeams] = useState<Team[]>([]);
+
+  useEffect(() => {
+    async function fetchTeams() {
+        try {
+            const fetchedTeams = await getTeams();
+            setTeams(fetchedTeams.filter(t => t.type === 'club'));
+        } catch (error) {
+            toast({ title: "Erro ao buscar times", variant: "destructive" });
+        }
+    }
+    fetchTeams();
+  }, [toast]);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -142,9 +157,16 @@ export function EditProfileForm() {
             <FormItem>
               <FormLabel>Time do Coração</FormLabel>
                <div className="relative">
-                <Heart className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Heart className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                 <FormControl>
-                    <Input placeholder="Seu time de torcida" {...field} className="pl-10" />
+                   <Combobox
+                        options={teams.map(t => ({ label: t.name, value: t.name }))}
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        placeholder="Selecione seu time do coração"
+                        searchPlaceholder="Buscar time..."
+                        notFoundMessage="Nenhum time encontrado."
+                    />
                 </FormControl>
                </div>
               <FormMessage />
@@ -186,3 +208,4 @@ export function EditProfileForm() {
     </Form>
   );
 }
+

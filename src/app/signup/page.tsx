@@ -6,16 +6,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, User, AtSign } from 'lucide-react';
+import { Mail, Lock, User, AtSign, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { getSystemSettings, updateUserLastLogin } from '@/lib/firebase/firestore';
+import { getSystemSettings, updateUserLastLogin, getTeams } from '@/lib/firebase/firestore';
+import type { Team } from '@/lib/types';
+import { Combobox } from '@/components/ui/combobox';
 
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -43,7 +45,21 @@ export default function SignupPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [timeCoracao, setTimeCoracao] = useState('');
+    const [teams, setTeams] = useState<Team[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        async function fetchTeams() {
+            try {
+                const fetchedTeams = await getTeams();
+                setTeams(fetchedTeams.filter(t => t.type === 'club'));
+            } catch (error) {
+                toast({ title: "Erro ao buscar times", variant: "destructive" });
+            }
+        }
+        fetchTeams();
+    }, [toast]);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -81,6 +97,7 @@ export default function SignupPage() {
                 status: 'pendente',
                 funcao: 'usuario',
                 dataCadastro: serverTimestamp(),
+                timeCoracao: timeCoracao || '',
                 titulos: 0,
                 totalJogos: 0,
                 championshipStats: [],
@@ -177,6 +194,17 @@ export default function SignupPage() {
                   <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input type="text" placeholder="Apelido (como aparecerá no ranking)" className="pl-10" value={apelido} onChange={(e) => setApelido(e.target.value)} />
               </div>
+               <div className="relative">
+                 <Heart className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                 <Combobox
+                    options={teams.map(t => ({ label: t.name, value: t.name }))}
+                    value={timeCoracao}
+                    onChange={setTimeCoracao}
+                    placeholder="Time do Coração (opcional)"
+                    searchPlaceholder="Buscar time..."
+                    notFoundMessage="Nenhum time encontrado."
+                />
+              </div>
               <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input type="email" placeholder="seu@email.com" className="pl-10" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -207,3 +235,4 @@ export default function SignupPage() {
     </div>
   );
 }
+
