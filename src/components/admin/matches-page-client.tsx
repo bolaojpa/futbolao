@@ -324,7 +324,7 @@ export function AdminMatchesPageClient() {
                         <div className="flex items-center justify-center w-full">
                             <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                 <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                <div className="h-16 w-16 flex items-center justify-center">
+                                <div className="h-14 w-14 flex items-center justify-center">
                                     <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={64} height={64} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                 </div>
                             </div>
@@ -332,7 +332,7 @@ export function AdminMatchesPageClient() {
                                 <Swords className="h-6 w-6" />
                             </div>
                             <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                <div className="h-16 w-16 flex items-center justify-center">
+                                <div className="h-14 w-14 flex items-center justify-center">
                                     <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={64} height={64} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                 </div>
                                 <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
@@ -393,14 +393,27 @@ export function AdminMatchesPageClient() {
                                             <div className="flex items-center gap-1.5">
                                                 <span className="font-bold">{user.apelido}:</span>
                                                 {chosenTeams.length > 0 && (
-                                                     <PopoverTrigger asChild>
-                                                        <div className="flex items-center gap-1 cursor-pointer">
-                                                            {chosenTeams.slice(0,2).map(team => (
-                                                                <Image key={team.id} src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
-                                                            ))}
-                                                            {chosenTeams.length > 2 && <span className='text-xs'>+{chosenTeams.length-2}</span>}
-                                                        </div>
-                                                    </PopoverTrigger>
+                                                     <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <div className="flex items-center gap-1 cursor-pointer">
+                                                                {chosenTeams.slice(0,2).map(team => (
+                                                                    <Image key={team.id} src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
+                                                                ))}
+                                                                {chosenTeams.length > 2 && <span className='text-xs'>+{chosenTeams.length-2}</span>}
+                                                            </div>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className='w-auto p-2'>
+                                                            <div className='flex flex-col gap-1'>
+                                                                <p className='font-semibold text-sm'>Palpites de Campeão</p>
+                                                                {chosenTeams.map(team => (
+                                                                    <div key={team.id} className='flex items-center gap-2'>
+                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
+                                                                        <p className="text-xs">{team.pickOrder}º: {team.name}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
                                                 )}
                                             </div>
                                         </div>
