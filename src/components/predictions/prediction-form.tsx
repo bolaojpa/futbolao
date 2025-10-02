@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -374,16 +373,16 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
             <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
               <AlarmClock className="w-3 h-3"/>
               {`Em breve às ${format(matchDate, "HH:mm", { locale: ptBR })}`}
-            </div>
-          );
-        }
-        
-        if (isToday(matchDate)) {
-          return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
-        }
+        </div>
+      );
+    }
     
-        return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
-      };
+    if (isToday(matchDate)) {
+      return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
+    }
+
+    return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
+  };
 
     const groupedMatches = useMemo(() => {
         return displayedMatches.reduce((acc, match) => {
@@ -418,7 +417,9 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                 {comboCota && comboCota.quantidade > 0 && (
                                     <Badge variant="secondary" className="flex items-center gap-2">
                                         <Gem className="h-4 w-4 text-primary" />
-                                        <span>Fichas de Combo Restantes: {tokensRemaining} / {comboCota.quantidade}</span>
+                                        <span>
+                                            {tokensRemaining === 1 ? 'Ficha de Combo Restante' : 'Fichas de Combo Restantes'}: {tokensRemaining} / {comboCota.quantidade}
+                                        </span>
                                     </Badge>
                                 )}
                             </div>
