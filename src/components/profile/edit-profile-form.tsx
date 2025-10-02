@@ -4,7 +4,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -27,6 +27,7 @@ import { Combobox } from '../ui/combobox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { cn } from '@/lib/utils';
 
 
 const profileFormSchema = z.object({
@@ -275,7 +276,6 @@ export function EditProfileForm() {
                     <FormItem>
                         <FormLabel>Imagem de Perfil</FormLabel>
                             <div className="flex items-center gap-4">
-                                <Upload className="h-5 w-5 text-muted-foreground" />
                                 <FormControl>
                                     <Input 
                                         type="file" 
@@ -286,12 +286,13 @@ export function EditProfileForm() {
                                         id="picture-upload"
                                     />
                                 </FormControl>
-                                <label htmlFor="picture-upload" className="cursor-pointer text-sm font-semibold text-primary hover:underline">
+                                <label htmlFor="picture-upload" className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer")}>
+                                    <Upload className="mr-2 h-4 w-4" />
                                     Escolher Imagem
                                 </label>
                             </div>
                          <FormDescription>
-                            Use uma imagem de um site como <a href="https://postimages.org/" target="_blank" rel="noopener noreferrer" className="underline">Postimages.org</a> (use o "Link Direto") ou envie um arquivo.
+                           Envie um arquivo de imagem (PNG, JPG, WEBP).
                         </FormDescription>
                         <FormMessage />
                     </FormItem>
