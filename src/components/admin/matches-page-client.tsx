@@ -390,8 +390,8 @@ export function AdminMatchesPageClient() {
                                                     const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                         const team = teams.find(t => t.name === teamName);
                                                         const isEliminated = (championship.finalRanking ? Object.values(championship.finalRanking) : []).length > 0 && !(championship.finalRanking ? Object.values(championship.finalRanking) : []).includes(teamName);
-                                                        return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
-                                                    }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+                                                        return team ? { ...team, pickOrder: index + 1, isEliminated: isEliminated } : null;
+                                                    }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 
                                                     if (chosenTeams.length === 0) return null;
 

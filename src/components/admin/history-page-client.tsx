@@ -374,8 +374,8 @@ export function AdminHistoryPageClient() {
                                       const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                           const team = teams.find(t => t.name === teamName);
                                           const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
-                                          return team ? { ...team, pickOrder: index + 1, isEliminated: boolean } : null;
-                                      }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+                                          return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                      }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 
                                       return (
                                       <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.acertoTipo))}>

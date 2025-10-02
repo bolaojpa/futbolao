@@ -499,7 +499,7 @@ export default function DashboardPage() {
                                                                                             const team = allTeams.find(t => t.name === teamName);
                                                                                             const isEliminated = (champ.finalRanking ? Object.values(champ.finalRanking) : []).length > 0 && !(champ.finalRanking ? Object.values(champ.finalRanking) : []).includes(teamName);
                                                                                             return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
-                                                                                        }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+                                                                                        }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 
                                                                                         if (chosenTeams.length === 0) return null;
 
@@ -598,8 +598,8 @@ export default function DashboardPage() {
                                                                                                 const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                                                                     const team = allTeams.find(t => t.name === teamName);
                                                                                                     const isEliminated = (champ.finalRanking ? Object.values(champ.finalRanking) : []).length > 0 && !(champ.finalRanking ? Object.values(champ.finalRanking) : []).includes(teamName);
-                                                                                                    return team ? { ...team, pickOrder: index + 1, isEliminated: boolean } : null;
-                                                                                                }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+                                                                                                    return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                                                                }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
                                                                                                 
                                                                                                 if (chosenTeams.length === 0) return null;
 
@@ -834,7 +834,7 @@ export default function DashboardPage() {
                                                                             const team = allTeams.find(t => t.name === teamName);
                                                                             const isEliminated = (champ.finalRanking ? Object.values(champ.finalRanking) : []).length > 0 && !(champ.finalRanking ? Object.values(champ.finalRanking) : []).includes(teamName);
                                                                             return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
-                                                                        }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+                                                                        }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 
                                                                         if (chosenTeams.length === 0) return null;
 
@@ -924,8 +924,8 @@ export default function DashboardPage() {
                                                                         const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                                             const team = allTeams.find(t => t.name === teamName);
                                                                             const isEliminated = (champ.finalRanking ? Object.values(champ.finalRanking) : []).length > 0 && !(champ.finalRanking ? Object.values(champ.finalRanking) : []).includes(teamName);
-                                                                            return team ? { ...team, pickOrder: index + 1, isEliminated: boolean } : null;
-                                                                        }).filter((t): t is Team & { pickOrder: number, isEliminated: boolean } => t !== null) : [];
+                                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
+                                                                        }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
                                                                         
                                                                         if (chosenTeams.length === 0) return null;
 
