@@ -1,8 +1,9 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User as FirebaseUser, onIdTokenChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserType } from '@/lib/types';
 
@@ -20,30 +21,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      setLoading(true);
-      if (user) {
-        setFirebaseUser(user);
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as UserType);
-        } else {
-          setUser(null); // Firestore doc might not be created yet during signup
-        }
-      } else {
-        setFirebaseUser(null);
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      if (!user) {
         setUser(null);
-        // Se o usuário foi deslogado, força um reload para limpar o estado
-        if (window.location.pathname !== '/' && window.location.pathname !== '/signup') {
+        setLoading(false);
+         if (window.location.pathname !== '/' && window.location.pathname !== '/signup') {
             window.location.href = '/';
         }
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
+
+  useEffect(() => {
+    if (firebaseUser) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const unsubscribeFirestore = onSnapshot(userDocRef, (doc) => {
+        if (doc.exists()) {
+          setUser({ id: doc.id, ...doc.data() } as UserType);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      });
+      return () => unsubscribeFirestore();
+    }
+  }, [firebaseUser]);
 
   const value = { firebaseUser, user, loading };
 
