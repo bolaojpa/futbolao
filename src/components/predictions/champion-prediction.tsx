@@ -6,7 +6,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { isFuture, parseISO, subMinutes } from 'date-fns';
-import { Trophy, Save, CheckCircle } from 'lucide-react';
+import { Trophy, Save, CheckCircle, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { Separator } from '../ui/separator';
 import type { Championship, Team, UserType, Match } from '@/lib/types';
 import { saveChampionPicks } from '@/app/dashboard/predictions/actions';
+import { cn } from '@/lib/utils';
 
 interface ChampionPredictionProps {
     championships: Championship[];
@@ -168,20 +169,23 @@ export function ChampionPrediction({ championships, teams, user, allMatches }: C
                                 const userHasPicks = savedPicks[champ.id];
                                  return (
                                     <AccordionItem value={champ.id} key={champ.id} className="border rounded-md">
-                                        <AccordionTrigger className="p-3 hover:no-underline">
+                                        <AccordionTrigger className={cn("p-3 hover:no-underline rounded-md bg-muted/50 hover:bg-muted")}>
                                              <div className="flex items-center justify-between w-full">
                                                 <div className="flex items-center gap-3">
                                                     {champ.iconUrl && <Image src={champ.iconUrl} alt="" width={24} height={24} />}
                                                     <span className="font-semibold">{champ.nome}</span>
                                                 </div>
-                                                {userHasPicks ? (
-                                                    <div className="flex items-center gap-2 text-sm text-green-600 mr-4">
-                                                        <CheckCircle className="h-4 w-4" />
-                                                        <span>Palpite Salvo</span>
-                                                    </div>
-                                                ) : (
-                                                    <Badge variant="warning" className="mr-4">Palpite Pendente</Badge>
-                                                )}
+                                                <div className="flex items-center gap-2 mr-2">
+                                                    {userHasPicks ? (
+                                                        <div className="flex items-center gap-2 text-sm text-green-600">
+                                                            <CheckCircle className="h-4 w-4" />
+                                                            <span>Palpite Salvo</span>
+                                                        </div>
+                                                    ) : (
+                                                        <Badge variant="warning">Palpite Pendente</Badge>
+                                                    )}
+                                                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                                                </div>
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent>
