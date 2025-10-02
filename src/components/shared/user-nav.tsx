@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,13 +31,6 @@ import { useRouter } from 'next/navigation';
 export function UserNav() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [currentStatus, setCurrentStatus] = useState<UserType['presenceStatus']>('Disponível');
-
-  useEffect(() => {
-    if (user?.presenceStatus) {
-      setCurrentStatus(user.presenceStatus);
-    }
-  }, [user]);
 
   if (loading) {
     return <Skeleton className="h-9 w-9 rounded-full" />;
@@ -46,12 +40,14 @@ export function UserNav() {
     return null; // Ou um botão de Login
   }
 
-  const { apelido, email, fotoPerfil } = user;
+  const { apelido, email, fotoPerfil, presenceStatus } = user;
   const fallbackInitials = apelido.substring(0, 2).toUpperCase();
 
   const handleStatusChange = async (newStatus: UserType['presenceStatus']) => {
     if (user) {
-      setCurrentStatus(newStatus); // Optimistic update
+      // O hook useAuth já reflete a mudança do DB,
+      // então a atualização otimista local não é estritamente necessária,
+      // mas pode deixar a UI um pouco mais rápida.
       await updateUserPresenceStatus(user.id, newStatus);
     }
   };
@@ -79,7 +75,7 @@ export function UserNav() {
           <Avatar className="h-9 w-9">
             <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
             <AvatarFallback>{fallbackInitials}</AvatarFallback>
-            <StatusIndicator status={currentStatus} className="w-3 h-3 top-0 right-0" />
+            <StatusIndicator status={presenceStatus} className="w-3 h-3 top-0 right-0" />
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -104,7 +100,7 @@ export function UserNav() {
           </Link>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-               <Circle className={cn("mr-2 h-4 w-4 fill-current", statusConfig[currentStatus]?.color)} />
+               <Circle className={cn("mr-2 h-4 w-4 fill-current", statusConfig[presenceStatus]?.color)} />
               <span>Status</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>

@@ -102,6 +102,7 @@ export default function SignupPage() {
                 totalJogos: 0,
                 championshipStats: [],
                 urlImagemPersonalizada: '',
+                presenceStatus: 'Disponível',
             });
             
             router.push('/pending-approval');
@@ -157,6 +158,7 @@ export default function SignupPage() {
                     totalJogos: 0,
                     championshipStats: [],
                     urlImagemPersonalizada: '',
+                    presenceStatus: 'Disponível',
                 });
             } else {
                 // User already exists, merge info
@@ -222,6 +224,7 @@ export default function SignupPage() {
                     placeholder="Time do Coração (opcional)"
                     searchPlaceholder="Buscar time..."
                     notFoundMessage="Nenhum time encontrado."
+                    className="pl-10"
                 />
               </div>
               <div className="relative">
