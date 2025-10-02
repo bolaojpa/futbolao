@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -97,11 +98,20 @@ export function PredictionsPageClient() {
         </div>
     }
 
-    const hasOpenChampionPredictions = championships.some(c => 
-        c.championPredictionSettings?.active && 
-        isFuture(parseISO(c.dataInicio as string)) &&
-        c.participantes.includes(user.id)
-    );
+    const hasOpenChampionPredictions = championships.some(c => {
+        if (!(c.championPredictionSettings?.active && c.participantes.includes(user.id))) return false;
+        
+        const firstMatch = allMatches
+            .filter(m => m.campeonatoId === c.id)
+            .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0];
+
+        if (firstMatch) {
+            const closingTime = subMinutes(parseISO(firstMatch.data), 15);
+            return isFuture(closingTime);
+        }
+        
+        return isFuture(parseISO(c.dataInicio as string));
+    });
     
     const hasOpenMatches = allMatches.some(m =>
       m.status === 'Agendado' &&
@@ -163,7 +173,7 @@ export function PredictionsPageClient() {
                 )}
             </div>
 
-            <ChampionPrediction championships={championships} teams={allTeams} user={user} />
+            <ChampionPrediction championships={championships} teams={allTeams} user={user} allMatches={allMatches} />
             
             <PredictionForm 
                 championships={championships} 
