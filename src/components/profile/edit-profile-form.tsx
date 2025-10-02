@@ -90,6 +90,8 @@ export function EditProfileForm() {
     const [completedCrop, setCompletedCrop] = useState<CropType>();
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const imgRef = useRef<HTMLImageElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     useEffect(() => {
         async function fetchTeams() {
@@ -272,19 +274,24 @@ export function EditProfileForm() {
                     />
                     <FormItem>
                         <FormLabel>Imagem de Perfil</FormLabel>
-                        <div className="flex items-center gap-4">
-                            <Upload className="h-5 w-5 text-muted-foreground" />
-                            <FormControl>
-                                <Input 
-                                    type="file" 
-                                    accept="image/png, image/jpeg, image/webp"
-                                    className="border-none p-0 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                                    onChange={handleFileChange}
-                                />
-                            </FormControl>
-                        </div>
+                            <div className="flex items-center gap-4">
+                                <Upload className="h-5 w-5 text-muted-foreground" />
+                                <FormControl>
+                                    <Input 
+                                        type="file" 
+                                        accept="image/png, image/jpeg, image/webp"
+                                        className="hidden"
+                                        onChange={handleFileChange}
+                                        ref={fileInputRef}
+                                        id="picture-upload"
+                                    />
+                                </FormControl>
+                                <label htmlFor="picture-upload" className="cursor-pointer text-sm font-semibold text-primary hover:underline">
+                                    Escolher Imagem
+                                </label>
+                            </div>
                          <FormDescription>
-                            Envie uma imagem (.jpg, .png, .webp) para usar como seu avatar personalizado.
+                            Use uma imagem de um site como <a href="https://postimages.org/" target="_blank" rel="noopener noreferrer" className="underline">Postimages.org</a> (use o "Link Direto") ou envie um arquivo.
                         </FormDescription>
                         <FormMessage />
                     </FormItem>
