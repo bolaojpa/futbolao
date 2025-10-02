@@ -272,17 +272,13 @@ export function EditProfileForm() {
                     />
                     <FormItem>
                         <FormLabel>Imagem de Perfil</FormLabel>
-                        <div className="relative flex items-center">
-                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-                            <FormControl>
-                                <Input 
-                                    type="file" 
-                                    accept="image/png, image/jpeg, image/webp"
-                                    onChange={handleFileChange}
-                                    className="pl-10 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                                />
-                            </FormControl>
-                        </div>
+                        <FormControl>
+                            <Input 
+                                type="file" 
+                                accept="image/png, image/jpeg, image/webp"
+                                onChange={handleFileChange}
+                            />
+                        </FormControl>
                          <FormDescription>
                             Envie uma imagem (.jpg, .png, .webp) para usar como seu avatar personalizado.
                         </FormDescription>
