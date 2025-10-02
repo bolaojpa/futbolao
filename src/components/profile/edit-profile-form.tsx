@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 
 const profileFormSchema = z.object({
@@ -92,6 +93,7 @@ export function EditProfileForm() {
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const imgRef = useRef<HTMLImageElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -124,7 +126,8 @@ export function EditProfileForm() {
                 apelido: user.apelido || '',
                 timeCoracao: user.timeCoracao || '',
                 urlImagemPersonalizada: user.urlImagemPersonalizada || '',
-            })
+            });
+            setImagePreview(user.urlImagemPersonalizada || user.fotoPerfil);
         }
     }, [user, form]);
 
@@ -164,6 +167,7 @@ export function EditProfileForm() {
             try {
                 const dataUrl = await getCroppedImg(imgRef.current, completedCrop);
                 form.setValue('urlImagemPersonalizada', dataUrl, { shouldValidate: true, shouldDirty: true });
+                setImagePreview(dataUrl);
                 setIsCropModalOpen(false);
             } catch (e) {
                 console.error(e);
@@ -201,6 +205,8 @@ export function EditProfileForm() {
     if (!user) {
         return <div className="flex justify-center"><Loader2 className="animate-spin" /></div>;
     }
+    
+    const fallbackInitials = (user.apelido || user.nome || '').substring(0, 2).toUpperCase();
 
     return (
         <>
@@ -276,6 +282,10 @@ export function EditProfileForm() {
                     <FormItem>
                         <FormLabel>Imagem de Perfil</FormLabel>
                             <div className="flex items-center gap-4">
+                               <Avatar className="h-14 w-14 border">
+                                    <AvatarImage src={imagePreview || undefined} />
+                                    <AvatarFallback>{fallbackInitials}</AvatarFallback>
+                                </Avatar>
                                 <FormControl>
                                     <Input 
                                         type="file" 
