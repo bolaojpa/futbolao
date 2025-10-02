@@ -475,7 +475,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                         <CardContent>
                                             <div className="flex flex-col items-center gap-2">
                                                  <div className="flex items-center justify-around w-full gap-2 px-2">
-                                                    <div className='flex-1 flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-3'>
+                                                    <div className='flex-1 flex flex-row items-center justify-end gap-2 sm:gap-3'>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <div className="flex h-14 w-14 items-center justify-center">
@@ -486,7 +486,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                                 <p>{match.timeA}</p>
                                                             </TooltipContent>
                                                         </Tooltip>
-                                                        <span className="font-bold text-base text-center sm:text-right sm:text-lg sm:hidden md:inline-block truncate">{match.timeA}</span>
+                                                        <span className="font-bold text-base text-center sm:text-right sm:text-lg hidden md:inline-block truncate">{match.timeA}</span>
                                                     </div>
 
                                                     <div className="flex items-center justify-center gap-2">
@@ -507,8 +507,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                         )}
                                                     </div>
                                                     
-                                                    <div className='flex-1 flex flex-col-reverse sm:flex-row items-center justify-start gap-2 sm:gap-3'>
-                                                         <span className="font-bold text-base text-center sm:text-left sm:text-lg sm:hidden md:inline-block truncate">{match.timeB}</span>
+                                                    <div className='flex-1 flex flex-row items-center justify-start gap-2 sm:gap-3'>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <div className="flex h-14 w-14 items-center justify-center">
@@ -519,6 +518,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                                 <p>{match.timeB}</p>
                                                             </TooltipContent>
                                                         </Tooltip>
+                                                         <span className="font-bold text-base text-center sm:text-left sm:text-lg hidden md:inline-block truncate">{match.timeB}</span>
                                                     </div>
                                                 </div>
                                                 
