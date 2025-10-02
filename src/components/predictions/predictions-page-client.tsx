@@ -84,14 +84,14 @@ export function PredictionsPageClient() {
 
 
     if (authLoading || loadingData || !user) {
-        return <div class="space-y-6 p-4 sm:p-6 lg:p-8">
+        return <div className="space-y-6 p-4 sm:p-6 lg:p-8">
             {[1, 2, 3].map(i => (
                 <Card key={i}>
                     <CardHeader>
                         <Skeleton className="h-6 w-1/2" />
                     </CardHeader>
                     <CardContent>
-                        <div class="h-24 bg-muted rounded-md animate-pulse"></div>
+                        <div className="h-24 bg-muted rounded-md animate-pulse"></div>
                     </CardContent>
                 </Card>
             ))}
@@ -130,7 +130,7 @@ export function PredictionsPageClient() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-10 text-center">
-                     <div class="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
+                     <div className="mx-auto w-fit bg-muted p-4 rounded-full mb-4">
                         <Goal className="w-12 h-12 text-muted-foreground" />
                     </div>
                      <p className="text-lg font-semibold">Tudo em dia!</p>
@@ -146,8 +146,8 @@ export function PredictionsPageClient() {
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                 <div class="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                 <div className="flex items-center gap-4">
                     <CalendarCheck className="h-8 w-8 text-primary" />
                     <div>
                         <h1 className="text-3xl font-bold font-headline">Meus Palpites</h1>
@@ -157,7 +157,7 @@ export function PredictionsPageClient() {
                     </div>
                 </div>
                 {activeChampionshipsForUser.length > 1 && (
-                    <div class="w-full sm:w-auto">
+                    <div className="w-full sm:w-auto">
                         <Select value={selectedChampionshipId} onValueChange={(value) => setSelectedChampionshipId(value)}>
                             <SelectTrigger className="w-full sm:w-[280px]">
                                 <SelectValue placeholder="Filtrar por campeonato" />
