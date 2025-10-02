@@ -26,6 +26,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
 import { getChampionships, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
 import { Badge } from '@/components/ui/badge';
@@ -324,7 +325,7 @@ export function AdminMatchesPageClient() {
                             <div className='flex-1 flex flex-row items-center justify-end gap-3'>
                                 <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
                                 <div className="h-16 w-16 flex items-center justify-center">
-                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={40} height={40} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={56} className="object-contain" data-ai-hint="team logo" />
                                 </div>
                             </div>
                              <div className="flex items-center justify-center text-muted-foreground mx-4">
@@ -332,7 +333,7 @@ export function AdminMatchesPageClient() {
                             </div>
                             <div className='flex-1 flex flex-row items-center justify-start gap-3'>
                                 <div className="h-16 w-16 flex items-center justify-center">
-                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={40} height={40} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={56} height={56} className="object-contain" data-ai-hint="team logo" />
                                 </div>
                                 <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                             </div>
@@ -392,35 +393,27 @@ export function AdminMatchesPageClient() {
                                             <div className="flex items-center gap-1.5">
                                                 <span className="font-bold">{user.apelido}:</span>
                                                 {chosenTeams.length > 0 && (
-                                                    <>
-                                                        <div className="hidden sm:flex items-center gap-1">
-                                                            {chosenTeams.map(team => (
-                                                                <Tooltip key={team.id}>
-                                                                    <TooltipTrigger>
+                                                     <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <div className="flex items-center gap-1 cursor-pointer">
+                                                                {chosenTeams.slice(0,2).map(team => (
+                                                                    <Image key={team.id} src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
+                                                                ))}
+                                                                {chosenTeams.length > 2 && <span className='text-xs'>+{chosenTeams.length-2}</span>}
+                                                            </div>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className='w-auto p-2'>
+                                                            <div className='flex flex-col gap-2'>
+                                                                <p className='font-semibold text-sm'>Palpites de Campeão</p>
+                                                                {chosenTeams.map(team => (
+                                                                    <div key={team.id} className='flex items-center gap-2'>
                                                                         <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
-                                                                </Tooltip>
-                                                            ))}
-                                                        </div>
-                                                        <div className="sm:hidden">
-                                                            <Tooltip>
-                                                                <TooltipTrigger>
-                                                                    <Trophy className="w-4 h-4 text-amber-500" />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    <div className='flex flex-col gap-1'>
-                                                                        {chosenTeams.map(team => (
-                                                                            <div key={team.id} className='flex items-center gap-2'>
-                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className="object-contain" />
-                                                                                <p>{team.pickOrder}º: {team.name}</p>
-                                                                            </div>
-                                                                        ))}
+                                                                        <p className='text-xs'>{team.pickOrder}º: {team.name}</p>
                                                                     </div>
-                                                                </TooltipContent>
-                                                            </Tooltip>
-                                                        </div>
-                                                    </>
+                                                                ))}
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
                                                 )}
                                             </div>
                                         </div>
