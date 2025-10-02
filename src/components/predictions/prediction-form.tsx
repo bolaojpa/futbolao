@@ -474,12 +474,11 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                         </CardHeader>
                                         <CardContent>
                                             <div className="flex flex-col items-center gap-2">
-                                                <div className="flex items-center justify-around w-full gap-2">
-                                                    <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                        <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                 <div className="flex items-center justify-around w-full gap-2 px-2">
+                                                    <div className='flex-1 flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-3'>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <div className="flex h-16 w-16 items-center justify-center">
+                                                                <div className="flex h-14 w-14 items-center justify-center">
                                                                     <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={48} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                 </div>
                                                             </TooltipTrigger>
@@ -487,11 +486,12 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                                 <p>{match.timeA}</p>
                                                             </TooltipContent>
                                                         </Tooltip>
+                                                        <span className="font-bold text-base text-center sm:text-right sm:text-lg sm:hidden md:inline-block truncate">{match.timeA}</span>
                                                     </div>
 
                                                     <div className="flex items-center justify-center gap-2">
                                                         {isLocked ? (
-                                                            <div className="flex items-center justify-center w-44 h-12 text-center text-2xl font-bold bg-muted/50 rounded-md">
+                                                            <div className="flex items-center justify-center w-full min-w-44 h-12 text-center text-2xl font-bold bg-muted/50 rounded-md">
                                                                 {currentScore.placarA !== null ? (
                                                                     <span>{currentScore.placarA} - {currentScore.placarB}</span>
                                                                 ) : (
@@ -507,10 +507,11 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                         )}
                                                     </div>
                                                     
-                                                    <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                    <div className='flex-1 flex flex-col-reverse sm:flex-row items-center justify-start gap-2 sm:gap-3'>
+                                                         <span className="font-bold text-base text-center sm:text-left sm:text-lg sm:hidden md:inline-block truncate">{match.timeB}</span>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <div className="flex h-16 w-16 items-center justify-center">
+                                                                <div className="flex h-14 w-14 items-center justify-center">
                                                                     <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={48} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                 </div>
                                                             </TooltipTrigger>
@@ -518,7 +519,6 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                                 <p>{match.timeB}</p>
                                                             </TooltipContent>
                                                         </Tooltip>
-                                                        <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                     </div>
                                                 </div>
                                                 
@@ -644,5 +644,3 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
         </>
     );
 }
-
-    
