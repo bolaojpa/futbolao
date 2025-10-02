@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -219,7 +220,7 @@ export function LeaderboardPageClient() {
                     if (a.exatos !== b.exatos) return b.exatos - a.exatos;
                     break;
                 case 'maiorNumeroSituacoes':
-                    if (a.situacoes !== b.situacoes) return b.situacoes - b.situacoes;
+                    if (a.situacoes !== b.situacoes) return b.situacoes - a.situacoes;
                     break;
                 case 'primeiraBucha':
                     if (selectedChampionship?.pontuacao.tradicional) {
@@ -424,7 +425,7 @@ export function LeaderboardPageClient() {
                                 </Tooltip>
                                 </TableCell>
                                 <TableCell>
-                                    <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-3 group">
+                                    <Link href={`/dashboard/profile?userId=${user.id}`} className="flex items-center gap-1.5 group">
                                         <div className="relative">
                                             <Avatar className="w-9 h-9">
                                             <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
@@ -475,3 +476,4 @@ export function LeaderboardPageClient() {
     </TooltipProvider>
   );
 }
+
