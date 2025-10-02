@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { User, AtSign, Heart, Link as LinkIcon, Save, Loader2, Upload, Crop } from 'lucide-react';
+import { User, AtSign, Heart, Link as LinkIcon, Save, Loader2, Upload, Crop, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState, useRef } from 'react';
@@ -179,13 +179,32 @@ export function EditProfileForm() {
         }
     };
 
+    const handleRemoveImage = () => {
+        if (!user || !firebaseUser) return;
+        form.setValue('urlImagemPersonalizada', '', { shouldValidate: true, shouldDirty: true });
+        // Reverte para a foto do provedor (ex: Google) ou uma genérica
+        const fallbackImage = firebaseUser.providerData.find(p => p.photoURL)?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=random`;
+        setImagePreview(fallbackImage);
+        toast({
+            title: "Imagem removida",
+            description: "Clique em 'Salvar Alterações' para confirmar e reverter para sua foto padrão.",
+        });
+    };
+
     const loginMethod = firebaseUser?.providerData.some(p => p.providerId === 'google.com') ? 'google' : 'email';
 
     async function onSubmit(data: ProfileFormValues) {
-        if (!user) return;
+        if (!user || !firebaseUser) return;
         setIsLoading(true);
         try {
-            await updateUserProfile(user.id, data);
+            // Se a url personalizada foi limpa, usa a foto original do provedor como fallback
+            const finalFotoPerfil = data.urlImagemPersonalizada || firebaseUser.providerData.find(p => p.photoURL)?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.nome)}&background=random`;
+
+            await updateUserProfile(user.id, {
+                ...data,
+                fotoPerfil: finalFotoPerfil,
+            });
+
             toast({
                 title: "Perfil Atualizado!",
                 description: "Suas informações foram salvas com sucesso.",
@@ -300,6 +319,12 @@ export function EditProfileForm() {
                                     <Upload className="mr-2 h-4 w-4" />
                                     Escolher Imagem
                                 </label>
+                                {form.getValues('urlImagemPersonalizada') && (
+                                     <Button variant="destructive" size="icon" type="button" onClick={handleRemoveImage}>
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="sr-only">Remover Imagem</span>
+                                    </Button>
+                                )}
                             </div>
                          <FormDescription>
                            Envie um arquivo de imagem (PNG, JPG, WEBP).

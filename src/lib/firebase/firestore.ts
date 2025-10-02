@@ -38,7 +38,7 @@ export async function getUsers(): Promise<UserType[]> {
  * @param userId - The ID of the user to update.
  * @param data - The profile data to update.
  */
-export async function updateUserProfile(userId: string, data: Partial<Pick<UserType, 'nome' | 'apelido' | 'timeCoracao' | 'urlImagemPersonalizada'>>): Promise<void> {
+export async function updateUserProfile(userId: string, data: Partial<Pick<UserType, 'nome' | 'apelido' | 'timeCoracao' | 'urlImagemPersonalizada' | 'fotoPerfil'>>): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
     const updateData: Partial<UserType> = { ...data, ultimaAtividade: serverTimestamp() };
     
