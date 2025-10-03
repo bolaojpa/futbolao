@@ -47,7 +47,6 @@ export default function WelcomePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [isSigningUp, setIsSigningUp] = useState(false);
 
     // Common state for both forms
     const [email, setEmail] = useState('');
@@ -93,7 +92,7 @@ export default function WelcomePage() {
         }
     };
 
-    const handleGoogleAuth = async () => {
+    const handleGoogleAuth = async (isSigningUp: boolean) => {
         setIsLoading(true);
         const settings = await getSystemSettings();
         if (isSigningUp && !settings.allowRegistrations) {
@@ -201,95 +200,97 @@ export default function WelcomePage() {
                 <h1 className="text-4xl font-bold font-headline mt-4">FutBolão Pro</h1>
                 <p className="text-muted-foreground mt-2">Seu app de palpites de futebol.</p>
             </div>
-            <Card className="w-full max-w-md shadow-2xl">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-headline">{isSigningUp ? 'Crie sua conta' : 'Acesse sua conta'}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     <Button variant="outline" className="w-full" type="button" onClick={handleGoogleAuth} disabled={isLoading}>
-                        <GoogleIcon className="mr-2 h-4 w-4" /> Continuar com Google
-                    </Button>
-                    <div className="flex items-center space-x-2 my-4">
-                        <Separator className="flex-1" />
-                        <span className="px-2 text-xs text-muted-foreground">OU</span>
-                        <Separator className="flex-1" />
-                    </div>
-
-                    {isSigningUp ? (
-                        <form onSubmit={handleEmailSignup} className="space-y-4">
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="text" placeholder="Nome completo" className="pl-10" required value={nome} onChange={(e) => setNome(e.target.value)} />
-                            </div>
-                            <div className="relative">
-                                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="text" placeholder="Apelido (como aparecerá no ranking)" className="pl-10" value={apelido} onChange={(e) => setApelido(e.target.value)} />
-                            </div>
-                            <div className="relative">
-                                <Heart className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
-                                <Combobox options={teams.map(t => ({ label: t.name, value: t.name }))} value={timeCoracao} onChange={setTimeCoracao} placeholder="Time do Coração (opcional)" searchPlaceholder="Buscar time..." notFoundMessage="Nenhum time encontrado." className="pl-10" />
-                            </div>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="email" placeholder="seu@email.com" className="pl-10" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                            </div>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="password" placeholder="Crie uma senha forte" className="pl-10" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                            </div>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="password" placeholder="Confirme sua senha" className="pl-10" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                            </div>
-                            <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
-                                {isLoading ? 'Criando conta...' : 'Criar Conta com Email'}
+            <Tabs defaultValue="login" className="w-full max-w-md">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="login">Entrar</TabsTrigger>
+                    <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+                </TabsList>
+                <TabsContent value="login">
+                    <Card className="shadow-none border-t-0 rounded-t-none">
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-2xl font-headline">Acesse sua conta</CardTitle>
+                            <CardDescription>Use sua conta para continuar.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Button variant="outline" className="w-full" type="button" onClick={() => handleGoogleAuth(false)} disabled={isLoading}>
+                                <GoogleIcon className="mr-2 h-4 w-4" /> Continuar com Google
                             </Button>
-                        </form>
-                    ) : (
-                        <form onSubmit={handleEmailLogin} className="space-y-4">
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="email" placeholder="seu@email.com" className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading} />
+                            <div className="flex items-center space-x-2 my-4">
+                                <Separator className="flex-1" />
+                                <span className="px-2 text-xs text-muted-foreground">OU</span>
+                                <Separator className="flex-1" />
                             </div>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input type="password" placeholder="Sua senha" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading} />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox id="remember-me" disabled={isLoading} />
-                                    <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"> Manter conectado </Label>
+                            <form onSubmit={handleEmailLogin} className="space-y-4">
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input type="email" placeholder="seu@email.com" className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={isLoading} />
                                 </div>
-                                <Link href="/forgot-password" passHref className={cn('text-sm font-semibold text-primary hover:underline', isLoading && 'pointer-events-none')}> Esqueceu a senha? </Link>
-                            </div>
-                            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
-                                {isLoading ? 'Entrando...' : 'Entrar com Email'}
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input type="password" placeholder="Sua senha" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading} />
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="remember-me" disabled={isLoading} />
+                                        <Label htmlFor="remember-me" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"> Manter conectado </Label>
+                                    </div>
+                                    <Link href="/forgot-password" passHref className={cn('text-sm font-semibold text-primary hover:underline', isLoading && 'pointer-events-none')}> Esqueceu a senha? </Link>
+                                </div>
+                                <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
+                                    {isLoading ? 'Entrando...' : 'Entrar com Email'}
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="signup">
+                     <Card className="shadow-none border-t-0 rounded-t-none">
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-2xl font-headline">Crie sua conta</CardTitle>
+                            <CardDescription>É rápido e fácil. Vamos começar!</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Button variant="outline" className="w-full" type="button" onClick={() => handleGoogleAuth(true)} disabled={isLoading}>
+                                <GoogleIcon className="mr-2 h-4 w-4" /> Cadastrar com Google
                             </Button>
-                        </form>
-                    )}
-                </CardContent>
-                <CardFooter>
-                    <div className="text-center text-sm w-full">
-                        {isSigningUp ? (
-                            <>
-                                Já tem uma conta?{' '}
-                                <Button variant="link" className="p-0 h-auto" onClick={() => setIsSigningUp(false)}>
-                                    Faça login aqui
+                            <div className="flex items-center space-x-2 my-4">
+                                <Separator className="flex-1" />
+                                <span className="px-2 text-xs text-muted-foreground">OU</span>
+                                <Separator className="flex-1" />
+                            </div>
+                            <form onSubmit={handleEmailSignup} className="space-y-4">
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input type="text" placeholder="Nome completo" className="pl-10" required value={nome} onChange={(e) => setNome(e.target.value)} />
+                                </div>
+                                <div className="relative">
+                                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input type="text" placeholder="Apelido (como aparecerá no ranking)" className="pl-10" value={apelido} onChange={(e) => setApelido(e.target.value)} />
+                                </div>
+                                <div className="relative">
+                                    <Heart className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                                    <Combobox options={teams.map(t => ({ label: t.name, value: t.name }))} value={timeCoracao} onChange={setTimeCoracao} placeholder="Time do Coração (opcional)" searchPlaceholder="Buscar time..." notFoundMessage="Nenhum time encontrado." className="pl-10" />
+                                </div>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input type="email" placeholder="seu@email.com" className="pl-10" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                                </div>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input type="password" placeholder="Crie uma senha forte" className="pl-10" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                                </div>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input type="password" placeholder="Confirme sua senha" className="pl-10" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                </div>
+                                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
+                                    {isLoading ? 'Criando conta...' : 'Criar Conta com Email'}
                                 </Button>
-                            </>
-                        ) : (
-                            <>
-                                Não tem uma conta?{' '}
-                                <Button variant="link" className="p-0 h-auto" onClick={() => setIsSigningUp(true)}>
-                                    Cadastre-se aqui
-                                </Button>
-                            </>
-                        )}
-                    </div>
-                </CardFooter>
-            </Card>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
-
-    
