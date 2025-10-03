@@ -283,11 +283,11 @@ export default function DashboardPage() {
     }, [user, allUsers, userChampionships, liveMatches, allPredictions, allMatches]);
 
     const getChampionPickWinner = useMemo(() => {
-        const cache: Record<string, { winnerId: string; winningTeam: string; tier: { rank: number; pick: number } } | null> = {};
+        const cache: Record<string, { winnerId: string[]; winningTeam: string; tier: { rank: number; pick: number } } | null> = {};
 
         return (championship: Championship) => {
             if (cache[championship.id]) return cache[championship.id];
-
+            
             const finalRankingOrder = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) as string[] : [];
             if (finalRankingOrder.length === 0) {
                 cache[championship.id] = null;
@@ -315,13 +315,60 @@ export default function DashboardPage() {
                 return null;
             }
             
-            const winningTeam = finalRankingOrder[bestTier.rank];
-            const winner = tierContenders[0]; 
+            // CRITÉRIO DE DESEMPATE
+            let finalWinners = [...tierContenders];
 
-            cache[championship.id] = { winnerId: winner.id, winningTeam, tier: bestTier };
+            // 1. Desempate por palpites subsequentes
+            for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
+                if (finalWinners.length === 1) break;
+
+                const nextPickWinners: { user: UserType, rank: number }[] = [];
+                for (const user of finalWinners) {
+                    const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
+                    if (userPick) {
+                        const rank = finalRankingOrder.indexOf(userPick);
+                        if (rank !== -1) {
+                            nextPickWinners.push({ user, rank });
+                        }
+                    }
+                }
+
+                if (nextPickWinners.length > 0) {
+                    const bestRank = Math.min(...nextPickWinners.map(w => w.rank));
+                    const newTiedUsers = nextPickWinners.filter(w => w.rank === bestRank).map(w => w.user);
+                    if (newTiedUsers.length < finalWinners.length) {
+                        finalWinners = newTiedUsers;
+                    }
+                }
+            }
+
+            // 2. Desempate pelo jogo final
+            if (finalWinners.length > 1) {
+                const finalMatch = allMatches
+                    .filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final'))
+                    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
+
+                if (finalMatch) {
+                    const buchaWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
+                    if (buchaWinners.length > 0 && buchaWinners.length < finalWinners.length) {
+                        finalWinners = buchaWinners;
+                    } else {
+                        const situationWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
+                        if (situationWinners.length > 0 && situationWinners.length < finalWinners.length) {
+                           finalWinners = situationWinners;
+                        }
+                    }
+                }
+            }
+            
+            const winningTeam = finalRankingOrder[bestTier.rank];
+            const winnerIds = finalWinners.map(u => u.id);
+
+            cache[championship.id] = { winnerId: winnerIds, winningTeam, tier: bestTier };
             return cache[championship.id];
         }
-    }, [allUsers]);
+    }, [allUsers, allMatches, allPredictions]);
+
 
     const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
         if (status === 'Ao Vivo') return 'destructive';
@@ -535,54 +582,24 @@ export default function DashboardPage() {
                                                                                     {champ?.championPredictionSettings?.active && (
                                                                                         <>
                                                                                             <div className="relative block sm:hidden">
-                                                                                                <Tooltip>
-                                                                                                    <TooltipTrigger asChild>
-                                                                                                        <div className='relative w-5 h-5'>
-                                                                                                            <Trophy className="w-full h-full text-amber-500" />
-                                                                                                            <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
-                                                                                                            {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
-                                                                                                                const team = allTeams.find(t => t.name === teamName);
-                                                                                                                if (!team) return null;
-                                                                                                                const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                                                                                let isEliminated = false;
-                                                                                                                if (finalRankingOrder.length > 0) {
-                                                                                                                    const winnerInfo = getChampionPickWinner(champ);
-                                                                                                                    if (winnerInfo) {
-                                                                                                                        if(user.id !== winnerInfo.winnerId) {
-                                                                                                                            isEliminated = true;
-                                                                                                                        }
-                                                                                                                    } else {
-                                                                                                                        isEliminated = true;
-                                                                                                                    }
-                                                                                                                }
-                                                                                                                return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
-                                                                                                            })}
-                                                                                                            </div>
+                                                                                                <Popover>
+                                                                                                    <PopoverTrigger asChild>
+                                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                                    </PopoverTrigger>
+                                                                                                    <PopoverContent className="w-48 p-2">
+                                                                                                        <div className="space-y-1">
+                                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                                            {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
                                                                                                         </div>
-                                                                                                    </TooltipTrigger>
-                                                                                                    <TooltipContent>
-                                                                                                        <div className="flex flex-col gap-1 p-1">
-                                                                                                        {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx}>{idx+1}º: {teamName}</span>)}
-                                                                                                        </div>
-                                                                                                    </TooltipContent>
-                                                                                                </Tooltip>
+                                                                                                    </PopoverContent>
+                                                                                                </Popover>
                                                                                             </div>
                                                                                             <div className='hidden sm:flex items-center gap-1'>
                                                                                                 {user.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
                                                                                                     const team = allTeams.find(t => t.name === teamName);
                                                                                                     if (!team) return null;
-                                                                                                    const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                                                                    let isEliminated = false;
-                                                                                                     if (finalRankingOrder.length > 0) {
-                                                                                                        const winnerInfo = getChampionPickWinner(champ);
-                                                                                                        if (winnerInfo) {
-                                                                                                            if(user.id !== winnerInfo.winnerId) {
-                                                                                                                isEliminated = true;
-                                                                                                            }
-                                                                                                        } else {
-                                                                                                            isEliminated = true;
-                                                                                                        }
-                                                                                                    }
+                                                                                                     const winnerInfo = getChampionPickWinner(champ);
+                                                                                                     const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
                                                                                                     return (
                                                                                                         <Tooltip key={team.id}>
                                                                                                             <TooltipTrigger>
@@ -655,54 +672,24 @@ export default function DashboardPage() {
                                                                                              {champ?.championPredictionSettings?.active && (
                                                                                                  <>
                                                                                                     <div className="relative block sm:hidden">
-                                                                                                        <Tooltip>
-                                                                                                            <TooltipTrigger asChild>
-                                                                                                                <div className='relative w-5 h-5'>
-                                                                                                                    <Trophy className="w-full h-full text-amber-500" />
-                                                                                                                    <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
-                                                                                                                    {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
-                                                                                                                        const team = allTeams.find(t => t.name === teamName);
-                                                                                                                        if (!team) return null;
-                                                                                                                        const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                                                                                        let isEliminated = false;
-                                                                                                                        if (finalRankingOrder.length > 0) {
-                                                                                                                            const winnerInfo = getChampionPickWinner(champ);
-                                                                                                                            if (winnerInfo) {
-                                                                                                                                if(otherUser.id !== winnerInfo.winnerId) {
-                                                                                                                                    isEliminated = true;
-                                                                                                                                }
-                                                                                                                            } else {
-                                                                                                                                isEliminated = true;
-                                                                                                                            }
-                                                                                                                        }
-                                                                                                                        return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
-                                                                                                                    })}
-                                                                                                                    </div>
+                                                                                                        <Popover>
+                                                                                                            <PopoverTrigger asChild>
+                                                                                                                <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                                            </PopoverTrigger>
+                                                                                                            <PopoverContent className="w-48 p-2">
+                                                                                                                <div className="space-y-1">
+                                                                                                                    <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                                                    {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
                                                                                                                 </div>
-                                                                                                            </TooltipTrigger>
-                                                                                                            <TooltipContent>
-                                                                                                                <div className="flex flex-col gap-1 p-1">
-                                                                                                                {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx}>{idx+1}º: {teamName}</span>)}
-                                                                                                                </div>
-                                                                                                            </TooltipContent>
-                                                                                                        </Tooltip>
+                                                                                                            </PopoverContent>
+                                                                                                        </Popover>
                                                                                                     </div>
                                                                                                     <div className='hidden sm:flex items-center gap-1'>
                                                                                                         {otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
                                                                                                             const team = allTeams.find(t => t.name === teamName);
                                                                                                             if (!team) return null;
-                                                                                                            const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                                                                            let isEliminated = false;
-                                                                                                             if (finalRankingOrder.length > 0) {
-                                                                                                                const winnerInfo = getChampionPickWinner(champ);
-                                                                                                                if (winnerInfo) {
-                                                                                                                    if(otherUser.id !== winnerInfo.winnerId) {
-                                                                                                                        isEliminated = true;
-                                                                                                                    }
-                                                                                                                } else {
-                                                                                                                    isEliminated = true;
-                                                                                                                }
-                                                                                                            }
+                                                                                                            const winnerInfo = getChampionPickWinner(champ);
+                                                                                                            const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(otherUser.id);
                                                                                                             return (
                                                                                                                 <Tooltip key={team.id}>
                                                                                                                     <TooltipTrigger>
@@ -821,54 +808,24 @@ export default function DashboardPage() {
                                                                     {champ?.championPredictionSettings?.active && (
                                                                         <>
                                                                             <div className="relative block sm:hidden">
-                                                                                <Tooltip>
-                                                                                    <TooltipTrigger asChild>
-                                                                                        <div className='relative w-5 h-5'>
-                                                                                            <Trophy className="w-full h-full text-amber-500" />
-                                                                                            <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
-                                                                                            {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
-                                                                                                const team = allTeams.find(t => t.name === teamName);
-                                                                                                if (!team) return null;
-                                                                                                const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                                                                let isEliminated = false;
-                                                                                                if (finalRankingOrder.length > 0) {
-                                                                                                    const winnerInfo = getChampionPickWinner(champ);
-                                                                                                    if (winnerInfo) {
-                                                                                                        if(user.id !== winnerInfo.winnerId) {
-                                                                                                            isEliminated = true;
-                                                                                                        }
-                                                                                                    } else {
-                                                                                                        isEliminated = true;
-                                                                                                    }
-                                                                                                }
-                                                                                                return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
-                                                                                            })}
-                                                                                            </div>
+                                                                                <Popover>
+                                                                                    <PopoverTrigger asChild>
+                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                    </PopoverTrigger>
+                                                                                    <PopoverContent className="w-48 p-2">
+                                                                                        <div className="space-y-1">
+                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                            {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
                                                                                         </div>
-                                                                                    </TooltipTrigger>
-                                                                                    <TooltipContent>
-                                                                                        <div className="flex flex-col gap-1 p-1">
-                                                                                        {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx}>{idx+1}º: {teamName}</span>)}
-                                                                                        </div>
-                                                                                    </TooltipContent>
-                                                                                </Tooltip>
+                                                                                    </PopoverContent>
+                                                                                </Popover>
                                                                             </div>
                                                                             <div className='hidden sm:flex items-center gap-1'>
                                                                                 {user.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
                                                                                     const team = allTeams.find(t => t.name === teamName);
                                                                                     if (!team) return null;
-                                                                                    const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                                                    let isEliminated = false;
-                                                                                    if (finalRankingOrder.length > 0) {
-                                                                                        const winnerInfo = getChampionPickWinner(champ);
-                                                                                        if (winnerInfo) {
-                                                                                            if(user.id !== winnerInfo.winnerId) {
-                                                                                                isEliminated = true;
-                                                                                            }
-                                                                                        } else {
-                                                                                            isEliminated = true;
-                                                                                        }
-                                                                                    }
+                                                                                    const winnerInfo = getChampionPickWinner(champ);
+                                                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
                                                                                     return (
                                                                                         <Tooltip key={team.id}>
                                                                                             <TooltipTrigger>
@@ -932,54 +889,24 @@ export default function DashboardPage() {
                                                                     {champ?.championPredictionSettings?.active && (
                                                                          <>
                                                                             <div className="relative block sm:hidden">
-                                                                                <Tooltip>
-                                                                                    <TooltipTrigger asChild>
-                                                                                        <div className='relative w-5 h-5'>
-                                                                                            <Trophy className="w-full h-full text-amber-500" />
-                                                                                            <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
-                                                                                            {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
-                                                                                                const team = allTeams.find(t => t.name === teamName);
-                                                                                                if (!team) return null;
-                                                                                                const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                                                                let isEliminated = false;
-                                                                                                if (finalRankingOrder.length > 0) {
-                                                                                                    const winnerInfo = getChampionPickWinner(champ);
-                                                                                                    if (winnerInfo) {
-                                                                                                        if(otherUser.id !== winnerInfo.winnerId) {
-                                                                                                            isEliminated = true;
-                                                                                                        }
-                                                                                                    } else {
-                                                                                                        isEliminated = true;
-                                                                                                    }
-                                                                                                }
-                                                                                                return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
-                                                                                            })}
-                                                                                            </div>
+                                                                                <Popover>
+                                                                                    <PopoverTrigger asChild>
+                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                    </PopoverTrigger>
+                                                                                    <PopoverContent className="w-48 p-2">
+                                                                                        <div className="space-y-1">
+                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                            {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
                                                                                         </div>
-                                                                                    </TooltipTrigger>
-                                                                                    <TooltipContent>
-                                                                                        <div className="flex flex-col gap-1 p-1">
-                                                                                        {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx}>{idx+1}º: {teamName}</span>)}
-                                                                                        </div>
-                                                                                    </TooltipContent>
-                                                                                </Tooltip>
+                                                                                    </PopoverContent>
+                                                                                </Popover>
                                                                             </div>
                                                                             <div className='hidden sm:flex items-center gap-1'>
                                                                                 {otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
                                                                                     const team = allTeams.find(t => t.name === teamName);
                                                                                     if (!team) return null;
-                                                                                    const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                                                    let isEliminated = false;
-                                                                                     if (finalRankingOrder.length > 0) {
-                                                                                        const winnerInfo = getChampionPickWinner(champ);
-                                                                                        if (winnerInfo) {
-                                                                                            if(otherUser.id !== winnerInfo.winnerId) {
-                                                                                                isEliminated = true;
-                                                                                            }
-                                                                                        } else {
-                                                                                            isEliminated = true;
-                                                                                        }
-                                                                                    }
+                                                                                     const winnerInfo = getChampionPickWinner(champ);
+                                                                                     const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(otherUser.id);
                                                                                     return (
                                                                                         <Tooltip key={team.id}>
                                                                                             <TooltipTrigger>
