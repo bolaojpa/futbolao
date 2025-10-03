@@ -373,8 +373,10 @@ export function AdminHistoryPageClient() {
                                       const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                       const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                           const team = teams.find(t => t.name === teamName);
-                                          const isEliminated = finalRankingOrder.length > 0 && !finalRankingOrder.includes(teamName);
-                                          return team ? { ...team, pickOrder: index + 1, isEliminated: isEliminated } : null;
+                                          const isEliminated = championship?.finalRanking && Object.values(championship.finalRanking).length > 0
+                                              ? !Object.values(championship.finalRanking).includes(teamName)
+                                              : false;
+                                          return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
                                       }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 
                                       return (
@@ -387,39 +389,19 @@ export function AdminHistoryPageClient() {
                                               </Avatar>
                                               <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                           </div>
-                                          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
+                                          <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
                                             <span className="font-bold">{user.apelido}:</span>
                                             {chosenTeams.length > 0 && (
-                                                <>
-                                                    <div className="hidden sm:flex items-center gap-1">
-                                                        {chosenTeams.map(team => (
-                                                            <Tooltip key={team.id}>
-                                                                <TooltipTrigger>
-                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
-                                                            </Tooltip>
-                                                        ))}
-                                                    </div>
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <div className="sm:hidden flex items-center gap-1 cursor-pointer">
-                                                                <Trophy className="w-4 h-4 text-amber-500" />
-                                                            </div>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className='w-auto p-2'>
-                                                            <div className='flex flex-col gap-1'>
-                                                                <p className="font-semibold text-sm">Palpites de Campeão</p>
-                                                                {chosenTeams.map(team => (
-                                                                    <div key={team.id} className='flex items-center gap-2'>
-                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
-                                                                        <p className="text-xs">{team.pickOrder}º: {team.name}</p>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                </>
+                                                <div className="flex items-center gap-1">
+                                                    {chosenTeams.map(team => (
+                                                        <Tooltip key={team.id}>
+                                                            <TooltipTrigger>
+                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                        </Tooltip>
+                                                    ))}
+                                                </div>
                                             )}
                                           </div>
                                         </div>
