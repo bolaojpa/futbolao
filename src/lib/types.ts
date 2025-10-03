@@ -101,6 +101,7 @@ export interface Championship {
         displayMode?: 'photo_and_names' | 'names_only';
         titleColor?: string;
         subtitleColor?: string;
+        namesColor?: string;
     };
     championPredictionSettings?: {
         active: boolean;

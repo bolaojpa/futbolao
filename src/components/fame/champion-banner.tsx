@@ -19,6 +19,7 @@ export interface ChampionBannerProps {
   banner?: {
     titleColor?: string;
     subtitleColor?: string;
+    namesColor?: string;
   }
 }
 
@@ -56,7 +57,8 @@ export function ChampionBanner({
   const finalPalpiteiroNome = palpiteiroNome.includes("(Em Breve)") ? "" : palpiteiroNome;
 
   const titleColor = banner?.titleColor || '#FFFFFF';
-  const subtitleColor = banner?.subtitleColor || '#FBBF24'; // Amarelo padrão
+  const subtitleColor = banner?.subtitleColor || '#FBBF24';
+  const namesColor = banner?.namesColor || '#FFFFFF';
 
   return (
     <div
@@ -110,11 +112,16 @@ export function ChampionBanner({
                 className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
               />
             )}
-             <p className={cn("font-bold whitespace-nowrap",
-              hasMultipleCampeoes ? "text-[4cqw]" : "text-[5cqw]",
-              !showPhotos && (hasMultipleCampeoes ? "text-[4.5cqw]" : "text-[6cqw]"),
-              !finalCampeaoNome && "h-[6cqw]"
-            )}>{finalCampeaoNome}</p>
+             <p 
+                className={cn("font-bold whitespace-nowrap",
+                    hasMultipleCampeoes ? "text-[4cqw]" : "text-[5cqw]",
+                    !showPhotos && (hasMultipleCampeoes ? "text-[4.5cqw]" : "text-[6cqw]"),
+                    !finalCampeaoNome && "h-[6cqw] text-[4cqw] opacity-80"
+                )}
+                style={{ color: namesColor }}
+            >
+                {finalCampeaoNome || 'EM BREVE'}
+            </p>
           </div>
         </Section>
 
@@ -136,11 +143,16 @@ export function ChampionBanner({
                 className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
               />
             )}
-             <p className={cn("font-bold",
-              hasMultiplePalpiteiros ? "text-[3.5cqw]" : "text-[4.5cqw]",
-              !showPhotos && (hasMultiplePalpiteiros ? "text-[4cqw]" : "text-[5cqw]"),
-              !finalPalpiteiroNome && "h-[5cqw]"
-            )}>{finalPalpiteiroNome}</p>
+             <p 
+                className={cn("font-bold",
+                    hasMultiplePalpiteiros ? "text-[3.5cqw]" : "text-[4.5cqw]",
+                    !showPhotos && (hasMultiplePalpiteiros ? "text-[4cqw]" : "text-[5cqw]"),
+                    !finalPalpiteiroNome && "h-[5cqw] text-[4cqw] opacity-80"
+                )}
+                style={{ color: namesColor }}
+            >
+                {finalPalpiteiroNome || 'EM BREVE'}
+            </p>
           </div>
         </Section>
       </div>

@@ -104,6 +104,7 @@ const championshipFormSchema = z.object({
     displayMode: z.enum(['photo_and_names', 'names_only']).optional(),
     titleColor: z.string().optional(),
     subtitleColor: z.string().optional(),
+    namesColor: z.string().optional(),
   }),
   championPredictionSettings: z.object({
     active: z.boolean(),
@@ -197,6 +198,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
             displayMode: 'photo_and_names',
             titleColor: '#FFFFFF',
             subtitleColor: '#FBBF24',
+            namesColor: '#FFFFFF',
         },
         championPredictionSettings: {
             active: false,
@@ -283,6 +285,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                 displayMode: 'photo_and_names' as const,
                 titleColor: '#FFFFFF',
                 subtitleColor: '#FBBF24',
+                namesColor: '#FFFFFF',
             },
             championPredictionSettings: {
                 active: false,
@@ -374,6 +377,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
     banner: {
       titleColor: watchAllFields.banner?.titleColor,
       subtitleColor: watchAllFields.banner?.subtitleColor,
+      namesColor: watchAllFields.banner?.namesColor,
     }
   };
   
@@ -1170,15 +1174,15 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                             </FormItem>
                                         )}
                                     />
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                                         <FormField
                                             control={form.control}
                                             name="banner.titleColor"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Cor do Título Principal</FormLabel>
+                                                    <FormLabel>Cor do Título</FormLabel>
                                                     <FormControl>
-                                                        <Input type="color" {...field} disabled={!isBannerActive} className="p-1 h-10"/>
+                                                        <Input type="color" {...field} value={field.value || '#FFFFFF'} disabled={!isBannerActive} className="p-1 h-10"/>
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -1189,9 +1193,22 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                             name="banner.subtitleColor"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Cor dos Subtítulos</FormLabel>
+                                                    <FormLabel>Cor do Subtítulo</FormLabel>
                                                     <FormControl>
-                                                         <Input type="color" {...field} disabled={!isBannerActive} className="p-1 h-10"/>
+                                                         <Input type="color" {...field} value={field.value || '#FBBF24'} disabled={!isBannerActive} className="p-1 h-10"/>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="banner.namesColor"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Cor dos Nomes</FormLabel>
+                                                    <FormControl>
+                                                         <Input type="color" {...field} value={field.value || '#FFFFFF'} disabled={!isBannerActive} className="p-1 h-10"/>
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
