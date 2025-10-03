@@ -99,6 +99,8 @@ export interface Championship {
         campeonatoLogoUrl?: string;
         backgroundUrl?: string;
         displayMode?: 'photo_and_names' | 'names_only';
+        titleColor?: string;
+        subtitleColor?: string;
     };
     championPredictionSettings?: {
         active: boolean;

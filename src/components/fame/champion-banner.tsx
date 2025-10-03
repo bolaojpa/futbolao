@@ -16,6 +16,10 @@ export interface ChampionBannerProps {
   palpiteiroAvatarUrl: string;
   displayMode?: 'photo_and_names' | 'names_only';
   backgroundUrl?: string;
+  banner?: {
+    titleColor?: string;
+    subtitleColor?: string;
+  }
 }
 
 const Section = ({
@@ -42,15 +46,17 @@ export function ChampionBanner({
   palpiteiroAvatarUrl,
   displayMode = 'photo_and_names',
   backgroundUrl,
+  banner
 }: ChampionBannerProps) {
   const showPhotos = displayMode === 'photo_and_names';
   const hasMultipleCampeoes = campeaoGeralNome.includes(",");
   const hasMultiplePalpiteiros = palpiteiroNome.includes(",");
-  
-  // Condicional para não exibir os nomes placeholder
+
   const finalCampeaoNome = campeaoGeralNome.includes("(Em Breve)") ? "" : campeaoGeralNome;
   const finalPalpiteiroNome = palpiteiroNome.includes("(Em Breve)") ? "" : palpiteiroNome;
 
+  const titleColor = banner?.titleColor || '#FFFFFF';
+  const subtitleColor = banner?.subtitleColor || '#FBBF24'; // Amarelo padrão
 
   return (
     <div
@@ -77,7 +83,10 @@ export function ChampionBanner({
           </div>
 
           <div style={{ width: '68.72%' }} className="flex justify-center items-center h-full">
-            <h2 className="text-[10cqw] font-extrabold tracking-wider uppercase text-center [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]">
+            <h2
+              className="text-[10cqw] font-extrabold tracking-wider uppercase text-center [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]"
+              style={{ color: titleColor }}
+            >
               Ganhadores
             </h2>
           </div>
@@ -85,7 +94,10 @@ export function ChampionBanner({
 
         {/* Middle Section */}
         <Section height="33.11%" className="flex-col justify-start items-center text-center p-[2%]">
-          <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]">
+          <h3
+            className="text-[6cqw] font-semibold uppercase tracking-wider font-headline [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]"
+            style={{ color: subtitleColor }}
+          >
             CAMPEÃO GERAL
           </h3>
           <div className={cn("flex items-center justify-center gap-[2%]", showPhotos ? "flex-row" : "flex-col")}>
@@ -98,17 +110,20 @@ export function ChampionBanner({
                 className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
               />
             )}
-            <p className={cn("font-bold whitespace-nowrap",
+             <p className={cn("font-bold whitespace-nowrap",
               hasMultipleCampeoes ? "text-[4cqw]" : "text-[5cqw]",
               !showPhotos && (hasMultipleCampeoes ? "text-[4.5cqw]" : "text-[6cqw]"),
-              !finalCampeaoNome && "h-[6cqw]" // Mantém a altura para evitar que o layout quebre
+              !finalCampeaoNome && "h-[6cqw]"
             )}>{finalCampeaoNome}</p>
           </div>
         </Section>
 
         {/* Bottom Section */}
         <Section height="33.28%" className="flex-col justify-start items-center text-center p-[2%]">
-          <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]">
+          <h3
+            className="text-[6cqw] font-semibold uppercase tracking-wider font-headline [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]"
+            style={{ color: subtitleColor }}
+          >
             {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
           </h3>
           <div className={cn("flex items-center justify-center gap-[2%]", showPhotos ? "flex-row" : "flex-col")}>
@@ -121,10 +136,10 @@ export function ChampionBanner({
                 className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
               />
             )}
-            <p className={cn("font-bold",
+             <p className={cn("font-bold",
               hasMultiplePalpiteiros ? "text-[3.5cqw]" : "text-[4.5cqw]",
               !showPhotos && (hasMultiplePalpiteiros ? "text-[4cqw]" : "text-[5cqw]"),
-              !finalPalpiteiroNome && "h-[5cqw]" // Mantém a altura para evitar que o layout quebre
+              !finalPalpiteiroNome && "h-[5cqw]"
             )}>{finalPalpiteiroNome}</p>
           </div>
         </Section>

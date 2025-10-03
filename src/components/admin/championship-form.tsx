@@ -31,7 +31,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit, Gavel } from 'lucide-react';
+import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit, Gavel, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship, Match, Team, UserType, TiebreakerRule } from '@/lib/types';
@@ -102,6 +102,8 @@ const championshipFormSchema = z.object({
     campeonatoLogoUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
     backgroundUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
     displayMode: z.enum(['photo_and_names', 'names_only']).optional(),
+    titleColor: z.string().optional(),
+    subtitleColor: z.string().optional(),
   }),
   championPredictionSettings: z.object({
     active: z.boolean(),
@@ -193,6 +195,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
             campeonatoLogoUrl: "",
             backgroundUrl: "",
             displayMode: 'photo_and_names',
+            titleColor: '#FFFFFF',
+            subtitleColor: '#FBBF24',
         },
         championPredictionSettings: {
             active: false,
@@ -277,6 +281,8 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                 campeonatoLogoUrl: "",
                 backgroundUrl: "",
                 displayMode: 'photo_and_names' as const,
+                titleColor: '#FFFFFF',
+                subtitleColor: '#FBBF24',
             },
             championPredictionSettings: {
                 active: false,
@@ -308,7 +314,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                     combo: championship.pontuacao.combo || defaultData.pontuacao.combo,
                 },
                 predictionAssist: championship.predictionAssist || defaultData.predictionAssist,
-                banner: championship.banner || defaultData.banner,
+                banner: {
+                    ...defaultData.banner,
+                    ...championship.banner,
+                },
                 championPredictionSettings: championship.championPredictionSettings || defaultData.championPredictionSettings,
                 finalRanking: championship.finalRanking || defaultData.finalRanking,
             });
@@ -362,6 +371,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
     palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
     displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
     backgroundUrl: watchAllFields.banner?.backgroundUrl,
+    banner: {
+      titleColor: watchAllFields.banner?.titleColor,
+      subtitleColor: watchAllFields.banner?.subtitleColor,
+    }
   };
   
   const rankingPositions = [
@@ -1157,6 +1170,34 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                             </FormItem>
                                         )}
                                     />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="banner.titleColor"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Cor do Título Principal</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="color" {...field} disabled={!isBannerActive} className="p-1 h-10"/>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="banner.subtitleColor"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Cor dos Subtítulos</FormLabel>
+                                                    <FormControl>
+                                                         <Input type="color" {...field} disabled={!isBannerActive} className="p-1 h-10"/>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                     <Button type="button" variant="outline" onClick={() => setIsPreviewOpen(true)} disabled={!isBannerActive}>
                                         <Eye className="mr-2 h-4 w-4"/>
                                         Pré-visualizar Banner
