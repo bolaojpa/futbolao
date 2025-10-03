@@ -4,12 +4,13 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Settings, Shield, Trash2, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2 } from 'lucide-react';
+import { Settings, Shield, Trash2, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2, Palette } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getSystemSettings, updateSystemSettings } from '@/lib/firebase/firestore';
+import { ThemeSettings } from '@/components/settings/theme-settings';
 
 interface SystemSettings {
     allowRegistrations: boolean;
@@ -78,6 +79,21 @@ export default function AdminSettingsPage() {
                     </p>
                 </div>
             </div>
+
+            <Card className="max-w-2xl">
+                <CardHeader>
+                     <div className="flex items-center gap-2">
+                        <Palette className="h-5 w-5" />
+                        <CardTitle>Aparência</CardTitle>
+                    </div>
+                    <CardDescription>
+                       Personalize o tema do aplicativo para sua visualização.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ThemeSettings />
+                </CardContent>
+            </Card>
 
              <Card className="max-w-2xl">
                 <CardHeader>
