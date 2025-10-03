@@ -127,30 +127,43 @@ export function AdminHistoryPageClient() {
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()), [selectedChampionship, matches]);
 
     const getChampionPickWinner = useMemo(() => {
-        const cache: Record<string, { winnerId: string; winningTeam: string } | null> = {};
+        const cache: Record<string, { winnerId: string; winningTeam: string; tier: { rank: number; pick: number } } | null> = {};
 
         return (championship: Championship) => {
             if (cache[championship.id]) return cache[championship.id];
 
-            const finalRanking = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) : [];
-            if (finalRanking.length === 0) {
+            const finalRankingOrder = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) as string[] : [];
+            if (finalRankingOrder.length === 0) {
+                cache[championship.id] = null;
                 return null;
             }
 
-            for (const rankTeam of finalRanking) {
-                for (let i = 0; i < (championship.championPredictionSettings?.numberOfPicks || 0); i++) {
-                    const winners = users
-                        .filter(u => u.championPicks?.some(p => p.championshipId === championship.id && p.teams[i] === rankTeam));
+            let bestTier: { rank: number; pick: number } | null = null;
+            let tierContenders: UserType[] = [];
 
-                    if (winners.length > 0) {
-                        const winner = winners[0]; // Em caso de empate, o primeiro encontrado (poderia ser refinado)
-                        cache[championship.id] = { winnerId: winner.id, winningTeam: rankTeam };
-                        return cache[championship.id];
+            for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
+                const rankedTeam = finalRankingOrder[rankIndex];
+                for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
+                    const contenders = users.filter(u => u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam));
+                    if (contenders.length > 0) {
+                        bestTier = { rank: rankIndex, pick: pickIndex };
+                        tierContenders = contenders;
+                        break;
                     }
                 }
+                if (bestTier) break;
             }
-            cache[championship.id] = null;
-            return null;
+
+            if (!bestTier || tierContenders.length === 0) {
+                cache[championship.id] = null;
+                return null;
+            }
+            
+            const winningTeam = finalRankingOrder[bestTier.rank];
+            const winner = tierContenders[0]; 
+
+            cache[championship.id] = { winnerId: winner.id, winningTeam, tier: bestTier };
+            return cache[championship.id];
         }
     }, [users]);
 
@@ -398,23 +411,6 @@ export function AdminHistoryPageClient() {
                                       const user = users.find(u => u.id === p.userId);
                                       if (!user) return null;
                                       
-                                      const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                       const pickWinner = championship ? getChampionPickWinner(championship) : null;
-                                      
-                                      const chosenTeams = champPicks ? champPicks.teams.map((teamName) => {
-                                          const team = teams.find(t => t.name === teamName);
-                                          if (!team) return null;
-
-                                          let isEliminated = false;
-                                          if (pickWinner) {
-                                              if (teamName !== pickWinner.winningTeam || user.id !== pickWinner.winnerId) {
-                                                  isEliminated = true;
-                                              }
-                                          }
-                                          
-                                          return { ...team, isEliminated };
-                                      }).filter((t): t is Team & { isEliminated: boolean; } => t !== null) : [];
-
                                       return (
                                       <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.acertoTipo))}>
                                         <div className="w-1/3 text-left flex items-center gap-2 group">
@@ -427,17 +423,68 @@ export function AdminHistoryPageClient() {
                                           </div>
                                           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                             <span className="font-bold">{user.apelido}:</span>
-                                            {chosenTeams.length > 0 && (
-                                                <div className="flex items-center gap-1">
-                                                    {chosenTeams.map(team => (
-                                                        <Tooltip key={team.id}>
-                                                            <TooltipTrigger>
-                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
+                                            {championship?.championPredictionSettings?.active && (
+                                                <>
+                                                    <div className="relative block sm:hidden">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className='relative w-5 h-5'>
+                                                                    <Trophy className="w-full h-full text-amber-500" />
+                                                                    <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
+                                                                    {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map(teamName => {
+                                                                        const team = teams.find(t => t.name === teamName);
+                                                                        if (!team) return null;
+                                                                        const finalRankingOrder = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) as string[] : [];
+                                                                        let isEliminated = false;
+                                                                        if (finalRankingOrder.length > 0) {
+                                                                            const winnerInfo = getChampionPickWinner(championship);
+                                                                            if (winnerInfo) {
+                                                                                if(user.id !== winnerInfo.winnerId) {
+                                                                                    isEliminated = true;
+                                                                                }
+                                                                            } else {
+                                                                                isEliminated = true;
+                                                                            }
+                                                                        }
+                                                                        return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
+                                                                    })}
+                                                                    </div>
+                                                                </div>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                            <TooltipContent>
+                                                                <div className="flex flex-col gap-1 p-1">
+                                                                {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx}>{idx+1}º: {teamName}</span>)}
+                                                                </div>
+                                                            </TooltipContent>
                                                         </Tooltip>
-                                                    ))}
-                                                </div>
+                                                    </div>
+                                                    <div className='hidden sm:flex items-center gap-1'>
+                                                        {user.championPicks?.find(cp => cp.championshipId === championship.id)?.teams.map(teamName => {
+                                                            const team = teams.find(t => t.name === teamName);
+                                                            if (!team) return null;
+                                                            const finalRankingOrder = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) as string[] : [];
+                                                            let isEliminated = false;
+                                                            if (finalRankingOrder.length > 0) {
+                                                                const winnerInfo = getChampionPickWinner(championship);
+                                                                if (winnerInfo) {
+                                                                    if(user.id !== winnerInfo.winnerId) {
+                                                                        isEliminated = true;
+                                                                    }
+                                                                } else {
+                                                                    isEliminated = true;
+                                                                }
+                                                            }
+                                                            return (
+                                                                <Tooltip key={team.id}>
+                                                                    <TooltipTrigger>
+                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                </Tooltip>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </>
                                             )}
                                           </div>
                                         </div>
@@ -548,3 +595,4 @@ export function AdminHistoryPageClient() {
     </div>
   );
 }
+

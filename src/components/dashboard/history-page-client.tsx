@@ -416,27 +416,37 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                         {champ?.championPredictionSettings?.active && (
                                             <>
                                                 <div className="relative block sm:hidden">
-                                                    <Trophy className="w-5 h-5 text-amber-500" />
-                                                    <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
-                                                    {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
-                                                        const team = allTeams.find(t => t.name === teamName);
-                                                        if (!team) return null;
-                                                        const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                        let isEliminated = false;
-                                                        if (finalRankingOrder.length > 0) {
-                                                            const winnerInfo = getChampionPickWinner(champ);
-                                                            if (winnerInfo) {
-                                                                const userBestPick = user.championPicks?.find(p => p.championshipId === champ.id)?.teams.find(t => finalRankingOrder.includes(t));
-                                                                if (winnerInfo.winningTeam !== userBestPick) {
-                                                                    isEliminated = true;
-                                                                }
-                                                            } else {
-                                                                isEliminated = true;
-                                                            }
-                                                        }
-                                                        return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
-                                                    })}
-                                                    </div>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className='relative w-5 h-5'>
+                                                                <Trophy className="w-full h-full text-amber-500" />
+                                                                <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
+                                                                {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
+                                                                    const team = allTeams.find(t => t.name === teamName);
+                                                                    if (!team) return null;
+                                                                    const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
+                                                                    let isEliminated = false;
+                                                                    if (finalRankingOrder.length > 0) {
+                                                                        const winnerInfo = getChampionPickWinner(champ);
+                                                                        if (winnerInfo) {
+                                                                            if(user.id !== winnerInfo.winnerId) {
+                                                                                isEliminated = true;
+                                                                            }
+                                                                        } else {
+                                                                            isEliminated = true;
+                                                                        }
+                                                                    }
+                                                                    return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
+                                                                })}
+                                                                </div>
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <div className="flex flex-col gap-1 p-1">
+                                                            {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx}>{idx+1}º: {teamName}</span>)}
+                                                            </div>
+                                                        </TooltipContent>
+                                                    </Tooltip>
                                                 </div>
                                                 <div className='hidden sm:flex items-center gap-1'>
                                                     {user.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
@@ -447,8 +457,7 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                                         if (finalRankingOrder.length > 0) {
                                                             const winnerInfo = getChampionPickWinner(champ);
                                                             if (winnerInfo) {
-                                                                const userBestPick = user.championPicks?.find(p => p.championshipId === champ.id)?.teams.find(t => finalRankingOrder.includes(t));
-                                                                if (winnerInfo.winningTeam !== userBestPick) {
+                                                                if(user.id !== winnerInfo.winnerId) {
                                                                     isEliminated = true;
                                                                 }
                                                             } else {
@@ -520,30 +529,40 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                         {champ?.championPredictionSettings?.active && (
                                             <>
                                                 <div className="relative block sm:hidden">
-                                                    <Trophy className="w-5 h-5 text-amber-500" />
-                                                    <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
-                                                    {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
-                                                        const team = allTeams.find(t => t.name === teamName);
-                                                        if (!team) return null;
-                                                        const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
-                                                        let isEliminated = false;
-                                                         if (finalRankingOrder.length > 0) {
-                                                            const winnerInfo = getChampionPickWinner(champ);
-                                                            if (winnerInfo) {
-                                                                const userBestPick = otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.find(t => finalRankingOrder.includes(t));
-                                                                if (winnerInfo.winningTeam !== userBestPick) {
-                                                                    isEliminated = true;
-                                                                }
-                                                            } else {
-                                                                isEliminated = true;
-                                                            }
-                                                        }
-                                                        return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
-                                                    })}
-                                                    </div>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className='relative w-5 h-5'>
+                                                                <Trophy className="w-full h-full text-amber-500" />
+                                                                <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
+                                                                {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
+                                                                    const team = allTeams.find(t => t.name === teamName);
+                                                                    if (!team) return null;
+                                                                    const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
+                                                                    let isEliminated = false;
+                                                                     if (finalRankingOrder.length > 0) {
+                                                                        const winnerInfo = getChampionPickWinner(champ);
+                                                                        if (winnerInfo) {
+                                                                            if(otherUser.id !== winnerInfo.winnerId) {
+                                                                                isEliminated = true;
+                                                                            }
+                                                                        } else {
+                                                                            isEliminated = true;
+                                                                        }
+                                                                    }
+                                                                    return <Image key={team.id} src={team.crestUrl} alt={team.name} width={10} height={10} className={cn("object-contain", isEliminated && "opacity-30")} />;
+                                                                })}
+                                                                </div>
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <div className="flex flex-col gap-1 p-1">
+                                                            {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx}>{idx+1}º: {teamName}</span>)}
+                                                            </div>
+                                                        </TooltipContent>
+                                                    </Tooltip>
                                                 </div>
                                                 <div className='hidden sm:flex items-center gap-1'>
-                                                    {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map(teamName => {
+                                                    {otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
                                                         const team = allTeams.find(t => t.name === teamName);
                                                         if (!team) return null;
                                                         const finalRankingOrder = champ.finalRanking ? Object.values(champ.finalRanking).filter(Boolean) as string[] : [];
@@ -551,8 +570,7 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                                          if (finalRankingOrder.length > 0) {
                                                             const winnerInfo = getChampionPickWinner(champ);
                                                             if (winnerInfo) {
-                                                                const userBestPick = otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.find(t => finalRankingOrder.includes(t));
-                                                                if (winnerInfo.winningTeam !== userBestPick) {
+                                                                if(otherUser.id !== winnerInfo.winnerId) {
                                                                     isEliminated = true;
                                                                 }
                                                             } else {
@@ -646,4 +664,5 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
     </div>
   );
 }
+
 
