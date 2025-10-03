@@ -53,6 +53,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 type Fase = {
     nome: string;
@@ -412,7 +413,6 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
     palpiteiroNome: 'EM BREVE',
     palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
     displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
-    backgroundUrl: watchAllFields.banner?.backgroundUrl,
     banner: {
       titleColor: watchAllFields.banner?.titleColor,
       subtitleColor: watchAllFields.banner?.subtitleColor,
@@ -1407,4 +1407,3 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
   );
 }
 
-    
