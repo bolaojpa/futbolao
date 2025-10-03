@@ -317,11 +317,6 @@ export function ProfilePageClient() {
   }, [userToDisplay, selectedChampionshipId, userPredictions, allMatches, championships]);
 
 
-  const lastGuessMatch = useMemo(() => {
-      if (!userToDisplay?.ultimoPalpite?.matchId) return null;
-      return allMatches.find(m => m.id === userToDisplay.ultimoPalpite.matchId);
-  }, [userToDisplay, allMatches]);
-
   const generalStats = useMemo(() => {
     if (!userToDisplay) return [];
 
@@ -333,7 +328,7 @@ export function ProfilePageClient() {
     );
 
     const playedChampionships = championshipIdsWithPlayedMatches.size;
-    const totalPalpites = userPredictions.length;
+    const totalPalpites = new Set(userPredictions.map(p => p.matchId)).size;
     const totalTitulos = userToDisplay.titulos || 0;
 
     return [
@@ -343,6 +338,11 @@ export function ProfilePageClient() {
     ];
   }, [userToDisplay, allMatches, userPredictions]);
 
+
+  const lastGuessMatch = useMemo(() => {
+      if (!userToDisplay?.ultimoPalpite?.matchId) return null;
+      return allMatches.find(m => m.id === userToDisplay.ultimoPalpite.matchId);
+  }, [userToDisplay, allMatches]);
 
   const getLastGuessLink = () => {
     if (!lastGuessMatch) return '#';
