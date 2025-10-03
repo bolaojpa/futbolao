@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2, Gem, Goal } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2, Gem, Goal, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useEffect, useMemo } from 'react';
@@ -384,7 +385,10 @@ export function AdminRankingPageClient() {
                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                     <Honorifics count={user.titulos ?? 0} variant="badge" />
                                 </div>
-                                <span className="font-medium group-hover:underline break-words">{user.apelido || user.nome}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium group-hover:underline break-words">{user.apelido || user.nome}</span>
+                                  {user.isGhost && <Bot className="w-4 h-4 text-primary" />}
+                                </div>
                                 {getMedalIcon(rank)}
                             </Link>
                         </TableCell>

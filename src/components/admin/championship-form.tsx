@@ -31,7 +31,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit, Gavel, Palette } from 'lucide-react';
+import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit, Gavel, Palette, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import type { Championship, Match, Team, UserType, TiebreakerRule } from '@/lib/types';
@@ -68,6 +68,7 @@ const championshipFormSchema = z.object({
   dataFim: z.date({ required_error: "A data de fim é obrigatória." }),
   tipoCampeonato: z.enum(['liga', 'copa', 'avulso'], { required_error: "Selecione o tipo do campeonato." }),
   modoEquipes: z.enum(['times', 'selecao', 'mista'], { required_error: "Selecione o modo de equipes." }),
+  incluirFantasma: z.boolean().default(false),
   teamIds: z.array(z.string()).min(2, "Selecione pelo menos duas equipes."),
   participantes: z.array(z.string()).min(1, "Selecione pelo menos um participante."),
   regrasDesempate: z.array(z.string()).optional(),
@@ -182,6 +183,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
         iconUrl: '',
         tipoCampeonato: 'liga',
         modoEquipes: 'times',
+        incluirFantasma: false,
         teamIds: [],
         participantes: [],
         regrasDesempate: [],
@@ -267,6 +269,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
             iconUrl: '',
             tipoCampeonato: 'liga' as const,
             modoEquipes: 'times' as const,
+            incluirFantasma: false,
             teamIds: [],
             participantes: [],
             regrasDesempate: [],
@@ -306,6 +309,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                 dataFim: typeof championship.dataFim === 'string' ? parseISO(championship.dataFim) : championship.dataFim,
                 tipoCampeonato: championship.tipoCampeonato,
                 modoEquipes: championship.modoEquipes,
+                incluirFantasma: championship.incluirFantasma || false,
                 teamIds: championship.teamIds || [],
                 participantes: championship.participantes || [],
                 regrasDesempate: championship.regrasDesempate || [],
@@ -367,10 +371,10 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
     id: 'preview',
     campeonatoLogoUrl: watchAllFields.banner?.campeonatoLogoUrl || 'https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png',
     campeonatoNome: watchAllFields.nome || 'Nome do Campeonato',
-    campeaoGeralNome: 'Campeão Exemplo',
+    campeaoGeralNome: 'EM BREVE',
     campeaoGeralAvatarUrl: 'https://picsum.photos/128/128',
     modoEquipes: watchAllFields.modoEquipes,
-    palpiteiroNome: 'Melhor Palpiteiro, Segundo Melhor, Terceiro Melhor Colocado',
+    palpiteiroNome: 'EM BREVE',
     palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
     displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
     backgroundUrl: watchAllFields.banner?.backgroundUrl,
@@ -763,6 +767,33 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                                     </PopoverContent>
                                 </Popover>
                              </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader className="p-4">
+                                <FormField
+                                    control={form.control}
+                                    name="incluirFantasma"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base flex items-center gap-2">
+                                                    <Bot className="w-4 h-4 text-primary" />
+                                                    Incluir Jogador Fantasma (IA)
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    Adiciona um jogador controlado por IA a este campeonato como homenagem.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardHeader>
                         </Card>
                     </TabsContent>
                     <TabsContent value="teams" className="space-y-4">

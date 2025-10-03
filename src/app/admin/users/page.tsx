@@ -130,7 +130,8 @@ export default function AdminUsersPage() {
         }
     }
     
-     const handleGhostModeToggle = async (userId: string, newGhostStatus: boolean) => {
+     const handleGhostModeToggle = async (userId: string, currentStatus: boolean | undefined) => {
+        const newGhostStatus = !currentStatus;
         try {
             await updateUserField(userId, { isGhost: newGhostStatus });
             await fetchUsers();
@@ -437,7 +438,7 @@ export default function AdminUsersPage() {
                                                                 <span>Promover a Admin</span>
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
-                                                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleGhostModeToggle(user.id, !user.isGhost); }}>
+                                                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleGhostModeToggle(user.id, user.isGhost); }}>
                                                                 <Bot className="mr-2 h-4 w-4" />
                                                                 {user.isGhost ? 'Desativar Modo Fantasma' : 'Ativar Modo Fantasma'}
                                                             </DropdownMenuItem>

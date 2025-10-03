@@ -13,7 +13,7 @@ export interface UserType {
     urlImagemPersonalizada?: string;
     status: 'ativo' | 'pendente' | 'bloqueado';
     funcao: 'usuario' | 'moderador' | 'admin';
-    isGhost?: boolean; // Novo campo para o modo fantasma
+    isGhost?: boolean;
     posicaoVariacao?: 'up' | 'down' | 'stable';
     dataCadastro: string | Timestamp;
     ultimaAtividade: string | Timestamp;
@@ -78,6 +78,7 @@ export interface Championship {
     modoEquipes: 'times' | 'selecao' | 'mista';
     teamIds: string[];
     participantes: string[];
+    incluirFantasma: boolean; // Novo campo
     status: 'ativo' | 'arquivado';
     formatoFases?: 'fases' | 'rodadas';
     fases?: { nome: string; idaEVolta: boolean; rodadas?: number }[];
