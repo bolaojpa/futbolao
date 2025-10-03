@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
 import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch, getSystemSettings } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
-import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy, Gem, Goal, AlertTriangle } from 'lucide-react';
+import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy, Gem, Goal, AlertTriangle, Ghost } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -579,41 +579,44 @@ export default function AdminDashboardPage() {
                                                                     </Avatar>
                                                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                                                 </div>
-                                                                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
-                                                                    <span className="font-bold">{user.apelido}:</span>
-                                                                     {championship?.championPredictionSettings?.active && (
-                                                                         <>
-                                                                            <div className="relative block sm:hidden">
-                                                                                <Popover>
-                                                                                    <PopoverTrigger asChild>
-                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                                                    </PopoverTrigger>
-                                                                                    <PopoverContent className="w-48 p-2">
-                                                                                        <div className="space-y-1">
-                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                                            {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                                        </div>
-                                                                                    </PopoverContent>
-                                                                                </Popover>
-                                                                            </div>
-                                                                            <div className='hidden sm:flex items-center gap-1'>
-                                                                                {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map(teamName => {
-                                                                                    const team = allTeams.find(t => t.name === teamName);
-                                                                                    if (!team) return null;
-                                                                                     const winnerInfo = getChampionPickWinner(championship);
-                                                                                     const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
-                                                                                    return (
-                                                                                        <Tooltip key={team.id}>
-                                                                                            <TooltipTrigger>
-                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                                            </TooltipTrigger>
-                                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                        </Tooltip>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                         </>
-                                                                    )}
+                                                                 <div className="flex items-center gap-2">
+                                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
+                                                                        <span className="font-bold">{user.apelido}:</span>
+                                                                        {championship?.championPredictionSettings?.active && (
+                                                                            <>
+                                                                                <div className="relative block sm:hidden">
+                                                                                    <Popover>
+                                                                                        <PopoverTrigger asChild>
+                                                                                            <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                        </PopoverTrigger>
+                                                                                        <PopoverContent className="w-48 p-2">
+                                                                                            <div className="space-y-1">
+                                                                                                <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                                {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                                            </div>
+                                                                                        </PopoverContent>
+                                                                                    </Popover>
+                                                                                </div>
+                                                                                <div className='hidden sm:flex items-center gap-1'>
+                                                                                    {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
+                                                                                        const team = allTeams.find(t => t.name === teamName);
+                                                                                        if (!team) return null;
+                                                                                        const winnerInfo = getChampionPickWinner(championship);
+                                                                                        const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
+                                                                                        return (
+                                                                                            <Tooltip key={team.id}>
+                                                                                                <TooltipTrigger>
+                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                                                </TooltipTrigger>
+                                                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                                            </Tooltip>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                    {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                                                 </div>
                                                             </div>
                                                             <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">

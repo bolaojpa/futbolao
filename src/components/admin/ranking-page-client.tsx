@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2, Gem, Goal, Bot } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2, Gem, Goal, Ghost } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useState, useEffect, useMemo } from 'react';
@@ -387,7 +387,7 @@ export function AdminRankingPageClient() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium group-hover:underline break-words">{user.apelido || user.nome}</span>
-                                  {user.isGhost && <Bot className="w-4 h-4 text-primary" />}
+                                  {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                 </div>
                                 {getMedalIcon(rank)}
                             </Link>

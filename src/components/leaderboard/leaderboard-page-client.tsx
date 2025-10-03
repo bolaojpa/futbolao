@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -17,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2, Gem, Goal } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2, Gem, Goal, Ghost } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -434,7 +435,10 @@ export function LeaderboardPageClient() {
                                             <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                             <Honorifics count={user.titulos ?? 0} variant="badge" />
                                         </div>
-                                        <span className="font-medium group-hover:underline break-words">{user.apelido || user.nome}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium group-hover:underline break-words">{user.apelido || user.nome}</span>
+                                            {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
+                                        </div>
                                         {getMedalIcon(rank)}
                                     </Link>
                                 </TableCell>
@@ -476,4 +480,3 @@ export function LeaderboardPageClient() {
     </TooltipProvider>
   );
 }
-

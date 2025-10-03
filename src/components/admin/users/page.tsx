@@ -1,0 +1,511 @@
+
+
+'use client';
+
+import { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle, Ghost } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Link from 'next/link';
+import { StatusIndicator } from '@/components/shared/status-indicator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { UserType } from '@/lib/types';
+import { getUsers, updateUserStatus, updateUserRole, deleteUsers, resetUserStats, updateUserField } from '@/lib/firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
+
+const ITEMS_PER_PAGE = 10;
+
+const statusConfig = {
+    ativo: { label: 'Ativo', color: 'bg-green-500', icon: CheckCircle },
+    pendente: { label: 'Pendente', color: 'bg-yellow-500', icon: ShieldQuestion },
+    bloqueado: { label: 'Bloqueado', color: 'bg-destructive', icon: CircleSlash },
+};
+
+const roleConfig = {
+    usuario: { label: 'Usuário', icon: Users },
+    moderador: { label: 'Moderador', icon: ShieldCheck },
+    admin: { label: 'Admin', icon: ShieldX },
+}
+
+const FormattedDate = ({ dateValue }: { dateValue: string | Date | Timestamp }) => {
+    const [formattedDate, setFormattedDate] = useState('');
+  
+    useEffect(() => {
+        let date: Date;
+        if (dateValue instanceof Timestamp) {
+            date = dateValue.toDate();
+        } else if (typeof dateValue === 'string') {
+            date = new Date(dateValue);
+        } else {
+            date = dateValue;
+        }
+
+        if (date && !isNaN(date.getTime())) {
+            setFormattedDate(format(date, "dd/MM/yyyy", { locale: ptBR }));
+        } else {
+            setFormattedDate("Data inválida");
+        }
+    }, [dateValue]);
+  
+    if (!formattedDate) {
+      return <>Carregando...</>; 
+    }
+  
+    return <>{formattedDate}</>;
+};
+
+export default function AdminUsersPage() {
+    const { toast } = useToast();
+    const [users, setUsers] = useState<UserType[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [filterRole, setFilterRole] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            const fetchedUsers = await getUsers();
+            setUsers(fetchedUsers);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            toast({
+                title: "Erro ao buscar usuários",
+                description: "Não foi possível carregar a lista de usuários do banco de dados.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const handleStatusChange = async (userId: string, newStatus: UserType['status']) => {
+        try {
+            await updateUserStatus(userId, newStatus);
+            await fetchUsers(); // Re-fetch para atualizar a UI
+            toast({
+                title: "Status do Usuário Alterado",
+                description: `O status do usuário foi alterado para ${statusConfig[newStatus].label}.`,
+            });
+        } catch (error) {
+             toast({
+                title: "Erro ao alterar status",
+                description: "Não foi possível atualizar o status do usuário.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleRoleChange = async (userId: string, newRole: UserType['funcao']) => {
+        try {
+            await updateUserRole(userId, newRole);
+            await fetchUsers(); // Re-fetch para atualizar a UI
+            toast({
+                title: "Função do Usuário Alterada",
+                description: `O usuário agora tem a função de ${roleConfig[newRole].label}.`,
+            });
+        } catch (error) {
+             toast({
+                title: "Erro ao alterar função",
+                description: "Não foi possível atualizar a função do usuário.",
+                variant: "destructive",
+            });
+        }
+    }
+    
+     const handleGhostModeToggle = async (userId: string, currentStatus: boolean | undefined) => {
+        const newGhostStatus = !currentStatus;
+        try {
+            await updateUserField(userId, { isGhost: newGhostStatus });
+            await fetchUsers();
+            toast({
+                title: "Modo Fantasma Alterado",
+                description: `O usuário foi ${newGhostStatus ? 'definido como um jogador IA' : 'revertido para um jogador normal'}.`,
+            });
+        } catch (error) {
+            toast({
+                title: "Erro ao alterar Modo Fantasma",
+                variant: "destructive",
+            });
+        }
+    };
+
+
+    const handleResetStats = async (userId: string, userName: string) => {
+        try {
+            await resetUserStats(userId);
+            await fetchUsers();
+            toast({
+                title: "Estatísticas Resetadas",
+                description: `As estatísticas de ${userName} foram zeradas.`,
+            });
+        } catch (error) {
+            toast({
+                title: "Erro ao Resetar",
+                description: `Não foi possível resetar as estatísticas de ${userName}.`,
+                variant: "destructive",
+            });
+        }
+    };
+
+
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => {
+            const statusMatch = filterStatus === 'all' || user.status === filterStatus;
+            const roleMatch = filterRole === 'all' || user.funcao === filterRole;
+            const searchMatch = searchTerm === '' || 
+                                user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                user.apelido.toLowerCase().includes(searchTerm.toLowerCase());
+            return statusMatch && roleMatch && searchMatch;
+        }).sort((a, b) => {
+             const dateA = a.dataCadastro instanceof Timestamp ? a.dataCadastro.toMillis() : new Date(a.dataCadastro).getTime();
+             const dateB = b.dataCadastro instanceof Timestamp ? b.dataCadastro.toMillis() : new Date(b.dataCadastro).getTime();
+             return dateB - dateA;
+        });
+    }, [filterStatus, filterRole, searchTerm, users]);
+
+    const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+    const paginatedUsers = filteredUsers.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    );
+
+    const handleSelectUser = (userId: string) => {
+        setSelectedUsers(prev => {
+            const newSelection = new Set(prev);
+            if (newSelection.has(userId)) {
+                newSelection.delete(userId);
+            } else {
+                newSelection.add(userId);
+            }
+            return newSelection;
+        });
+    };
+
+    const handleSelectAllOnPage = (checked: boolean | 'indeterminate') => {
+        if (checked) {
+            setSelectedUsers(prev => new Set([...prev, ...paginatedUsers.map(u => u.id)]));
+        } else {
+             setSelectedUsers(prev => {
+                const newSelection = new Set(prev);
+                paginatedUsers.forEach(u => newSelection.delete(u.id));
+                return newSelection;
+            });
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        const userIdsToDelete = Array.from(selectedUsers);
+        try {
+            await deleteUsers(userIdsToDelete);
+            await fetchUsers(); // Re-fetch
+            toast({
+                title: "Usuários Removidos",
+                description: `${selectedUsers.size} usuário(s) foram removidos permanentemente.`,
+            });
+            setSelectedUsers(new Set());
+        } catch (error) {
+             toast({
+                title: "Erro ao remover usuários",
+                description: "Não foi possível remover os usuários selecionados.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    return (
+        <TooltipProvider>
+            <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
+                <div className="flex items-center gap-4 mb-8">
+                    <Users className="h-8 w-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline">Gerenciamento de Usuários</h1>
+                        <p className="text-muted-foreground">Aprove, bloqueie e gerencie os participantes do bolão.</p>
+                    </div>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                            <div className="flex-1">
+                                <CardTitle>Lista de Usuários</CardTitle>
+                                <CardDescription>
+                                    Um total de {users.length} usuários cadastrados.
+                                </CardDescription>
+                            </div>
+                            {selectedUsers.size > 0 && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full sm:w-auto">
+                                            <Trash2 className="mr-2 h-4 w-4"/>
+                                            Excluir Selecionados ({selectedUsers.size})
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta ação removerá permanentemente os {selectedUsers.size} usuário(s) selecionado(s) do banco de dados. Esta ação não pode ser desfeita.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir usuários</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-2 pt-6">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Buscar por nome ou apelido..."
+                                    className="pl-8 w-full"
+                                    value={searchTerm}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                />
+                            </div>
+                            <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Filtrar por status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos os Status</SelectItem>
+                                    <SelectItem value="ativo">Ativos</SelectItem>
+                                    <SelectItem value="pendente">Pendentes</SelectItem>
+                                    <SelectItem value="bloqueado">Bloqueados</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={filterRole} onValueChange={(v) => { setFilterRole(v); setCurrentPage(1); }}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Filtrar por função" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas as Funções</SelectItem>
+                                    <SelectItem value="usuario">Usuários</SelectItem>
+                                    <SelectItem value="moderador">Moderadores</SelectItem>
+                                    <SelectItem value="admin">Admins</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12">
+                                        <Checkbox 
+                                            onCheckedChange={handleSelectAllOnPage}
+                                            checked={paginatedUsers.length > 0 && paginatedUsers.every(u => selectedUsers.has(u.id))}
+                                            aria-label="Selecionar todos os usuários nesta página"
+                                        />
+                                    </TableHead>
+                                    <TableHead>Usuário</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Função</TableHead>
+                                    <TableHead className="hidden md:table-cell">Data de Cadastro</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                     Array.from({ length: 5 }).map((_, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell colSpan={6}>
+                                                <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : paginatedUsers.length > 0 ? (
+                                    paginatedUsers.map(user => {
+                                        const RoleIcon = roleConfig[user.funcao].icon;
+                                        return (
+                                            <TableRow key={user.id} data-state={selectedUsers.has(user.id) ? "selected" : ""}>
+                                                <TableCell>
+                                                    <Checkbox 
+                                                        checked={selectedUsers.has(user.id)}
+                                                        onCheckedChange={() => handleSelectUser(user.id)}
+                                                        aria-label={`Selecionar usuário ${user.apelido}`}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <div className="relative">
+                                                                    <Avatar className="w-9 h-9">
+                                                                        <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                        <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <StatusIndicator status={user.presenceStatus} />
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>{user.email}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                        <div>
+                                                            <div className='flex items-center gap-2'>
+                                                                <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido || user.nome}</Link>
+                                                                {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
+                                                            <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
+                                                                <Mail className="w-3 h-3" />
+                                                                <span>{user.email}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="hidden sm:table-cell">
+                                                    <Badge variant="outline">
+                                                        <RoleIcon className="h-4 w-4 mr-1.5" />
+                                                        {roleConfig[user.funcao].label}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="hidden md:table-cell">
+                                                    <FormattedDate dateValue={user.dataCadastro} />
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant="secondary" className="font-normal">
+                                                        <div className={`w-2 h-2 rounded-full mr-2 ${statusConfig[user.status].color}`} />
+                                                        {statusConfig[user.status].label}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Abrir menu</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Ações de Moderação</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            {user.status === 'pendente' && (
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
+                                                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                                                    <span>Aprovar Cadastro</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {user.status === 'ativo' && user.funcao !== 'admin' && (
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'bloqueado')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                                                    <UserX className="mr-2 h-4 w-4" />
+                                                                    <span>Bloquear Usuário</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {user.status === 'bloqueado' && (
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
+                                                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                                                    <span>Desbloquear Usuário</span>
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            <DropdownMenuSeparator />
+                                                             <DropdownMenuLabel>Funções</DropdownMenuLabel>
+                                                             <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'usuario')} disabled={user.funcao === 'usuario'}>
+                                                                <Users className="mr-2 h-4 w-4" />
+                                                                <span>Definir como Usuário</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'moderador')} disabled={user.funcao === 'moderador'}>
+                                                                <ShieldCheck className="mr-2 h-4 w-4 text-blue-500"/>
+                                                                <span>Promover a Moderador</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'admin')} disabled={user.funcao === 'admin'}>
+                                                                <ShieldX className="mr-2 h-4 w-4 text-destructive"/>
+                                                                <span>Promover a Admin</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleGhostModeToggle(user.id, user.isGhost); }}>
+                                                                <Ghost className="mr-2 h-4 w-4" />
+                                                                {user.isGhost ? 'Desativar Modo Fantasma' : 'Ativar Modo Fantasma'}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                             <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <DropdownMenuItem className="text-amber-600 focus:bg-amber-500/10 focus:text-amber-700" onSelect={(e) => e.preventDefault()}>
+                                                                        <RefreshCcw className="mr-2 h-4 w-4" />
+                                                                        Resetar Estatísticas
+                                                                    </DropdownMenuItem>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-amber-500" />Resetar estatísticas de {user.apelido || user.nome}?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            Esta ação é irreversível. Todas as estatísticas de campeonatos, pontos e títulos do usuário serão zerados. Isso é útil para limpar dados de teste.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => handleResetStats(user.id, user.apelido || user.nome)} className="bg-amber-600 hover:bg-amber-600/90">Sim, resetar</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="h-24 text-center">
+                                            <p className="font-semibold">Nenhum usuário encontrado.</p>
+                                            <p className="text-sm text-muted-foreground">Tente ajustar os filtros de busca.</p>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 mt-8">
+                        <Button 
+                            variant="outline"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-2" />
+                            Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                            Página {currentPage} de {totalPages}
+                        </span>
+                        <Button 
+                            variant="outline"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Próximo
+                            <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </TooltipProvider>
+    );
+}
