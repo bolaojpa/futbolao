@@ -51,6 +51,17 @@ export async function updateUserProfile(userId: string, data: Partial<Pick<UserT
 }
 
 /**
+ * Updates a single field for a specific user.
+ * @param userId - The ID of the user to update.
+ * @param data - An object with the field to update.
+ */
+export async function updateUserField(userId: string, data: Partial<UserType>): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, data);
+}
+
+
+/**
  * Updates the status of a specific user in Firestore.
  * If the user is being approved (status changes to 'ativo'),
  * it also triggers a welcome notification.

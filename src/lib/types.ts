@@ -13,6 +13,7 @@ export interface UserType {
     urlImagemPersonalizada?: string;
     status: 'ativo' | 'pendente' | 'bloqueado';
     funcao: 'usuario' | 'moderador' | 'admin';
+    isGhost?: boolean; // Novo campo para o modo fantasma
     posicaoVariacao?: 'up' | 'down' | 'stable';
     dataCadastro: string | Timestamp;
     ultimaAtividade: string | Timestamp;
@@ -133,7 +134,7 @@ export interface Log {
     actor: {
         id: string;
         apelido: string;
-        type: 'admin' | 'moderador' | 'user';
+        type: 'admin' | 'moderator' | 'user';
     };
     action: 'login' | 'login_fail' | 'prediction_update' | 'profile_update' | 'user_management' | 'championship_create' | 'emergency_message' | 'ai_notification';
     details: string | object;

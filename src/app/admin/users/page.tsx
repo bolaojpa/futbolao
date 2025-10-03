@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle } from 'lucide-react';
+import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { UserType } from '@/lib/types';
-import { getUsers, updateUserStatus, updateUserRole, deleteUsers, resetUserStats } from '@/lib/firebase/firestore';
+import { getUsers, updateUserStatus, updateUserRole, deleteUsers, resetUserStats, updateUserField } from '@/lib/firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
 
 const ITEMS_PER_PAGE = 10;
@@ -128,6 +129,23 @@ export default function AdminUsersPage() {
             });
         }
     }
+    
+     const handleGhostModeToggle = async (userId: string, newGhostStatus: boolean) => {
+        try {
+            await updateUserField(userId, { isGhost: newGhostStatus });
+            await fetchUsers();
+            toast({
+                title: "Modo Fantasma Alterado",
+                description: `O usuário foi ${newGhostStatus ? 'definido como um jogador IA' : 'revertido para um jogador normal'}.`,
+            });
+        } catch (error) {
+            toast({
+                title: "Erro ao alterar Modo Fantasma",
+                variant: "destructive",
+            });
+        }
+    };
+
 
     const handleResetStats = async (userId: string, userName: string) => {
         try {
@@ -348,7 +366,10 @@ export default function AdminUsersPage() {
                                                             </TooltipContent>
                                                         </Tooltip>
                                                         <div>
-                                                            <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido || user.nome}</Link>
+                                                            <div className='flex items-center gap-2'>
+                                                                <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido || user.nome}</Link>
+                                                                {user.isGhost && <Bot className="w-4 h-4 text-primary" />}
+                                                            </div>
                                                             <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
                                                             <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
                                                                 <Mail className="w-3 h-3" />
@@ -414,6 +435,11 @@ export default function AdminUsersPage() {
                                                             <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'admin')} disabled={user.funcao === 'admin'}>
                                                                 <ShieldX className="mr-2 h-4 w-4 text-destructive"/>
                                                                 <span>Promover a Admin</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleGhostModeToggle(user.id, !user.isGhost); }}>
+                                                                <Bot className="mr-2 h-4 w-4" />
+                                                                {user.isGhost ? 'Desativar Modo Fantasma' : 'Ativar Modo Fantasma'}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                              <AlertDialog>
@@ -482,5 +508,3 @@ export default function AdminUsersPage() {
         </TooltipProvider>
     );
 }
-
-    
