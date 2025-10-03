@@ -174,7 +174,10 @@ export function AdminMatchesPageClient() {
             if (cache[championship.id]) return cache[championship.id];
 
             const finalRankingOrder = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) as string[] : [];
-            if (finalRankingOrder.length === 0) return null;
+            if (finalRankingOrder.length === 0) {
+                cache[championship.id] = null;
+                return null;
+            }
 
             let bestTier: { rank: number; pick: number } | null = null;
             let tierContenders: UserType[] = [];
@@ -425,22 +428,20 @@ export function AdminMatchesPageClient() {
                                                 <span className="font-bold">{user.apelido}:</span>
                                                  {championship?.championPredictionSettings?.active && (
                                                       <>
-                                                        <div className="relative sm:hidden">
-                                                            <Trophy className="w-4 h-4 text-amber-500" />
-                                                            <div className="absolute top-0 left-0 flex items-center justify-center w-full h-full gap-0.5 px-1">
+                                                        <div className="relative block sm:hidden">
+                                                            <Trophy className="w-5 h-5 text-amber-500" />
+                                                            <div className="absolute inset-0 flex items-center justify-center gap-0.5 px-1">
                                                             {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map(teamName => {
                                                                 const team = teams.find(t => t.name === teamName);
                                                                 if (!team) return null;
                                                                 const finalRankingOrder = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) as string[] : [];
-                                                                const isFinalized = finalRankingOrder.length > 0;
                                                                 let isEliminated = false;
-                                                                if (isFinalized) {
+                                                                if (finalRankingOrder.length > 0) {
                                                                     const winnerInfo = getChampionPickWinner(championship);
-                                                                    const userBestPickRank = user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(t => finalRankingOrder.indexOf(t)).filter(rank => rank !== -1).sort((a,b) => a-b)[0];
-                                                                    const winnerBestPickRank = winnerInfo ? finalRankingOrder.indexOf(winnerInfo.winningTeam) : -1;
                                                                     if (winnerInfo) {
-                                                                        if (user.id !== winnerInfo.winnerId || (user.id === winnerInfo.winnerId && teamName !== winnerInfo.winningTeam)) {
-                                                                            if (userBestPickRank === undefined || userBestPickRank > winnerBestPickRank) isEliminated = true;
+                                                                        const userBestPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams.find(t => finalRankingOrder.includes(t));
+                                                                        if (winnerInfo.winningTeam !== userBestPick) {
+                                                                            isEliminated = true;
                                                                         }
                                                                     } else {
                                                                         isEliminated = true;
@@ -455,15 +456,13 @@ export function AdminMatchesPageClient() {
                                                                 const team = teams.find(t => t.name === teamName);
                                                                 if (!team) return null;
                                                                 const finalRankingOrder = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) as string[] : [];
-                                                                const isFinalized = finalRankingOrder.length > 0;
                                                                 let isEliminated = false;
-                                                                if (isFinalized) {
+                                                                if (finalRankingOrder.length > 0) {
                                                                     const winnerInfo = getChampionPickWinner(championship);
-                                                                    const userBestPickRank = user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(t => finalRankingOrder.indexOf(t)).filter(rank => rank !== -1).sort((a,b) => a-b)[0];
-                                                                    const winnerBestPickRank = winnerInfo ? finalRankingOrder.indexOf(winnerInfo.winningTeam) : -1;
                                                                     if (winnerInfo) {
-                                                                        if (user.id !== winnerInfo.winnerId || (user.id === winnerInfo.winnerId && teamName !== winnerInfo.winningTeam)) {
-                                                                            if (userBestPickRank === undefined || userBestPickRank > winnerBestPickRank) isEliminated = true;
+                                                                        const userBestPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams.find(t => finalRankingOrder.includes(t));
+                                                                        if (winnerInfo.winningTeam !== userBestPick) {
+                                                                            isEliminated = true;
                                                                         }
                                                                     } else {
                                                                         isEliminated = true;
