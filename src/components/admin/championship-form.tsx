@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -43,7 +42,7 @@ import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { getTeams, getUsers } from '@/lib/firebase/firestore';
+import { getTeams, getUsers, updateUserField } from '@/lib/firebase/firestore';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
@@ -52,7 +51,8 @@ import { Combobox } from '../ui/combobox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 type Fase = {
     nome: string;
@@ -159,6 +159,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
   const [userSearch, setUserSearch] = useState("");
   const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  const { toast } = useToast();
   
   const isChampionshipStarted = useMemo(() => {
     if (!championship) return false;
@@ -358,8 +359,42 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
       });
   };
 
-  const handleFormSubmit = (data: ChampionshipFormValues) => {
-    onSubmit(data as Omit<Championship, 'status'>);
+  const handleFormSubmit = async (data: ChampionshipFormValues) => {
+    let finalData = { ...data };
+
+    if (data.incluirFantasma) {
+        const ghostUserRef = doc(db, "users", "GHOST_USER_ID");
+        const ghostUserSnap = await getDoc(ghostUserRef);
+
+        if (!ghostUserSnap.exists()) {
+            await setDoc(ghostUserRef, {
+                id: 'GHOST_USER_ID',
+                nome: 'Lóia (IA)',
+                apelido: 'Lóia',
+                email: 'ghost@futbolao.pro',
+                fotoPerfil: `https://ui-avatars.com/api/?name=L&background=random`,
+                status: 'ativo',
+                funcao: 'usuario',
+                dataCadastro: serverTimestamp(),
+                titulos: 0,
+                totalJogos: 0,
+                championshipStats: [],
+                presenceStatus: 'Disponível',
+                isGhost: true,
+            });
+             toast({ title: "Fantasma Criado!", description: "O jogador Lóia (IA) foi adicionado ao sistema." });
+        }
+        
+        // Garante que o fantasma está na lista de participantes se a opção estiver marcada
+        if (!finalData.participantes.includes('GHOST_USER_ID')) {
+            finalData.participantes.push('GHOST_USER_ID');
+        }
+    } else {
+        // Garante que o fantasma é removido se a opção for desmarcada
+        finalData.participantes = finalData.participantes.filter(pId => pId !== 'GHOST_USER_ID');
+    }
+
+    onSubmit(finalData as Omit<Championship, 'status'>);
     setIsOpen(false);
   };
   
@@ -446,9 +481,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
                         <TooltipContent><p>Equipes</p></TooltipContent>
                     </Tooltip>
                      <Tooltip>
-                        <TooltipTrigger asChild><TabsTrigger value="participants" disabled={isChampionshipStarted}><Users className="md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
+                        <TooltipTrigger asChild><TabsTrigger value="participants" disabled={isChampionshipStarted && !!championship}><Users className="md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent>
-                            {isChampionshipStarted ? (
+                            {isChampionshipStarted && !!championship ? (
                                 <p>Não é possível editar participantes após o início do campeonato.</p>
                             ) : (
                                 <p>Participantes</p>
@@ -1371,3 +1406,5 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, al
   </>
   );
 }
+
+    
