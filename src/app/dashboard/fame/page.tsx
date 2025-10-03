@@ -37,9 +37,9 @@ export default function FamePage() {
                     });
 
                 const bannerData: ChampionBannerProps[] = hallOfFameChamps.map(champ => {
-                    let campeaoGeralNome = 'Campeão (Em Breve)';
+                    let campeaoGeralNome = '';
                     let campeaoGeralAvatarUrl = 'https://ui-avatars.com/api/?name=?&background=random';
-                    let palpiteiroNome = 'Melhor Palpiteiro (Em Breve)';
+                    let palpiteiroNome = '';
                     let palpiteiroAvatarUrl = 'https://ui-avatars.com/api/?name=?&background=random';
 
                     if (champ.status === 'arquivado') {
@@ -142,7 +142,11 @@ export default function FamePage() {
                         palpiteiroNome,
                         palpiteiroAvatarUrl,
                         displayMode: champ.banner?.displayMode || 'photo_and_names',
-                        backgroundUrl: champ.banner?.backgroundUrl
+                        backgroundUrl: champ.banner?.backgroundUrl,
+                        banner: {
+                            titleColor: champ.banner?.titleColor,
+                            subtitleColor: champ.banner?.subtitleColor,
+                        }
                     };
                 });
 
