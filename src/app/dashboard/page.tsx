@@ -134,13 +134,11 @@ export default function DashboardPage() {
     }, [allMatches, userChampionships, currentTime]);
 
     const recentMatches = useMemo(() => {
-        if (userChampionships.length === 0) return [];
-        const userChampionshipIds = userChampionships.map(c => c.id);
         return allMatches
-            .filter(match => userChampionshipIds.includes(match.campeonatoId) && match.status === 'Finalizado')
-            .sort((a, b) => new Date(b.data).getTime() - new Date(b.data).getTime())
+            .filter(match => match.status === 'Finalizado')
+            .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
             .slice(0, 3);
-    }, [allMatches, userChampionships]);
+    }, [allMatches]);
 
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
@@ -518,7 +516,7 @@ export default function DashboardPage() {
                                                                                                 </div>
                                                                                                 <Popover>
                                                                                                     <PopoverTrigger asChild>
-                                                                                                        <div className="flex flex-col items-center sm:hidden cursor-pointer">
+                                                                                                        <div className="flex sm:hidden flex-col items-center cursor-pointer">
                                                                                                             <Trophy className="w-4 h-4 text-amber-500" />
                                                                                                         </div>
                                                                                                     </PopoverTrigger>
@@ -618,7 +616,7 @@ export default function DashboardPage() {
                                                                                                         </div>
                                                                                                         <Popover>
                                                                                                             <PopoverTrigger asChild>
-                                                                                                                <div className="flex flex-col items-center sm:hidden cursor-pointer">
+                                                                                                                <div className="flex sm:hidden flex-col items-center cursor-pointer">
                                                                                                                     <Trophy className="w-4 h-4 text-amber-500" />
                                                                                                                 </div>
                                                                                                             </PopoverTrigger>
@@ -674,95 +672,6 @@ export default function DashboardPage() {
                                                 </AccordionItem>
                                             </Accordion>
                                         );
-                                    })}
-                                </div>
-                            </section>
-                        )}
-
-                        {upcomingMatches.length > 0 && (
-                            <section>
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                                        <Calendar className="w-6 h-6 text-primary" />
-                                        Próximas Partidas
-                                    </h2>
-                                    <Button asChild variant="link">
-                                        <Link href="/dashboard/predictions">Ver todos &rarr;</Link>
-                                    </Button>
-                                </div>
-                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                    {upcomingMatches.map((match) => {
-                                        const userPrediction = userPredictions.find(p => p.matchId === match.id);
-                                        const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !userPrediction;
-                                        const championship = allChampionships.find(c => c.id === match.campeonatoId);
-                                        const displayStatus = getMatchDisplayStatus(match.data, match.status);
-                                        const teamA = allTeams.find(t => t.name === match.timeA);
-                                        const teamB = allTeams.find(t => t.name === match.timeB);
-
-                                        return (
-                                            <Link href={`/dashboard/predictions?championshipId=${match.campeonatoId}#${match.id}`} key={match.id} className="block hover:scale-[1.02] transition-transform duration-200">
-                                                <Card className={cn(
-                                                    "relative flex flex-col h-full overflow-hidden",
-                                                    needsAttention && "border-accent animate-pulse"
-                                                )}>
-                                                    {needsAttention && (
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <div className="absolute top-2 left-2 z-10">
-                                                                    <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
-                                                                </div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top">
-                                                                <p>Seu palpite é necessário! Esta partida começa em breve.</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    )}
-                                                    <CardContent className="flex-grow flex flex-col justify-center items-center p-4">
-                                                        <div className="flex justify-center items-center gap-2 mb-2">
-                                                            {championship?.iconUrl && (
-                                                                <Image src={championship.iconUrl} alt={championship.nome} width={20} height={20} className="object-contain" data-ai-hint="championship logo" />
-                                                            )}
-                                                            <p className="text-xs text-muted-foreground font-semibold">{match.campeonato}</p>
-                                                        </div>
-                                                        <div className="flex items-center justify-around w-full text-center">
-                                                            <div className='flex flex-col items-center gap-2 w-1/3'>
-                                                                 <div className="h-14 w-14 flex items-center justify-center">
-                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                                </div>
-                                                                <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeA}</p>
-                                                            </div>
-                                                            <div className="flex flex-col items-center justify-center gap-1 mx-2">
-                                                                <Badge variant={getStatusVariant(displayStatus)}>
-                                                                    {displayStatus}
-                                                                </Badge>
-                                                                <span className="text-2xl font-bold text-muted-foreground">vs</span>
-                                                            </div>
-                                                            <div className='flex flex-col items-center gap-2 w-1/3'>
-                                                                <div className="h-14 w-14 flex items-center justify-center">
-                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                                </div>
-                                                                <p className="font-semibold text-sm truncate hidden md:block w-full">{match.timeB}</p>
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                    
-                                                    {userPrediction && (
-                                                        <CardContent className="py-2">
-                                                            <Separator className="mb-2" />
-                                                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                                                                <Goal className="w-4 h-4 text-primary" />
-                                                                <span className="font-semibold">Seu Palpite:</span>
-                                                                <span className="font-bold text-foreground">{`${userPrediction.palpiteUsuario.placarA} - ${userPrediction.palpiteUsuario.placarB}`}</span>
-                                                            </div>
-                                                        </CardContent>
-                                                    )}
-
-                                                    <CardContent className="text-center bg-muted/50 py-2 mt-auto">
-                                                    <UpcomingMatchDate matchDateString={match.data} />
-                                                    </CardContent>
-                                                </Card>
-                                            </Link>
-                                        )
                                     })}
                                 </div>
                             </section>
@@ -853,7 +762,7 @@ export default function DashboardPage() {
                                                                                 </div>
                                                                                 <Popover>
                                                                                     <PopoverTrigger asChild>
-                                                                                        <div className="flex flex-col items-center sm:hidden cursor-pointer">
+                                                                                        <div className="flex sm:hidden flex-col items-center cursor-pointer">
                                                                                             <Trophy className="w-4 h-4 text-amber-500" />
                                                                                         </div>
                                                                                     </PopoverTrigger>
@@ -944,7 +853,7 @@ export default function DashboardPage() {
                                                                                 </div>
                                                                                 <Popover>
                                                                                     <PopoverTrigger asChild>
-                                                                                        <div className="flex flex-col items-center sm:hidden cursor-pointer">
+                                                                                        <div className="flex sm:hidden flex-col items-center cursor-pointer">
                                                                                             <Trophy className="w-4 h-4 text-amber-500" />
                                                                                         </div>
                                                                                     </PopoverTrigger>
@@ -1023,3 +932,4 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
