@@ -26,15 +26,15 @@ interface HallOfFameCarouselProps {
 export function HallOfFameCarousel({ banners }: HallOfFameCarouselProps) {
   const [selectedBanner, setSelectedBanner] = useState<ChampionBannerProps | null>(null);
 
-  // Garante que o banner mais recente apareça primeiro.
-  const sortedBanners = [...banners].reverse();
+  // A ordenação já vem da página pai
+  const sortedBanners = banners;
 
   return (
     <>
         <Carousel
           opts={{
             align: "start",
-            loop: true,
+            loop: sortedBanners.length > 1, // Loop só se houver mais de um item
           }}
           plugins={[
             Autoplay({
@@ -56,8 +56,12 @@ export function HallOfFameCarousel({ banners }: HallOfFameCarouselProps) {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-0 sm:left-2 md:-left-10" />
-          <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-0 sm:right-2 md:-right-10" />
+           {sortedBanners.length > 1 && (
+            <>
+                <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-0 sm:left-2 md:-left-10" />
+                <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-0 sm:right-2 md:-right-10" />
+            </>
+           )}
         </Carousel>
 
         <Dialog open={!!selectedBanner} onOpenChange={(isOpen) => !isOpen && setSelectedBanner(null)}>
