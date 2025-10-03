@@ -320,21 +320,26 @@ export function ProfilePageClient() {
   const generalStats = useMemo(() => {
     if (!userToDisplay) return [];
 
-     const championshipIdsWithPlayedMatches = new Set(
-        userPredictions
-            .map(p => allMatches.find(m => m.id === p.matchId))
-            .filter((m): m is Match => !!m && m.status === 'Finalizado')
-            .map(m => m.campeonatoId)
-    );
+    const finalizedPredictions = userPredictions.filter(p => {
+        const match = allMatches.find(m => m.id === p.matchId);
+        return match && match.status === 'Finalizado';
+    });
 
-    const playedChampionships = championshipIdsWithPlayedMatches.size;
-    const totalPalpites = new Set(userPredictions.map(p => p.matchId)).size;
+    const playedChampionshipIds = new Set(
+        finalizedPredictions.map(p => {
+            const match = allMatches.find(m => m.id === p.matchId);
+            return match?.campeonatoId;
+        }).filter(Boolean)
+    );
+    
+    const playedChampionships = playedChampionshipIds.size;
+    const totalPalpites = new Set(finalizedPredictions.map(p => p.matchId)).size;
     const totalTitulos = userToDisplay.titulos || 0;
 
     return [
       { icon: <Trophy className="h-4 w-4 text-muted-foreground" />, title: "Títulos Conquistados", value: totalTitulos, description: "Total de campeonatos vencidos" },
-      { icon: <Users className="h-4 w-4 text-muted-foreground" />, title: "Campeonatos Disputados", value: playedChampionships, description: "Total de campeonatos com palpites finalizados" },
-      { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Total de Palpites", value: totalPalpites, description: "Palpites enviados em todos os tempos" },
+      { icon: <Users className="h-4 w-4 text-muted-foreground" />, title: "Campeonatos Disputados", value: playedChampionships, description: "Campeonatos com palpites finalizados" },
+      { icon: <Gamepad2 className="h-4 w-4 text-muted-foreground" />, title: "Total de Palpites", value: totalPalpites, description: "Jogos finalizados com palpites enviados" },
     ];
   }, [userToDisplay, allMatches, userPredictions]);
 
