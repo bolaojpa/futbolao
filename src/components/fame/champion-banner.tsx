@@ -46,12 +46,16 @@ export function ChampionBanner({
   const showPhotos = displayMode === 'photo_and_names';
   const hasMultipleCampeoes = campeaoGeralNome.includes(",");
   const hasMultiplePalpiteiros = palpiteiroNome.includes(",");
+  
+  // Condicional para não exibir os nomes placeholder
+  const finalCampeaoNome = campeaoGeralNome.includes("(Em Breve)") ? "" : campeaoGeralNome;
+  const finalPalpiteiroNome = palpiteiroNome.includes("(Em Breve)") ? "" : palpiteiroNome;
+
 
   return (
     <div
       className="w-full h-full aspect-[857/828] bg-cover bg-center bg-gradient-to-br from-yellow-300/20 via-primary/20 to-background shadow-2xl border-2 border-primary/50 flex flex-col p-[0.33%] text-white relative overflow-hidden [container-type:inline-size] rounded-lg"
       style={{
-        textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
         backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : undefined,
       }}
     >
@@ -68,12 +72,12 @@ export function ChampionBanner({
               alt={`Logo ${campeonatoNome}`}
               width={150}
               height={150}
-              className="object-contain h-full w-auto"
+              className="object-contain h-full w-auto [filter:drop-shadow(0_2px_2px_rgba(0,0,0,0.7))]"
             />
           </div>
 
           <div style={{ width: '68.72%' }} className="flex justify-center items-center h-full">
-            <h2 className="text-[10cqw] font-extrabold tracking-wider uppercase text-center">
+            <h2 className="text-[10cqw] font-extrabold tracking-wider uppercase text-center [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]">
               Ganhadores
             </h2>
           </div>
@@ -81,14 +85,14 @@ export function ChampionBanner({
 
         {/* Middle Section */}
         <Section height="33.11%" className="flex-col justify-start items-center text-center p-[2%]">
-          <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
+          <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]">
             CAMPEÃO GERAL
           </h3>
           <div className={cn("flex items-center justify-center gap-[2%]", showPhotos ? "flex-row" : "flex-col")}>
-            {showPhotos && campeaoGeralAvatarUrl && (
+            {showPhotos && campeaoGeralAvatarUrl && finalCampeaoNome && (
               <Image
                 src={campeaoGeralAvatarUrl}
-                alt={`Avatar de ${campeaoGeralNome}`}
+                alt={`Avatar de ${finalCampeaoNome}`}
                 width={80}
                 height={80}
                 className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
@@ -96,21 +100,22 @@ export function ChampionBanner({
             )}
             <p className={cn("font-bold whitespace-nowrap",
               hasMultipleCampeoes ? "text-[4cqw]" : "text-[5cqw]",
-              !showPhotos && (hasMultipleCampeoes ? "text-[4.5cqw]" : "text-[6cqw]")
-            )}>{campeaoGeralNome}</p>
+              !showPhotos && (hasMultipleCampeoes ? "text-[4.5cqw]" : "text-[6cqw]"),
+              !finalCampeaoNome && "h-[6cqw]" // Mantém a altura para evitar que o layout quebre
+            )}>{finalCampeaoNome}</p>
           </div>
         </Section>
 
         {/* Bottom Section */}
         <Section height="33.28%" className="flex-col justify-start items-center text-center p-[2%]">
-          <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline">
+          <h3 className="text-[6cqw] font-semibold uppercase tracking-wider text-yellow-300 font-headline [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]">
             {modoEquipes === "selecao" ? "PALPITE DA SELEÇÃO" : "PALPITE DA EQUIPE"}
           </h3>
           <div className={cn("flex items-center justify-center gap-[2%]", showPhotos ? "flex-row" : "flex-col")}>
-            {showPhotos && palpiteiroAvatarUrl && (
+            {showPhotos && palpiteiroAvatarUrl && finalPalpiteiroNome && (
               <Image
                 src={palpiteiroAvatarUrl}
-                alt={`Avatar de ${palpiteiroNome}`}
+                alt={`Avatar de ${finalPalpiteiroNome}`}
                 width={80}
                 height={80}
                 className="w-[18%] h-auto aspect-square rounded-full border-[0.5cqw] border-yellow-400"
@@ -118,8 +123,9 @@ export function ChampionBanner({
             )}
             <p className={cn("font-bold",
               hasMultiplePalpiteiros ? "text-[3.5cqw]" : "text-[4.5cqw]",
-              !showPhotos && (hasMultiplePalpiteiros ? "text-[4cqw]" : "text-[5cqw]")
-            )}>{palpiteiroNome}</p>
+              !showPhotos && (hasMultiplePalpiteiros ? "text-[4cqw]" : "text-[5cqw]"),
+              !finalPalpiteiroNome && "h-[5cqw]" // Mantém a altura para evitar que o layout quebre
+            )}>{finalPalpiteiroNome}</p>
           </div>
         </Section>
       </div>
