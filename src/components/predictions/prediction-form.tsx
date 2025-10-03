@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { format, parseISO, differenceInHours, isToday, isPast, isFuture } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, Gem, Check, X, Goal } from 'lucide-react';
+import { BrainCircuit, Loader2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, Gem, Check, X, Goal, Ghost } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAiSuggestion, savePrediction, saveComboPick } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
@@ -60,11 +60,12 @@ interface PredictionFormProps {
     championships: Championship[];
     allTeams: Team[];
     allMatches: Match[];
+    allUsers: UserType[];
     selectedChampionshipId: string | 'all';
 }
 
 
-export function PredictionForm({ championships, allTeams, allMatches, selectedChampionshipId }: PredictionFormProps) {
+export function PredictionForm({ championships, allTeams, allMatches, allUsers, selectedChampionshipId }: PredictionFormProps) {
     const { toast } = useToast();
     const { user } = useAuth();
 
@@ -399,6 +400,8 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
     if (Object.keys(groupedMatches).length === 0) {
         return null;
     }
+    
+    const ghostUser = allUsers.find(u => u.isGhost);
 
     return (
         <>
@@ -425,6 +428,7 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                             </div>
                             {matches.map((match) => {
                                 const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                                const ghostPrediction = ghostUser ? allPredictions.find(p => p.matchId === match.id && p.userId === ghostUser.id) : null;
                                 const isEditingPrediction = !!userPrediction;
                                 const currentScore = scores[match.id] || { placarA: null, placarB: null };
                                 const comboState = comboUiState[match.id];
@@ -536,6 +540,13 @@ export function PredictionForm({ championships, allTeams, allMatches, selectedCh
                                                             <p>Seu palpite de gols para o combo.</p>
                                                         </TooltipContent>
                                                     </Tooltip>
+                                                )}
+                                                
+                                                {ghostPrediction && (
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 font-medium">
+                                                        <Ghost className="h-4 w-4 text-primary" />
+                                                        <span>Lóia: {ghostPrediction.palpiteUsuario.placarA}-{ghostPrediction.palpiteUsuario.placarB}</span>
+                                                    </div>
                                                 )}
                                             </div>
                                         </CardContent>

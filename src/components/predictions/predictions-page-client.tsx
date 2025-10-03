@@ -180,6 +180,7 @@ export function PredictionsPageClient() {
                 championships={championships} 
                 allTeams={allTeams} 
                 allMatches={allMatches}
+                allUsers={allUsers}
                 selectedChampionshipId={selectedChampionshipId}
             />
 
