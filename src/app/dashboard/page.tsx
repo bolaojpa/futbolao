@@ -168,18 +168,18 @@ export default function DashboardPage() {
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
             acertoTipo = 'bucha';
-            if (acertouGols && pontuacao.combo.ativo) {
+            if (acertouGols && pontuacao.combo) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
                 acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
             pontosGanhos = pontuacao.tradicional.situacao;
             acertoTipo = 'situacao';
-             if (acertouGols && pontuacao.combo.ativo) {
+             if (acertouGols && pontuacao.combo) {
                 pontosGanhos += pontuacao.combo.pontosGols;
                 acertoTipo = 'bonus';
             }
-        } else if (acertouGols && pontuacao.combo.ativo) {
+        } else if (acertouGols && pontuacao.combo) {
             pontosGanhos = pontuacao.combo.pontosGols;
             acertoTipo = 'gols';
         }
@@ -282,6 +282,33 @@ export default function DashboardPage() {
 
     }, [user, allUsers, userChampionships, liveMatches, allPredictions, allMatches]);
 
+    const getChampionPickWinner = useMemo(() => {
+        const cache: Record<string, { winnerId: string; winningTeam: string } | null> = {};
+
+        return (championship: Championship) => {
+            if (cache[championship.id]) return cache[championship.id];
+
+            const finalRanking = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) : [];
+            if (finalRanking.length === 0) {
+                return null;
+            }
+
+            for (const rankTeam of finalRanking) {
+                for (let i = 0; i < (championship.championPredictionSettings?.numberOfPicks || 0); i++) {
+                    const winners = allUsers
+                        .filter(u => u.championPicks?.some(p => p.championshipId === championship.id && p.teams[i] === rankTeam));
+
+                    if (winners.length > 0) {
+                        const winner = winners[0]; // Em caso de empate, o primeiro encontrado (poderia ser refinado)
+                        cache[championship.id] = { winnerId: winner.id, winningTeam: rankTeam };
+                        return cache[championship.id];
+                    }
+                }
+            }
+            cache[championship.id] = null;
+            return null;
+        }
+    }, [allUsers]);
 
     const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
         if (status === 'Ao Vivo') return 'destructive';
@@ -490,16 +517,25 @@ export default function DashboardPage() {
                                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
                                                                                     <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                                                                 </Avatar>
-                                                                                 <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                                                                     <span className="font-bold">Seu Palpite:</span>
                                                                                      {champ?.championPredictionSettings?.active && (() => {
                                                                                         const userChampPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                                                        const chosenTeams = userChampPicks ? userChampPicks.teams.map((teamName, index) => {
+                                                                                        const pickWinner = getChampionPickWinner(champ);
+
+                                                                                        const chosenTeams = userChampPicks ? userChampPicks.teams.map((teamName) => {
                                                                                             const team = allTeams.find(t => t.name === teamName);
-                                                                                            const champIsFinalized = champ.finalRanking && Object.values(champ.finalRanking).some(v => v);
-                                                                                            const isEliminated = champIsFinalized ? !Object.values(champ.finalRanking).includes(teamName) : false;
-                                                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
-                                                                                        }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
+                                                                                            if (!team) return null;
+                                                                                            
+                                                                                            let isEliminated = false;
+                                                                                            if (pickWinner) {
+                                                                                                if (teamName !== pickWinner.winningTeam || user.id !== pickWinner.winnerId) {
+                                                                                                    isEliminated = true;
+                                                                                                }
+                                                                                            }
+                                                                                            
+                                                                                            return { ...team, isEliminated };
+                                                                                        }).filter((t): t is Team & { isEliminated: boolean } => t !== null) : [];
 
                                                                                         if (chosenTeams.length === 0) return null;
 
@@ -510,7 +546,7 @@ export default function DashboardPage() {
                                                                                                         <TooltipTrigger>
                                                                                                             <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
                                                                                                         </TooltipTrigger>
-                                                                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                                        <TooltipContent><p>{team.name}</p></TooltipContent>
                                                                                                     </Tooltip>
                                                                                                 ))}
                                                                                             </div>
@@ -571,16 +607,25 @@ export default function DashboardPage() {
                                                                                             <AvatarImage src={otherUser.fotoPerfil} alt={otherUser.apelido} />
                                                                                             <AvatarFallback>{otherUser.apelido.substring(0,2)}</AvatarFallback>
                                                                                         </Avatar>
-                                                                                         <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                                         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                                                                             <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
                                                                                              {champ?.championPredictionSettings?.active && (() => {
                                                                                                 const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                                                                const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
+                                                                                                 const pickWinner = getChampionPickWinner(champ);
+
+                                                                                                const chosenTeams = champPicks ? champPicks.teams.map((teamName) => {
                                                                                                     const team = allTeams.find(t => t.name === teamName);
-                                                                                                    const champIsFinalized = champ.finalRanking && Object.values(champ.finalRanking).some(v => v);
-                                                                                                    const isEliminated = champIsFinalized ? !Object.values(champ.finalRanking).includes(teamName) : false;
-                                                                                                    return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
-                                                                                                }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
+                                                                                                    if (!team) return null;
+
+                                                                                                    let isEliminated = false;
+                                                                                                    if (pickWinner) {
+                                                                                                        if (teamName !== pickWinner.winningTeam || otherUser.id !== pickWinner.winnerId) {
+                                                                                                            isEliminated = true;
+                                                                                                        }
+                                                                                                    }
+                                                                                                    
+                                                                                                    return { ...team, isEliminated };
+                                                                                                }).filter((t): t is Team & { isEliminated: boolean; } => t !== null) : [];
                                                                                                 
                                                                                                 if (chosenTeams.length === 0) return null;
 
@@ -591,7 +636,7 @@ export default function DashboardPage() {
                                                                                                                 <TooltipTrigger>
                                                                                                                     <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
                                                                                                                 </TooltipTrigger>
-                                                                                                                <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
                                                                                                             </Tooltip>
                                                                                                         ))}
                                                                                                     </div>
@@ -698,16 +743,25 @@ export default function DashboardPage() {
                                                                     <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
                                                                     <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
                                                                 </Avatar>
-                                                                <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                                                     <span className="font-bold">Seu Palpite:</span>
                                                                     {champ?.championPredictionSettings?.active && (() => {
                                                                         const userChampPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                                        const chosenTeams = userChampPicks ? userChampPicks.teams.map((teamName, index) => {
+                                                                         const pickWinner = getChampionPickWinner(champ);
+
+                                                                        const chosenTeams = userChampPicks ? userChampPicks.teams.map((teamName) => {
                                                                             const team = allTeams.find(t => t.name === teamName);
-                                                                            const champIsFinalized = champ.finalRanking && Object.values(champ.finalRanking).some(v => v);
-                                                                            const isEliminated = champIsFinalized ? !Object.values(champ.finalRanking).includes(teamName) : false;
-                                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
-                                                                        }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
+                                                                            if (!team) return null;
+
+                                                                            let isEliminated = false;
+                                                                            if (pickWinner) {
+                                                                                if (teamName !== pickWinner.winningTeam || user.id !== pickWinner.winnerId) {
+                                                                                    isEliminated = true;
+                                                                                }
+                                                                            }
+                                                                            
+                                                                            return { ...team, isEliminated };
+                                                                        }).filter((t): t is Team & { isEliminated: boolean; } => t !== null) : [];
 
                                                                         if (chosenTeams.length === 0) return null;
 
@@ -718,7 +772,7 @@ export default function DashboardPage() {
                                                                                         <TooltipTrigger>
                                                                                             <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
                                                                                         </TooltipTrigger>
-                                                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                        <TooltipContent><p>{team.name}</p></TooltipContent>
                                                                                     </Tooltip>
                                                                                 ))}
                                                                             </div>
@@ -770,16 +824,25 @@ export default function DashboardPage() {
                                                                     <AvatarImage src={otherUser.fotoPerfil} alt={otherUser.apelido} />
                                                                     <AvatarFallback>{otherUser.apelido.substring(0,2)}</AvatarFallback>
                                                                 </Avatar>
-                                                                <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
                                                                     <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
                                                                     {champ?.championPredictionSettings?.active && (() => {
                                                                         const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
-                                                                        const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
+                                                                        const pickWinner = getChampionPickWinner(champ);
+                                                                        
+                                                                        const chosenTeams = champPicks ? champPicks.teams.map((teamName) => {
                                                                             const team = allTeams.find(t => t.name === teamName);
-                                                                            const champIsFinalized = champ.finalRanking && Object.values(champ.finalRanking).some(v => v);
-                                                                            const isEliminated = champIsFinalized ? !Object.values(champ.finalRanking).includes(teamName) : false;
-                                                                            return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
-                                                                        }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
+                                                                            if (!team) return null;
+                                                                            
+                                                                            let isEliminated = false;
+                                                                            if (pickWinner) {
+                                                                                if (teamName !== pickWinner.winningTeam || otherUser.id !== pickWinner.winnerId) {
+                                                                                    isEliminated = true;
+                                                                                }
+                                                                            }
+
+                                                                            return { ...team, isEliminated };
+                                                                        }).filter((t): t is Team & { isEliminated: boolean; } => t !== null) : [];
                                                                         
                                                                         if (chosenTeams.length === 0) return null;
 
@@ -790,7 +853,7 @@ export default function DashboardPage() {
                                                                                         <TooltipTrigger>
                                                                                             <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", team.isEliminated && "opacity-30")} />
                                                                                         </TooltipTrigger>
-                                                                                        <TooltipContent><p>Opção {team.pickOrder}: {team.name}</p></TooltipContent>
+                                                                                        <TooltipContent><p>{team.name}</p></TooltipContent>
                                                                                     </Tooltip>
                                                                                 ))}
                                                                             </div>
