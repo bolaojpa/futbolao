@@ -373,9 +373,8 @@ export function AdminHistoryPageClient() {
                                       const champPicks = user.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                       const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                           const team = teams.find(t => t.name === teamName);
-                                          const isEliminated = championship?.finalRanking && Object.values(championship.finalRanking).length > 0
-                                              ? !Object.values(championship.finalRanking).includes(teamName)
-                                              : false;
+                                          const champIsFinalized = championship?.finalRanking && Object.values(championship.finalRanking).some(v => v);
+                                          const isEliminated = champIsFinalized ? !Object.values(championship.finalRanking).includes(teamName) : false;
                                           return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
                                       }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 

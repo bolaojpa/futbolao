@@ -424,9 +424,8 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                             const champPicks = otherUser.championPicks?.find(cp => cp.championshipId === match.campeonatoId);
                                             const chosenTeams = champPicks ? champPicks.teams.map((teamName, index) => {
                                                 const team = allTeams.find(t => t.name === teamName);
-                                                const isEliminated = champ.finalRanking && Object.values(champ.finalRanking).length > 0
-                                                  ? !Object.values(champ.finalRanking).includes(teamName)
-                                                  : false;
+                                                const champIsFinalized = champ.finalRanking && Object.values(champ.finalRanking).some(v => v);
+                                                const isEliminated = champIsFinalized ? !Object.values(champ.finalRanking).includes(teamName) : false;
                                                 return team ? { ...team, pickOrder: index + 1, isEliminated } : null;
                                             }).filter((t): t is Team & { pickOrder: number; isEliminated: boolean; } => t !== null) : [];
 
