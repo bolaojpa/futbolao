@@ -135,7 +135,6 @@ export default function DashboardPage() {
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
     const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
-        // Assume 0-0 if the score is null/undefined for a live match
         const finalA = match.placarA ?? 0;
         const finalB = match.placarB ?? 0;
 
@@ -144,7 +143,7 @@ export default function DashboardPage() {
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao;
 
-        if (!pontuacao || guessA === null || guessB === null) {
+        if (guessA === null || guessB === null || !pontuacao) {
             return { pontos: 0, acertoTipo: 'erro' };
         }
     
@@ -543,7 +542,7 @@ export default function DashboardPage() {
                                                                                     </div>
                                                                                     <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
                                                                                     <div className="w-1/3 text-right">
-                                                                                        <Badge variant="destructive" className="bg-orange-700">0 pts</Badge>
+                                                                                        <Badge variant="secondary" className="bg-orange-700 text-white border-transparent">0 pts</Badge>
                                                                                     </div>
                                                                                 </li>
                                                                             );
@@ -559,8 +558,41 @@ export default function DashboardPage() {
                                                                                             <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
                                                                                             <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                                         </Avatar>
-                                                                                        <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                                         <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
                                                                                             <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                                             {championship?.championPredictionSettings?.active && (
+                                                                                                <>
+                                                                                                    <div className="relative block sm:hidden">
+                                                                                                        <Popover>
+                                                                                                            <PopoverTrigger asChild>
+                                                                                                                <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                                            </PopoverTrigger>
+                                                                                                            <PopoverContent className="w-48 p-2">
+                                                                                                                <div className="space-y-1">
+                                                                                                                    <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                                                    {participant.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                                                                </div>
+                                                                                                            </PopoverContent>
+                                                                                                        </Popover>
+                                                                                                    </div>
+                                                                                                    <div className='hidden sm:flex items-center gap-1'>
+                                                                                                        {participant.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
+                                                                                                            const team = allTeams.find(t => t.name === teamName);
+                                                                                                            if (!team) return null;
+                                                                                                            const winnerInfo = getChampionPickWinner(championship);
+                                                                                                            const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(participant.id);
+                                                                                                            return (
+                                                                                                                <Tooltip key={team.id}>
+                                                                                                                    <TooltipTrigger>
+                                                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                                                                    </TooltipTrigger>
+                                                                                                                    <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                                                                </Tooltip>
+                                                                                                            );
+                                                                                                        })}
+                                                                                                    </div>
+                                                                                                </>
+                                                                                            )}
                                                                                         </div>
                                                                                     </Link>
                                                                                 </div>
@@ -604,13 +636,71 @@ export default function DashboardPage() {
                         )}
                         
                         <section>
-                            <PredictionForm 
-                                championships={allChampionships}
-                                allTeams={allTeams}
-                                allMatches={allMatches}
-                                allUsers={allUsers}
-                                selectedChampionshipId="all"
-                            />
+                           <h2 className="text-2xl font-bold font-headline flex items-center gap-2 mb-4">
+                                <Calendar className="w-6 h-6 text-primary" />
+                                Próximos Jogos
+                            </h2>
+                            <div className="w-full space-y-4">
+                                {userChampionships.length > 0 ? (
+                                    allMatches.filter(match => 
+                                        match.status === 'Agendado' && 
+                                        !isPast(parseISO(match.data)) &&
+                                        userChampionships.some(c => c.id === match.campeonatoId)
+                                    ).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+                                    .map(match => {
+                                        const teamA = allTeams.find(t => t.name === match.timeA);
+                                        const teamB = allTeams.find(t => t.name === match.timeB);
+                                        const userPrediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
+                                        const ghostPrediction = allUsers.find(u => u.isGhost) ? allPredictions.find(p => p.matchId === match.id && p.userId === allUsers.find(u => u.isGhost)!.id) : null;
+                                        
+                                        return (
+                                            <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
+                                                <Card className="h-full hover:border-primary/50 transition-colors">
+                                                    <CardContent className="p-4">
+                                                        <div className="flex flex-col items-center justify-center w-full gap-2">
+                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                                                                {match.iconUrl && <Image src={match.iconUrl} alt="" width={16} height={16} />}
+                                                                {match.campeonato} - {match.fase}
+                                                            </div>
+                                                            <div className="flex items-center justify-center w-full">
+                                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-center text-muted-foreground mx-4">
+                                                                    <Swords className="h-6 w-6" />
+                                                                </div>
+                                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                    </div>
+                                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className='flex flex-col items-center justify-center mt-2 gap-2'>
+                                                                <Countdown targetDate={match.data} />
+                                                                {userPrediction?.palpiteUsuario.placarA !== null && (
+                                                                    <div className="font-semibold text-sm">Seu Palpite: {userPrediction?.palpiteUsuario.placarA} - {userPrediction?.palpiteUsuario.placarB}</div>
+                                                                )}
+                                                                {ghostPrediction && ghostPrediction.palpiteUsuario && (
+                                                                    <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                                                                        <Ghost className="h-4 w-4 text-primary" />
+                                                                        Lóia: {ghostPrediction.palpiteUsuario.placarA} - {ghostPrediction.palpiteUsuario.placarB}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </Link>
+                                        )
+                                    })
+                                ) : (
+                                    <p>Nenhuma partida futura encontrada.</p>
+                                )}
+                            </div>
                         </section>
 
                         {recentMatches.length > 0 && (
@@ -703,8 +793,41 @@ export default function DashboardPage() {
                                                                     <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
                                                                     <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                 </Avatar>
-                                                                <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                 <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
                                                                     <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                    {champ?.championPredictionSettings?.active && (
+                                                                        <>
+                                                                            <div className="relative block sm:hidden">
+                                                                                <Popover>
+                                                                                    <PopoverTrigger asChild>
+                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                    </PopoverTrigger>
+                                                                                    <PopoverContent className="w-48 p-2">
+                                                                                        <div className="space-y-1">
+                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                            {participant.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                                        </div>
+                                                                                    </PopoverContent>
+                                                                                </Popover>
+                                                                            </div>
+                                                                            <div className='hidden sm:flex items-center gap-1'>
+                                                                                {participant.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
+                                                                                    const team = allTeams.find(t => t.name === teamName);
+                                                                                    if (!team) return null;
+                                                                                    const winnerInfo = getChampionPickWinner(champ);
+                                                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(participant.id);
+                                                                                    return (
+                                                                                        <Tooltip key={team.id}>
+                                                                                            <TooltipTrigger>
+                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                                            </TooltipTrigger>
+                                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                                        </Tooltip>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </Link>
                                                         </div>

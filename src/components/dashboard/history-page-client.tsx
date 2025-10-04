@@ -457,11 +457,11 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                       </Avatar>
                                       <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                     </div>
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
+                                    <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
                                         <span className="font-bold">Seu Palpite:</span>
-                                        {champ?.championPredictionSettings?.active && (
-                                            <>
-                                                <div className="relative block sm:hidden">
+                                        <div className='flex items-center gap-1'>
+                                            <div className="sm:hidden">
+                                                {champ?.championPredictionSettings?.active && (
                                                     <Popover>
                                                         <PopoverTrigger asChild>
                                                             <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
@@ -473,25 +473,25 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                                             </div>
                                                         </PopoverContent>
                                                     </Popover>
-                                                </div>
-                                                <div className='hidden sm:flex items-center gap-1'>
-                                                    {user.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
-                                                        const team = allTeams.find(t => t.name === teamName);
-                                                        if (!team) return null;
-                                                        const winnerInfo = getChampionPickWinner(champ);
-                                                        const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
-                                                        return (
-                                                            <Tooltip key={team.id}>
-                                                                <TooltipTrigger>
-                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                            </Tooltip>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </>
-                                        )}
+                                                )}
+                                            </div>
+                                            <div className='hidden sm:flex items-center gap-1'>
+                                                {user.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
+                                                    const team = allTeams.find(t => t.name === teamName);
+                                                    if (!team) return null;
+                                                    const winnerInfo = getChampionPickWinner(champ);
+                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
+                                                    return (
+                                                        <Tooltip key={team.id}>
+                                                            <TooltipTrigger>
+                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                        </Tooltip>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
@@ -540,11 +540,11 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                         </Avatar>
                                         <StatusIndicator status={otherUser.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                       </div>
-                                      <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                       <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
                                         <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
-                                        {champ?.championPredictionSettings?.active && (
-                                            <>
-                                                <div className="relative block sm:hidden">
+                                        <div className='flex items-center gap-1'>
+                                            <div className="sm:hidden">
+                                                {champ?.championPredictionSettings?.active && (
                                                     <Popover>
                                                         <PopoverTrigger asChild>
                                                             <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
@@ -556,25 +556,25 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
                                                             </div>
                                                         </PopoverContent>
                                                     </Popover>
-                                                </div>
-                                                <div className='hidden sm:flex items-center gap-1'>
-                                                    {otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
-                                                        const team = allTeams.find(t => t.name === teamName);
-                                                        if (!team) return null;
-                                                         const winnerInfo = getChampionPickWinner(champ);
-                                                         const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(otherUser.id);
-                                                        return (
-                                                            <Tooltip key={team.id}>
-                                                                <TooltipTrigger>
-                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                            </Tooltip>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </>
-                                        )}
+                                                )}
+                                            </div>
+                                            <div className='hidden sm:flex items-center gap-1'>
+                                                {otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
+                                                    const team = allTeams.find(t => t.name === teamName);
+                                                    if (!team) return null;
+                                                     const winnerInfo = getChampionPickWinner(champ);
+                                                     const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(otherUser.id);
+                                                    return (
+                                                        <Tooltip key={team.id}>
+                                                            <TooltipTrigger>
+                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                        </Tooltip>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                       </div>
                                     </Link>
                                   </div>

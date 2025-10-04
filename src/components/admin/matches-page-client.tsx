@@ -463,17 +463,51 @@ export function AdminMatchesPageClient() {
 
                                     return (
                                         <li key={user.id} className="flex justify-between items-center p-4 border-t">
-                                            <div className="w-1/3 text-left flex items-center gap-2 group">
-                                                <div className="relative">
-                                                    <Avatar className="w-8 h-8">
-                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="font-bold">{user.apelido}:</span>
-                                                    {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
+                                            <div className="w-1/3 text-left">
+                                                <div className="flex items-center gap-2 group">
+                                                    <div className="relative">
+                                                        <Avatar className="w-8 h-8">
+                                                        <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                        <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                                    </div>
+                                                    <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                        <span className="font-bold">{user.apelido}:</span>
+                                                        <div className='flex items-center gap-1'>
+                                                            <div className="sm:hidden">
+                                                                {championship?.championPredictionSettings?.active && (
+                                                                    <Popover>
+                                                                        <PopoverTrigger asChild>
+                                                                            <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                        </PopoverTrigger>
+                                                                        <PopoverContent className="w-48 p-2">
+                                                                            <div className="space-y-1">
+                                                                                <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                            </div>
+                                                                        </PopoverContent>
+                                                                    </Popover>
+                                                                )}
+                                                            </div>
+                                                            <div className='hidden sm:flex items-center gap-1'>
+                                                                {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
+                                                                    const team = teams.find(t => t.name === teamName);
+                                                                    if (!team) return null;
+                                                                    const winnerInfo = getChampionPickWinner(championship);
+                                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
+                                                                    return (
+                                                                        <Tooltip key={team.id}>
+                                                                            <TooltipTrigger>
+                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                        </Tooltip>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
@@ -550,3 +584,4 @@ export function AdminMatchesPageClient() {
     </div>
   );
 }
+

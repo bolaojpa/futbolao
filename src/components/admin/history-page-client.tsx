@@ -473,21 +473,39 @@ export function AdminHistoryPageClient() {
                                           </div>
                                           <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
                                             <span className="font-bold">{user.apelido}:</span>
-                                            {championship?.championPredictionSettings?.active && (
-                                                <Popover>
-                                                  <PopoverTrigger asChild>
-                                                    <div className="relative block sm:hidden">
-                                                      <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                    </div>
-                                                  </PopoverTrigger>
-                                                  <PopoverContent className="w-48 p-2">
-                                                    <div className="space-y-1">
-                                                      <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                      {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                    </div>
-                                                  </PopoverContent>
-                                                </Popover>
-                                            )}
+                                            <div className='flex items-center gap-1'>
+                                                <div className="sm:hidden">
+                                                    {championship?.championPredictionSettings?.active && (
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-48 p-2">
+                                                                <div className="space-y-1">
+                                                                    <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                    {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                </div>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    )}
+                                                </div>
+                                                <div className='hidden sm:flex items-center gap-1'>
+                                                    {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
+                                                        const team = teams.find(t => t.name === teamName);
+                                                        if (!team) return null;
+                                                        const winnerInfo = getChampionPickWinner(championship);
+                                                        const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
+                                                        return (
+                                                            <Tooltip key={team.id}>
+                                                                <TooltipTrigger>
+                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                            </Tooltip>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
                                           </div>
                                         </div>
                                         <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">

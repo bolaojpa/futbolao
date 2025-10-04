@@ -580,11 +580,11 @@ export default function AdminDashboardPage() {
                                                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                                                 </div>
                                                                  <div className="flex items-center gap-2">
-                                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
+                                                                    <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
                                                                         <span className="font-bold">{user.apelido}:</span>
-                                                                        {championship?.championPredictionSettings?.active && (
-                                                                            <>
-                                                                                <div className="relative block sm:hidden">
+                                                                        <div className='flex items-center gap-1'>
+                                                                            <div className="sm:hidden">
+                                                                                {championship?.championPredictionSettings?.active && (
                                                                                     <Popover>
                                                                                         <PopoverTrigger asChild>
                                                                                             <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
@@ -596,25 +596,25 @@ export default function AdminDashboardPage() {
                                                                                             </div>
                                                                                         </PopoverContent>
                                                                                     </Popover>
-                                                                                </div>
-                                                                                <div className='hidden sm:flex items-center gap-1'>
-                                                                                    {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
-                                                                                        const team = allTeams.find(t => t.name === teamName);
-                                                                                        if (!team) return null;
-                                                                                        const winnerInfo = getChampionPickWinner(championship);
-                                                                                        const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
-                                                                                        return (
-                                                                                            <Tooltip key={team.id}>
-                                                                                                <TooltipTrigger>
-                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                                                </TooltipTrigger>
-                                                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                            </Tooltip>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-                                                                            </>
-                                                                        )}
+                                                                                )}
+                                                                            </div>
+                                                                            <div className='hidden sm:flex items-center gap-1'>
+                                                                                {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
+                                                                                    const team = allTeams.find(t => t.name === teamName);
+                                                                                    if (!team) return null;
+                                                                                    const winnerInfo = getChampionPickWinner(championship);
+                                                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
+                                                                                    return (
+                                                                                        <Tooltip key={team.id}>
+                                                                                            <TooltipTrigger>
+                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                                            </TooltipTrigger>
+                                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                                        </Tooltip>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                     {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                                                 </div>
