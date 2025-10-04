@@ -620,7 +620,6 @@ export default function DashboardPage() {
                                                                         if (!participant) return null;
 
                                                                         const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === participant.id);
-                                                                        const { pontos: livePoints, acertoTipo } = prediction ? calculateLivePoints(match, prediction) : { pontos: 0, acertoTipo: 'erro' as const };
                                                                         const isCurrentUser = participant.id === user.id;
 
                                                                         if (!prediction) {
@@ -642,6 +641,8 @@ export default function DashboardPage() {
                                                                                 </li>
                                                                             );
                                                                         }
+                                                                        
+                                                                        const { pontos: livePoints, acertoTipo } = calculateLivePoints(match, prediction);
                                                                         
                                                                         return (
                                                                             <li key={participant.id} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(acertoTipo))}>
@@ -847,6 +848,4 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
-
-
 
