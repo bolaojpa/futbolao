@@ -497,19 +497,14 @@ export default function DashboardPage() {
                                         const teamB = allTeams.find(t => t.name === match.timeB);
 
                                         const userPrediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
-                                        const { pontos: currentUserLivePoints, acertoTipo: currentUserAcertoTipo } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, acertoTipo: 'erro' };
+                                        const { acertoTipo: currentUserAcertoTipo } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, acertoTipo: 'erro' };
                                         
-                                        let cardStatusClass = 'border-accent/50'; // Default for live
-                                        if(userPrediction) {
-                                            cardStatusClass = getPredictionStatusClass(currentUserAcertoTipo);
-                                        } else {
-                                            cardStatusClass = 'bg-orange-500 text-white';
-                                        }
+                                        const cardStatusClass = userPrediction ? getPredictionStatusClass(currentUserAcertoTipo) : 'bg-orange-500 text-white';
 
                                         return (
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
                                                 <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
-                                                    <Card className={cn(cardStatusClass)}>
+                                                    <Card className={cn("relative", cardStatusClass)}>
                                                          <AccordionTrigger className="p-4 hover:no-underline w-full relative">
                                                             <div className="flex-1 justify-center items-center">
                                                                 <div className="flex items-center justify-center w-full">
@@ -632,13 +627,63 @@ export default function DashboardPage() {
                                     <Link href="/dashboard/predictions">Ver todos &rarr;</Link>
                                 </Button>
                             </div>
-                            <PredictionForm 
-                                championships={userChampionships}
-                                allTeams={allTeams}
-                                allMatches={allMatches}
-                                allUsers={allUsers}
-                                selectedChampionshipId={'all'} // Mostra todos na dashboard
-                            />
+                            <div className="space-y-4">
+                            {userChampionships.map(champ => {
+                                const upcomingMatches = allMatches.filter(m => m.campeonatoId === champ.id && m.status === 'Agendado' && !isPast(parseISO(m.data))).slice(0,3);
+                                if (upcomingMatches.length === 0) return null;
+
+                                return upcomingMatches.map(match => {
+                                    const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                                    const ghostPrediction = ghostUser ? allPredictions.find(p => p.matchId === match.id && p.userId === ghostUser.id) : null;
+                                    const teamA = allTeams.find(t => t.name === match.timeA);
+                                    const teamB = allTeams.find(t => t.name === match.timeB);
+
+                                    return (
+                                    <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
+                                        <Card className="h-full hover:border-primary/50 transition-colors">
+                                            <CardContent className="p-4">
+                                                <div className="flex flex-col items-center justify-center w-full gap-2">
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                                                        {champ.iconUrl && <Image src={champ.iconUrl} alt="" width={16} height={16} />}
+                                                        {match.campeonato} - {match.fase}
+                                                    </div>
+                                                    <div className="flex items-center justify-center w-full">
+                                                        <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                            <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                            <div className='flex h-14 w-14 items-center justify-center'>
+                                                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center justify-center text-muted-foreground mx-4">
+                                                            <p>vs</p>
+                                                        </div>
+                                                        <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                            <div className='flex h-14 w-14 items-center justify-center'>
+                                                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                            </div>
+                                                            <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className='flex flex-col items-center justify-center mt-2 gap-2'>
+                                                        <UpcomingMatchDate matchDateString={match.data} />
+                                                        {userPrediction?.palpiteUsuario.placarA !== null && userPrediction?.palpiteUsuario.placarB !== null && (
+                                                            <div className="font-semibold text-sm">Seu Palpite: {userPrediction?.palpiteUsuario.placarA} - {userPrediction?.palpiteUsuario.placarB}</div>
+                                                        )}
+                                                        {ghostPrediction && ghostPrediction.palpiteUsuario && ghostPrediction.palpiteUsuario.placarA !== null && (
+                                                            <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                                                                <Ghost className="h-4 w-4 text-primary" />
+                                                                Lóia: {ghostPrediction.palpiteUsuario.placarA} - {ghostPrediction.palpiteUsuario.placarB}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                    );
+                                });
+                            })}
+                            </div>
                         </section>
 
                         {recentMatches.length > 0 && (
@@ -793,6 +838,7 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
 
 
