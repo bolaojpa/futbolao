@@ -37,6 +37,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PredictionForm } from '@/components/predictions/prediction-form';
 
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
@@ -122,15 +123,6 @@ export default function DashboardPage() {
         return allMatches
             .filter(match => userChampionshipIds.includes(match.campeonatoId) && (match.status === 'Ao Vivo' || (match.status === 'Agendado' && isPast(parseISO(match.data)))))
             .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    }, [allMatches, userChampionships, currentTime]);
-
-    const upcomingMatches = useMemo(() => {
-        if (userChampionships.length === 0) return [];
-        const userChampionshipIds = userChampionships.map(c => c.id);
-        return allMatches
-            .filter(match => userChampionshipIds.includes(match.campeonatoId) && match.status === 'Agendado' && !isPast(parseISO(match.data)))
-            .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
-            .slice(0, 6); 
     }, [allMatches, userChampionships, currentTime]);
 
     const recentMatches = useMemo(() => {
@@ -369,20 +361,6 @@ export default function DashboardPage() {
         }
     }, [allUsers, allMatches, allPredictions]);
 
-
-    const getStatusVariant = (status: string): "default" | "destructive" | "secondary" => {
-        if (status === 'Ao Vivo') return 'destructive';
-        if (status === 'Agendado' || status === 'Hoje') return 'secondary';
-        return 'default';
-    };
-    
-    const getMatchDisplayStatus = (matchDate: string, currentStatus: string) => {
-        if (currentStatus === 'Agendado' && isToday(parseISO(matchDate))) {
-            return 'Hoje';
-        }
-        return currentStatus;
-    };
-
     const getPredictionStatusClass = (acertoTipo?: Prediction['acertoTipo']) => {
         switch (acertoTipo) {
             case 'combo': return 'bg-combo-gold text-black';
@@ -408,36 +386,6 @@ export default function DashboardPage() {
                 return 'badge-erro-solid';
         }
     };
-    
-    const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
-        const matchDate = parseISO(matchDateString);
-        const now = new Date();
-        const hoursDiff = differenceInHours(matchDate, now);
-
-        if (hoursDiff < 1) {
-          return (
-             <div className="text-xs font-semibold text-accent flex items-center justify-center gap-2">
-               <AlarmClock className="w-4 h-4"/>
-               <Countdown targetDate={matchDateString} />
-            </div>
-          )
-        }
-
-        if (hoursDiff < 2) {
-          return (
-            <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-              <AlarmClock className="w-3 h-3"/>
-              {`Em breve às ${format(matchDate, "HH:mm", { locale: ptBR })}`}
-            </div>
-          );
-        }
-        
-        if (isToday(matchDate)) {
-          return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
-        }
-
-        return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
-      };
 
     if (authLoading || loadingData || !user) {
         return <div className="p-8 space-y-6">
@@ -509,6 +457,16 @@ export default function DashboardPage() {
                                 </div>
                             </section>
                          )}
+
+                        <section>
+                            <PredictionForm 
+                                championships={allChampionships}
+                                allTeams={allTeams}
+                                allMatches={allMatches}
+                                allUsers={allUsers}
+                                selectedChampionshipId="all"
+                            />
+                        </section>
 
                         {liveMatches.length > 0 && (
                             <section>
