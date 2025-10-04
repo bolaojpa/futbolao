@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -22,6 +23,7 @@ import { db } from '@/lib/firebase';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Label } from '../ui/label';
+import Link from 'next/link';
 
 const NumberInput = ({ value, onChange, disabled }: { value: number | null; onChange: (value: number) => void; disabled?: boolean; }) => {
     const handleIncrement = () => {
@@ -504,200 +506,50 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
                             {matches.map((match) => {
                                 const userPrediction = userPredictions.find(p => p.matchId === match.id);
                                 const ghostPrediction = ghostUser ? allPredictions.find(p => p.matchId === match.id && p.userId === ghostUser.id) : null;
-                                const isEditingPrediction = !!userPrediction;
-                                const currentScore = scores[match.id] || { placarA: null, placarB: null };
-                                const comboState = comboUiState[match.id];
-
-                                const originalScore = userPrediction?.palpiteUsuario;
-                                const hasScoreChanged = isEditingPrediction ? 
-                                    (currentScore.placarA !== originalScore?.placarA || currentScore.placarB !== originalScore?.placarB) :
-                                    (currentScore.placarA !== null || currentScore.placarB !== null);
                                 
-                                const needsAttention = differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditingPrediction;
-                                const teamA = allTeams.find(t => t.name === match.timeA);
-                                const teamB = allTeams.find(t => t.name === match.timeB);
-                                const isLocked = match.predictionsLocked || isPast(parseISO(match.data));
-                                const championship = championships.find(c => c.id === match.campeonatoId);
-                                const allowAiAssist = championship?.predictionAssist?.active ?? false;
-                                
-                                const canUseCombo = (comboCota?.quantidade ?? 0) > 0 && (tokensRemaining > 0 || (!!comboState && !comboState.isEditing));
-                                const isButtonDisabled = isLocked || 
-                                    (isEditingPrediction && !hasScoreChanged) || 
-                                    (!isEditingPrediction && (currentScore.placarA === null || currentScore.placarB === null));
-
                                 return (
-                                    <Card 
-                                        key={match.id} 
-                                        id={match.id} 
-                                        ref={(el) => matchRefs.current[match.id] = el}
-                                        className={cn("relative overflow-hidden scroll-mt-20", needsAttention && !isLocked && "border-accent animate-pulse", isLocked && "bg-muted/30")}
-                                    >
-                                        {needsAttention && !isLocked && (
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className="absolute top-2 left-2 z-10">
-                                                        <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="right">
-                                                    <p>Palpite necessário! Esta partida começa em breve.</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        )}
-                                        <CardHeader className='pb-2 pt-4 text-center'>
-                                            <CardTitle className="text-base font-semibold flex items-center justify-center gap-2">
-                                                {championship?.iconUrl && <Image src={championship.iconUrl} alt="" width={16} height={16} />}
-                                                {match.campeonato}
-                                            </CardTitle>
-                                            <div className="text-xs text-muted-foreground">
-                                                <UpcomingMatchDate matchDateString={match.data} />
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="flex flex-col items-center gap-2">
-                                                 <div className="flex items-center justify-around w-full gap-2 px-2">
-                                                    <div className='flex-1 flex flex-row items-center justify-end gap-2 sm:gap-3'>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <div className="flex h-11 w-11 items-center justify-center">
-                                                                    <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={48} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                                </div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p>{match.timeA}</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                        <span className="font-bold text-base text-center sm:text-right sm:text-lg hidden md:inline-block truncate">{match.timeA}</span>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        {isLocked ? (
-                                                            <div className="flex items-center justify-center w-full min-w-44 h-11 text-center text-2xl font-bold bg-muted/50 rounded-md">
-                                                                {currentScore.placarA !== null ? (
-                                                                    <span>{currentScore.placarA} - {currentScore.placarB}</span>
-                                                                ) : (
-                                                                    <Lock className="h-6 w-6 text-muted-foreground" />
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
-                                                                <span className="font-bold text-muted-foreground text-lg">x</span>
-                                                                <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                    
-                                                    <div className='flex-1 flex flex-row items-center justify-start gap-2 sm:gap-3'>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <div className="flex h-11 w-11 items-center justify-center">
-                                                                    <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt="" width={48} height={48} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                                </div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p>{match.timeB}</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                         <span className="font-bold text-base text-center sm:text-left sm:text-lg hidden md:inline-block truncate">{match.timeB}</span>
-                                                    </div>
-                                                </div>
-                                                
-                                                {comboState && !comboState.isEditing && !isLocked && (
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <div className="flex items-center gap-1.5 font-semibold text-sm text-primary mt-2">
-                                                                <Goal className="h-4 w-4" />
-                                                                <span>Palpite de Gols: {comboState.totalGols}</span>
-                                                            </div>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p>Seu palpite de gols para o combo.</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                )}
-                                                
-                                                {ghostPrediction && (
-                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 font-medium">
-                                                        <Ghost className="h-4 w-4 text-primary" />
-                                                        <span>Lóia: {ghostPrediction.palpiteUsuario.placarA}-{ghostPrediction.palpiteUsuario.placarB}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                        
-                                        {comboState && comboState.isEditing && !isLocked && (
-                                            <CardContent className="pt-2 pb-4">
-                                                <Separator className="mb-4" />
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <Label htmlFor={`combo-${match.id}`} className="font-semibold flex items-center gap-2 text-primary">
-                                                        <Gem className="h-4 w-4" /> Palpite Combo: Total de Gols na Partida
-                                                    </Label>
-                                                    <div className="flex items-center gap-2">
-                                                        <NumberInput value={comboState.totalGols} onChange={(v) => setComboUiState(p => ({ ...p, [match.id]: { ...p[match.id], totalGols: v } }))} />
-                                                        <Button variant="ghost" size="icon" className="text-green-500 hover:text-green-600 h-9 w-9" onClick={() => handleConfirmCombo(match.id)}><Check className="h-5 w-5" /></Button>
-                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80 h-9 w-9" onClick={() => handleCancelCombo(match.id)}><X className="h-5 w-5" /></Button>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        )}
-                                        
-                                        <CardFooter className="flex flex-col gap-2 p-4">
-                                            <div className='text-center h-4 mb-2'>
-                                                {isLocked ? (
-                                                    <Badge variant="destructive">Palpites Encerrados</Badge>
-                                                ) : lastUpdated[match.id] && (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {`Alterado em ${format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}`}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            {!isLocked && (
-                                                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                                    {canUseCombo && (
-                                                        <>
-                                                            {!comboState ? (
-                                                                <Button 
-                                                                    variant="outline"
-                                                                    onClick={() => handleUseComboToken(match.id)}
-                                                                >
-                                                                    <Gem className="mr-2 h-4 w-4" />
-                                                                    Usar Ficha
-                                                                </Button>
-                                                            ) : (
-                                                                !comboState.isEditing && (
-                                                                    <Button variant="destructive" onClick={() => handleRemoveCombo(match.id)}>
-                                                                        <X className="mr-2 h-4 w-4" />
-                                                                        Remover Ficha
-                                                                    </Button>
-                                                                )
-                                                            )}
-                                                        </>
-                                                    )}
-                                                    {allowAiAssist && (
-                                                        <Button 
-                                                            variant="outline" 
-                                                            onClick={() => handleAiSuggestion(match)} 
-                                                            disabled={loadingAi[match.id]}
-                                                            className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                                        >
-                                                            {loadingAi[match.id] ? (
-                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                            ) : (
-                                                                <BrainCircuit className="mr-2 h-4 w-4" />
-                                                            )}
-                                                            Consultar IA
-                                                        </Button>
-                                                    )}
-                                                    <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isButtonDisabled}>
-                                                        <Save className="mr-2 h-4 w-4" />
-                                                        {isEditingPrediction ? 'Alterar Palpite' : 'Salvar Palpite'}
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </CardFooter>
-                                    </Card>
-                                );
+                                     <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
+                                         <Card className="h-full hover:border-primary/50 transition-colors">
+                                             <CardContent className="p-4">
+                                                 <div className="flex flex-col items-center justify-center w-full gap-2">
+                                                     <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                                                         {match.iconUrl && <Image src={match.iconUrl} alt="" width={16} height={16} />}
+                                                         {match.campeonato} - {match.fase}
+                                                     </div>
+                                                     <div className="flex items-center justify-center w-full">
+                                                         <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                             <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                             <div className='flex h-14 w-14 items-center justify-center'>
+                                                                 <Image src={allTeams.find(t => t.name === match.timeA)?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                             </div>
+                                                         </div>
+                                                         <div className="flex items-center justify-center text-muted-foreground mx-4">
+                                                             <p>vs</p>
+                                                         </div>
+                                                         <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                             <div className='flex h-14 w-14 items-center justify-center'>
+                                                                 <Image src={allTeams.find(t => t.name === match.timeB)?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                             </div>
+                                                             <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                         </div>
+                                                     </div>
+                                                     <div className='flex flex-col items-center justify-center mt-2 gap-2'>
+                                                        <UpcomingMatchDate matchDateString={match.data} />
+                                                        {userPrediction?.palpiteUsuario.placarA !== null && (
+                                                             <div className="font-semibold text-sm">Seu Palpite: {userPrediction?.palpiteUsuario.placarA} - {userPrediction?.palpiteUsuario.placarB}</div>
+                                                         )}
+                                                         {ghostPrediction && ghostPrediction.palpiteUsuario && (
+                                                             <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                                                                 <Ghost className="h-4 w-4 text-primary" />
+                                                                 Lóia: {ghostPrediction.palpiteUsuario.placarA} - {ghostPrediction.palpiteUsuario.placarB}
+                                                             </div>
+                                                         )}
+                                                     </div>
+                                                 </div>
+                                             </CardContent>
+                                         </Card>
+                                     </Link>
+                                )
                             })}
                         </div>
                     )})}
