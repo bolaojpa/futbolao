@@ -135,45 +135,45 @@ export default function DashboardPage() {
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
     const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
-        const finalA = match.placarA ?? 0;
-        const finalB = match.placarB ?? 0;
-
+        const livePlacarA = match.placarA ?? 0;
+        const livePlacarB = match.placarB ?? 0;
+    
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao;
-
+    
         if (guessA === null || guessB === null || !pontuacao) {
             return { pontos: 0, acertoTipo: 'erro' };
         }
     
-        const acertouPlacarExato = guessA === finalA && guessB === finalB;
-        const finalWinner = finalA > finalB ? 'A' : finalA < finalB ? 'B' : 'E';
+        const acertouPlacarExato = guessA === livePlacarA && guessB === livePlacarB;
+        const finalWinner = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
         const acertouSituacao = finalWinner === guessWinner;
         
         let pontosGanhos = 0;
         let acertoTipo: Prediction['acertoTipo'] = 'erro';
-
+    
         const usouCombo = !!prediction.palpiteCombo;
-        const totalGolsFinal = finalA + finalB;
+        const totalGolsFinal = livePlacarA + livePlacarB;
         const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
-
+    
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
             acertoTipo = 'bucha';
-            if (acertouGols && pontuacao.combo) {
+            if (acertouGols && pontuacao.combo.ativo) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
                 acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
             pontosGanhos = pontuacao.tradicional.situacao;
             acertoTipo = 'situacao';
-             if (acertouGols && pontuacao.combo) {
+             if (acertouGols && pontuacao.combo.ativo) {
                 pontosGanhos += pontuacao.combo.pontosGols;
                 acertoTipo = 'bonus';
             }
-        } else if (acertouGols && pontuacao.combo) {
+        } else if (acertouGols && pontuacao.combo.ativo) {
             pontosGanhos = pontuacao.combo.pontosGols;
             acertoTipo = 'gols';
         }
@@ -461,179 +461,177 @@ export default function DashboardPage() {
                             </section>
                          )}
                         
-                        {liveMatches.length > 0 && (
-                            <section>
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                                        <Zap className="w-6 h-6 text-accent animate-pulse" />
-                                        Acontecendo Agora
-                                    </h2>
-                                </div>
-                                <div className="w-full space-y-4">
-                                    {liveMatches.map((match) => {
-                                        const championship = allChampionships.find(c => c.id === match.campeonatoId);
-                                        const teamA = allTeams.find(t => t.name === match.timeA);
-                                        const teamB = allTeams.find(t => t.name === match.timeB);
+                        <section>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                                    <Zap className="w-6 h-6 text-accent animate-pulse" />
+                                    Acontecendo Agora
+                                </h2>
+                            </div>
+                            <div className="w-full space-y-4">
+                                {liveMatches.map((match) => {
+                                    const championship = allChampionships.find(c => c.id === match.campeonatoId);
+                                    const teamA = allTeams.find(t => t.name === match.timeA);
+                                    const teamB = allTeams.find(t => t.name === match.timeB);
 
-                                        const userPrediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
-                                        const { acertoTipo: currentUserAcertoTipo } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, acertoTipo: 'erro' };
-                                        
-                                        const cardStatusClass = !userPrediction ? 'bg-orange-500 text-white' : getPredictionStatusClass(currentUserAcertoTipo);
+                                    const userPrediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
+                                    const { acertoTipo: currentUserAcertoTipo } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, acertoTipo: 'erro' };
+                                    
+                                    const cardStatusClass = !userPrediction ? 'bg-orange-500 text-white' : getPredictionStatusClass(currentUserAcertoTipo);
 
-                                        const participants = (championship?.participantes || [])
-                                            .map(pId => allUsers.find(u => u.id === pId))
-                                            .filter((u): u is UserType => !!u)
-                                            .sort((a, b) => {
-                                                if (a.id === user.id) return -1;
-                                                if (b.id === user.id) return 1;
-                                                return a.apelido.localeCompare(b.apelido);
-                                            });
+                                    const participants = (championship?.participantes || [])
+                                        .map(pId => allUsers.find(u => u.id === pId))
+                                        .filter((u): u is UserType => !!u)
+                                        .sort((a, b) => {
+                                            if (a.id === user.id) return -1;
+                                            if (b.id === user.id) return 1;
+                                            return a.apelido.localeCompare(b.apelido);
+                                        });
 
-                                        return (
-                                            <Accordion type="single" collapsible className="w-full" key={match.id}>
-                                                <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
-                                                    <Card className={cn("relative", cardStatusClass)}>
-                                                         <AccordionTrigger className="p-4 hover:no-underline w-full relative">
-                                                            <div className="flex-1 justify-center items-center">
-                                                                <div className="flex items-center justify-center w-full">
-                                                                    <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                                        <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                                        <div className='flex h-14 w-14 items-center justify-center'>
-                                                                            <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                                        </div>
+                                    return (
+                                        <Accordion type="single" collapsible className="w-full" key={match.id}>
+                                            <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
+                                                <Card className={cn("relative", cardStatusClass)}>
+                                                        <AccordionTrigger className="p-4 hover:no-underline w-full relative">
+                                                        <div className="flex-1 justify-center items-center">
+                                                            <div className="flex items-center justify-center w-full">
+                                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                     </div>
-                                                                    <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
-                                                                        <span>{`${match.placarA ?? 0} - ${match.placarB ?? 0}`}</span>
-                                                                        <Badge variant="destructive" className='mt-2 animate-pulse'>
-                                                                            Ao Vivo
-                                                                        </Badge>
+                                                                </div>
+                                                                <div className="flex flex-col items-center justify-center font-bold text-xl md:text-2xl whitespace-nowrap mx-4">
+                                                                    <span>{`${match.placarA ?? 0} - ${match.placarB ?? 0}`}</span>
+                                                                    <Badge variant="destructive" className='mt-2 animate-pulse'>
+                                                                        Ao Vivo
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
                                                                     </div>
-                                                                    <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                                        <div className='flex h-14 w-14 items-center justify-center'>
-                                                                            <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                                        </div>
-                                                                        <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                                                    </div>
+                                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
                                                                 </div>
                                                             </div>
-                                                            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 absolute right-4 top-1/2 -translate-y-1/2" />
-                                                        </AccordionTrigger>
-                                                        <AccordionContent>
-                                                            <div className="border-t bg-background/80">
-                                                                <div className="text-center py-2 text-foreground">
-                                                                    <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
-                                                                </div>
-                                                                <ul className="text-sm">
-                                                                    {participants.map((participant) => {
-                                                                        const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === participant.id);
-                                                                        const isCurrentUser = participant.id === user.id;
+                                                        </div>
+                                                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 absolute right-4 top-1/2 -translate-y-1/2" />
+                                                    </AccordionTrigger>
+                                                    <AccordionContent>
+                                                        <div className="border-t bg-background/80">
+                                                            <div className="text-center py-2 text-foreground">
+                                                                <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
+                                                            </div>
+                                                            <ul className="text-sm">
+                                                                {participants.map((participant) => {
+                                                                    const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === participant.id);
+                                                                    const isCurrentUser = participant.id === user.id;
 
-                                                                        if (!prediction) {
-                                                                            return (
-                                                                                <li key={participant.id} className="flex justify-between items-center p-4 border-t bg-orange-500 text-white">
-                                                                                     <div className="w-1/3 text-left">
-                                                                                        <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
-                                                                                            <Avatar className="w-8 h-8 opacity-70">
-                                                                                                <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
-                                                                                                <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
-                                                                                            </Avatar>
-                                                                                            <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
-                                                                                        </Link>
-                                                                                    </div>
-                                                                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
-                                                                                    <div className="w-1/3 text-right">
-                                                                                        <Badge variant="secondary" className="bg-orange-700 text-white border-transparent">0 pts</Badge>
-                                                                                    </div>
-                                                                                </li>
-                                                                            );
-                                                                        }
-                                                                        
-                                                                        const { pontos: livePoints, acertoTipo } = calculateLivePoints(match, prediction);
-                                                                        
+                                                                    if (!prediction) {
                                                                         return (
-                                                                            <li key={participant.id} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(acertoTipo))}>
-                                                                                <div className="w-1/3 text-left">
-                                                                                     <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
-                                                                                        <Avatar className="w-8 h-8">
+                                                                            <li key={participant.id} className="flex justify-between items-center p-4 border-t bg-orange-500 text-white">
+                                                                                    <div className="w-1/3 text-left">
+                                                                                    <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
+                                                                                        <Avatar className="w-8 h-8 opacity-70">
                                                                                             <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
                                                                                             <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                                         </Avatar>
-                                                                                         <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                                                                            <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
-                                                                                             {championship?.championPredictionSettings?.active && (
-                                                                                                <>
-                                                                                                    <div className="relative block sm:hidden">
-                                                                                                        <Popover>
-                                                                                                            <PopoverTrigger asChild>
-                                                                                                                <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                                                                            </PopoverTrigger>
-                                                                                                            <PopoverContent className="w-48 p-2">
-                                                                                                                <div className="space-y-1">
-                                                                                                                    <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                                                                    {participant.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                                                                </div>
-                                                                                                            </PopoverContent>
-                                                                                                        </Popover>
-                                                                                                    </div>
-                                                                                                    <div className='hidden sm:flex items-center gap-1'>
-                                                                                                        {participant.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
-                                                                                                            const team = allTeams.find(t => t.name === teamName);
-                                                                                                            if (!team) return null;
-                                                                                                            const winnerInfo = getChampionPickWinner(championship);
-                                                                                                            const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(participant.id);
-                                                                                                            return (
-                                                                                                                <Tooltip key={team.id}>
-                                                                                                                    <TooltipTrigger>
-                                                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                                                                    </TooltipTrigger>
-                                                                                                                    <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                                                </Tooltip>
-                                                                                                            );
-                                                                                                        })}
-                                                                                                    </div>
-                                                                                                </>
-                                                                                            )}
-                                                                                        </div>
+                                                                                        <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
                                                                                     </Link>
                                                                                 </div>
-                                                                                <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
-                                                                                    <div className="flex-1 text-center">
-                                                                                        <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
-                                                                                    </div>
-                                                                                    {prediction.palpiteCombo && (
-                                                                                        <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
-                                                                                            <Tooltip>
-                                                                                                <TooltipTrigger>
-                                                                                                    <div className="flex items-center gap-1">
-                                                                                                        <Goal className="h-4 w-4" />
-                                                                                                        <span>{prediction.palpiteCombo.totalGols}</span>
-                                                                                                    </div>
-                                                                                                </TooltipTrigger>
-                                                                                                <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
-                                                                                            </Tooltip>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                    {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", acertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                                                                    <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(acertoTipo))}>
-                                                                                        {livePoints} pts
-                                                                                    </Badge>
+                                                                                <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
+                                                                                <div className="w-1/3 text-right">
+                                                                                    <Badge variant="secondary" className="bg-orange-700 text-white border-transparent">0 pts</Badge>
                                                                                 </div>
                                                                             </li>
                                                                         );
-                                                                    })}
-                                                                </ul>
-                                                            </div>
-                                                        </AccordionContent>
-                                                    </Card>
-                                                </AccordionItem>
-                                            </Accordion>
-                                        );
-                                    })}
-                                </div>
-                            </section>
-                        )}
+                                                                    }
+                                                                    
+                                                                    const { pontos: livePoints, acertoTipo } = calculateLivePoints(match, prediction);
+                                                                    
+                                                                    return (
+                                                                        <li key={participant.id} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(acertoTipo))}>
+                                                                            <div className="w-1/3 text-left">
+                                                                                <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
+                                                                                    <Avatar className="w-8 h-8">
+                                                                                        <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
+                                                                                        <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
+                                                                                    </Avatar>
+                                                                                    <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                                        <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                                        {championship?.championPredictionSettings?.active && (
+                                                                                            <>
+                                                                                                <div className="relative block sm:hidden">
+                                                                                                    <Popover>
+                                                                                                        <PopoverTrigger asChild>
+                                                                                                            <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                                        </PopoverTrigger>
+                                                                                                        <PopoverContent className="w-48 p-2">
+                                                                                                            <div className="space-y-1">
+                                                                                                                <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                                                {participant.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                                                            </div>
+                                                                                                        </PopoverContent>
+                                                                                                    </Popover>
+                                                                                                </div>
+                                                                                                <div className='hidden sm:flex items-center gap-1'>
+                                                                                                    {participant.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
+                                                                                                        const team = allTeams.find(t => t.name === teamName);
+                                                                                                        if (!team) return null;
+                                                                                                        const winnerInfo = getChampionPickWinner(championship);
+                                                                                                        const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(participant.id);
+                                                                                                        return (
+                                                                                                            <Tooltip key={team.id}>
+                                                                                                                <TooltipTrigger>
+                                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                                                                </TooltipTrigger>
+                                                                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                                                            </Tooltip>
+                                                                                                        );
+                                                                                                    })}
+                                                                                                </div>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </Link>
+                                                                            </div>
+                                                                            <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
+                                                                                <div className="flex-1 text-center">
+                                                                                    <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                                                                </div>
+                                                                                {prediction.palpiteCombo && (
+                                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
+                                                                                        <Tooltip>
+                                                                                            <TooltipTrigger>
+                                                                                                <div className="flex items-center gap-1">
+                                                                                                    <Goal className="h-4 w-4" />
+                                                                                                    <span>{prediction.palpiteCombo.totalGols}</span>
+                                                                                                </div>
+                                                                                            </TooltipTrigger>
+                                                                                            <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
+                                                                                        </Tooltip>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="w-1/3 text-right flex items-center justify-end gap-2">
+                                                                                {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                                                <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(acertoTipo))}>
+                                                                                    {livePoints} pts
+                                                                                </Badge>
+                                                                            </div>
+                                                                        </li>
+                                                                    );
+                                                                })}
+                                                            </ul>
+                                                        </div>
+                                                    </AccordionContent>
+                                                </Card>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    );
+                                })}
+                            </div>
+                        </section>
                         
                         <section>
                            <h2 className="text-2xl font-bold font-headline flex items-center gap-2 mb-4">

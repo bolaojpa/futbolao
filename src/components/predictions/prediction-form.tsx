@@ -504,51 +504,115 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
                                 )}
                             </div>
                             {matches.map((match) => {
-                                const userPrediction = userPredictions.find(p => p.matchId === match.id);
-                                const ghostPrediction = ghostUser ? allPredictions.find(p => p.matchId === match.id && p.userId === ghostUser.id) : null;
+                                const score = scores[match.id] || { placarA: null, placarB: null };
+                                const teamA = allTeams.find(t => t.name === match.timeA);
+                                const teamB = allTeams.find(t => t.name === match.timeB);
+                                const matchDate = parseISO(match.data);
+                                const isLocked = isPast(matchDate) || match.predictionsLocked;
+                                const showLockMessage = match.predictionsLocked && isFuture(matchDate);
+                                const userHasPredicted = score.placarA !== null && score.placarB !== null;
+                                const isComboActiveForChamp = championshipForPhase?.pontuacao.combo?.ativo;
+                                const comboState = comboUiState[match.id];
+                                const hasUsedCombo = comboState !== undefined && !comboState.isEditing;
                                 
                                 return (
-                                     <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
-                                         <Card className="h-full hover:border-primary/50 transition-colors">
-                                             <CardContent className="p-4">
-                                                 <div className="flex flex-col items-center justify-center w-full gap-2">
-                                                     <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
-                                                         {match.iconUrl && <Image src={match.iconUrl} alt="" width={16} height={16} />}
-                                                         {match.campeonato} - {match.fase}
-                                                     </div>
-                                                     <div className="flex items-center justify-center w-full">
-                                                         <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                             <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                             <div className='flex h-14 w-14 items-center justify-center'>
-                                                                 <Image src={allTeams.find(t => t.name === match.timeA)?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                             </div>
-                                                         </div>
-                                                         <div className="flex items-center justify-center text-muted-foreground mx-4">
-                                                             <p>vs</p>
-                                                         </div>
-                                                         <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                             <div className='flex h-14 w-14 items-center justify-center'>
-                                                                 <Image src={allTeams.find(t => t.name === match.timeB)?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                             </div>
-                                                             <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                                         </div>
-                                                     </div>
-                                                     <div className='flex flex-col items-center justify-center mt-2 gap-2'>
-                                                        <UpcomingMatchDate matchDateString={match.data} />
-                                                        {userPrediction?.palpiteUsuario.placarA !== null && (
-                                                             <div className="font-semibold text-sm">Seu Palpite: {userPrediction?.palpiteUsuario.placarA} - {userPrediction?.palpiteUsuario.placarB}</div>
+                                    <Card key={match.id} id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
+                                        <CardHeader>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                                                     {match.iconUrl && <Image src={match.iconUrl} alt="" width={16} height={16} />}
+                                                    <span>{match.campeonato}</span>
+                                                </div>
+                                                 <UpcomingMatchDate matchDateString={match.data} />
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex flex-col items-center justify-center gap-4">
+                                            <div className="flex items-center justify-center w-full">
+                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" />
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-center font-bold text-2xl whitespace-nowrap mx-2">
+                                                   <NumberInput value={score.placarA} onChange={(val) => handleScoreChange(match.id, 'placarA', val)} disabled={isLocked} />
+                                                    <span className="mx-2 text-muted-foreground">-</span>
+                                                    <NumberInput value={score.placarB} onChange={(val) => handleScoreChange(match.id, 'placarB', val)} disabled={isLocked} />
+                                                </div>
+                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                         <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" />
+                                                    </div>
+                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                </div>
+                                            </div>
+                                            {showLockMessage && (
+                                                <Badge variant="warning" className="animate-pulse">
+                                                    <Lock className="mr-2 h-3 w-3" />
+                                                    Palpites para esta partida foram bloqueados pelo administrador.
+                                                </Badge>
+                                            )}
+                                        </CardContent>
+                                        <CardFooter className="flex flex-col gap-4">
+                                            <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
+                                                <div className="flex-1 flex gap-2">
+                                                    <Button onClick={() => handlePredictionSubmit(match)} className="w-full sm:w-auto" disabled={isLocked || !userHasPredicted}>
+                                                        {loadingAi[match.id] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                                        {userPredictions.some(p => p.matchId === match.id) ? 'Alterar Palpite' : 'Salvar Palpite'}
+                                                    </Button>
+                                                     {championshipForPhase?.predictionAssist?.active && (
+                                                        <Button onClick={() => handleAiSuggestion(match)} variant="outline" className="w-full sm:w-auto" disabled={isLocked}>
+                                                             {loadingAi[match.id] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                                            Consultar IA
+                                                        </Button>
+                                                     )}
+                                                </div>
+                                                {isComboActiveForChamp && !isLocked && (
+                                                    <div className="flex items-center gap-2">
+                                                         {comboState?.isEditing ? (
+                                                            <>
+                                                                <div className="relative">
+                                                                     <Goal className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                                     <Input 
+                                                                        type="number"
+                                                                        placeholder="Gols" 
+                                                                        className="w-28 pl-9"
+                                                                        value={comboState.totalGols ?? ''}
+                                                                        onChange={(e) => setComboUiState(prev => ({...prev, [match.id]: {...prev[match.id], totalGols: parseInt(e.target.value) || null}}))}
+                                                                     />
+                                                                </div>
+                                                                 <Button size="icon" onClick={() => handleConfirmCombo(match.id)}><Check className="h-4 w-4"/></Button>
+                                                                 <Button size="icon" variant="destructive" onClick={() => handleCancelCombo(match.id)}><X className="h-4 w-4"/></Button>
+                                                            </>
+                                                         ) : hasUsedCombo ? (
+                                                             <div className="flex items-center gap-2">
+                                                                <Badge variant="success" className="gap-2">
+                                                                    <Gem className="h-3 w-3"/> Ficha usada: {comboState.totalGols} gols
+                                                                </Badge>
+                                                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRemoveCombo(match.id)}>
+                                                                    <X className="h-4 w-4 text-destructive"/>
+                                                                </Button>
+                                                            </div>
+                                                         ) : (
+                                                            <Button 
+                                                                variant="outline" 
+                                                                className="w-full sm:w-auto text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                                                onClick={() => handleUseComboToken(match.id)}
+                                                                disabled={tokensRemaining <= 0}
+                                                            >
+                                                                <Gem className="mr-2 h-4 w-4"/> Usar Ficha de Combo
+                                                            </Button>
                                                          )}
-                                                         {ghostPrediction && ghostPrediction.palpiteUsuario && (
-                                                             <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                                                                 <Ghost className="h-4 w-4 text-primary" />
-                                                                 Lóia: {ghostPrediction.palpiteUsuario.placarA} - {ghostPrediction.palpiteUsuario.placarB}
-                                                             </div>
-                                                         )}
-                                                     </div>
-                                                 </div>
-                                             </CardContent>
-                                         </Card>
-                                     </Link>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {lastUpdated[match.id] && (
+                                                <p className="text-xs text-muted-foreground w-full text-right">
+                                                    Última alteração: {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss", { locale: ptBR })}
+                                                </p>
+                                            )}
+                                        </CardFooter>
+                                    </Card>
                                 )
                             })}
                         </div>
