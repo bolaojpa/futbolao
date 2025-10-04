@@ -489,8 +489,6 @@ export default function DashboardPage() {
                             </section>
                          )}
 
-                        <ChampionPrediction championships={allChampionships} teams={allTeams} user={user} allMatches={allMatches} />
-
                          {upcomingMatches.length > 0 && (
                             <section>
                                  <div className="flex items-center justify-between mb-4">
@@ -1026,4 +1024,5 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
