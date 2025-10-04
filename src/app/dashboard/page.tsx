@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/accordion';
 import { format, parseISO, isToday, differenceInHours, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard, ChevronDown, HelpCircle, Gem } from 'lucide-react';
+import { Users, Calendar, History, Zap, AlarmClock, Medal, Trophy, AlertCircle, Goal, LayoutDashboard, ChevronDown, HelpCircle, Gem, Swords, Ghost } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -37,7 +37,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PredictionForm } from '@/components/predictions/prediction-form';
+import { ChampionPrediction } from '@/components/predictions/champion-prediction';
+
+const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
+    const matchDate = parseISO(matchDateString);
+    const now = new Date();
+    const hoursDiff = differenceInHours(matchDate, now);
+
+    if (hoursDiff < 1) {
+      return (
+         <div className="text-xs font-semibold text-accent flex items-center justify-center gap-2">
+           <AlarmClock className="w-4 h-4"/>
+           <Countdown targetDate={matchDateString} />
+        </div>
+      )
+    }
+    
+    if (isToday(matchDate)) {
+      return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
+    }
+
+    return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
+};
 
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
@@ -116,6 +137,15 @@ export default function DashboardPage() {
         if (!user) return [];
         return allChampionships.filter(c => c.participantes.includes(user.id));
     }, [allChampionships, user]);
+
+    const upcomingMatches = useMemo(() => {
+        if (userChampionships.length === 0) return [];
+        const userChampionshipIds = userChampionships.map(c => c.id);
+        return allMatches
+            .filter(match => userChampionshipIds.includes(match.campeonatoId) && (match.status === 'Agendado' && !isPast(parseISO(match.data))))
+            .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+            .slice(0, 5); // Limita a 5 jogos
+    }, [allMatches, userChampionships, currentTime]);
 
     const liveMatches = useMemo(() => {
         if (userChampionships.length === 0) return [];
@@ -396,6 +426,7 @@ export default function DashboardPage() {
     }
 
     const hasContent = userChampionships.length > 0;
+    const ghostUser = allUsers.find(u => u.isGhost);
 
     return (
         <TooltipProvider>
@@ -458,15 +489,73 @@ export default function DashboardPage() {
                             </section>
                          )}
 
-                        <section>
-                            <PredictionForm 
-                                championships={allChampionships}
-                                allTeams={allTeams}
-                                allMatches={allMatches}
-                                allUsers={allUsers}
-                                selectedChampionshipId="all"
-                            />
-                        </section>
+                        <ChampionPrediction championships={allChampionships} teams={allTeams} user={user} allMatches={allMatches} />
+
+                         {upcomingMatches.length > 0 && (
+                            <section>
+                                 <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                                        <Calendar className="w-6 h-6 text-primary" />
+                                        Próximos Jogos
+                                    </h2>
+                                    <Button asChild variant="link">
+                                        <Link href="/dashboard/predictions">Ver todos &rarr;</Link>
+                                    </Button>
+                                </div>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {upcomingMatches.map(match => {
+                                        const teamA = allTeams.find(t => t.name === match.timeA);
+                                        const teamB = allTeams.find(t => t.name === match.timeB);
+                                        const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                                        const ghostPrediction = ghostUser ? allPredictions.find(p => p.matchId === match.id && p.userId === ghostUser.id) : null;
+                                        
+                                        return (
+                                            <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
+                                                <Card className="h-full hover:border-primary/50 transition-colors">
+                                                    <CardContent className="p-4">
+                                                        <div className="flex flex-col items-center justify-center w-full gap-2">
+                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                                                                {match.iconUrl && <Image src={match.iconUrl} alt="" width={16} height={16} />}
+                                                                {match.campeonato} - {match.fase}
+                                                            </div>
+                                                            <div className="flex items-center justify-center w-full">
+                                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-center text-muted-foreground mx-4">
+                                                                    <Swords className="h-6 w-6" />
+                                                                </div>
+                                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                    </div>
+                                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className='flex flex-col items-center justify-center mt-2 gap-2'>
+                                                               <UpcomingMatchDate matchDateString={match.data} />
+                                                               {userPrediction && (
+                                                                    <div className="font-semibold text-sm">Seu Palpite: {userPrediction.palpiteUsuario.placarA} - {userPrediction.palpiteUsuario.placarB}</div>
+                                                                )}
+                                                                {ghostPrediction && (
+                                                                    <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                                                                        <Ghost className="h-4 w-4 text-primary" />
+                                                                        Lóia: {ghostPrediction.palpiteUsuario.placarA} - {ghostPrediction.palpiteUsuario.placarB}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </Link>
+                                        )
+                                    })}
+                                </div>
+                            </section>
+                         )}
 
                         {liveMatches.length > 0 && (
                             <section>
