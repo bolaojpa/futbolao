@@ -78,10 +78,10 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
     const [comboUiState, setComboUiState] = useState<Record<string, { totalGols: number | null; isEditing: boolean }>>({});
     
-    // State for AI suggestion dialog
     const [aiSuggestion, setAiSuggestion] = useState<{ matchId: string; suggestion: string; justification: string; } | null>(null);
 
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
+    const processingGhostPrediction = useRef(new Set<string>());
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -159,6 +159,81 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
         };
 
     }, [user]);
+
+    // Lógica para o Fantasma fazer o palpite
+    useEffect(() => {
+        const ghostUser = allUsers.find(u => u.isGhost);
+        if (!ghostUser || displayedMatches.length === 0) return;
+
+        const now = new Date();
+        
+        displayedMatches.forEach(match => {
+            const matchDate = parseISO(match.data);
+            const hoursUntilMatch = differenceInHours(matchDate, now);
+            const hasGhostPredicted = allPredictions.some(p => p.matchId === match.id && p.userId === ghostUser.id);
+
+            // Verifica se a partida está dentro da janela de 12 horas e se o fantasma ainda não palpitou.
+            // A flag `processingGhostPrediction` evita múltiplas chamadas simultâneas para a mesma partida.
+            if (hoursUntilMatch <= 12 && !hasGhostPredicted && !processingGhostPrediction.current.has(match.id)) {
+                
+                const makeGhostPrediction = async () => {
+                    processingGhostPrediction.current.add(match.id); // Marca como processando
+
+                    const championship = championships.find(c => c.id === match.campeonatoId);
+                    if (!championship) {
+                        processingGhostPrediction.current.delete(match.id);
+                        return;
+                    }
+                    
+                    const predictionsForMatch = allPredictions.filter(p => p.matchId === match.id && p.userId !== ghostUser.id);
+                    const aggregatedPredictions = predictionsForMatch.reduce((acc, p) => {
+                        const predictionKey = `${p.palpiteUsuario.placarA}-${p.palpiteUsuario.placarB}`;
+                        if (!acc[predictionKey]) {
+                            acc[predictionKey] = { prediction: predictionKey, count: 0 };
+                        }
+                        acc[predictionKey].count++;
+                        return acc;
+                    }, {} as Record<string, { prediction: string; count: number }>);
+                    
+                    const predictionDataForAPI = Object.values(aggregatedPredictions);
+
+                    const sortedUsers = [...allUsers].sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0));
+                    const userRank = sortedUsers.findIndex(u => u.id === ghostUser.id) + 1;
+                    
+                    const totalMatchesInChampionship = allMatches.filter(m => m.campeonatoId === championship.id).length;
+                    const userMatchesPlayed = allPredictions.filter(p => p.userId === ghostUser.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === championship.id)).length;
+                    
+                    try {
+                        const result = await getAiSuggestion({
+                            userNickname: ghostUser.apelido,
+                            userPosition: userRank,
+                            totalParticipants: championship.participantes.length,
+                            predictionData: predictionDataForAPI,
+                            currentUserMatches: userMatchesPlayed,
+                            totalUserMatches: totalMatchesInChampionship
+                        });
+                        
+                        if ('suggestedPrediction' in result) {
+                            const [placarA, placarB] = result.suggestedPrediction.split('-').map(Number);
+                            await savePrediction({
+                                matchId: match.id,
+                                userId: ghostUser.id,
+                                palpiteUsuario: { placarA, placarB },
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`AI prediction failed for ghost user on match ${match.id}:`, error);
+                    } finally {
+                        processingGhostPrediction.current.delete(match.id); // Remove a marcação
+                    }
+                };
+
+                makeGhostPrediction();
+            }
+        });
+
+    }, [displayedMatches, allUsers, allPredictions, allMatches, championships]);
+
 
     const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: number) => {
         setScores(prev => ({

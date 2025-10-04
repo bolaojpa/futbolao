@@ -430,30 +430,30 @@ export function AdminMatchesPageClient() {
                       </div>
                     </div>
                     <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
-                        <ChevronDown className="h-4 w-4 mx-auto" />
+                        <div className="flex items-center justify-center w-full relative">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <h4 className={cn("font-semibold flex items-center justify-center gap-2", hasMissingPredictions && "cursor-help")}>
+                                            <Users className="w-4 h-4" /> 
+                                            Palpites dos Usuários ({match.predictions.length}/{totalParticipants})
+                                        </h4>
+                                    </TooltipTrigger>
+                                    {hasMissingPredictions && (
+                                        <TooltipContent>
+                                            <p className="font-semibold">Palpites Pendentes:</p>
+                                            <ul className="list-disc list-inside">
+                                                {missingUsers.map(user => user && <li key={user.id}>{user.apelido}</li>)}
+                                            </ul>
+                                        </TooltipContent>
+                                    )}
+                                </Tooltip>
+                            </TooltipProvider>
+                             <ChevronDown className="h-4 w-4 absolute right-4 top-1/2 -translate-y-1/2" />
+                        </div>
                     </AccordionTrigger>
                     <AccordionContent>
                         <div className="bg-background/80 border-t">
-                             <div className="text-center p-2">
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <h4 className={cn("font-semibold flex items-center justify-center gap-2", hasMissingPredictions && "cursor-help")}>
-                                                <Users className="w-4 h-4" /> 
-                                                Palpites dos Usuários ({match.predictions.length}/{totalParticipants})
-                                            </h4>
-                                        </TooltipTrigger>
-                                        {hasMissingPredictions && (
-                                            <TooltipContent>
-                                                <p className="font-semibold">Palpites Pendentes:</p>
-                                                <ul className="list-disc list-inside">
-                                                    {missingUsers.map(user => user && <li key={user.id}>{user.apelido}</li>)}
-                                                </ul>
-                                            </TooltipContent>
-                                        )}
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </div>
                             {match.predictions.length > 0 ? (
                                 <ul className="text-sm">
                                 {match.predictions.map((prediction, i) => {
@@ -582,4 +582,3 @@ export function AdminMatchesPageClient() {
     </div>
   );
 }
-
