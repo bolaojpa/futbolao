@@ -12,7 +12,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const SuggestPredictionsInputSchema = z.object({
+export const SuggestPredictionsInputSchema = z.object({
   userNickname: z.string().describe("O apelido do usuário que está pedindo a sugestão."),
   userPosition: z.number().describe("A posição atual do usuário no ranking do campeonato."),
   totalParticipants: z.number().describe("O número total de participantes no campeonato."),
