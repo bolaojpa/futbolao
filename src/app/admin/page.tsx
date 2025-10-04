@@ -289,12 +289,12 @@ export default function AdminDashboardPage() {
         switch (acertoTipo) {
             case 'combo': return 'bg-combo-gold text-black';
             case 'bonus': return 'bg-combo-silver text-black';
-            case 'bucha': return 'bg-bucha-solid';
-            case 'situacao': return 'bg-situacao-solid';
-            case 'gols': return 'bg-gols-solid';
+            case 'bucha': return 'bg-bucha-solid text-white';
+            case 'situacao': return 'bg-situacao-solid text-white';
+            case 'gols': return 'bg-gols-solid text-white';
             case 'erro':
             default:
-                 return 'bg-erro-solid';
+                 return 'bg-erro-solid text-white';
         }
     };
 
@@ -474,6 +474,7 @@ export default function AdminDashboardPage() {
                                 const championship = allChampionships.find(c => c.id === match.campeonatoId);
                                 const teamA = allTeams.find(t => t.name === match.timeA);
                                 const teamB = allTeams.find(t => t.name === match.timeB);
+                                const participants = allUsers.filter(u => championship?.participantes.includes(u.id));
 
                                 return (
                                 <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -563,14 +564,33 @@ export default function AdminDashboardPage() {
                                                         </h4>
                                                     </div>
                                                     <ul className="text-sm max-h-[40vh] overflow-y-auto">
-                                                    {match.predictions.map((p, i) => {
-                                                        const user = allUsers.find(u => u.id === p.userId);
-                                                        if (!user) return null;
+                                                    {participants.map((user) => {
+                                                        const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
                                                         
-                                                        const { pontos: simulatedPoints, acertoTipo: simulatedAcertoTipo } = calculateSimulatedPoints(match, p);
+                                                        if (!prediction) {
+                                                            return (
+                                                                <li key={user.id} className="flex justify-between items-center p-4 border-t bg-orange-500 text-white">
+                                                                    <div className="w-1/3 text-left">
+                                                                        <div className="flex items-center gap-2 group">
+                                                                            <Avatar className="w-8 h-8 opacity-70">
+                                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                                <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                                            </Avatar>
+                                                                            <span className="font-bold">{user.apelido}:</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
+                                                                    <div className="w-1/3 text-right">
+                                                                        <Badge variant="secondary" className="bg-orange-700 text-white border-transparent">0 pts</Badge>
+                                                                    </div>
+                                                                </li>
+                                                            );
+                                                        }
+                                                        
+                                                        const { pontos: simulatedPoints, acertoTipo: simulatedAcertoTipo } = calculateSimulatedPoints(match, prediction);
                                                         
                                                         return (
-                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedAcertoTipo))}>
+                                                        <li key={prediction.id} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedAcertoTipo))}>
                                                             <div className="w-1/3 text-left flex items-center gap-2 group">
                                                                 <div className="relative">
                                                                     <Avatar className="w-8 h-8">
@@ -621,15 +641,15 @@ export default function AdminDashboardPage() {
                                                             </div>
                                                             <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
                                                                 <div className="flex-1 text-center">
-                                                                    <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                    <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                                                 </div>
-                                                                {p.palpiteCombo && (
+                                                                {prediction.palpiteCombo && (
                                                                     <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                         <Tooltip>
                                                                             <TooltipTrigger>
                                                                                 <div className="flex items-center gap-1">
                                                                                     <Goal className="h-4 w-4" />
-                                                                                    <span>{p.palpiteCombo.totalGols}</span>
+                                                                                    <span>{prediction.palpiteCombo.totalGols}</span>
                                                                                 </div>
                                                                             </TooltipTrigger>
                                                                             <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
@@ -638,7 +658,7 @@ export default function AdminDashboardPage() {
                                                                 )}
                                                             </div>
                                                             <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                {p.palpiteCombo && <Gem className={cn("h-4 w-4", simulatedAcertoTipo === 'combo' ? "animate-gem-pulse" : "" )} />}
+                                                                {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", simulatedAcertoTipo === 'combo' ? "animate-gem-pulse" : "" )} />}
                                                                 <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(simulatedAcertoTipo))}>
                                                                     {simulatedPoints} pts
                                                                 </Badge>

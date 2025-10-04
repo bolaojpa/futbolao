@@ -349,13 +349,11 @@ export function AdminMatchesPageClient() {
         {paginatedMatches.length > 0 ? (
           paginatedMatches.map((match) => {
             const championship = championships.find(c => c.id === match.campeonatoId);
-            const participants = championship?.participantes || [];
+            const participants = users.filter(u => championship?.participantes.includes(u.id));
             const totalParticipants = participants.length;
             
             const predictedUserIds = new Set(match.predictions.map(p => p.userId));
-            const missingUsers = participants
-                .map(pId => users.find(u => u.id === pId))
-                .filter(u => u && !predictedUserIds.has(u.id));
+            const missingUsers = participants.filter(u => !predictedUserIds.has(u.id));
             const hasMissingPredictions = missingUsers.length > 0;
 
             const teamA = teams.find(t => t.name === match.timeA);
@@ -455,11 +453,28 @@ export function AdminMatchesPageClient() {
                     <AccordionContent>
                         <div className="bg-background/80 border-t">
                              <ul className="text-sm">
-                                {participants.map((participantId) => {
-                                    const user = users.find(u => u.id === participantId);
-                                    if (!user) return null;
-
+                                {participants.map((user) => {
                                     const prediction = match.predictions.find(p => p.userId === user.id);
+
+                                     if (!prediction) {
+                                        return (
+                                            <li key={user.id} className="flex justify-between items-center p-4 border-t bg-orange-500/80 text-white">
+                                                <div className="w-1/3 text-left">
+                                                    <div className="flex items-center gap-2 group">
+                                                        <Avatar className="w-8 h-8 opacity-70">
+                                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                            <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="font-bold">{user.apelido}:</span>
+                                                    </div>
+                                                </div>
+                                                <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
+                                                <div className="w-1/3 text-right">
+                                                    <Badge variant="secondary">Sem Palpite</Badge>
+                                                </div>
+                                            </li>
+                                        );
+                                    }
 
                                     return (
                                         <li key={user.id} className="flex justify-between items-center p-4 border-t">
@@ -508,15 +523,12 @@ export function AdminMatchesPageClient() {
                                                             </div>
                                                         </div>
                                                     </div>
+                                                     {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                                 </div>
                                             </div>
                                         <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
                                             <div className="flex-1 text-center">
-                                                {prediction ? (
-                                                    <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
-                                                ) : (
-                                                    <span className='text-muted-foreground'>? - ?</span>
-                                                )}
+                                                <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                             </div>
                                             {championship?.pontuacao.combo?.ativo && prediction?.palpiteCombo && (
                                                 <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
@@ -537,7 +549,7 @@ export function AdminMatchesPageClient() {
                                             )}
                                         </div>
                                         <div className="w-1/3 text-right">
-                                            {!prediction && <Badge variant="secondary">Sem Palpite</Badge>}
+                                            <Badge variant="secondary">Palpite Salvo</Badge>
                                         </div>
                                         </li>
                                     )})}

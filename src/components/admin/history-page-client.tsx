@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle, Loader2, Goal, Gem } from 'lucide-react';
+import { Users, History, ChevronLeft, ChevronRight, Trophy, MoreHorizontal, Trash2, Pencil, Save, AlertTriangle, Loader2, Goal, Gem, Ghost } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -384,6 +384,7 @@ export function AdminHistoryPageClient() {
                   const championship = championships.find(c => c.id === match.campeonatoId);
                   const teamA = teams.find(t => t.name === match.timeA);
                   const teamB = teams.find(t => t.name === match.timeB);
+                  const participants = users.filter(u => championship?.participantes.includes(u.id));
 
                   return (
                     <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -455,14 +456,33 @@ export function AdminHistoryPageClient() {
                               <div className="text-center py-2 text-foreground">
                                 <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                               </div>
-                              {match.predictions.length > 0 ? (
+                              {participants.length > 0 ? (
                                   <ul className="text-sm">
-                                    {match.predictions.map((p, i) => {
-                                      const user = users.find(u => u.id === p.userId);
-                                      if (!user) return null;
+                                    {participants.map((user, i) => {
+                                      const prediction = match.predictions.find(p => p.userId === user.id);
                                       
+                                      if (!prediction) {
+                                        return (
+                                            <li key={user.id} className="flex justify-between items-center p-4 border-t bg-orange-500 text-white">
+                                                <div className="w-1/3 text-left">
+                                                    <div className="flex items-center gap-2 group">
+                                                        <Avatar className="w-8 h-8 opacity-70">
+                                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                            <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="font-bold">{user.apelido}:</span>
+                                                    </div>
+                                                </div>
+                                                <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
+                                                <div className="w-1/3 text-right">
+                                                    <Badge variant="secondary" className="bg-orange-700 text-white border-transparent">0 pts</Badge>
+                                                </div>
+                                            </li>
+                                        );
+                                      }
+
                                       return (
-                                      <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.acertoTipo))}>
+                                      <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(prediction.acertoTipo))}>
                                         <div className="w-1/3 text-left flex items-center gap-2 group">
                                           <div className="relative">
                                               <Avatar className="w-8 h-8">
@@ -507,18 +527,19 @@ export function AdminHistoryPageClient() {
                                                 </div>
                                             </div>
                                           </div>
+                                           {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                         </div>
                                         <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
                                             <div className="flex-1 text-center">
-                                                <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                             </div>
-                                            {p.palpiteCombo && (
+                                            {prediction.palpiteCombo && (
                                                 <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                     <Tooltip>
                                                         <TooltipTrigger>
                                                             <div className="flex items-center gap-1">
                                                                 <Goal className="h-4 w-4" />
-                                                                <span>{p.palpiteCombo.totalGols}</span>
+                                                                <span>{prediction.palpiteCombo.totalGols}</span>
                                                             </div>
                                                         </TooltipTrigger>
                                                         <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
@@ -527,9 +548,9 @@ export function AdminHistoryPageClient() {
                                             )}
                                         </div>
                                         <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                          {p.palpiteCombo && <Gem className={cn("h-4 w-4", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                          <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(p.acertoTipo))}>
-                                              {p.pontos} pts
+                                          {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                          <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(prediction.acertoTipo))}>
+                                              {prediction.pontos} pts
                                           </Badge>
                                         </div>
                                       </li>
