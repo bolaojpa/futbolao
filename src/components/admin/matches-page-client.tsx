@@ -430,116 +430,83 @@ export function AdminMatchesPageClient() {
                       </div>
                     </div>
                     <AccordionTrigger className="w-full p-2 border-t hover:bg-muted/50">
-                        <div className="flex items-center justify-center w-full relative">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex items-center justify-center w-full relative group/trigger">
                                         <h4 className={cn("font-semibold flex items-center justify-center gap-2", hasMissingPredictions && "cursor-help")}>
                                             <Users className="w-4 h-4" /> 
-                                            Palpites dos Usuários ({match.predictions.length}/{totalParticipants})
+                                            Palpites ({match.predictions.length}/{totalParticipants})
                                         </h4>
-                                    </TooltipTrigger>
-                                    {hasMissingPredictions && (
-                                        <TooltipContent>
-                                            <p className="font-semibold">Palpites Pendentes:</p>
-                                            <ul className="list-disc list-inside">
-                                                {missingUsers.map(user => user && <li key={user.id}>{user.apelido}</li>)}
-                                            </ul>
-                                        </TooltipContent>
-                                    )}
-                                </Tooltip>
-                            </TooltipProvider>
-                             <ChevronDown className="h-4 w-4 absolute right-4 top-1/2 -translate-y-1/2" />
-                        </div>
+                                        <ChevronDown className="h-4 w-4 absolute right-4 top-1/2 -translate-y-1/2 group-data-[state=open]/trigger:rotate-180 transition-transform" />
+                                    </div>
+                                </TooltipTrigger>
+                                {hasMissingPredictions && (
+                                    <TooltipContent>
+                                        <p className="font-semibold">Palpites Pendentes:</p>
+                                        <ul className="list-disc list-inside">
+                                            {missingUsers.map(user => user && <li key={user.id}>{user.apelido}</li>)}
+                                        </ul>
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </TooltipProvider>
                     </AccordionTrigger>
                     <AccordionContent>
                         <div className="bg-background/80 border-t">
-                            {match.predictions.length > 0 ? (
-                                <ul className="text-sm">
-                                {match.predictions.map((prediction, i) => {
-                                    const user = users.find(u => u.id === prediction.userId);
+                             <ul className="text-sm">
+                                {participants.map((participantId) => {
+                                    const user = users.find(u => u.id === participantId);
                                     if (!user) return null;
 
+                                    const prediction = match.predictions.find(p => p.userId === user.id);
+
                                     return (
-                                    <li key={i} className="flex justify-between items-center p-4 border-t">
-                                        <div className="w-1/3 text-left flex items-center gap-2 group">
-                                            <div className="relative">
-                                                <Avatar className="w-8 h-8">
-                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                                </Avatar>
-                                                <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                        <li key={user.id} className="flex justify-between items-center p-4 border-t">
+                                            <div className="w-1/3 text-left flex items-center gap-2 group">
+                                                <div className="relative">
+                                                    <Avatar className="w-8 h-8">
+                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
+                                                </div>
+                                                <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                    <span className="font-bold">{user.apelido}:</span>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
-                                                <span className="font-bold">{user.apelido}:</span>
-                                                 {championship?.championPredictionSettings?.active && (
-                                                      <>
-                                                        <div className="relative block sm:hidden">
-                                                          <Popover>
-                                                              <PopoverTrigger asChild>
-                                                                  <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                              </PopoverTrigger>
-                                                              <PopoverContent className="w-48 p-2">
-                                                                  <div className="space-y-1">
-                                                                      <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                      {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                  </div>
-                                                              </PopoverContent>
-                                                          </Popover>
-                                                        </div>
-                                                        <div className='hidden sm:flex items-center gap-1'>
-                                                            {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map(teamName => {
-                                                                const team = teams.find(t => t.name === teamName);
-                                                                if (!team) return null;
-                                                                const winnerInfo = getChampionPickWinner(championship);
-                                                                const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
-                                                                return (
-                                                                    <Tooltip key={team.id}>
-                                                                        <TooltipTrigger>
-                                                                            <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                    </Tooltip>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                     </>
+                                        <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
+                                            <div className="flex-1 text-center">
+                                                {prediction ? (
+                                                    <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                                ) : (
+                                                    <span className='text-muted-foreground'>? - ?</span>
                                                 )}
                                             </div>
+                                            {championship?.pontuacao.combo?.ativo && prediction?.palpiteCombo && (
+                                                <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Goal className="h-4 w-4" />
+                                                                    <span>{prediction.palpiteCombo.totalGols}</span>
+                                                                </div>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Palpite de Gols (Combo)</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
+                                            )}
                                         </div>
-                                    <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
-                                        <div className="flex-1 text-center">
-                                            <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
+                                        <div className="w-1/3 text-right">
+                                            {!prediction && <Badge variant="secondary">Sem Palpite</Badge>}
                                         </div>
-                                        {championship?.pontuacao.combo?.ativo && prediction.palpiteCombo && (
-                                            <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger>
-                                                            <div className="flex items-center gap-1">
-                                                                <Goal className="h-4 w-4" />
-                                                                <span>{prediction.palpiteCombo.totalGols}</span>
-                                                            </div>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p>Palpite de Gols (Combo)</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="w-1/3 text-right">
-                                        {/* A pontuação só é exibida no histórico */}
-                                    </div>
-                                    </li>
-                                )})}
+                                        </li>
+                                    )})}
                                 </ul>
-                            ) : (
-                                <div className="text-center p-4 text-muted-foreground">
-                                    Nenhum palpite registrado para esta partida ainda.
-                                </div>
-                            )}
                         </div>
                     </AccordionContent>
                   </Card>

@@ -37,7 +37,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChampionPrediction } from '@/components/predictions/champion-prediction';
 
 const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
     const matchDate = parseISO(matchDateString);
@@ -565,13 +564,14 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="w-full space-y-4">
                                     {liveMatches.map((match) => {
-                                        const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                                        const championship = allChampionships.find(c => c.id === match.campeonatoId);
+                                        const participants = championship?.participantes || [];
+                                        
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
-                                        const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
+
+                                        const userPrediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
                                         const { pontos: currentUserLivePoints, acertoTipo: currentUserAcertoTipo } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, acertoTipo: 'erro' };
-                                        
-                                        const champ = allChampionships.find(c => c.id === match.campeonatoId);
                                         
                                         let cardStatusClass = 'border-accent/50'; // Default for live
                                         if(userPrediction) {
@@ -615,152 +615,58 @@ export default function DashboardPage() {
                                                                     <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                                 </div>
                                                                 <ul className="text-sm">
-                                                                    {userPrediction ? (
-                                                                        <li className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(currentUserAcertoTipo))}>
-                                                                            <div className="w-1/3 text-left flex items-center gap-2 group">
-                                                                                <Avatar className="w-8 h-8">
-                                                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                                                                </Avatar>
-                                                                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
-                                                                                    <span className="font-bold">Seu Palpite:</span>
-                                                                                    {champ?.championPredictionSettings?.active && (
-                                                                                        <>
-                                                                                            <div className="relative block sm:hidden">
-                                                                                                <Popover>
-                                                                                                    <PopoverTrigger asChild>
-                                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                                                                    </PopoverTrigger>
-                                                                                                    <PopoverContent className="w-48 p-2">
-                                                                                                        <div className="space-y-1">
-                                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                                                            {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                                                        </div>
-                                                                                                    </PopoverContent>
-                                                                                                </Popover>
-                                                                                            </div>
-                                                                                            <div className='hidden sm:flex items-center gap-1'>
-                                                                                                {user.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
-                                                                                                    const team = allTeams.find(t => t.name === teamName);
-                                                                                                    if (!team) return null;
-                                                                                                     const winnerInfo = getChampionPickWinner(champ);
-                                                                                                     const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
-                                                                                                    return (
-                                                                                                        <Tooltip key={team.id}>
-                                                                                                            <TooltipTrigger>
-                                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                                                            </TooltipTrigger>
-                                                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                                        </Tooltip>
-                                                                                                    );
-                                                                                                })}
-                                                                                            </div>
-                                                                                        </>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
-                                                                                <div className="flex-1 text-center">
-                                                                                    <span>{userPrediction.palpiteUsuario.placarA}-{userPrediction.palpiteUsuario.placarB}</span>
-                                                                                </div>
-                                                                                {userPrediction.palpiteCombo && (
-                                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
-                                                                                        <Tooltip>
-                                                                                            <TooltipTrigger>
-                                                                                                <div className="flex items-center gap-1">
-                                                                                                    <Goal className="h-4 w-4" />
-                                                                                                    <span>{userPrediction.palpiteCombo.totalGols}</span>
-                                                                                                </div>
-                                                                                            </TooltipTrigger>
-                                                                                            <TooltipContent><p>Seu palpite de gols para o combo.</p></TooltipContent>
-                                                                                        </Tooltip>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                {userPrediction.palpiteCombo && <Gem className={cn("h-4 w-4", currentUserAcertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                                                                <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(currentUserAcertoTipo))}>
-                                                                                    {currentUserLivePoints} pts
-                                                                                </Badge>
-                                                                            </div>
-                                                                        </li>
-                                                                    ) : (
-                                                                        <li className="flex justify-between items-center p-4 border-t bg-erro-solid text-white">
-                                                                            <div className="w-1/3 text-left flex items-center gap-2 group">
-                                                                                <Avatar className="w-8 h-8 opacity-70">
-                                                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                                                                </Avatar>
-                                                                                <span className="font-bold">Seu Palpite:</span>
-                                                                            </div>
-                                                                            <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
-                                                                            <div className="w-1/3 text-right">
-                                                                                <Badge variant="destructive">Sem Palpite</Badge>
-                                                                            </div>
-                                                                        </li>
-                                                                    )}
-                                                                    {otherPredictions.map((p, i) => {
-                                                                        const otherUser = allUsers.find(u => u.id === p.userId);
-                                                                        if (!otherUser) return null;
-                                                                        const { pontos: otherLivePoints, acertoTipo: otherAcertoTipo } = calculateLivePoints(match, p);
+                                                                    {participants.map((participantId) => {
+                                                                        const participant = allUsers.find(u => u.id === participantId);
+                                                                        if (!participant) return null;
 
+                                                                        const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === participant.id);
+                                                                        const { pontos: livePoints, acertoTipo } = prediction ? calculateLivePoints(match, prediction) : { pontos: 0, acertoTipo: 'erro' as const };
+                                                                        const isCurrentUser = participant.id === user.id;
+
+                                                                        if (!prediction) {
+                                                                            return (
+                                                                                <li key={participant.id} className="flex justify-between items-center p-4 border-t bg-erro-solid text-white">
+                                                                                     <div className="w-1/3 text-left">
+                                                                                        <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
+                                                                                            <Avatar className="w-8 h-8 opacity-70">
+                                                                                                <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
+                                                                                                <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
+                                                                                            </Avatar>
+                                                                                            <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                                        </Link>
+                                                                                    </div>
+                                                                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
+                                                                                    <div className="w-1/3 text-right">
+                                                                                        <Badge variant="destructive">Sem Palpite</Badge>
+                                                                                    </div>
+                                                                                </li>
+                                                                            );
+                                                                        }
+                                                                        
                                                                         return (
-                                                                            <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(otherAcertoTipo))}>
+                                                                            <li key={participant.id} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(acertoTipo))}>
                                                                                 <div className="w-1/3 text-left">
-                                                                                    <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
+                                                                                     <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
                                                                                         <Avatar className="w-8 h-8">
-                                                                                            <AvatarImage src={otherUser.fotoPerfil} alt={otherUser.apelido} />
-                                                                                            <AvatarFallback>{otherUser.apelido.substring(0,2)}</AvatarFallback>
+                                                                                            <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
+                                                                                            <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                                         </Avatar>
-                                                                                         <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                                                                            <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
-                                                                                             {champ?.championPredictionSettings?.active && (
-                                                                                                 <>
-                                                                                                    <div className="relative block sm:hidden">
-                                                                                                        <Popover>
-                                                                                                            <PopoverTrigger asChild>
-                                                                                                                <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                                                                            </PopoverTrigger>
-                                                                                                            <PopoverContent className="w-48 p-2">
-                                                                                                                <div className="space-y-1">
-                                                                                                                    <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                                                                    {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                                                                </div>
-                                                                                                            </PopoverContent>
-                                                                                                        </Popover>
-                                                                                                    </div>
-                                                                                                    <div className='hidden sm:flex items-center gap-1'>
-                                                                                                        {otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
-                                                                                                            const team = allTeams.find(t => t.name === teamName);
-                                                                                                            if (!team) return null;
-                                                                                                            const winnerInfo = getChampionPickWinner(champ);
-                                                                                                            const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(otherUser.id);
-                                                                                                            return (
-                                                                                                                <Tooltip key={team.id}>
-                                                                                                                    <TooltipTrigger>
-                                                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                                                                    </TooltipTrigger>
-                                                                                                                    <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                                                </Tooltip>
-                                                                                                            );
-                                                                                                        })}
-                                                                                                    </div>
-                                                                                                 </>
-                                                                                            )}
+                                                                                        <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                                            <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
                                                                                         </div>
                                                                                     </Link>
                                                                                 </div>
                                                                                 <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
                                                                                     <div className="flex-1 text-center">
-                                                                                        <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                                        <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                                                                     </div>
-                                                                                    {p.palpiteCombo && (
+                                                                                    {prediction.palpiteCombo && (
                                                                                         <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                                             <Tooltip>
                                                                                                 <TooltipTrigger>
                                                                                                     <div className="flex items-center gap-1">
                                                                                                         <Goal className="h-4 w-4" />
-                                                                                                        <span>{p.palpiteCombo.totalGols}</span>
+                                                                                                        <span>{prediction.palpiteCombo.totalGols}</span>
                                                                                                     </div>
                                                                                                 </TooltipTrigger>
                                                                                                 <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
@@ -769,9 +675,9 @@ export default function DashboardPage() {
                                                                                     )}
                                                                                 </div>
                                                                                 <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                                    {p.palpiteCombo && <Gem className={cn("h-4 w-4", otherAcertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                                                                    <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(otherAcertoTipo))}>
-                                                                                        {otherLivePoints} pts
+                                                                                    {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                                                    <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(acertoTipo))}>
+                                                                                        {livePoints} pts
                                                                                     </Badge>
                                                                                 </div>
                                                                             </li>
@@ -802,17 +708,17 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="w-full space-y-4">
                                     {recentMatches.map((match) => {
-                                        const prediction = userPredictions.find(p => p.matchId === match.id);
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
+                                        
                                         const champ = allChampionships.find(c => c.id === match.campeonatoId);
-                                        const otherPredictions = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
+                                        const participants = champ?.participantes || [];
 
                                         return (
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
                                             <AccordionItem value={match.id} className="border-0 rounded-lg overflow-hidden" id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
                                                 <Card>
-                                                <AccordionTrigger className={cn("p-4 hover:no-underline opacity-75", getPredictionStatusClass(prediction?.acertoTipo))}>
+                                                <AccordionTrigger className={cn("p-4 hover:no-underline opacity-75", getPredictionStatusClass(userPredictions.find(p => p.matchId === match.id)?.acertoTipo))}>
                                                     <div className="flex flex-col items-center justify-center w-full">
                                                         <div className="flex items-center justify-center w-full">
                                                             <div className='hidden md:block flex-shrink-0 w-1/3 text-right font-semibold text-sm md:text-base pr-2'>
@@ -835,149 +741,66 @@ export default function DashboardPage() {
                                                         </div>
                                                         <div className='flex flex-col items-center justify-center mt-2 gap-1'>
                                                             <Badge variant="secondary">{match.status}</Badge>
-                                                            <span className={cn("text-xs", getPredictionStatusClass(prediction?.acertoTipo).includes('text-white') ? 'text-white/80' : 'text-muted-foreground')}>{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
+                                                            <span className={cn("text-xs", getPredictionStatusClass(userPredictions.find(p => p.matchId === match.id)?.acertoTipo).includes('text-white') ? 'text-white/80' : 'text-muted-foreground')}>{format(parseISO(match.data), 'dd/MM/yy', { locale: ptBR })}</span>
                                                         </div>
                                                     </div>
                                                 </AccordionTrigger>
                                                 <AccordionContent>
-                                                {prediction && (
-                                                    <div className={cn("p-4 border-t", getPredictionStatusClass(prediction.acertoTipo))}>
-                                                        <div className="flex justify-between items-center w-full">
-                                                            <div className="w-1/3 text-left flex items-center gap-2">
-                                                                <Avatar className="w-8 h-8">
-                                                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                                                </Avatar>
-                                                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
-                                                                    <span className="font-bold">Seu Palpite:</span>
-                                                                    {champ?.championPredictionSettings?.active && (
-                                                                        <>
-                                                                            <div className="relative block sm:hidden">
-                                                                                <Popover>
-                                                                                    <PopoverTrigger asChild>
-                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                                                    </PopoverTrigger>
-                                                                                    <PopoverContent className="w-48 p-2">
-                                                                                        <div className="space-y-1">
-                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                                            {user.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                                        </div>
-                                                                                    </PopoverContent>
-                                                                                </Popover>
-                                                                            </div>
-                                                                            <div className='hidden sm:flex items-center gap-1'>
-                                                                                {user.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
-                                                                                    const team = allTeams.find(t => t.name === teamName);
-                                                                                    if (!team) return null;
-                                                                                    const winnerInfo = getChampionPickWinner(champ);
-                                                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
-                                                                                    return (
-                                                                                        <Tooltip key={team.id}>
-                                                                                            <TooltipTrigger>
-                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                                            </TooltipTrigger>
-                                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                        </Tooltip>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
-                                                                <div className="flex-1 text-center">
-                                                                    <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
-                                                                </div>
-                                                                {prediction.palpiteCombo && (
-                                                                    <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger>
-                                                                                <div className="flex items-center gap-1">
-                                                                                    <Goal className="h-4 w-4" />
-                                                                                    <span>{prediction.palpiteCombo.totalGols}</span>
-                                                                                </div>
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent><p>Seu palpite de gols (Combo)</p></TooltipContent>
-                                                                        </Tooltip>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                                 {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                                                <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(prediction.acertoTipo))}>
-                                                                    {prediction.pontos} pts
-                                                                </Badge>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
                                                 <div className="bg-background/80 border-t">
                                                     <div className="text-center py-2 text-foreground">
                                                         <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Outros Palpites</h4>
                                                     </div>
                                                     <ul className="text-sm">
-                                                    {otherPredictions.map((p, i) => {
-                                                        const otherUser = allUsers.find(u => u.id === p.userId);
-                                                        if (!otherUser) return null;
+                                                    {participants.map((participantId) => {
+                                                        const participant = allUsers.find(u => u.id === participantId);
+                                                        if (!participant) return null;
+                                                        
+                                                        const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === participant.id);
+
+                                                        if (!prediction) {
+                                                            return (
+                                                                <li key={participant.id} className="flex justify-between items-center p-4 border-t bg-erro-solid text-white">
+                                                                    <div className="w-1/3 text-left">
+                                                                        <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
+                                                                            <Avatar className="w-8 h-8 opacity-70">
+                                                                                <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
+                                                                                <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
+                                                                            </Avatar>
+                                                                            <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                        </Link>
+                                                                    </div>
+                                                                    <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
+                                                                    <div className="w-1/3 text-right">
+                                                                        <Badge variant="destructive">Sem Palpite</Badge>
+                                                                    </div>
+                                                                </li>
+                                                            );
+                                                        }
 
                                                         return (
-                                                        <li key={i} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(p.acertoTipo))}>
+                                                        <li key={participant.id} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(prediction.acertoTipo))}>
                                                         <div className="w-1/3 text-left">
-                                                            <Link href={`/dashboard/profile?userId=${p.userId}`} className="flex items-center gap-2 group">
+                                                            <Link href={`/dashboard/profile?userId=${prediction.userId}`} className="flex items-center gap-2 group">
                                                                 <Avatar className="w-8 h-8">
-                                                                    <AvatarImage src={otherUser.fotoPerfil} alt={otherUser.apelido} />
-                                                                    <AvatarFallback>{otherUser.apelido.substring(0,2)}</AvatarFallback>
+                                                                    <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
+                                                                    <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                 </Avatar>
                                                                 <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                                                    <span className="font-bold group-hover:underline">{otherUser.apelido}:</span>
-                                                                    {champ?.championPredictionSettings?.active && (
-                                                                         <>
-                                                                            <div className="relative block sm:hidden">
-                                                                                <Popover>
-                                                                                    <PopoverTrigger asChild>
-                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                                                    </PopoverTrigger>
-                                                                                    <PopoverContent className="w-48 p-2">
-                                                                                        <div className="space-y-1">
-                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                                            {otherUser.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                                        </div>
-                                                                                    </PopoverContent>
-                                                                                </Popover>
-                                                                            </div>
-                                                                            <div className='hidden sm:flex items-center gap-1'>
-                                                                                {otherUser.championPicks?.find(p => p.championshipId === champ.id)?.teams.map(teamName => {
-                                                                                    const team = allTeams.find(t => t.name === teamName);
-                                                                                    if (!team) return null;
-                                                                                     const winnerInfo = getChampionPickWinner(champ);
-                                                                                     const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(otherUser.id);
-                                                                                    return (
-                                                                                        <Tooltip key={team.id}>
-                                                                                            <TooltipTrigger>
-                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
-                                                                                            </TooltipTrigger>
-                                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                        </Tooltip>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                         </>
-                                                                    )}
+                                                                    <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Seu Palpite' : participant.apelido}:</span>
                                                                 </div>
                                                             </Link>
                                                         </div>
                                                         <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
                                                             <div className="flex-1 text-center">
-                                                                <span>{p.palpiteUsuario.placarA}-{p.palpiteUsuario.placarB}</span>
+                                                                <span>{prediction.palpiteUsuario.placarA}-{prediction.palpiteUsuario.placarB}</span>
                                                             </div>
-                                                            {p.palpiteCombo && (
+                                                            {prediction.palpiteCombo && (
                                                                 <div className="absolute right-0 sm:left-full sm:ml-2 flex items-center gap-1">
                                                                     <Tooltip>
                                                                         <TooltipTrigger>
                                                                             <div className="flex items-center gap-1">
                                                                                 <Goal className="h-4 w-4" />
-                                                                                <span>{p.palpiteCombo.totalGols}</span>
+                                                                                <span>{prediction.palpiteCombo.totalGols}</span>
                                                                             </div>
                                                                         </TooltipTrigger>
                                                                         <TooltipContent><p>Palpite de Gols (Combo)</p></TooltipContent>
@@ -986,9 +809,9 @@ export default function DashboardPage() {
                                                             )}
                                                         </div>
                                                         <div className="w-1/3 text-right flex items-center justify-end gap-2">
-                                                            {p.palpiteCombo && <Gem className={cn("h-4 w-4", p.acertoTipo === 'combo' && "animate-gem-pulse")} />}
-                                                            <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(p.acertoTipo))}>
-                                                                {p.pontos} pts
+                                                            {prediction.palpiteCombo && <Gem className={cn("h-4 w-4", prediction.acertoTipo === 'combo' && "animate-gem-pulse")} />}
+                                                            <Badge className={cn('whitespace-nowrap', getPointsBadgeClass(prediction.acertoTipo))}>
+                                                                {prediction.pontos} pts
                                                             </Badge>
                                                         </div>
                                                         </li>
@@ -1024,5 +847,6 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
 
