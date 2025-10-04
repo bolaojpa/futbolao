@@ -1,6 +1,7 @@
 
 
 import { Timestamp } from 'firebase/firestore';
+import { z } from 'zod';
 
 export type TiebreakerRule = 'maiorNumeroExatos' | 'maiorNumeroSituacoes' | 'primeiraBucha';
 
@@ -199,3 +200,19 @@ export interface SupportMessage {
   lastActivityAt?: Timestamp;
   readAt?: Timestamp; // Data de leitura da mensagem do usuário pelo admin
 }
+
+// Tipo para a entrada da função de sugestão de IA
+export type SuggestPredictionsInput = z.infer<typeof SuggestPredictionsInputSchema>;
+const SuggestPredictionsInputSchema = z.object({
+  userNickname: z.string().describe("O apelido do usuário que está pedindo a sugestão."),
+  userPosition: z.number().describe("A posição atual do usuário no ranking do campeonato."),
+  totalParticipants: z.number().describe("O número total de participantes no campeonato."),
+  currentUserMatches: z.number().describe("O número de partidas que o usuário já disputou/palpitou neste campeonato."),
+  totalUserMatches: z.number().describe("O número total de partidas que o usuário disputará no campeonato."),
+  predictionData: z
+    .array(z.object({
+      prediction: z.string().describe('O placar apostado, no formato "X-Y".'),
+      count: z.number().describe('O número de usuários que apostaram neste placar.'),
+    }))
+    .describe('Uma lista de palpites agregados de outros usuários para a partida.'),
+});

@@ -10,9 +10,11 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
+import type { SuggestPredictionsInput } from '@/lib/types';
 
-export const SuggestPredictionsInputSchema = z.object({
+
+const SuggestPredictionsInputSchema = z.object({
   userNickname: z.string().describe("O apelido do usuário que está pedindo a sugestão."),
   userPosition: z.number().describe("A posição atual do usuário no ranking do campeonato."),
   totalParticipants: z.number().describe("O número total de participantes no campeonato."),
@@ -25,7 +27,6 @@ export const SuggestPredictionsInputSchema = z.object({
     }))
     .describe('Uma lista de palpites agregados de outros usuários para a partida.'),
 });
-export type SuggestPredictionsInput = z.infer<typeof SuggestPredictionsInputSchema>;
 
 const SuggestPredictionsOutputSchema = z.object({
   suggestedPrediction: z.string().describe('A sugestão de previsão da IA (formato: "X-Y").'),

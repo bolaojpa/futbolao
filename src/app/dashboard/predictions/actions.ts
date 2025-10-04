@@ -2,9 +2,8 @@
 
 'use server';
 
-import { suggestPredictions, SuggestPredictionsInput, SuggestPredictionsOutput } from '@/ai/flows/suggest-predictions';
-import { addOrUpdatePrediction as dbAddOrUpdatePrediction } from '@/lib/firebase/firestore';
-import type { Prediction, UserType } from '@/lib/types';
+import { suggestPredictions, SuggestPredictionsOutput } from '@/ai/flows/suggest-predictions';
+import type { Prediction, UserType, SuggestPredictionsInput } from '@/lib/types';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
