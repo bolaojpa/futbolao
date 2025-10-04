@@ -39,27 +39,6 @@ import { db } from '@/lib/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PredictionForm } from '@/components/predictions/prediction-form';
 
-const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
-    const matchDate = parseISO(matchDateString);
-    const now = new Date();
-    const hoursDiff = differenceInHours(matchDate, now);
-
-    if (hoursDiff < 1) {
-      return (
-         <div className="text-xs font-semibold text-accent flex items-center justify-center gap-2">
-           <AlarmClock className="w-4 h-4"/>
-           <Countdown targetDate={matchDateString} />
-        </div>
-      )
-    }
-    
-    if (isToday(matchDate)) {
-      return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
-    }
-
-    return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
-};
-
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
     const [allMatches, setAllMatches] = useState<Match[]>([]);
@@ -156,13 +135,16 @@ export default function DashboardPage() {
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
     const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
-        const { placarA: finalA, placarB: finalB } = match;
+        // Assume 0-0 if the score is null/undefined for a live match
+        const finalA = match.placarA ?? 0;
+        const finalB = match.placarB ?? 0;
+
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         
         const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao;
 
-        if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) {
+        if (!pontuacao || guessA === null || guessB === null) {
             return { pontos: 0, acertoTipo: 'erro' };
         }
     
@@ -491,15 +473,22 @@ export default function DashboardPage() {
                                 <div className="w-full space-y-4">
                                     {liveMatches.map((match) => {
                                         const championship = allChampionships.find(c => c.id === match.campeonatoId);
-                                        const participants = championship?.participantes || [];
-                                        
                                         const teamA = allTeams.find(t => t.name === match.timeA);
                                         const teamB = allTeams.find(t => t.name === match.timeB);
 
                                         const userPrediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
                                         const { acertoTipo: currentUserAcertoTipo } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, acertoTipo: 'erro' };
                                         
-                                        const cardStatusClass = userPrediction ? getPredictionStatusClass(currentUserAcertoTipo) : 'bg-orange-500 text-white';
+                                        const cardStatusClass = !userPrediction ? 'bg-orange-500 text-white' : getPredictionStatusClass(currentUserAcertoTipo);
+
+                                        const participants = (championship?.participantes || [])
+                                            .map(pId => allUsers.find(u => u.id === pId))
+                                            .filter((u): u is UserType => !!u)
+                                            .sort((a, b) => {
+                                                if (a.id === user.id) return -1;
+                                                if (b.id === user.id) return 1;
+                                                return a.apelido.localeCompare(b.apelido);
+                                            });
 
                                         return (
                                             <Accordion type="single" collapsible className="w-full" key={match.id}>
@@ -536,10 +525,7 @@ export default function DashboardPage() {
                                                                     <h4 className="font-semibold flex items-center justify-center gap-2 py-1"><Users className="w-4 h-4" /> Palpites dos Usuários</h4>
                                                                 </div>
                                                                 <ul className="text-sm">
-                                                                    {participants.map((participantId) => {
-                                                                        const participant = allUsers.find(u => u.id === participantId);
-                                                                        if (!participant) return null;
-
+                                                                    {participants.map((participant) => {
                                                                         const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === participant.id);
                                                                         const isCurrentUser = participant.id === user.id;
 
@@ -618,72 +604,13 @@ export default function DashboardPage() {
                         )}
                         
                         <section>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                                    <Calendar className="w-6 h-6 text-primary" />
-                                    Próximos Jogos
-                                </h2>
-                                <Button asChild variant="link">
-                                    <Link href="/dashboard/predictions">Ver todos &rarr;</Link>
-                                </Button>
-                            </div>
-                            <div className="space-y-4">
-                            {userChampionships.map(champ => {
-                                const upcomingMatches = allMatches.filter(m => m.campeonatoId === champ.id && m.status === 'Agendado' && !isPast(parseISO(m.data))).slice(0,3);
-                                if (upcomingMatches.length === 0) return null;
-
-                                return upcomingMatches.map(match => {
-                                    const userPrediction = userPredictions.find(p => p.matchId === match.id);
-                                    const ghostPrediction = ghostUser ? allPredictions.find(p => p.matchId === match.id && p.userId === ghostUser.id) : null;
-                                    const teamA = allTeams.find(t => t.name === match.timeA);
-                                    const teamB = allTeams.find(t => t.name === match.timeB);
-
-                                    return (
-                                    <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
-                                        <Card className="h-full hover:border-primary/50 transition-colors">
-                                            <CardContent className="p-4">
-                                                <div className="flex flex-col items-center justify-center w-full gap-2">
-                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
-                                                        {champ.iconUrl && <Image src={champ.iconUrl} alt="" width={16} height={16} />}
-                                                        {match.campeonato} - {match.fase}
-                                                    </div>
-                                                    <div className="flex items-center justify-center w-full">
-                                                        <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                            <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                            <div className='flex h-14 w-14 items-center justify-center'>
-                                                                <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center justify-center text-muted-foreground mx-4">
-                                                            <p>vs</p>
-                                                        </div>
-                                                        <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                            <div className='flex h-14 w-14 items-center justify-center'>
-                                                                <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                            </div>
-                                                            <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className='flex flex-col items-center justify-center mt-2 gap-2'>
-                                                        <UpcomingMatchDate matchDateString={match.data} />
-                                                        {userPrediction?.palpiteUsuario.placarA !== null && userPrediction?.palpiteUsuario.placarB !== null && (
-                                                            <div className="font-semibold text-sm">Seu Palpite: {userPrediction?.palpiteUsuario.placarA} - {userPrediction?.palpiteUsuario.placarB}</div>
-                                                        )}
-                                                        {ghostPrediction && ghostPrediction.palpiteUsuario && ghostPrediction.palpiteUsuario.placarA !== null && (
-                                                            <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                                                                <Ghost className="h-4 w-4 text-primary" />
-                                                                Lóia: {ghostPrediction.palpiteUsuario.placarA} - {ghostPrediction.palpiteUsuario.placarB}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </Link>
-                                    );
-                                });
-                            })}
-                            </div>
+                            <PredictionForm 
+                                championships={allChampionships}
+                                allTeams={allTeams}
+                                allMatches={allMatches}
+                                allUsers={allUsers}
+                                selectedChampionshipId="all"
+                            />
                         </section>
 
                         {recentMatches.length > 0 && (
@@ -838,7 +765,3 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
-
-
-
-
