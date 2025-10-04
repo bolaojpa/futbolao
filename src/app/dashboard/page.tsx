@@ -487,73 +487,7 @@ export default function DashboardPage() {
                                 </div>
                             </section>
                          )}
-
-                         {upcomingMatches.length > 0 && (
-                            <section>
-                                 <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                                        <Calendar className="w-6 h-6 text-primary" />
-                                        Próximos Jogos
-                                    </h2>
-                                    <Button asChild variant="link">
-                                        <Link href="/dashboard/predictions">Ver todos &rarr;</Link>
-                                    </Button>
-                                </div>
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    {upcomingMatches.map(match => {
-                                        const teamA = allTeams.find(t => t.name === match.timeA);
-                                        const teamB = allTeams.find(t => t.name === match.timeB);
-                                        const userPrediction = userPredictions.find(p => p.matchId === match.id);
-                                        const ghostPrediction = ghostUser ? allPredictions.find(p => p.matchId === match.id && p.userId === ghostUser.id) : null;
-                                        
-                                        return (
-                                            <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
-                                                <Card className="h-full hover:border-primary/50 transition-colors">
-                                                    <CardContent className="p-4">
-                                                        <div className="flex flex-col items-center justify-center w-full gap-2">
-                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
-                                                                {match.iconUrl && <Image src={match.iconUrl} alt="" width={16} height={16} />}
-                                                                {match.campeonato} - {match.fase}
-                                                            </div>
-                                                            <div className="flex items-center justify-center w-full">
-                                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                                    <div className='flex h-14 w-14 items-center justify-center'>
-                                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex items-center justify-center text-muted-foreground mx-4">
-                                                                    <Swords className="h-6 w-6" />
-                                                                </div>
-                                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                                    <div className='flex h-14 w-14 items-center justify-center'>
-                                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
-                                                                    </div>
-                                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
-                                                                </div>
-                                                            </div>
-                                                            <div className='flex flex-col items-center justify-center mt-2 gap-2'>
-                                                               <UpcomingMatchDate matchDateString={match.data} />
-                                                               {userPrediction && (
-                                                                    <div className="font-semibold text-sm">Seu Palpite: {userPrediction.palpiteUsuario.placarA} - {userPrediction.palpiteUsuario.placarB}</div>
-                                                                )}
-                                                                {ghostPrediction && (
-                                                                    <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-                                                                        <Ghost className="h-4 w-4 text-primary" />
-                                                                        Lóia: {ghostPrediction.palpiteUsuario.placarA} - {ghostPrediction.palpiteUsuario.placarB}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </Link>
-                                        )
-                                    })}
-                                </div>
-                            </section>
-                         )}
-
+                        
                         {liveMatches.length > 0 && (
                             <section>
                                 <div className="flex items-center justify-between mb-4">
@@ -577,7 +511,7 @@ export default function DashboardPage() {
                                         if(userPrediction) {
                                             cardStatusClass = getPredictionStatusClass(currentUserAcertoTipo);
                                         } else {
-                                            cardStatusClass = 'bg-erro-solid text-white';
+                                            cardStatusClass = 'bg-orange-500 text-white';
                                         }
 
                                         return (
@@ -624,7 +558,7 @@ export default function DashboardPage() {
 
                                                                         if (!prediction) {
                                                                             return (
-                                                                                <li key={participant.id} className="flex justify-between items-center p-4 border-t bg-erro-solid text-white">
+                                                                                <li key={participant.id} className="flex justify-between items-center p-4 border-t bg-orange-500 text-white">
                                                                                      <div className="w-1/3 text-left">
                                                                                         <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
                                                                                             <Avatar className="w-8 h-8 opacity-70">
@@ -636,7 +570,7 @@ export default function DashboardPage() {
                                                                                     </div>
                                                                                     <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
                                                                                     <div className="w-1/3 text-right">
-                                                                                        <Badge variant="destructive">Sem Palpite</Badge>
+                                                                                        <Badge variant="destructive" className="bg-orange-700">0 pts</Badge>
                                                                                     </div>
                                                                                 </li>
                                                                             );
@@ -695,6 +629,72 @@ export default function DashboardPage() {
                                 </div>
                             </section>
                         )}
+
+                         {upcomingMatches.length > 0 && (
+                            <section>
+                                 <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                                        <Calendar className="w-6 h-6 text-primary" />
+                                        Próximos Jogos
+                                    </h2>
+                                    <Button asChild variant="link">
+                                        <Link href="/dashboard/predictions">Ver todos &rarr;</Link>
+                                    </Button>
+                                </div>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {upcomingMatches.map(match => {
+                                        const teamA = allTeams.find(t => t.name === match.timeA);
+                                        const teamB = allTeams.find(t => t.name === match.timeB);
+                                        const userPrediction = userPredictions.find(p => p.matchId === match.id);
+                                        const ghostPrediction = ghostUser ? allPredictions.find(p => p.matchId === match.id && p.userId === ghostUser.id) : null;
+                                        
+                                        return (
+                                            <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
+                                                <Card className="h-full hover:border-primary/50 transition-colors">
+                                                    <CardContent className="p-4">
+                                                        <div className="flex flex-col items-center justify-center w-full gap-2">
+                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                                                                {match.iconUrl && <Image src={match.iconUrl} alt="" width={16} height={16} />}
+                                                                {match.campeonato} - {match.fase}
+                                                            </div>
+                                                            <div className="flex items-center justify-center w-full">
+                                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-center text-muted-foreground mx-4">
+                                                                    <Swords className="h-6 w-6" />
+                                                                </div>
+                                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                                        <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" data-ai-hint="team logo" />
+                                                                    </div>
+                                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className='flex flex-col items-center justify-center mt-2 gap-2'>
+                                                               <UpcomingMatchDate matchDateString={match.data} />
+                                                               {userPrediction?.palpiteUsuario.placarA !== null && (
+                                                                    <div className="font-semibold text-sm">Seu Palpite: {userPrediction.palpiteUsuario.placarA} - {userPrediction.palpiteUsuario.placarB}</div>
+                                                                )}
+                                                                {ghostPrediction?.palpiteUsuario.placarA !== null && (
+                                                                    <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                                                                        <Ghost className="h-4 w-4 text-primary" />
+                                                                        Lóia: {ghostPrediction.palpiteUsuario.placarA} - {ghostPrediction.palpiteUsuario.placarB}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </Link>
+                                        )
+                                    })}
+                                </div>
+                            </section>
+                         )}
 
                         {recentMatches.length > 0 && (
                             <section>
@@ -760,7 +760,7 @@ export default function DashboardPage() {
 
                                                         if (!prediction) {
                                                             return (
-                                                                <li key={participant.id} className="flex justify-between items-center p-4 border-t bg-erro-solid text-white">
+                                                                <li key={participant.id} className="flex justify-between items-center p-4 border-t bg-orange-500 text-white">
                                                                     <div className="w-1/3 text-left">
                                                                         <Link href={`/dashboard/profile?userId=${participant.id}`} className="flex items-center gap-2 group">
                                                                             <Avatar className="w-8 h-8 opacity-70">
@@ -772,7 +772,7 @@ export default function DashboardPage() {
                                                                     </div>
                                                                     <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
                                                                     <div className="w-1/3 text-right">
-                                                                        <Badge variant="destructive">Sem Palpite</Badge>
+                                                                        <Badge variant="destructive" className="bg-orange-700">0 pts</Badge>
                                                                     </div>
                                                                 </li>
                                                             );
@@ -848,4 +848,5 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
