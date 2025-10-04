@@ -12,7 +12,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown, Trophy, Zap, Gem, Goal } from 'lucide-react';
+import { Users, CalendarCheck, ChevronLeft, ChevronRight, AlarmClock, Calendar, Swords, PlusCircle, MoreHorizontal, Pencil, Trash2, ChevronDown, Trophy, Zap, Gem, Goal, Ghost } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -471,8 +471,9 @@ export function AdminMatchesPageClient() {
                                                     </Avatar>
                                                     <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                                 </div>
-                                                <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                <div className="flex items-center gap-1.5">
                                                     <span className="font-bold">{user.apelido}:</span>
+                                                    {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                                 </div>
                                             </div>
                                         <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { mockLogs, Log } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck, Trash2, Ghost } from 'lucide-react';
+import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck, Trash2, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,7 @@ const actionConfig = {
     user_management: { icon: Shield, color: 'text-amber-500', label: 'Gestão de Usuário' },
     championship_create: { icon: Trophy, color: 'text-yellow-600', label: 'Campeonato' },
     emergency_message: { icon: MessageSquareWarning, color: 'text-red-600', label: 'Aviso Urgente' },
-    ai_notification: { icon: Ghost, color: 'text-teal-500', label: 'Notificação de IA' },
+    ai_notification: { icon: Bot, color: 'text-teal-500', label: 'Notificação de IA' },
     default: { icon: FileClock, color: 'text-muted-foreground', label: 'Outro' },
 };
 

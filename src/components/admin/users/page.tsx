@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle, Ghost } from 'lucide-react';
+import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -369,7 +369,7 @@ export default function AdminUsersPage() {
                                                         <div>
                                                             <div className='flex items-center gap-2'>
                                                                 <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido || user.nome}</Link>
-                                                                {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
+                                                                {user.isGhost && <Bot className="w-4 h-4 text-primary" />}
                                                             </div>
                                                             <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
                                                             <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
@@ -439,7 +439,7 @@ export default function AdminUsersPage() {
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleGhostModeToggle(user.id, user.isGhost); }}>
-                                                                <Ghost className="mr-2 h-4 w-4" />
+                                                                <Bot className="mr-2 h-4 w-4" />
                                                                 {user.isGhost ? 'Desativar Modo Fantasma' : 'Ativar Modo Fantasma'}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
