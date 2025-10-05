@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle, Bot } from 'lucide-react';
+import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle, Bot, KeyRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { UserType } from '@/lib/types';
 import { getUsers, updateUserStatus, updateUserRole, deleteUsers, resetUserStats, updateUserField } from '@/lib/firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
+import { GoogleIcon } from '@/components/shared/icons';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -176,8 +177,8 @@ export default function AdminUsersPage() {
                                 user.email.toLowerCase().includes(searchTerm.toLowerCase());
             return statusMatch && roleMatch && searchMatch;
         }).sort((a, b) => {
-             const dateA = a.dataCadastro instanceof Timestamp ? a.dataCadastro.toMillis() : new Date(a.dataCadastro).getTime();
-             const dateB = b.dataCadastro instanceof Timestamp ? b.dataCadastro.toMillis() : new Date(b.dataCadastro).getTime();
+             const dateA = a.dataCadastro instanceof Timestamp ? a.dataCadastro.toMillis() : new Date(a.dataCadastro as string).getTime();
+             const dateB = b.dataCadastro instanceof Timestamp ? b.dataCadastro.toMillis() : new Date(b.dataCadastro as string).getTime();
              return dateB - dateA;
         });
     }, [filterStatus, filterRole, searchTerm, users]);
@@ -364,12 +365,29 @@ export default function AdminUsersPage() {
                                                             <div className='flex items-center gap-2'>
                                                                 <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido || user.nome}</Link>
                                                                 {user.isGhost && <Bot className="w-4 h-4 text-primary" />}
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <div className="cursor-help">
+                                                                            {user.providerId === 'google.com' ? <GoogleIcon className="w-3.5 h-3.5" /> : <KeyRound className="w-3.5 h-3.5 text-muted-foreground" />}
+                                                                        </div>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        <p>Login via {user.providerId === 'google.com' ? 'Google' : 'Email/Senha'}</p>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
                                                             </div>
                                                             <p className="text-xs text-muted-foreground hidden sm:block">{user.nome}</p>
-                                                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                                                <Mail className="w-3 h-3" />
-                                                                <span>{user.email}</span>
-                                                            </div>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <div className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer">
+                                                                        <Mail className="w-3 h-3" />
+                                                                        <span className="hidden md:inline">Ver e-mail</span>
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>{user.email}</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
                                                         </div>
                                                     </div>
                                                 </TableCell>
@@ -503,3 +521,4 @@ export default function AdminUsersPage() {
         </TooltipProvider>
     );
 }
+

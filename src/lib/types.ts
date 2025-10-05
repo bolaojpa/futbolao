@@ -12,6 +12,7 @@ export interface UserType {
     email: string;
     fotoPerfil: string;
     urlImagemPersonalizada?: string;
+    providerId?: string; // Novo campo
     status: 'ativo' | 'pendente' | 'bloqueado';
     funcao: 'usuario' | 'moderador' | 'admin';
     isGhost?: boolean;
