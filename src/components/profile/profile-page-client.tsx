@@ -76,8 +76,8 @@ const StatCard = ({
     variant?: StatCardVariant 
 }) => {
     const variantClasses: Record<StatCardVariant, string> = {
-        default: 'hover:brightness-105',
-        leader: 'bg-green-500/10 border-green-500/50 shadow-lg hover:brightness-110',
+        default: 'hover:bg-muted/50',
+        leader: 'bg-green-500/10 border-green-500/50 shadow-lg hover:bg-green-500/20',
         exact: 'bg-bucha-solid text-white hover:brightness-110',
         situation: 'bg-situacao-solid text-white hover:brightness-110',
         combo: 'bg-combo-gold text-black hover:brightness-110',
