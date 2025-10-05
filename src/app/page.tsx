@@ -103,16 +103,19 @@ export default function WelcomePage() {
                     id: googleUser.uid, nome: googleUser.displayName, apelido: googleUser.displayName?.split(' ')[0] || googleUser.email, email: googleUser.email, fotoPerfil: googleUser.photoURL, status: 'pendente', funcao: 'usuario', dataCadastro: serverTimestamp(), titulos: 0, totalJogos: 0, championshipStats: [], urlImagemPersonalizada: '', presenceStatus: 'Disponível', providerId: providerId,
                 });
             } else {
-                // Sempre atualiza o providerId e outras informações que podem mudar no perfil do Google.
+                // Se o usuário já existe, atualiza as informações que podem mudar
+                // e garante que o providerId reflita o último método de login.
                 const existingData = userDoc.data() as UserType;
                 const updates: Partial<UserType> = { 
                     nome: googleUser.displayName || existingData.nome,
-                    providerId: providerId 
+                    providerId: providerId // Sempre atualiza para "google.com" neste fluxo
                 };
+                
                 // Só atualiza a foto se o usuário não tiver definido uma URL personalizada.
                 if (!existingData.urlImagemPersonalizada && googleUser.photoURL) {
                     updates.fotoPerfil = googleUser.photoURL;
                 }
+                
                 await firestoreUpdateDoc(userDocRef, updates);
             }
             handleRedirectBasedOnUser(googleUser);
