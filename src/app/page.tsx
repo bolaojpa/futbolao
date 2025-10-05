@@ -103,14 +103,17 @@ export default function WelcomePage() {
                     id: googleUser.uid, nome: googleUser.displayName, apelido: googleUser.displayName?.split(' ')[0] || googleUser.email, email: googleUser.email, fotoPerfil: googleUser.photoURL, status: 'pendente', funcao: 'usuario', dataCadastro: serverTimestamp(), titulos: 0, totalJogos: 0, championshipStats: [], urlImagemPersonalizada: '', presenceStatus: 'Disponível', providerId: providerId,
                 });
             } else {
+                // Sempre atualiza o providerId e outras informações que podem mudar no perfil do Google.
                 const existingData = userDoc.data() as UserType;
-                const updates: Partial<UserType> = { nome: googleUser.displayName || existingData.nome, providerId: providerId };
+                const updates: Partial<UserType> = { 
+                    nome: googleUser.displayName || existingData.nome,
+                    providerId: providerId 
+                };
+                // Só atualiza a foto se o usuário não tiver definido uma URL personalizada.
                 if (!existingData.urlImagemPersonalizada && googleUser.photoURL) {
                     updates.fotoPerfil = googleUser.photoURL;
                 }
-                if (Object.keys(updates).length > 0) {
-                    await firestoreUpdateDoc(userDocRef, updates);
-                }
+                await firestoreUpdateDoc(userDocRef, updates);
             }
             handleRedirectBasedOnUser(googleUser);
         } catch (error: any) {
