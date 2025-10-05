@@ -245,7 +245,7 @@ export default function AdminDashboardPage() {
             const systemSettings = await getSystemSettings();
             const enableAiNotifications = systemSettings.enablePerformanceNotifications ?? true;
             
-            if (enableAiNotifications && championship.predictionAssist?.active) {
+            if (enableAiNotifications) {
                 for (const prediction of match.predictions) {
                     const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
                     const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
@@ -686,4 +686,5 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
 
