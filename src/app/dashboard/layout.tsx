@@ -2,6 +2,7 @@
 'use client';
 
 import { AppSidebar } from '@/components/shared/app-sidebar';
+import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { Header } from '@/components/shared/header';
 import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -155,12 +156,14 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = useAuth();
+  const isAdmin = user?.funcao === 'admin' || user?.funcao === 'moderator';
 
   return (
     <AuthGuard>
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
-          <AppSidebar />
+          {isAdmin ? <AdminSidebar /> : <AppSidebar />}
           <div className="flex flex-1 flex-col">
             <Header />
             <main className="flex-1 bg-blue-50/50 dark:bg-gray-900/50">

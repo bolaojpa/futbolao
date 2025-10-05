@@ -172,7 +172,8 @@ export default function AdminUsersPage() {
             const roleMatch = filterRole === 'all' || user.funcao === filterRole;
             const searchMatch = searchTerm === '' || 
                                 user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                user.apelido.toLowerCase().includes(searchTerm.toLowerCase());
+                                user.apelido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                user.email.toLowerCase().includes(searchTerm.toLowerCase());
             return statusMatch && roleMatch && searchMatch;
         }).sort((a, b) => {
              const dateA = a.dataCadastro instanceof Timestamp ? a.dataCadastro.toMillis() : new Date(a.dataCadastro).getTime();
@@ -278,7 +279,7 @@ export default function AdminUsersPage() {
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="search"
-                                    placeholder="Buscar por nome ou apelido..."
+                                    placeholder="Buscar por nome, apelido ou e-mail..."
                                     className="pl-8 w-full"
                                     value={searchTerm}
                                     onChange={(e) => {
@@ -352,27 +353,20 @@ export default function AdminUsersPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <div className="relative">
-                                                                    <Avatar className="w-9 h-9">
-                                                                        <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                        <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
-                                                                    </Avatar>
-                                                                    <StatusIndicator status={user.presenceStatus} />
-                                                                </div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p>{user.email}</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
+                                                        <div className="relative">
+                                                            <Avatar className="w-9 h-9">
+                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                            </Avatar>
+                                                            <StatusIndicator status={user.presenceStatus} />
+                                                        </div>
                                                         <div>
                                                             <div className='flex items-center gap-2'>
                                                                 <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido || user.nome}</Link>
                                                                 {user.isGhost && <Bot className="w-4 h-4 text-primary" />}
                                                             </div>
-                                                            <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
-                                                            <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
+                                                            <p className="text-xs text-muted-foreground hidden sm:block">{user.nome}</p>
+                                                            <div className="text-xs text-muted-foreground flex items-center gap-1">
                                                                 <Mail className="w-3 h-3" />
                                                                 <span>{user.email}</span>
                                                             </div>
