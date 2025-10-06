@@ -209,7 +209,6 @@ export function AdminMatchesPageClient() {
             let finalWinners = [...tierContenders];
     
             // Aplicar critérios de desempate de forma eliminatória
-            // 1. Desempate por palpites subsequentes
             if (finalWinners.length > 1) {
                 for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
                     if (finalWinners.length === 1) break;
@@ -228,7 +227,6 @@ export function AdminMatchesPageClient() {
                     if (nextPickWinners.length > 0) {
                         const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
                         const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                        // Apenas atualiza se o novo grupo de empatados for menor
                         if (newTiedUsers.length > 0 && newTiedUsers.length < finalWinners.length) {
                             finalWinners = newTiedUsers;
                         }
@@ -236,7 +234,6 @@ export function AdminMatchesPageClient() {
                 }
             }
     
-            // 2. Desempate pelo jogo final
             if (finalWinners.length > 1) {
                 const finalMatch = allMatches
                     .filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final'))
@@ -255,14 +252,12 @@ export function AdminMatchesPageClient() {
                 }
             }
             
-            // 3. Critério final: antiguidade (se ainda houver empate)
             if (finalWinners.length > 1) {
                 finalWinners.sort((a, b) => {
                     const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
                     const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
                     return dateA - dateB;
                 });
-                finalWinners = [finalWinners[0]]; // Pega apenas o mais antigo
             }
     
             const result = { winnerId: finalWinners.map(u => u.id) };
@@ -523,15 +518,17 @@ export function AdminMatchesPageClient() {
                                                                 )}
                                                             </div>
                                                             <div className='hidden sm:flex items-center gap-1'>
-                                                                {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
+                                                                {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map((teamName, pickIndex) => {
                                                                     const team = teams.find(t => t.name === teamName);
                                                                     if (!team) return null;
                                                                     const winnerInfo = getChampionPickWinner(championship);
                                                                     const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
+                                                                    const finalRankingOrder = Object.values(championship?.finalRanking || {}).filter(Boolean) as string[];
+                                                                    const isPickCorrect = !isEliminated && finalRankingOrder[pickIndex] === teamName;
                                                                     return (
                                                                         <Tooltip key={team.id}>
                                                                             <TooltipTrigger>
-                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", (isEliminated || !isPickCorrect) && "opacity-30")} />
                                                                             </TooltipTrigger>
                                                                             <TooltipContent><p>{team.name}</p></TooltipContent>
                                                                         </Tooltip>

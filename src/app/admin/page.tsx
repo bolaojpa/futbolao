@@ -243,9 +243,7 @@ export default function AdminDashboardPage() {
 
              // 4. (Opcional) Envia notificação por IA
             const systemSettings = await getSystemSettings();
-            const enableAiNotifications = systemSettings.enablePerformanceNotifications ?? true;
-            
-            if (enableAiNotifications) {
+            if (systemSettings.enablePerformanceNotifications) {
                 for (const prediction of match.predictions) {
                     const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
                     const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
@@ -331,7 +329,6 @@ export default function AdminDashboardPage() {
             let bestTier: { rank: number; pick: number } | null = null;
             let tierContenders: UserType[] = [];
     
-            // Encontrar o melhor "tier" de acerto
             for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
                 const rankedTeam = finalRankingOrder[rankIndex];
                 for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
@@ -352,8 +349,6 @@ export default function AdminDashboardPage() {
     
             let finalWinners = [...tierContenders];
     
-            // Aplicar critérios de desempate de forma eliminatória
-            // 1. Desempate por palpites subsequentes
             if (finalWinners.length > 1) {
                 for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
                     if (finalWinners.length === 1) break;
@@ -372,7 +367,6 @@ export default function AdminDashboardPage() {
                     if (nextPickWinners.length > 0) {
                         const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
                         const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                        // Apenas atualiza se o novo grupo de empatados for menor
                         if (newTiedUsers.length > 0 && newTiedUsers.length < finalWinners.length) {
                             finalWinners = newTiedUsers;
                         }
@@ -380,7 +374,6 @@ export default function AdminDashboardPage() {
                 }
             }
     
-            // 2. Desempate pelo jogo final
             if (finalWinners.length > 1) {
                 const finalMatch = allMatches
                     .filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final'))
@@ -399,14 +392,12 @@ export default function AdminDashboardPage() {
                 }
             }
             
-            // 3. Critério final: antiguidade (se ainda houver empate)
             if (finalWinners.length > 1) {
                 finalWinners.sort((a, b) => {
                     const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
                     const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
                     return dateA - dateB;
                 });
-                finalWinners = [finalWinners[0]]; // Pega apenas o mais antigo
             }
     
             const result = { winnerId: finalWinners.map(u => u.id) };
@@ -636,15 +627,17 @@ export default function AdminDashboardPage() {
                                                                                 )}
                                                                             </div>
                                                                             <div className='hidden sm:flex items-center gap-1'>
-                                                                                {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map(teamName => {
+                                                                                {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map((teamName, pickIndex) => {
                                                                                     const team = allTeams.find(t => t.name === teamName);
                                                                                     if (!team) return null;
                                                                                     const winnerInfo = getChampionPickWinner(championship);
                                                                                     const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
+                                                                                    const finalRankingOrder = Object.values(championship?.finalRanking || {}).filter(Boolean) as string[];
+                                                                                    const isPickCorrect = !isEliminated && finalRankingOrder[pickIndex] === teamName;
                                                                                     return (
                                                                                         <Tooltip key={team.id}>
                                                                                             <TooltipTrigger>
-                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated && "opacity-30")} />
+                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", (isEliminated || !isPickCorrect) && "opacity-30")} />
                                                                                             </TooltipTrigger>
                                                                                             <TooltipContent><p>{team.name}</p></TooltipContent>
                                                                                         </Tooltip>
@@ -703,3 +696,4 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
