@@ -37,6 +37,97 @@ export default function FamePage() {
                         return timeB - timeA;
                     });
 
+                const getChampionPickWinner = (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } => {
+                    if (!championship.finalRanking || !championship.championPredictionSettings?.active) return { winnerIds: [], validPicks: {} };
+
+                    const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
+                    if (finalRankingOrder.length === 0) return { winnerIds: [], validPicks: {} };
+
+                    let candidates: UserType[] = [];
+                    let bestTier = { rank: Infinity, pick: Infinity };
+
+                    for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
+                        const rankedTeam = finalRankingOrder[rankIndex];
+                        for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
+                            const contenders = users.filter(u =>
+                                u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
+                            );
+                            if (contenders.length > 0 && rankIndex < bestTier.rank) {
+                                bestTier = { rank: rankIndex, pick: pickIndex };
+                                candidates = contenders;
+                                break; 
+                            }
+                        }
+                        if (candidates.length > 0) break;
+                    }
+
+                    if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
+
+                    for (let nextPickIndex = 0; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
+                        if (candidates.length <= 1) break;
+                        if (nextPickIndex === bestTier.pick) continue;
+
+                        let bestNextRank = Infinity;
+                        const nextPickWinners: { user: UserType; rank: number }[] = [];
+
+                        for (const user of candidates) {
+                            const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
+                            if (userPick) {
+                                const rank = finalRankingOrder.indexOf(userPick);
+                                if (rank !== -1) {
+                                    nextPickWinners.push({ user, rank });
+                                    if (rank < bestNextRank) bestNextRank = rank;
+                                }
+                            }
+                        }
+                        if(nextPickWinners.length > 0) {
+                            const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
+                            if (newTiedUsers.length > 0 && newTiedUsers.length < candidates.length) {
+                                candidates = newTiedUsers;
+                            }
+                        }
+                    }
+
+                    if (candidates.length > 1) {
+                        const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
+                        if (finalMatch) {
+                            const buchaWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
+                            if (buchaWinners.length > 0 && buchaWinners.length < candidates.length) {
+                                candidates = buchaWinners;
+                            } else {
+                                const situationWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
+                                if (situationWinners.length > 0 && situationWinners.length < candidates.length) {
+                                    candidates = situationWinners;
+                                }
+                            }
+                        }
+                    }
+
+                    if (candidates.length > 1) {
+                        candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
+                        candidates = [candidates[0]];
+                    }
+
+                    const validPicks: Record<string, string[]> = {};
+                    candidates.forEach(winner => {
+                        const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
+                        const correctPicksInSequence: string[] = [];
+                        for (let i = 0; i < winnerPicks.length; i++) {
+                             const pick = winnerPicks[i];
+                             const actualRank = finalRankingOrder.indexOf(pick);
+                             if (actualRank !== -1) {
+                                 correctPicksInSequence.push(pick);
+                             } else {
+                                 break;
+                             }
+                        }
+                        validPicks[winner.id] = correctPicksInSequence;
+                    });
+                    
+                    return { winnerIds: candidates.map(u => u.id), validPicks };
+                };
+
+
                 const bannerData: ChampionBannerProps[] = hallOfFameChamps.map(champ => {
                     let campeaoGeralNome = 'EM BREVE';
                     let campeaoGeralAvatarUrl = 'https://ui-avatars.com/api/?name=?&background=random';
@@ -59,93 +150,15 @@ export default function FamePage() {
                     }
 
                     // Lógica para Palpiteiro (quem acertou o campeão)
-                    if (champ.finalRanking && champ.championPredictionSettings?.active) {
-                        const finalRankingOrder = Object.values(champ.finalRanking).filter(Boolean) as string[];
-                        
-                        let bestTier: { rank: number; pick: number } | null = null;
-                        let tierContenders: UserType[] = [];
-
-                        for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
-                            const rankedTeam = finalRankingOrder[rankIndex];
-                            for (let pickIndex = 0; pickIndex < (champ.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
-                                const contenders = users.filter(u => u.championPicks?.some(p => p.championshipId === champ.id && p.teams[pickIndex] === rankedTeam));
-                                if (contenders.length > 0) {
-                                    bestTier = { rank: rankIndex, pick: pickIndex };
-                                    tierContenders = contenders;
-                                    break;
-                                }
-                            }
-                            if (bestTier) break;
-                        }
-
-                        let finalWinners: UserType[] = [];
-
-                        if (bestTier && tierContenders.length > 0) {
-                             finalWinners = [...tierContenders];
-
-                            // 1. Desempate por palpites subsequentes
-                            if (finalWinners.length > 1) {
-                                for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (champ.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
-                                    if (finalWinners.length === 1) break;
-
-                                    const nextPickWinners: { user: UserType, rank: number }[] = [];
-                                    for (const user of finalWinners) {
-                                        const userPick = user.championPicks?.find(p => p.championshipId === champ.id)?.teams[nextPickIndex];
-                                        if (userPick) {
-                                            const rank = finalRankingOrder.indexOf(userPick);
-                                            if (rank !== -1) {
-                                                nextPickWinners.push({ user, rank });
-                                            }
-                                        }
-                                    }
-
-                                    if (nextPickWinners.length > 0) {
-                                        const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
-                                        const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                                        if (newTiedUsers.length > 0 && newTiedUsers.length < finalWinners.length) {
-                                            finalWinners = newTiedUsers;
-                                        }
-                                    }
-                                }
-                            }
-
-                            // 2. Desempate pelo jogo final
-                            if (finalWinners.length > 1) {
-                                const finalMatch = allMatches
-                                    .filter(m => m.campeonatoId === champ.id && m.fase.toLowerCase().includes('final'))
-                                    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
-
-                                if (finalMatch) {
-                                    const buchaWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
-                                    if (buchaWinners.length > 0 && buchaWinners.length < finalWinners.length) {
-                                        finalWinners = buchaWinners;
-                                    } else {
-                                        const situationWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
-                                        if (situationWinners.length > 0 && situationWinners.length < finalWinners.length) {
-                                            finalWinners = situationWinners;
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            // 3. Desempate por antiguidade
-                            if (finalWinners.length > 1) {
-                                finalWinners.sort((a, b) => {
-                                    const dateA = a.dataCadastro instanceof Timestamp ? a.dataCadastro.toMillis() : new Date(a.dataCadastro as string).getTime();
-                                    const dateB = b.dataCadastro instanceof Timestamp ? b.dataCadastro.toMillis() : new Date(b.dataCadastro as string).getTime();
-                                    return dateA - dateB;
-                                });
-                                finalWinners = [finalWinners[0]];
-                            }
-                        }
-                        
-                        if (finalWinners.length > 0) {
-                            palpiteiroNome = finalWinners.map(u => u.apelido).join(', ');
-                            palpiteiroAvatarUrl = finalWinners[0]?.fotoPerfil || 'https://ui-avatars.com/api/?name=?&background=random';
-                        } else {
-                            palpiteiroNome = 'Ninguém';
-                        }
+                    const winnerInfo = getChampionPickWinner(champ);
+                    if (winnerInfo.winnerIds.length > 0) {
+                        const winners = users.filter(u => winnerInfo.winnerIds.includes(u.id));
+                        palpiteiroNome = winners.map(u => u.apelido).join(', ');
+                        palpiteiroAvatarUrl = winners[0]?.fotoPerfil || 'https://ui-avatars.com/api/?name=?&background=random';
+                    } else {
+                        palpiteiroNome = 'Ninguém';
                     }
+
 
                     return {
                         id: champ.id,
