@@ -25,7 +25,7 @@ import { MatchForm } from '@/components/admin/match-form';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
 import { getChampionships, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
@@ -168,30 +168,24 @@ export function AdminMatchesPageClient() {
   }, [selectedChampionship, matchesWithPredictions]);
 
     const getChampionPickWinner = useMemo(() => {
-        const cache: Record<string, { winnerId: string[]; validPicks: Record<string, string[]> } | null> = {};
+        const cache: Record<string, { winnerIds: string[]; validPicks: Record<string, string[]> }> = {};
 
-        return (championship: Championship) => {
+        return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } | null => {
             if (cache[championship.id]) return cache[championship.id];
+            if (!championship.finalRanking || !championship.championPredictionSettings?.active) return null;
 
-            if (!championship.finalRanking || !championship.championPredictionSettings?.active) {
-                cache[championship.id] = null;
-                return null;
-            }
-            
             const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
-            if (finalRankingOrder.length === 0) {
-                cache[championship.id] = null;
-                return null;
-            }
+            if (finalRankingOrder.length === 0) return null;
 
-            let bestTier: { rank: number, pick: number } | null = null;
+            let bestTier: { rank: number; pick: number } | null = null;
             let tierContenders: UserType[] = [];
 
-            // Encontrar o melhor "tier" de acerto (campeão, vice, etc) na melhor posição de palpite
             for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
                 const rankedTeam = finalRankingOrder[rankIndex];
                 for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
-                    const contenders = users.filter(u => u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam));
+                    const contenders = users.filter(u =>
+                        u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
+                    );
                     if (contenders.length > 0) {
                         bestTier = { rank: rankIndex, pick: pickIndex };
                         tierContenders = contenders;
@@ -201,68 +195,47 @@ export function AdminMatchesPageClient() {
                 if (bestTier) break;
             }
 
-            if (!bestTier || tierContenders.length === 0) {
-                cache[championship.id] = null;
-                return null;
-            }
-            
+            if (!bestTier) return null;
+
             let finalWinners = [...tierContenders];
 
-            // 1. Desempate por palpites subsequentes
             if (finalWinners.length > 1) {
                 for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
                     if (finalWinners.length === 1) break;
-
-                    const nextPickWinners: { user: UserType, rank: number }[] = [];
+                    const nextPickWinners: { user: UserType; rank: number }[] = [];
                     for (const user of finalWinners) {
                         const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
                         if (userPick) {
                             const rank = finalRankingOrder.indexOf(userPick);
-                            if (rank !== -1) {
-                                nextPickWinners.push({ user, rank });
-                            }
+                            if (rank !== -1) nextPickWinners.push({ user, rank });
                         }
                     }
-
                     if (nextPickWinners.length > 0) {
                         const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
-                        const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                        if (newTiedUsers.length > 0 && newTiedUsers.length < finalWinners.length) {
-                            finalWinners = newTiedUsers;
-                        }
+                        finalWinners = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
                     }
                 }
             }
 
-            // 2. Desempate pelo jogo final
             if (finalWinners.length > 1) {
                 const finalMatch = allMatches
                     .filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final'))
                     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
-
                 if (finalMatch) {
                     const buchaWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
-                    if (buchaWinners.length > 0 && buchaWinners.length < finalWinners.length) {
+                    if (buchaWinners.length > 0) {
                         finalWinners = buchaWinners;
                     } else {
                         const situationWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
-                        if (situationWinners.length > 0 && situationWinners.length < finalWinners.length) {
-                            finalWinners = situationWinners;
-                        }
+                        if (situationWinners.length > 0) finalWinners = situationWinners;
                     }
                 }
             }
-            
-            // 3. Desempate por antiguidade
+
             if (finalWinners.length > 1) {
-                finalWinners.sort((a, b) => {
-                    const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
-                    const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
-                    return dateA - dateB;
-                });
-                finalWinners = [finalWinners[0]];
+                finalWinners.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
             }
-            
+
             const validPicks: Record<string, string[]> = {};
             finalWinners.forEach(winner => {
                 const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
@@ -271,13 +244,13 @@ export function AdminMatchesPageClient() {
                     if (winnerPicks[i] === finalRankingOrder[i]) {
                         correctPicksInSequence.push(winnerPicks[i]);
                     } else {
-                        break; // Para a sequência ao encontrar o primeiro erro
+                        break;
                     }
                 }
                 validPicks[winner.id] = correctPicksInSequence;
             });
 
-            const result = { winnerId: finalWinners.map(u => u.id), validPicks };
+            const result = { winnerIds: finalWinners.map(u => u.id), validPicks };
             cache[championship.id] = result;
             return result;
         };
@@ -539,13 +512,13 @@ export function AdminMatchesPageClient() {
                                                                     const team = teams.find(t => t.name === teamName);
                                                                     if (!team) return null;
                                                                     const winnerInfo = getChampionPickWinner(championship);
-                                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerId.includes(user.id);
-                                                                    const isPickCorrect = !isEliminated && winnerInfo?.validPicks[user.id]?.includes(teamName);
+                                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerIds.includes(user.id);
+                                                                    const isPickValid = !isEliminated && (winnerInfo?.validPicks[user.id]?.includes(teamName));
                                                                     
                                                                     return (
                                                                         <Tooltip key={team.id}>
                                                                             <TooltipTrigger>
-                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", isEliminated || !isPickCorrect ? "opacity-30" : "")} />
+                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", !isPickValid && "opacity-30")} />
                                                                             </TooltipTrigger>
                                                                             <TooltipContent><p>{team.name}</p></TooltipContent>
                                                                         </Tooltip>
