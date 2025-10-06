@@ -18,7 +18,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2, Gem, Goal, Ghost } from 'lucide-react';
+import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2, Gem, Goal, Ghost } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,7 +30,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { useAuth } from '@/hooks/use-auth';
-import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { isPast, parseISO } from 'date-fns';
 import { db } from '@/lib/firebase';
