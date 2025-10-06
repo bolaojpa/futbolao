@@ -132,94 +132,100 @@ export function AdminHistoryPageClient() {
     .filter(match => (selectedChampionship === 'all' || match.campeonatoId === selectedChampionship))
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()), [selectedChampionship, matches]);
 
-     const getChampionPickWinner = useMemo(() => {
-        const cache: Record<string, { winnerIds: string[]; validPicks: Record<string, string[]> }> = {};
+    const getChampionPickWinner = useMemo(() => {
+    const cache: Record<string, { winnerIds: string[]; validPicks: Record<string, string[]> }> = {};
 
-        return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } | null => {
-            if (cache[championship.id]) return cache[championship.id];
-            if (!championship.finalRanking || !championship.championPredictionSettings?.active) return null;
+    return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } | null => {
+        if (cache[championship.id]) return cache[championship.id];
+        if (!championship.finalRanking || !championship.championPredictionSettings?.active) return null;
 
-            const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
-            if (finalRankingOrder.length === 0) return null;
+        const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
+        if (finalRankingOrder.length === 0) return null;
 
-            let bestTier: { rank: number; pick: number } | null = null;
-            let tierContenders: UserType[] = [];
-
-            for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
-                const rankedTeam = finalRankingOrder[rankIndex];
-                for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
-                    const contenders = users.filter(u =>
-                        u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
-                    );
-                    if (contenders.length > 0) {
-                        bestTier = { rank: rankIndex, pick: pickIndex };
-                        tierContenders = contenders;
-                        break;
-                    }
-                }
-                if (bestTier) break;
-            }
-
-            if (!bestTier) return null;
-
-            let finalWinners = [...tierContenders];
-
-            if (finalWinners.length > 1) {
-                for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
-                    if (finalWinners.length === 1) break;
-                    const nextPickWinners: { user: UserType; rank: number }[] = [];
-                    for (const user of finalWinners) {
-                        const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
-                        if (userPick) {
-                            const rank = finalRankingOrder.indexOf(userPick);
-                            if (rank !== -1) nextPickWinners.push({ user, rank });
-                        }
-                    }
-                    if (nextPickWinners.length > 0) {
-                        const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
-                        finalWinners = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                    }
+        let candidates: UserType[] = [];
+        
+        // 1. Encontrar o melhor "tier" de acerto
+        for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
+            const rankedTeam = finalRankingOrder[rankIndex];
+            for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
+                const contenders = users.filter(u =>
+                    u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
+                );
+                if (contenders.length > 0) {
+                    candidates = contenders;
+                    break;
                 }
             }
+            if (candidates.length > 0) break;
+        }
 
-            if (finalWinners.length > 1) {
-                const finalMatch = allMatches
-                    .filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final'))
-                    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
-                if (finalMatch) {
-                    const buchaWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
-                    if (buchaWinners.length > 0) {
-                        finalWinners = buchaWinners;
-                    } else {
-                        const situationWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
-                        if (situationWinners.length > 0) finalWinners = situationWinners;
+        if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
+
+        // 2. Aplicar desempates eliminatórios
+        // Desempate 1: Melhores palpites subsequentes
+        for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
+            if (candidates.length <= 1) break;
+
+            const nextPickWinners: { user: UserType; rank: number }[] = [];
+            for (const user of candidates) {
+                const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[pickIndex];
+                if (userPick) {
+                    const rank = finalRankingOrder.indexOf(userPick);
+                    if (rank !== -1) nextPickWinners.push({ user, rank });
+                }
+            }
+            
+            if (nextPickWinners.length > 0) {
+                const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
+                const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
+                if (newTiedUsers.length < candidates.length) {
+                    candidates = newTiedUsers;
+                }
+            }
+        }
+        
+        // Desempate 2: Jogo Final
+        if (candidates.length > 1) {
+            const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
+            if (finalMatch) {
+                const buchaWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
+                if (buchaWinners.length > 0 && buchaWinners.length < candidates.length) {
+                    candidates = buchaWinners;
+                } else {
+                    const situationWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
+                    if (situationWinners.length > 0 && situationWinners.length < candidates.length) {
+                        candidates = situationWinners;
                     }
                 }
             }
+        }
 
-            if (finalWinners.length > 1) {
-                finalWinners.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
-            }
+        // Desempate 3: Antiguidade
+        if (candidates.length > 1) {
+            candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
+            candidates = [candidates[0]];
+        }
 
-            const validPicks: Record<string, string[]> = {};
-            finalWinners.forEach(winner => {
-                const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
-                const correctPicksInSequence: string[] = [];
-                for (let i = 0; i < winnerPicks.length; i++) {
-                    if (winnerPicks[i] === finalRankingOrder[i]) {
-                        correctPicksInSequence.push(winnerPicks[i]);
-                    } else {
-                        break;
-                    }
+        // 3. Determinar os palpites válidos para o(s) vencedor(es)
+        const validPicks: Record<string, string[]> = {};
+        candidates.forEach(winner => {
+            const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
+            const correctPicksInSequence: string[] = [];
+            for (let i = 0; i < winnerPicks.length; i++) {
+                if (winnerPicks[i] === finalRankingOrder[i]) {
+                    correctPicksInSequence.push(winnerPicks[i]);
+                } else {
+                    break; // Quebra a corrente no primeiro erro
                 }
-                validPicks[winner.id] = correctPicksInSequence;
-            });
+            }
+            validPicks[winner.id] = correctPicksInSequence;
+        });
 
-            const result = { winnerIds: finalWinners.map(u => u.id), validPicks };
-            cache[championship.id] = result;
-            return result;
-        };
-    }, [users, allMatches, allPredictions]);
+        const result = { winnerIds: candidates.map(u => u.id), validPicks };
+        cache[championship.id] = result;
+        return result;
+    };
+}, [users, allMatches, allPredictions]);
 
 
   const handleFilterChange = (value: string) => {
@@ -493,45 +499,47 @@ export function AdminHistoryPageClient() {
                                               </Avatar>
                                               <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                           </div>
-                                          <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                            <span className="font-bold">{user.apelido}:</span>
-                                            <div className='flex items-center gap-1'>
-                                                <div className="sm:hidden">
-                                                    {championship?.championPredictionSettings?.active && (
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-48 p-2">
-                                                                <div className="space-y-1">
-                                                                    <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                    {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                </div>
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                    )}
-                                                </div>
-                                                <div className='hidden sm:flex items-center gap-1'>
-                                                     {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map((teamName, pickIndex) => {
-                                                        const team = teams.find(t => t.name === teamName);
-                                                        if (!team) return null;
-                                                        const winnerInfo = getChampionPickWinner(championship);
-                                                        const isEliminated = !!winnerInfo && !winnerInfo.winnerIds.includes(user.id);
-                                                        const isPickValid = !isEliminated && (winnerInfo?.validPicks[user.id]?.includes(teamName));
-                                                        
-                                                        return (
-                                                            <Tooltip key={team.id}>
-                                                                <TooltipTrigger>
-                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", !isPickValid && "opacity-30")} />
-                                                                </TooltipTrigger>
-                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                            </Tooltip>
-                                                        );
-                                                    })}
-                                                </div>
+                                          <div className="flex items-center gap-2">
+                                            <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                              <span className="font-bold">{user.apelido}:</span>
+                                              <div className='flex items-center gap-1'>
+                                                  <div className="sm:hidden">
+                                                      {championship?.championPredictionSettings?.active && (
+                                                          <Popover>
+                                                              <PopoverTrigger asChild>
+                                                                  <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                              </PopoverTrigger>
+                                                              <PopoverContent className="w-48 p-2">
+                                                                  <div className="space-y-1">
+                                                                      <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                      {user.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                  </div>
+                                                              </PopoverContent>
+                                                          </Popover>
+                                                      )}
+                                                  </div>
+                                                  <div className='hidden sm:flex items-center gap-1'>
+                                                      {user.championPicks?.find(p => p.championshipId === championship.id)?.teams.map((teamName, pickIndex) => {
+                                                          const team = teams.find(t => t.name === teamName);
+                                                          if (!team) return null;
+                                                          const winnerInfo = getChampionPickWinner(championship);
+                                                          const isWinner = winnerInfo?.winnerIds.includes(user.id);
+                                                          const isPickValid = isWinner && winnerInfo.validPicks[user.id]?.includes(teamName);
+                                                          
+                                                          return (
+                                                              <Tooltip key={team.id}>
+                                                                  <TooltipTrigger>
+                                                                      <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", !isPickValid && "opacity-30")} />
+                                                                  </TooltipTrigger>
+                                                                  <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                              </Tooltip>
+                                                          );
+                                                      })}
+                                                  </div>
+                                              </div>
                                             </div>
+                                            {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                           </div>
-                                           {user.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                         </div>
                                         <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
                                             <div className="flex-1 text-center">
@@ -640,3 +648,4 @@ export function AdminHistoryPageClient() {
     </div>
   );
 }
+

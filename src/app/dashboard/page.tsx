@@ -276,19 +276,19 @@ export default function DashboardPage() {
 
     }, [user, allUsers, userChampionships, liveMatches, allPredictions, allMatches]);
 
-     const getChampionPickWinner = useMemo(() => {
+    const getChampionPickWinner = useMemo(() => {
         const cache: Record<string, { winnerIds: string[]; validPicks: Record<string, string[]> }> = {};
-
+    
         return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } | null => {
             if (cache[championship.id]) return cache[championship.id];
             if (!championship.finalRanking || !championship.championPredictionSettings?.active) return null;
-
+    
             const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
             if (finalRankingOrder.length === 0) return null;
-
-            let bestTier: { rank: number; pick: number } | null = null;
-            let tierContenders: UserType[] = [];
-
+    
+            let candidates: UserType[] = [];
+            
+            // 1. Encontrar o melhor "tier" de acerto
             for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
                 const rankedTeam = finalRankingOrder[rankIndex];
                 for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
@@ -296,70 +296,76 @@ export default function DashboardPage() {
                         u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
                     );
                     if (contenders.length > 0) {
-                        bestTier = { rank: rankIndex, pick: pickIndex };
-                        tierContenders = contenders;
+                        candidates = contenders;
                         break;
                     }
                 }
-                if (bestTier) break;
+                if (candidates.length > 0) break;
             }
-
-            if (!bestTier) return null;
-
-            let finalWinners = [...tierContenders];
-
-            if (finalWinners.length > 1) {
-                for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
-                    if (finalWinners.length === 1) break;
-                    const nextPickWinners: { user: UserType; rank: number }[] = [];
-                    for (const user of finalWinners) {
-                        const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
-                        if (userPick) {
-                            const rank = finalRankingOrder.indexOf(userPick);
-                            if (rank !== -1) nextPickWinners.push({ user, rank });
+    
+            if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
+    
+            // 2. Aplicar desempates eliminatórios
+            // Desempate 1: Melhores palpites subsequentes
+            for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
+                if (candidates.length <= 1) break;
+    
+                const nextPickWinners: { user: UserType; rank: number }[] = [];
+                for (const user of candidates) {
+                    const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[pickIndex];
+                    if (userPick) {
+                        const rank = finalRankingOrder.indexOf(userPick);
+                        if (rank !== -1) nextPickWinners.push({ user, rank });
+                    }
+                }
+                
+                if (nextPickWinners.length > 0) {
+                    const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
+                    const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
+                    if (newTiedUsers.length < candidates.length) {
+                        candidates = newTiedUsers;
+                    }
+                }
+            }
+            
+            // Desempate 2: Jogo Final
+            if (candidates.length > 1) {
+                const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
+                if (finalMatch) {
+                    const buchaWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
+                    if (buchaWinners.length > 0 && buchaWinners.length < candidates.length) {
+                        candidates = buchaWinners;
+                    } else {
+                        const situationWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
+                        if (situationWinners.length > 0 && situationWinners.length < candidates.length) {
+                            candidates = situationWinners;
                         }
                     }
-                    if (nextPickWinners.length > 0) {
-                        const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
-                        finalWinners = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                    }
                 }
             }
-
-            if (finalWinners.length > 1) {
-                const finalMatch = allMatches
-                    .filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final'))
-                    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
-                if (finalMatch) {
-                    const buchaWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
-                    if (buchaWinners.length > 0) {
-                        finalWinners = buchaWinners;
-                    } else {
-                        const situationWinners = finalWinners.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
-                        if (situationWinners.length > 0) finalWinners = situationWinners;
-                    }
-                }
+    
+            // Desempate 3: Antiguidade
+            if (candidates.length > 1) {
+                candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
+                candidates = [candidates[0]];
             }
-
-            if (finalWinners.length > 1) {
-                finalWinners.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
-            }
-
+    
+            // 3. Determinar os palpites válidos para o(s) vencedor(es)
             const validPicks: Record<string, string[]> = {};
-            finalWinners.forEach(winner => {
+            candidates.forEach(winner => {
                 const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
                 const correctPicksInSequence: string[] = [];
                 for (let i = 0; i < winnerPicks.length; i++) {
                     if (winnerPicks[i] === finalRankingOrder[i]) {
                         correctPicksInSequence.push(winnerPicks[i]);
                     } else {
-                        break;
+                        break; // Quebra a corrente no primeiro erro
                     }
                 }
                 validPicks[winner.id] = correctPicksInSequence;
             });
-
-            const result = { winnerIds: finalWinners.map(u => u.id), validPicks };
+    
+            const result = { winnerIds: candidates.map(u => u.id), validPicks };
             cache[championship.id] = result;
             return result;
         };
@@ -559,43 +565,46 @@ export default function DashboardPage() {
                                                                                         <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
                                                                                         <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                                     </Avatar>
-                                                                                    <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                                                                        <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
-                                                                                        {championship?.championPredictionSettings?.active && (
-                                                                                            <>
-                                                                                                <div className="relative block sm:hidden">
-                                                                                                    <Popover>
-                                                                                                        <PopoverTrigger asChild>
-                                                                                                            <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                                                                        </PopoverTrigger>
-                                                                                                        <PopoverContent className="w-48 p-2">
-                                                                                                            <div className="space-y-1">
-                                                                                                                <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                                                                {participant.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                                                            </div>
-                                                                                                        </PopoverContent>
-                                                                                                    </Popover>
-                                                                                                </div>
-                                                                                                <div className='hidden sm:flex items-center gap-1'>
-                                                                                                     {participant.championPicks?.find(p => p.championshipId === championship.id)?.teams.map((teamName, pickIndex) => {
-                                                                                                        const team = allTeams.find(t => t.name === teamName);
-                                                                                                        if (!team) return null;
-                                                                                                        const winnerInfo = getChampionPickWinner(championship);
-                                                                                                        const isEliminated = !!winnerInfo && !winnerInfo.winnerIds.includes(participant.id);
-                                                                                                        const isPickValid = !isEliminated && (winnerInfo?.validPicks[participant.id]?.includes(teamName));
-                                                                                                        
-                                                                                                        return (
-                                                                                                            <Tooltip key={team.id}>
-                                                                                                                <TooltipTrigger>
-                                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", !isPickValid && "opacity-30")} />
-                                                                                                                </TooltipTrigger>
-                                                                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                                            </Tooltip>
-                                                                                                        );
-                                                                                                    })}
-                                                                                                </div>
-                                                                                            </>
-                                                                                        )}
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                                            <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                                            {championship?.championPredictionSettings?.active && (
+                                                                                                <>
+                                                                                                    <div className="relative block sm:hidden">
+                                                                                                        <Popover>
+                                                                                                            <PopoverTrigger asChild>
+                                                                                                                <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                                            </PopoverTrigger>
+                                                                                                            <PopoverContent className="w-48 p-2">
+                                                                                                                <div className="space-y-1">
+                                                                                                                    <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                                                    {participant.championPicks?.find(pick => pick.championshipId === championship.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                                                                </div>
+                                                                                                            </PopoverContent>
+                                                                                                        </Popover>
+                                                                                                    </div>
+                                                                                                    <div className='hidden sm:flex items-center gap-1'>
+                                                                                                        {participant.championPicks?.find(p => p.championshipId === championship.id)?.teams.map((teamName, pickIndex) => {
+                                                                                                            const team = allTeams.find(t => t.name === teamName);
+                                                                                                            if (!team) return null;
+                                                                                                            const winnerInfo = getChampionPickWinner(championship);
+                                                                                                            const isWinner = winnerInfo?.winnerIds.includes(participant.id);
+                                                                                                            const isPickValid = isWinner && winnerInfo.validPicks[participant.id]?.includes(teamName);
+                                                                                                            
+                                                                                                            return (
+                                                                                                                <Tooltip key={team.id}>
+                                                                                                                    <TooltipTrigger>
+                                                                                                                        <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", !isPickValid && "opacity-30")} />
+                                                                                                                    </TooltipTrigger>
+                                                                                                                    <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                                                                </Tooltip>
+                                                                                                            );
+                                                                                                        })}
+                                                                                                    </div>
+                                                                                                </>
+                                                                                            )}
+                                                                                        </div>
+                                                                                         {participant.isGhost && <Ghost className="w-4 h-4 text-primary" />}
                                                                                     </div>
                                                                                 </Link>
                                                                             </div>
@@ -795,44 +804,47 @@ export default function DashboardPage() {
                                                                     <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
                                                                     <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                 </Avatar>
-                                                                 <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                                                    <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Seu Palpite' : participant.apelido}:</span>
-                                                                    {champ?.championPredictionSettings?.active && (
-                                                                        <>
-                                                                            <div className="relative block sm:hidden">
-                                                                                <Popover>
-                                                                                    <PopoverTrigger asChild>
-                                                                                        <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
-                                                                                    </PopoverTrigger>
-                                                                                    <PopoverContent className="w-48 p-2">
-                                                                                        <div className="space-y-1">
-                                                                                            <p className="font-bold text-sm">Palpites de Campeão</p>
-                                                                                            {participant.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
-                                                                                        </div>
-                                                                                    </PopoverContent>
-                                                                                </Popover>
-                                                                            </div>
-                                                                            <div className='hidden sm:flex items-center gap-1'>
-                                                                                 {participant.championPicks?.find(p => p.championshipId === champ.id)?.teams.map((teamName, pickIndex) => {
-                                                                                    const team = allTeams.find(t => t.name === teamName);
-                                                                                    if (!team) return null;
-                                                                                    const winnerInfo = getChampionPickWinner(champ);
-                                                                                    const isEliminated = !!winnerInfo && !winnerInfo.winnerIds.includes(participant.id);
-                                                                                    const isPickValid = !isEliminated && (winnerInfo?.validPicks[participant.id]?.includes(teamName));
-                                                                                    
-                                                                                    return (
-                                                                                        <Tooltip key={team.id}>
-                                                                                            <TooltipTrigger>
-                                                                                                <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", !isPickValid && "opacity-30")} />
-                                                                                            </TooltipTrigger>
-                                                                                            <TooltipContent><p>{team.name}</p></TooltipContent>
-                                                                                        </Tooltip>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        </>
-                                                                    )}
-                                                                </div>
+                                                                 <div className="flex items-center gap-2">
+                                                                    <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
+                                                                        <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                        {champ?.championPredictionSettings?.active && (
+                                                                            <>
+                                                                                <div className="relative block sm:hidden">
+                                                                                    <Popover>
+                                                                                        <PopoverTrigger asChild>
+                                                                                            <Trophy className="w-5 h-5 text-amber-500 cursor-pointer" />
+                                                                                        </PopoverTrigger>
+                                                                                        <PopoverContent className="w-48 p-2">
+                                                                                            <div className="space-y-1">
+                                                                                                <p className="font-bold text-sm">Palpites de Campeão</p>
+                                                                                                {participant.championPicks?.find(pick => pick.championshipId === champ.id)?.teams.map((teamName, idx) => <span key={idx} className="block text-xs">{idx+1}º: {teamName}</span>)}
+                                                                                            </div>
+                                                                                        </PopoverContent>
+                                                                                    </Popover>
+                                                                                </div>
+                                                                                <div className='hidden sm:flex items-center gap-1'>
+                                                                                    {participant.championPicks?.find(p => p.championshipId === champ.id)?.teams.map((teamName, pickIndex) => {
+                                                                                        const team = allTeams.find(t => t.name === teamName);
+                                                                                        if (!team) return null;
+                                                                                        const winnerInfo = getChampionPickWinner(champ);
+                                                                                        const isWinner = winnerInfo?.winnerIds.includes(participant.id);
+                                                                                        const isPickValid = isWinner && winnerInfo.validPicks[participant.id]?.includes(teamName);
+                                                                                        
+                                                                                        return (
+                                                                                            <Tooltip key={team.id}>
+                                                                                                <TooltipTrigger>
+                                                                                                    <Image src={team.crestUrl} alt={team.name} width={16} height={16} className={cn("object-contain", !isPickValid && "opacity-30")} />
+                                                                                                </TooltipTrigger>
+                                                                                                <TooltipContent><p>{team.name}</p></TooltipContent>
+                                                                                            </Tooltip>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                     {participant.isGhost && <Ghost className="w-4 h-4 text-primary" />}
+                                                                  </div>
                                                             </Link>
                                                         </div>
                                                         <div className="w-1/3 flex justify-center font-mono font-semibold text-base relative">
@@ -892,4 +904,5 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
+
 
