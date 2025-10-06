@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
-import { getChampionships, deleteMatch, getTeams, getUsers } from '@/lib/firebase/firestore';
+import { deleteMatch } from '@/lib/firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -81,7 +81,6 @@ const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => 
     return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
 };
 
-
 export function AdminMatchesPageClient() {
   const router = useRouter();
   const pathname = usePathname();
@@ -101,57 +100,39 @@ export function AdminMatchesPageClient() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Check every minute
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
-      setIsLoading(true);
-      const fetchData = async () => {
-          try {
-              const [championshipsData, teamsData, usersData] = await Promise.all([
-                  getChampionships(),
-                  getTeams(),
-                  getUsers(),
-              ]);
-              setChampionships(championshipsData);
-              setTeams(teamsData);
-              setUsers(usersData);
-              if (championshipIdFromQuery) {
-                  setSelectedChampionship(championshipIdFromQuery);
-              } else if (championshipsData.length > 0) {
-                  setSelectedChampionship(championshipsData[0].id);
-              }
-          } catch (error) {
-              toast({ title: 'Erro ao carregar dados iniciais', variant: 'destructive' });
-          } finally {
-              setIsLoading(false);
-          }
-      };
-      fetchData();
-  }, [championshipIdFromQuery, toast]);
+    setIsLoading(true);
 
-  // Real-time listeners
-  useEffect(() => {
-      const qMatches = query(collection(db, 'matches'), where('status', 'in', ['Agendado', 'Ao Vivo']));
-      const unsubMatches = onSnapshot(qMatches, (snapshot) => {
-          const matchesData: Match[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-          setAllMatches(matchesData);
-      });
+    const unsubChampionships = onSnapshot(collection(db, 'championships'), (snap) => {
+        const championshipsData = snap.docs.map(d => ({id: d.id, ...d.data()}) as Championship);
+        setChampionships(championshipsData);
+        if (championshipIdFromQuery) {
+            setSelectedChampionship(championshipIdFromQuery);
+        } else if (championshipsData.length > 0) {
+            setSelectedChampionship(championshipsData[0].id);
+        }
+    });
 
-      const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
-           const predictionsData: Prediction[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
-           setAllPredictions(predictionsData);
-      });
+    const unsubTeams = onSnapshot(collection(db, 'teams'), (snap) => setTeams(snap.docs.map(d => ({id: d.id, ...d.data()}) as Team)));
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => setUsers(snap.docs.map(d => ({id: d.id, ...d.data()}) as UserType)));
+    
+    const qMatches = query(collection(db, 'matches'), where('status', 'in', ['Agendado', 'Ao Vivo']));
+    const unsubMatches = onSnapshot(qMatches, (snap) => setAllMatches(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match))));
 
-      return () => {
+    const unsubPredictions = onSnapshot(collection(db, "predictions"), (snap) => {
+        setAllPredictions(snap.docs.map(d => ({id: d.id, ...d.data()}) as Prediction));
+        setIsLoading(false);
+    });
+
+    return () => {
+        unsubChampionships();
+        unsubTeams();
+        unsubUsers();
         unsubMatches();
         unsubPredictions();
-      };
-  }, []);
+    };
+  }, [championshipIdFromQuery]);
 
   const matchesWithPredictions = useMemo(() => {
     return allMatches.map(match => ({
@@ -168,99 +149,99 @@ export function AdminMatchesPageClient() {
   }, [selectedChampionship, matchesWithPredictions]);
 
     const getChampionPickWinner = useMemo(() => {
-    const cache: Record<string, { winnerIds: string[]; validPicks: Record<string, string[]> }> = {};
+        const cache: Record<string, { winnerIds: string[]; validPicks: Record<string, string[]> }> = {};
+    
+        return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } => {
+            if (cache[championship.id]) return cache[championship.id];
+            if (!championship.finalRanking || !championship.championPredictionSettings?.active) return { winnerIds: [], validPicks: {} };
+    
+            const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
+            if (finalRankingOrder.length === 0) return { winnerIds: [], validPicks: {} };
+    
+            let candidates: UserType[] = [];
+            let bestTier = { rank: Infinity, pick: Infinity };
 
-    return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } | null => {
-        if (cache[championship.id]) return cache[championship.id];
-        if (!championship.finalRanking || !championship.championPredictionSettings?.active) return null;
-
-        const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
-        if (finalRankingOrder.length === 0) return null;
-
-        let candidates: UserType[] = [];
-        
-        // 1. Encontrar o melhor "tier" de acerto
-        for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
-            const rankedTeam = finalRankingOrder[rankIndex];
-            for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
-                const contenders = users.filter(u =>
-                    u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
-                );
-                if (contenders.length > 0) {
-                    candidates = contenders;
-                    break;
+            for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
+                const rankedTeam = finalRankingOrder[rankIndex];
+                for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
+                    const contenders = users.filter(u =>
+                        u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
+                    );
+                    if (contenders.length > 0) {
+                        bestTier = { rank: rankIndex, pick: pickIndex };
+                        candidates = contenders;
+                        break; 
+                    }
                 }
+                if (candidates.length > 0) break;
             }
-            if (candidates.length > 0) break;
-        }
 
-        if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
+            if (candidates.length > 1) {
+                for (let nextPickIndex = 0; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
+                    if (candidates.length <= 1) break;
+                    if (nextPickIndex === bestTier.pick) continue;
 
-        // 2. Aplicar desempates eliminatórios
-        // Desempate 1: Melhores palpites subsequentes
-        for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
-            if (candidates.length <= 1) break;
+                    let bestNextRank = Infinity;
+                    const nextPickWinners: { user: UserType; rank: number }[] = [];
 
-            const nextPickWinners: { user: UserType; rank: number }[] = [];
-            for (const user of candidates) {
-                const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[pickIndex];
-                if (userPick) {
-                    const rank = finalRankingOrder.indexOf(userPick);
-                    if (rank !== -1) nextPickWinners.push({ user, rank });
-                }
-            }
-            
-            if (nextPickWinners.length > 0) {
-                const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
-                const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                if (newTiedUsers.length < candidates.length) {
-                    candidates = newTiedUsers;
-                }
-            }
-        }
-        
-        // Desempate 2: Jogo Final
-        if (candidates.length > 1) {
-            const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
-            if (finalMatch) {
-                const buchaWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
-                if (buchaWinners.length > 0 && buchaWinners.length < candidates.length) {
-                    candidates = buchaWinners;
-                } else {
-                    const situationWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
-                    if (situationWinners.length > 0 && situationWinners.length < candidates.length) {
-                        candidates = situationWinners;
+                    for (const user of candidates) {
+                        const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
+                        if (userPick) {
+                            const rank = finalRankingOrder.indexOf(userPick);
+                            if (rank !== -1) {
+                                nextPickWinners.push({ user, rank });
+                                bestNextRank = Math.min(bestNextRank, rank);
+                            }
+                        }
+                    }
+                    if(nextPickWinners.length > 0) {
+                        const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
+                        if (newTiedUsers.length > 0) {
+                            candidates = newTiedUsers;
+                        }
                     }
                 }
             }
-        }
-
-        // Desempate 3: Antiguidade
-        if (candidates.length > 1) {
-            candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
-            candidates = [candidates[0]];
-        }
-
-        // 3. Determinar os palpites válidos para o(s) vencedor(es)
-        const validPicks: Record<string, string[]> = {};
-        candidates.forEach(winner => {
-            const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
-            const correctPicksInSequence: string[] = [];
-            for (let i = 0; i < winnerPicks.length; i++) {
-                if (winnerPicks[i] === finalRankingOrder[i]) {
-                    correctPicksInSequence.push(winnerPicks[i]);
-                } else {
-                    break; // Quebra a corrente no primeiro erro
+            
+            if (candidates.length > 1) {
+                const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
+                if (finalMatch) {
+                    const buchaWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'bucha' || p.acertoTipo === 'combo')));
+                    if (buchaWinners.length > 0 && buchaWinners.length < candidates.length) {
+                        candidates = buchaWinners;
+                    } else {
+                        const situationWinners = candidates.filter(u => allPredictions.some(p => p.userId === u.id && p.matchId === finalMatch.id && (p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus')));
+                        if (situationWinners.length > 0 && situationWinners.length < candidates.length) {
+                            candidates = situationWinners;
+                        }
+                    }
                 }
             }
-            validPicks[winner.id] = correctPicksInSequence;
-        });
 
-        const result = { winnerIds: candidates.map(u => u.id), validPicks };
-        cache[championship.id] = result;
-        return result;
-    };
-}, [users, allMatches, allPredictions]);
+            if (candidates.length > 1) {
+                candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
+                candidates = [candidates[0]];
+            }
+
+            const validPicks: Record<string, string[]> = {};
+            candidates.forEach(winner => {
+                const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
+                const correctPicksInSequence: string[] = [];
+                for (let i = 0; i < winnerPicks.length; i++) {
+                    if (winnerPicks[i] === finalRankingOrder[i]) {
+                        correctPicksInSequence.push(winnerPicks[i]);
+                    } else {
+                        break; 
+                    }
+                }
+                validPicks[winner.id] = correctPicksInSequence;
+            });
+            
+            const result = { winnerIds: candidates.map(u => u.id), validPicks };
+            cache[championship.id] = result;
+            return result;
+        };
+    }, [users, allMatches, allPredictions]);
 
 
   const handleFilterChange = (value: string) => {
@@ -296,7 +277,6 @@ export function AdminMatchesPageClient() {
   const handleFormSubmit = async () => {
     setIsFormOpen(false);
   };
-
 
   const paginatedMatches = useMemo(() => {
      return sortedMatches.slice(
@@ -519,7 +499,7 @@ export function AdminMatchesPageClient() {
                                                                         const team = teams.find(t => t.name === teamName);
                                                                         if (!team) return null;
                                                                         const winnerInfo = getChampionPickWinner(championship);
-                                                                        const isWinner = winnerInfo?.winnerIds.includes(user.id);
+                                                                        const isWinner = winnerInfo.winnerIds.includes(user.id);
                                                                         const isPickValid = isWinner && winnerInfo.validPicks[user.id]?.includes(teamName);
                                                                         
                                                                         return (
@@ -608,4 +588,3 @@ export function AdminMatchesPageClient() {
     </div>
   );
 }
-

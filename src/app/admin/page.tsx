@@ -1,6 +1,7 @@
+
+
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
 import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch, getSystemSettings } from '@/lib/firebase/firestore';
@@ -22,16 +23,15 @@ import { generatePerformanceUpdate } from '@/ai/flows/generate-performance-updat
 import { doc, updateDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import React, { useEffect, useState, useMemo } from 'react';
 
 interface MatchWithPredictions extends Match {
     predictions: Prediction[];
 }
 
-
 export default function AdminDashboardPage() {
     const [allMatches, setAllMatches] = useState<Match[]>([]);
     const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
-    const [liveMatchesWithPredictions, setLiveMatchesWithPredictions] = useState<MatchWithPredictions[]>([]);
     const [allUsers, setAllUsers] = useState<UserType[]>([]);
     const [allChampionships, setAllChampionships] = useState<Championship[]>([]);
     const [allTeams, setAllTeams] = useState<Team[]>([]);
@@ -43,73 +43,52 @@ export default function AdminDashboardPage() {
 
     useEffect(() => {
         setIsLoading(true);
-        const fetchInitialData = async () => {
-            try {
-                const [usersData, championshipsData, teamsData] = await Promise.all([
-                    getUsers(),
-                    getChampionships(),
-                    getTeams(),
-                ]);
-                setAllUsers(usersData);
-                setAllChampionships(championshipsData);
-                setAllTeams(teamsData);
-            } catch (error) {
-                toast({ title: 'Erro ao carregar dados iniciais', variant: 'destructive' });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchInitialData();
-
-        const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
-            const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-            setAllMatches(matchesData);
-        });
-
-        const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
-            const predictionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
-            setAllPredictions(predictionsData);
+        const unsubChampionships = onSnapshot(collection(db, 'championships'), (snap) => setAllChampionships(snap.docs.map(d => ({id: d.id, ...d.data()}) as Championship)));
+        const unsubTeams = onSnapshot(collection(db, 'teams'), (snap) => setAllTeams(snap.docs.map(d => ({id: d.id, ...d.data()}) as Team)));
+        const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => setAllUsers(snap.docs.map(d => ({id: d.id, ...d.data()}) as UserType)));
+        const unsubMatches = onSnapshot(collection(db, "matches"), (snap) => setAllMatches(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match))));
+        const unsubPredictions = onSnapshot(collection(db, "predictions"), (snap) => {
+            setAllPredictions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction)))
+            setIsLoading(false);
         });
 
         return () => {
+            unsubChampionships();
+            unsubTeams();
+            unsubUsers();
             unsubMatches();
             unsubPredictions();
         };
-    }, [toast]);
-    
+    }, []);
 
-    useEffect(() => {
-        const updateLiveMatches = async () => {
-            const live = allMatches.filter(match => 
-                match.status !== 'Finalizado' && 
-                match.status !== 'Cancelado' &&
-                isPast(parseISO(match.data))
-            ).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    const liveMatchesWithPredictions = useMemo(() => {
+        const live = allMatches.filter(match => 
+            match.status !== 'Finalizado' && 
+            match.status !== 'Cancelado' &&
+            isPast(parseISO(match.data))
+        ).sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
-            const matchesWithPredictions: MatchWithPredictions[] = live.map(match => ({
-                ...match,
-                predictions: allPredictions.filter(p => p.matchId === match.id)
-            }));
-            
-            setLiveMatchesWithPredictions(matchesWithPredictions);
+        const matchesWithPredictions: MatchWithPredictions[] = live.map(match => ({
+            ...match,
+            predictions: allPredictions.filter(p => p.matchId === match.id)
+        }));
 
-            // Initialize scores for live matches
-            const initialScores = live.reduce((acc, match) => {
+        const initialScores = live.reduce((acc, match) => {
+            if (!scores[match.id]) {
                 acc[match.id] = { 
                     placarA: match.placarA?.toString() ?? '0', 
                     placarB: match.placarB?.toString() ?? '0' 
                 };
-                return acc;
-            }, {} as Record<string, { placarA: string; placarB: string; }>);
+            }
+            return acc;
+        }, {} as Record<string, { placarA: string; placarB: string; }>);
+        if (Object.keys(initialScores).length > 0) {
             setScores(prevScores => ({ ...initialScores, ...prevScores }));
-        };
-
-        if (allMatches.length > 0) {
-            updateLiveMatches();
         }
+
+        return matchesWithPredictions;
     }, [allMatches, allPredictions]);
     
-
     const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: string) => {
         const numericValue = value.replace(/[^0-9]/g, '');
         setScores(prev => ({
@@ -189,7 +168,6 @@ export default function AdminDashboardPage() {
         return { pontos: pontosGanhos, acertoTipo };
     };
 
-
     const handleFinalizeMatch = async (match: MatchWithPredictions) => {
        const currentScore = scores[match.id];
         if (currentScore.placarA === '' || currentScore.placarB === '') {
@@ -202,20 +180,14 @@ export default function AdminDashboardPage() {
         const finalizedMatch = { ...match, status: 'Finalizado', placarA: finalScoreA, placarB: finalScoreB } as const;
 
         try {
-             // 0. Captura o estado do ranking ANTES da atualização
             const usersBeforeUpdate = [...allUsers];
 
-            // 1. Atualiza o status da partida para Finalizado
             await updateMatch(match.id, { 
                 status: 'Finalizado',
                 placarA: finalScoreA,
                 placarB: finalScoreB
             });
             
-            // Refresca a lista de partidas localmente para UI
-            const updatedMatches = await getMatches();
-            setAllMatches(updatedMatches);
-
             toast({
                 title: "Partida Finalizada!",
                 description: `A partida ${match.timeA} vs ${match.timeB} foi movida para o histórico. Consolidando pontos...`,
@@ -226,7 +198,6 @@ export default function AdminDashboardPage() {
                 throw new Error("Campeonato não encontrado para a partida.");
             }
             
-            // 2. Itera sobre cada palpite da partida finalizada para atualizar os stats de cada usuário
             for (const prediction of match.predictions) {
                 const user = allUsers.find(u => u.id === prediction.userId);
                 if (user) {
@@ -235,11 +206,9 @@ export default function AdminDashboardPage() {
                 }
             }
 
-            // 3. Busca os usuários atualizados para refletir no ranking e enviar notificações
             const usersAfterUpdate = await getUsers();
             setAllUsers(usersAfterUpdate);
 
-             // 4. (Opcional) Envia notificação por IA
             const systemSettings = await getSystemSettings();
             if (systemSettings.enablePerformanceNotifications) {
                 for (const prediction of match.predictions) {
@@ -307,7 +276,7 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const getChampionPickWinner = useMemo(() => {
+     const getChampionPickWinner = useMemo(() => {
         const cache: Record<string, { winnerIds: string[]; validPicks: Record<string, string[]> }> = {};
     
         return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } => {
@@ -318,8 +287,8 @@ export default function AdminDashboardPage() {
             if (finalRankingOrder.length === 0) return { winnerIds: [], validPicks: {} };
     
             let candidates: UserType[] = [];
-    
-            // 1. Encontrar o melhor "tier" de acerto inicial
+            let bestTier = { rank: Infinity, pick: Infinity };
+
             for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
                 const rankedTeam = finalRankingOrder[rankIndex];
                 for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
@@ -327,42 +296,41 @@ export default function AdminDashboardPage() {
                         u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
                     );
                     if (contenders.length > 0) {
+                        bestTier = { rank: rankIndex, pick: pickIndex };
                         candidates = contenders;
                         break; 
                     }
                 }
                 if (candidates.length > 0) break;
             }
-    
-            if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
-    
-            // 2. Aplicar desempates eliminatórios
-            for (let nextPickIndex = 0; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
-                if (candidates.length <= 1) break;
-    
-                let bestNextRank = Infinity;
-                const nextPickWinners: { user: UserType; rank: number }[] = [];
-    
-                for (const user of candidates) {
-                    const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
-                    if (userPick) {
-                        const rank = finalRankingOrder.indexOf(userPick);
-                        if (rank !== -1) {
-                            nextPickWinners.push({ user, rank });
-                            bestNextRank = Math.min(bestNextRank, rank);
+
+            if (candidates.length > 1) {
+                for (let nextPickIndex = 0; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
+                    if (candidates.length <= 1) break;
+                    if (nextPickIndex === bestTier.pick) continue;
+
+                    let bestNextRank = Infinity;
+                    const nextPickWinners: { user: UserType; rank: number }[] = [];
+
+                    for (const user of candidates) {
+                        const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
+                        if (userPick) {
+                            const rank = finalRankingOrder.indexOf(userPick);
+                            if (rank !== -1) {
+                                nextPickWinners.push({ user, rank });
+                                bestNextRank = Math.min(bestNextRank, rank);
+                            }
+                        }
+                    }
+                    if(nextPickWinners.length > 0) {
+                        const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
+                        if (newTiedUsers.length > 0) {
+                            candidates = newTiedUsers;
                         }
                     }
                 }
-    
-                if (nextPickWinners.length > 0) {
-                    const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                    if (newTiedUsers.length > 0) {
-                        candidates = newTiedUsers;
-                    }
-                }
             }
-    
-            // Desempate 2: Jogo Final
+            
             if (candidates.length > 1) {
                 const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
                 if (finalMatch) {
@@ -377,44 +345,26 @@ export default function AdminDashboardPage() {
                     }
                 }
             }
-    
-            // Desempate 3: Antiguidade
+
             if (candidates.length > 1) {
                 candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
                 candidates = [candidates[0]];
             }
-    
+
             const validPicks: Record<string, string[]> = {};
             candidates.forEach(winner => {
                 const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
                 const correctPicksInSequence: string[] = [];
                 for (let i = 0; i < winnerPicks.length; i++) {
-                    const pick = winnerPicks[i];
-                    if (finalRankingOrder.includes(pick)) { // Verifica se o palpite está em qualquer lugar do ranking final (para desempate)
-                         correctPicksInSequence.push(pick);
+                    if (winnerPicks[i] === finalRankingOrder[i]) {
+                        correctPicksInSequence.push(winnerPicks[i]);
+                    } else {
+                        break; 
                     }
                 }
-                
-                // Filtra para manter apenas a sequência correta a partir do início
-                const finalValidPicks: string[] = [];
-                for(let i = 0; i < correctPicksInSequence.length; i++) {
-                    const userPickForPos = winnerPicks[i];
-                    const actualTeamForPos = finalRankingOrder[i];
-                    if(userPickForPos === actualTeamForPos) {
-                        finalValidPicks.push(userPickForPos);
-                    } else if(winnerPicks.includes(actualTeamForPos)) {
-                        // Não é uma sequência, mas pode ser um acerto de desempate
-                        if(finalValidPicks.includes(userPickForPos)) continue;
-                         // A lógica aqui se torna complexa, simplificando:
-                         // Acende apenas os palpites que estão na posição correta na sequência
-                    }
-                }
-
-                const firstWrongIndex = winnerPicks.findIndex((pick, index) => pick !== finalRankingOrder[index]);
-                validPicks[winner.id] = firstWrongIndex === -1 ? winnerPicks : winnerPicks.slice(0, firstWrongIndex);
-
+                validPicks[winner.id] = correctPicksInSequence;
             });
-    
+            
             const result = { winnerIds: candidates.map(u => u.id), validPicks };
             cache[championship.id] = result;
             return result;
@@ -467,7 +417,6 @@ export default function AdminDashboardPage() {
         
         return { pontos: pontosGanhos, acertoTipo };
     };
-
 
     return (
         <TooltipProvider>
@@ -646,8 +595,8 @@ export default function AdminDashboardPage() {
                                                                                     const team = allTeams.find(t => t.name === teamName);
                                                                                     if (!team) return null;
                                                                                     const winnerInfo = getChampionPickWinner(championship);
-                                                                                    const isWinner = !!winnerInfo?.winnerIds.includes(user.id);
-                                                                                    const isPickValid = isWinner && !!winnerInfo.validPicks[user.id]?.includes(teamName);
+                                                                                    const isWinner = winnerInfo.winnerIds.includes(user.id);
+                                                                                    const isPickValid = isWinner && winnerInfo.validPicks[user.id]?.includes(teamName);
                                                                                     
                                                                                     return (
                                                                                         <Tooltip key={team.id}>
@@ -711,7 +660,3 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
-
-
-
-

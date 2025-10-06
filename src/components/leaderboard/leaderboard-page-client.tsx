@@ -30,11 +30,9 @@ import { useSearchParams } from 'next/navigation';
 import { StatusIndicator } from '@/components/shared/status-indicator';
 import { useAuth } from '@/hooks/use-auth';
 import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
-import { getChampionships } from '@/lib/firebase/firestore';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { isPast, parseISO } from 'date-fns';
 import { db } from '@/lib/firebase';
-
 
 export function LeaderboardPageClient() {
   const { user: authUser, loading: authLoading } = useAuth();
@@ -43,67 +41,57 @@ export function LeaderboardPageClient() {
   
   type SortType = 'default' | 'exact' | 'situation' | 'combo' | 'bonus' | 'gols';
 
-  const [championships, setChampionships] = useState<Championship[]>([]);
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  const [championships, setChampionships] = useState<Championship[]>([]);
   const [allMatches, setAllMatches] = useState<Match[]>([]);
   const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-
+  const [loading, setLoading] = useState(true);
   const [sortType, setSortType] = useState<SortType>('default');
   const [selectedChampionshipId, setSelectedChampionshipId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchInitialStaticData() {
-      try {
-        const champs = await getChampionships();
-        // A ordenação já é feita no getChampionships
-        setChampionships(champs);
-      } catch (error) {
-        console.error("Failed to fetch championships", error);
-      }
-    }
-    fetchInitialStaticData();
+    setLoading(true);
 
-    // Set up real-time listeners
-    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-      const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType));
-      setAllUsers(usersData);
-      setLoadingData(false);
+    const unsubChampionships = onSnapshot(collection(db, "championships"), (snap) => {
+      const championshipsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Championship)).sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+      setChampionships(championshipsData);
     });
     
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+        setAllUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType)));
+    });
+
     const unsubMatches = onSnapshot(collection(db, "matches"), (snapshot) => {
-        const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match));
-        setAllMatches(matchesData);
+        setAllMatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Match)));
     });
 
     const unsubPredictions = onSnapshot(collection(db, "predictions"), (snapshot) => {
-        const predictionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
-        setAllPredictions(predictionsData);
+        setAllPredictions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction)));
+        setLoading(false);
     });
 
     return () => {
-      unsubUsers();
-      unsubMatches();
-      unsubPredictions();
+        unsubChampionships();
+        unsubUsers();
+        unsubMatches();
+        unsubPredictions();
     };
   }, []);
 
   useEffect(() => {
-    if (authLoading || !authUser) return;
+    if (authLoading || !authUser || championships.length === 0) return;
 
-    if (championshipIdFromQuery) {
+    if (championshipIdFromQuery && championships.some(c => c.id === championshipIdFromQuery)) {
         setSelectedChampionshipId(championshipIdFromQuery);
     } else {
-        // Encontra o campeonato mais recente (ativo ou não) em que o usuário está
         const userChampionships = championships.filter(c => c.participantes.includes(authUser.id));
         if (userChampionships.length > 0) {
-            setSelectedChampionshipId(userChampionships[0].id); // O primeiro é o mais recente
+            setSelectedChampionshipId(userChampionships[0].id);
         } else {
             setSelectedChampionshipId(null);
         }
     }
-}, [championships, championshipIdFromQuery, authUser, authLoading]);
-
+  }, [championships, championshipIdFromQuery, authUser, authLoading]);
 
   const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonus: boolean; gols: boolean; } => {
     const { placarA: liveA, placarB: liveB } = match;
@@ -132,29 +120,29 @@ export function LeaderboardPageClient() {
 
     if (acertouPlacarExato) {
         pontosGanhos += pontuacao.tradicional.exato;
-        if (acertouGols && pontuacao.combo) {
+        if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
             acertouCombo = true;
         }
     } else if (acertouSituacao) {
         pontosGanhos += pontuacao.tradicional.situacao;
-        if (acertouGols && pontuacao.combo) {
+        if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos += pontuacao.combo.pontosGols;
             acertouBonus = true;
         }
-    } else if (acertouGols && pontuacao.combo) {
+    } else if (acertouGols && pontuacao.combo?.ativo) {
         pontosGanhos += pontuacao.combo.pontosGols;
         acertouGolsSozinho = true;
     }
 
     return { pontos: pontosGanhos, exato: acertouPlacarExato, situacao: acertouSituacao, combo: acertouCombo, bonus: acertouBonus, gols: acertouGolsSozinho };
   };
-
-  const usersWithLiveScore = useMemo(() => {
+  
+  const usersWithStatsForChampionship = useMemo(() => {
     if (!selectedChampionshipId) return [];
-
-    const championshipDetails = championships.find(c => c.id === selectedChampionshipId);
-    if (!championshipDetails) return [];
+    
+    const selectedChampionship = championships.find(c => c.id === selectedChampionshipId);
+    if (!selectedChampionship) return [];
     
     const liveMatchesForChamp = allMatches.filter(match => 
         match.campeonatoId === selectedChampionshipId &&
@@ -163,37 +151,37 @@ export function LeaderboardPageClient() {
         isPast(parseISO(match.data))
     );
 
-    const participantUsers = allUsers.filter(u => championshipDetails.participantes.includes(u.id));
+    const participantUsers = allUsers.filter(user => selectedChampionship.participantes.includes(user.id));
 
     return participantUsers.map(user => {
-        const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
-        let basePoints = stats?.pontos ?? 0;
-        let baseExatos = stats?.acertosExatos ?? 0;
-        let baseSituacoes = stats?.acertosSituacao ?? 0;
-        let baseCombos = 0;
-        let baseBonus = 0;
-        let baseGols = 0;
+      const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
+      let basePoints = stats?.pontos ?? 0;
+      let baseExatos = stats?.acertosExatos ?? 0;
+      let baseSituacoes = stats?.acertosSituacao ?? 0;
+      let baseCombos = 0;
+      let baseBonus = 0;
+      let baseGols = 0;
 
-        const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
-        predictionsInChamp.forEach(p => {
-             if (p.acertoTipo === 'combo') baseCombos++;
-             if (p.acertoTipo === 'bonus') baseBonus++;
-             if (p.acertoTipo === 'gols') baseGols++;
-        })
-      
-        liveMatchesForChamp.forEach(match => {
-            const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
-            if (prediction) {
-                const result = calculateLivePoints(match, prediction);
-                basePoints += result.pontos;
-                if (result.exato) baseExatos++;
-                if (result.situacao) baseSituacoes++;
-                if (result.combo) baseCombos++;
-                if (result.bonus) baseBonus++;
-                if (result.gols) baseGols++;
-            }
-        });
-      
+      const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
+      predictionsInChamp.forEach(p => {
+            if (p.acertoTipo === 'combo') baseCombos++;
+            if (p.acertoTipo === 'bonus') baseBonus++;
+            if (p.acertoTipo === 'gols') baseGols++;
+      })
+
+      liveMatchesForChamp.forEach(match => {
+          const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
+          if (prediction) {
+              const result = calculateLivePoints(match, prediction);
+              basePoints += result.pontos;
+              if (result.exato) baseExatos++;
+              if (result.situacao) baseSituacoes++;
+              if (result.combo) baseCombos++;
+              if (result.bonus) baseBonus++;
+              if (result.gols) baseGols++;
+          }
+      });
+
       return {
         ...user,
         pontos: basePoints,
@@ -205,14 +193,14 @@ export function LeaderboardPageClient() {
       }
     });
   }, [allUsers, selectedChampionshipId, allMatches, allPredictions, championships]);
-  
+
   const selectedChampionship = useMemo(() => championships.find(c => c.id === selectedChampionshipId), [championships, selectedChampionshipId]);
   
   const sortedTableUsers = useMemo(() => {
       const tiebreakerRules = selectedChampionship?.regrasDesempate || [];
       const championshipMatches = allMatches.filter(m => m.campeonatoId === selectedChampionshipId).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 
-      return [...usersWithLiveScore].sort((a, b) => {
+      return [...usersWithStatsForChampionship].sort((a, b) => {
         if (a.pontos !== b.pontos) return b.pontos - a.pontos;
 
         for (const rule of tiebreakerRules) {
@@ -232,21 +220,19 @@ export function LeaderboardPageClient() {
                         for (const match of championshipMatches) {
                             const aAcertou = buchasA.includes(match.id);
                             const bAcertou = buchasB.includes(match.id);
-                            if (aAcertou && !bAcertou) return -1; // A leva vantagem
-                            if (!aAcertou && bAcertou) return 1;  // B leva vantagem
+                            if (aAcertou && !bAcertou) return -1;
+                            if (!aAcertou && bAcertou) return 1;
                         }
                     }
                     break;
             }
         }
         
-        // Critério final: data de cadastro
         const dateAValue = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
         const dateBValue = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
         return dateAValue - dateBValue;
     });
-  }, [usersWithLiveScore, selectedChampionshipId, selectedChampionship, allMatches, allPredictions]);
-
+  }, [usersWithStatsForChampionship, selectedChampionshipId, selectedChampionship, allMatches, allPredictions]);
 
   const getSortColumn = () => {
     switch (sortType) {
@@ -283,7 +269,7 @@ export function LeaderboardPageClient() {
     }
   };
   
-  if (authLoading || loadingData) {
+  if (authLoading || loading) {
       return <div className="p-8 flex justify-center items-center h-full"><Loader2 className="w-8 h-8 animate-spin" /></div>;
   }
   
