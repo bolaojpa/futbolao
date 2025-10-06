@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -320,29 +318,26 @@ export default function AdminDashboardPage() {
             if (finalRankingOrder.length === 0) return { winnerIds: [], validPicks: {} };
     
             let candidates: UserType[] = [];
-            let bestTier = { rank: Infinity, pick: Infinity };
     
-            // 1. Encontrar o melhor "tier" de acerto (a equipe mais bem classificada, na menor escolha)
+            // 1. Encontrar o melhor "tier" de acerto inicial
             for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
                 const rankedTeam = finalRankingOrder[rankIndex];
                 for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
                     const contenders = allUsers.filter(u =>
                         u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
                     );
-                    if (contenders.length > 0 && rankIndex < bestTier.rank) {
-                        bestTier = { rank: rankIndex, pick: pickIndex };
+                    if (contenders.length > 0) {
                         candidates = contenders;
-                        break; // Vai para o próximo time do ranking
+                        break; 
                     }
                 }
-                if (candidates.length > 0) break; // Encontrou o primeiro grupo de candidatos, para a busca
+                if (candidates.length > 0) break;
             }
     
             if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
     
             // 2. Aplicar desempates eliminatórios
-            // Desempate 1: Melhores palpites subsequentes
-            for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
+            for (let nextPickIndex = 0; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
                 if (candidates.length <= 1) break;
     
                 let bestNextRank = Infinity;
@@ -354,16 +349,14 @@ export default function AdminDashboardPage() {
                         const rank = finalRankingOrder.indexOf(userPick);
                         if (rank !== -1) {
                             nextPickWinners.push({ user, rank });
-                            if (rank < bestNextRank) {
-                                bestNextRank = rank;
-                            }
+                            bestNextRank = Math.min(bestNextRank, rank);
                         }
                     }
                 }
     
                 if (nextPickWinners.length > 0) {
                     const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                    if (newTiedUsers.length > 0 && newTiedUsers.length < candidates.length) {
+                    if (newTiedUsers.length > 0) {
                         candidates = newTiedUsers;
                     }
                 }
@@ -391,32 +384,35 @@ export default function AdminDashboardPage() {
                 candidates = [candidates[0]];
             }
     
-            // 3. Determinar os palpites válidos para o(s) vencedor(es)
             const validPicks: Record<string, string[]> = {};
             candidates.forEach(winner => {
                 const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
                 const correctPicksInSequence: string[] = [];
                 for (let i = 0; i < winnerPicks.length; i++) {
                     const pick = winnerPicks[i];
-                    const actualRank = finalRankingOrder.indexOf(pick);
-    
-                    if (i === 0 && actualRank === bestTier.rank) { // Acerto do tier principal
-                        correctPicksInSequence.push(pick);
-                    } else if (i > 0 && correctPicksInSequence.length === i) { // Continua a sequência
-                         // Verifica se o palpite atual é válido para desempate
-                         if (actualRank !== -1) {
-                             correctPicksInSequence.push(pick);
-                         } else {
-                             break;
-                         }
-                    } else if(correctPicksInSequence.length === 0 && i === bestTier.pick && actualRank === bestTier.rank) {
-                        correctPicksInSequence.push(pick);
-                    }
-                    else {
-                        break; 
+                    if (finalRankingOrder.includes(pick)) { // Verifica se o palpite está em qualquer lugar do ranking final (para desempate)
+                         correctPicksInSequence.push(pick);
                     }
                 }
-                validPicks[winner.id] = correctPicksInSequence;
+                
+                // Filtra para manter apenas a sequência correta a partir do início
+                const finalValidPicks: string[] = [];
+                for(let i = 0; i < correctPicksInSequence.length; i++) {
+                    const userPickForPos = winnerPicks[i];
+                    const actualTeamForPos = finalRankingOrder[i];
+                    if(userPickForPos === actualTeamForPos) {
+                        finalValidPicks.push(userPickForPos);
+                    } else if(winnerPicks.includes(actualTeamForPos)) {
+                        // Não é uma sequência, mas pode ser um acerto de desempate
+                        if(finalValidPicks.includes(userPickForPos)) continue;
+                         // A lógica aqui se torna complexa, simplificando:
+                         // Acende apenas os palpites que estão na posição correta na sequência
+                    }
+                }
+
+                const firstWrongIndex = winnerPicks.findIndex((pick, index) => pick !== finalRankingOrder[index]);
+                validPicks[winner.id] = firstWrongIndex === -1 ? winnerPicks : winnerPicks.slice(0, firstWrongIndex);
+
             });
     
             const result = { winnerIds: candidates.map(u => u.id), validPicks };
@@ -715,6 +711,7 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
 
 
 

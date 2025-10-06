@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -39,55 +37,56 @@ export default function FamePage() {
 
                 const getChampionPickWinner = (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } => {
                     if (!championship.finalRanking || !championship.championPredictionSettings?.active) return { winnerIds: [], validPicks: {} };
-
+            
                     const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
                     if (finalRankingOrder.length === 0) return { winnerIds: [], validPicks: {} };
-
+            
                     let candidates: UserType[] = [];
-                    let bestTier = { rank: Infinity, pick: Infinity };
-
+            
+                    // 1. Encontrar o melhor "tier" de acerto inicial
                     for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
                         const rankedTeam = finalRankingOrder[rankIndex];
                         for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
                             const contenders = users.filter(u =>
                                 u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
                             );
-                            if (contenders.length > 0 && rankIndex < bestTier.rank) {
-                                bestTier = { rank: rankIndex, pick: pickIndex };
+                            if (contenders.length > 0) {
                                 candidates = contenders;
                                 break; 
                             }
                         }
                         if (candidates.length > 0) break;
                     }
-
+            
                     if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
-
+            
+                    // 2. Aplicar desempates eliminatórios
                     for (let nextPickIndex = 0; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
                         if (candidates.length <= 1) break;
-                        if (nextPickIndex === bestTier.pick) continue;
-
+            
                         let bestNextRank = Infinity;
                         const nextPickWinners: { user: UserType; rank: number }[] = [];
-
+            
                         for (const user of candidates) {
                             const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
                             if (userPick) {
                                 const rank = finalRankingOrder.indexOf(userPick);
                                 if (rank !== -1) {
                                     nextPickWinners.push({ user, rank });
-                                    if (rank < bestNextRank) bestNextRank = rank;
+                                    bestNextRank = Math.min(bestNextRank, rank);
                                 }
                             }
                         }
-                        if(nextPickWinners.length > 0) {
+            
+                        if (nextPickWinners.length > 0) {
                             const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                            if (newTiedUsers.length > 0 && newTiedUsers.length < candidates.length) {
+                            if (newTiedUsers.length > 0) {
                                 candidates = newTiedUsers;
                             }
                         }
                     }
-
+            
+                    // Desempate 2: Jogo Final
                     if (candidates.length > 1) {
                         const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
                         if (finalMatch) {
@@ -102,24 +101,24 @@ export default function FamePage() {
                             }
                         }
                     }
-
+            
+                    // Desempate 3: Antiguidade
                     if (candidates.length > 1) {
                         candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
                         candidates = [candidates[0]];
                     }
-
+            
                     const validPicks: Record<string, string[]> = {};
                     candidates.forEach(winner => {
                         const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
                         const correctPicksInSequence: string[] = [];
+                        
                         for (let i = 0; i < winnerPicks.length; i++) {
-                             const pick = winnerPicks[i];
-                             const actualRank = finalRankingOrder.indexOf(pick);
-                             if (actualRank !== -1) {
-                                 correctPicksInSequence.push(pick);
-                             } else {
-                                 break;
-                             }
+                            if (winnerPicks[i] === finalRankingOrder[i]) {
+                                correctPicksInSequence.push(winnerPicks[i]);
+                            } else {
+                                break; 
+                            }
                         }
                         validPicks[winner.id] = correctPicksInSequence;
                     });
