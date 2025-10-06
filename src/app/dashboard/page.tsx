@@ -279,13 +279,13 @@ export default function DashboardPage() {
     const getChampionPickWinner = useMemo(() => {
         const cache: Record<string, { winnerIds: string[]; validPicks: Record<string, string[]> }> = {};
     
-        return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } | null => {
+        return (championship: Championship): { winnerIds: string[]; validPicks: Record<string, string[]> } => {
             if (cache[championship.id]) return cache[championship.id];
-            if (!championship.finalRanking || !championship.championPredictionSettings?.active) return null;
-    
+            if (!championship.finalRanking || !championship.championPredictionSettings?.active) return { winnerIds: [], validPicks: {} };
+
             const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
-            if (finalRankingOrder.length === 0) return null;
-    
+            if (finalRankingOrder.length === 0) return { winnerIds: [], validPicks: {} };
+            
             let candidates: UserType[] = [];
             
             // 1. Encontrar o melhor "tier" de acerto
@@ -302,33 +302,37 @@ export default function DashboardPage() {
                 }
                 if (candidates.length > 0) break;
             }
-    
-            if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
-    
-            // 2. Aplicar desempates eliminatórios
-            // Desempate 1: Melhores palpites subsequentes
-            for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
-                if (candidates.length <= 1) break;
-    
-                const nextPickWinners: { user: UserType; rank: number }[] = [];
-                for (const user of candidates) {
-                    const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[pickIndex];
-                    if (userPick) {
-                        const rank = finalRankingOrder.indexOf(userPick);
-                        if (rank !== -1) nextPickWinners.push({ user, rank });
+
+            if (candidates.length <= 1) {
+                // Se 0 ou 1 vencedor, não há desempate
+            } else {
+                // 2. Desempate por palpites subsequentes
+                for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
+                     if (candidates.length <= 1) break;
+                    let bestNextRank = Infinity;
+                    const nextPickWinners: { user: UserType; rank: number }[] = [];
+
+                    for (const user of candidates) {
+                        const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[pickIndex];
+                        if (userPick) {
+                            const rank = finalRankingOrder.indexOf(userPick);
+                            if (rank !== -1) {
+                                nextPickWinners.push({ user, rank });
+                                bestNextRank = Math.min(bestNextRank, rank);
+                            }
+                        }
                     }
-                }
-                
-                if (nextPickWinners.length > 0) {
-                    const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
-                    const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                    if (newTiedUsers.length < candidates.length) {
-                        candidates = newTiedUsers;
+
+                    if(nextPickWinners.length > 0) {
+                        const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
+                        if (newTiedUsers.length > 0 && newTiedUsers.length < candidates.length) {
+                            candidates = newTiedUsers;
+                        }
                     }
                 }
             }
             
-            // Desempate 2: Jogo Final
+            // 3. Desempate pelo jogo da Final
             if (candidates.length > 1) {
                 const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
                 if (finalMatch) {
@@ -343,28 +347,19 @@ export default function DashboardPage() {
                     }
                 }
             }
-    
-            // Desempate 3: Antiguidade
-            if (candidates.length > 1) {
-                candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
-                candidates = [candidates[0]];
-            }
-    
-            // 3. Determinar os palpites válidos para o(s) vencedor(es)
+            
             const validPicks: Record<string, string[]> = {};
             candidates.forEach(winner => {
                 const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
                 const correctPicksInSequence: string[] = [];
                 for (let i = 0; i < winnerPicks.length; i++) {
-                    if (winnerPicks[i] === finalRankingOrder[i]) {
+                    if (finalRankingOrder.includes(winnerPicks[i])) {
                         correctPicksInSequence.push(winnerPicks[i]);
-                    } else {
-                        break; // Quebra a corrente no primeiro erro
                     }
                 }
                 validPicks[winner.id] = correctPicksInSequence;
             });
-    
+
             const result = { winnerIds: candidates.map(u => u.id), validPicks };
             cache[championship.id] = result;
             return result;
@@ -588,7 +583,7 @@ export default function DashboardPage() {
                                                                                                             const team = allTeams.find(t => t.name === teamName);
                                                                                                             if (!team) return null;
                                                                                                             const winnerInfo = getChampionPickWinner(championship);
-                                                                                                            const isWinner = winnerInfo?.winnerIds.includes(participant.id);
+                                                                                                            const isWinner = winnerInfo.winnerIds.includes(participant.id);
                                                                                                             const isPickValid = isWinner && winnerInfo.validPicks[participant.id]?.includes(teamName);
                                                                                                             
                                                                                                             return (
@@ -827,7 +822,7 @@ export default function DashboardPage() {
                                                                                         const team = allTeams.find(t => t.name === teamName);
                                                                                         if (!team) return null;
                                                                                         const winnerInfo = getChampionPickWinner(champ);
-                                                                                        const isWinner = winnerInfo?.winnerIds.includes(participant.id);
+                                                                                        const isWinner = winnerInfo.winnerIds.includes(participant.id);
                                                                                         const isPickValid = isWinner && winnerInfo.validPicks[participant.id]?.includes(teamName);
                                                                                         
                                                                                         return (
@@ -904,5 +899,3 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
-
-

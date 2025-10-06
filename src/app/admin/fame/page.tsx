@@ -48,10 +48,10 @@ export default function AdminFamePage() {
 
                             const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
                             if (finalRankingOrder.length === 0) return { winnerIds: [], validPicks: {} };
-
+                            
                             let candidates: UserType[] = [];
-                            let bestTier = { rank: Infinity, pick: Infinity };
-
+                            
+                            // 1. Encontrar o melhor "tier" de acerto
                             for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
                                 const rankedTeam = finalRankingOrder[rankIndex];
                                 for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
@@ -59,24 +59,24 @@ export default function AdminFamePage() {
                                         u.championPicks?.some(p => p.championshipId === championship.id && p.teams[pickIndex] === rankedTeam)
                                     );
                                     if (contenders.length > 0) {
-                                        bestTier = { rank: rankIndex, pick: pickIndex };
                                         candidates = contenders;
-                                        break; 
+                                        break;
                                     }
                                 }
                                 if (candidates.length > 0) break;
                             }
 
-                            if (candidates.length > 1) {
-                                for (let nextPickIndex = 0; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
-                                    if (candidates.length <= 1) break;
-                                    if (nextPickIndex === bestTier.pick) continue;
-
+                            if (candidates.length <= 1) {
+                                // Se 0 ou 1 vencedor, não há desempate
+                            } else {
+                                // 2. Desempate por palpites subsequentes
+                                for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
+                                     if (candidates.length <= 1) break;
                                     let bestNextRank = Infinity;
                                     const nextPickWinners: { user: UserType; rank: number }[] = [];
 
                                     for (const user of candidates) {
-                                        const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
+                                        const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[pickIndex];
                                         if (userPick) {
                                             const rank = finalRankingOrder.indexOf(userPick);
                                             if (rank !== -1) {
@@ -85,15 +85,17 @@ export default function AdminFamePage() {
                                             }
                                         }
                                     }
+
                                     if(nextPickWinners.length > 0) {
                                         const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
-                                        if (newTiedUsers.length > 0) {
+                                        if (newTiedUsers.length > 0 && newTiedUsers.length < candidates.length) {
                                             candidates = newTiedUsers;
                                         }
                                     }
                                 }
                             }
                             
+                            // 3. Desempate pelo jogo da Final
                             if (candidates.length > 1) {
                                 const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
                                 if (finalMatch) {
@@ -108,26 +110,19 @@ export default function AdminFamePage() {
                                     }
                                 }
                             }
-
-                            if (candidates.length > 1) {
-                                candidates.sort((a, b) => (new Date(a.dataCadastro as string).getTime()) - (new Date(b.dataCadastro as string).getTime()));
-                                candidates = [candidates[0]];
-                            }
-
+                            
                             const validPicks: Record<string, string[]> = {};
                             candidates.forEach(winner => {
                                 const winnerPicks = winner.championPicks?.find(p => p.championshipId === championship.id)?.teams || [];
                                 const correctPicksInSequence: string[] = [];
                                 for (let i = 0; i < winnerPicks.length; i++) {
-                                    if (winnerPicks[i] === finalRankingOrder[i]) {
+                                    if (finalRankingOrder.includes(winnerPicks[i])) {
                                         correctPicksInSequence.push(winnerPicks[i]);
-                                    } else {
-                                        break; 
                                     }
                                 }
                                 validPicks[winner.id] = correctPicksInSequence;
                             });
-                            
+
                             return { winnerIds: candidates.map(u => u.id), validPicks };
                         };
 
