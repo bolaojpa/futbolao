@@ -128,12 +128,17 @@ export function HistoryPageClient() {
   }, [championshipIdFromQuery, filterTypeFromQuery]);
 
   const getChampionPickWinner = useMemo(() => {
-    const cache: Record<string, { winnerId: string[]; winningTeam: string; tier: { rank: number; pick: number } } | null> = {};
+    const cache: Record<string, { winnerId: string[] } | null> = {};
 
     return (championship: Championship) => {
         if (cache[championship.id]) return cache[championship.id];
 
-        const finalRankingOrder = championship.finalRanking ? Object.values(championship.finalRanking).filter(Boolean) as string[] : [];
+        if (!championship.finalRanking || !championship.championPredictionSettings?.active) {
+            cache[championship.id] = null;
+            return null;
+        }
+
+        const finalRankingOrder = Object.values(championship.finalRanking).filter(Boolean) as string[];
         if (finalRankingOrder.length === 0) {
             cache[championship.id] = null;
             return null;
@@ -142,6 +147,7 @@ export function HistoryPageClient() {
         let bestTier: { rank: number; pick: number } | null = null;
         let tierContenders: UserType[] = [];
 
+        // Encontrar o melhor "tier" de acerto
         for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
             const rankedTeam = finalRankingOrder[rankIndex];
             for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
@@ -159,29 +165,33 @@ export function HistoryPageClient() {
             cache[championship.id] = null;
             return null;
         }
-        
+
         let finalWinners = [...tierContenders];
 
+        // Aplicar critérios de desempate de forma eliminatória
         // 1. Desempate por palpites subsequentes
-        for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
-            if (finalWinners.length === 1) break;
+        if (finalWinners.length > 1) {
+            for (let nextPickIndex = bestTier.pick + 1; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
+                if (finalWinners.length === 1) break;
 
-            const nextPickWinners: { user: UserType, rank: number }[] = [];
-            for (const user of finalWinners) {
-                const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
-                if (userPick) {
-                    const rank = finalRankingOrder.indexOf(userPick);
-                    if (rank !== -1) {
-                        nextPickWinners.push({ user, rank });
+                const nextPickWinners: { user: UserType, rank: number }[] = [];
+                for (const user of finalWinners) {
+                    const userPick = user.championPicks?.find(p => p.championshipId === championship.id)?.teams[nextPickIndex];
+                    if (userPick) {
+                        const rank = finalRankingOrder.indexOf(userPick);
+                        if (rank !== -1) {
+                            nextPickWinners.push({ user, rank });
+                        }
                     }
                 }
-            }
 
-            if (nextPickWinners.length > 0) {
-                const bestRank = Math.min(...nextPickWinners.map(w => w.rank));
-                const newTiedUsers = nextPickWinners.filter(w => w.rank === bestRank).map(w => w.user);
-                if (newTiedUsers.length < finalWinners.length) {
-                    finalWinners = newTiedUsers;
+                if (nextPickWinners.length > 0) {
+                    const bestNextRank = Math.min(...nextPickWinners.map(w => w.rank));
+                    const newTiedUsers = nextPickWinners.filter(w => w.rank === bestNextRank).map(w => w.user);
+                    // Apenas atualiza se o novo grupo de empatados for menor
+                    if (newTiedUsers.length > 0 && newTiedUsers.length < finalWinners.length) {
+                        finalWinners = newTiedUsers;
+                    }
                 }
             }
         }
@@ -205,12 +215,20 @@ export function HistoryPageClient() {
             }
         }
         
-        const winningTeam = finalRankingOrder[bestTier.rank];
-        const winnerIds = finalWinners.map(u => u.id);
+        // 3. Critério final: antiguidade (se ainda houver empate)
+        if (finalWinners.length > 1) {
+            finalWinners.sort((a, b) => {
+                const dateA = a.dataCadastro instanceof Date ? a.dataCadastro.getTime() : new Date(a.dataCadastro as string).getTime();
+                const dateB = b.dataCadastro instanceof Date ? b.dataCadastro.getTime() : new Date(b.dataCadastro as string).getTime();
+                return dateA - dateB;
+            });
+            finalWinners = [finalWinners[0]]; // Pega apenas o mais antigo
+        }
 
-        cache[championship.id] = { winnerId: winnerIds, winningTeam, tier: bestTier };
-        return cache[championship.id];
-    }
+        const result = { winnerId: finalWinners.map(u => u.id) };
+        cache[championship.id] = result;
+        return result;
+    };
 }, [allUsers, allMatches, allPredictions]);
 
 
@@ -650,4 +668,3 @@ const getPointsBadgeClass = (acertoTipo?: Prediction['acertoTipo']): string => {
     </div>
   );
 }
-
