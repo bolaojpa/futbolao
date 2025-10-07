@@ -449,7 +449,7 @@ export default function DashboardPage() {
                                                                                             <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
                                                                                             <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                                         </Avatar>
-                                                                                        <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                                        <span className="font-bold group-hover:underline">{isCurrentUser ? 'Você' : participant.apelido}:</span>
                                                                                     </Link>
                                                                                 </div>
                                                                                 <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
@@ -472,7 +472,7 @@ export default function DashboardPage() {
                                                                                     </Avatar>
                                                                                     <div className="flex items-center gap-2">
                                                                                         <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                                                                            <span className="font-bold group-hover:underline">{isCurrentUser ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                                            <span className="font-bold group-hover:underline">{isCurrentUser ? 'Você' : participant.apelido}:</span>
                                                                                             {championship?.championPredictionSettings?.active && (
                                                                                                 <>
                                                                                                     <div className="relative block sm:hidden">
@@ -687,7 +687,7 @@ export default function DashboardPage() {
                                                                                 <AvatarImage src={participant.fotoPerfil} alt={participant.apelido} />
                                                                                 <AvatarFallback>{participant.apelido.substring(0,2)}</AvatarFallback>
                                                                             </Avatar>
-                                                                            <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                            <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Você' : participant.apelido}:</span>
                                                                         </Link>
                                                                     </div>
                                                                     <span className="w-1/3 text-center font-mono font-semibold text-base whitespace-nowrap">? - ?</span>
@@ -708,7 +708,7 @@ export default function DashboardPage() {
                                                                 </Avatar>
                                                                  <div className="flex items-center gap-2">
                                                                     <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                                                        <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Seu Palpite' : participant.apelido}:</span>
+                                                                        <span className="font-bold group-hover:underline">{participant.id === user.id ? 'Você' : participant.apelido}:</span>
                                                                         {champ?.championPredictionSettings?.active && (
                                                                             <>
                                                                                 <div className="relative block sm:hidden">

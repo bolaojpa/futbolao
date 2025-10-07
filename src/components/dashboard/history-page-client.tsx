@@ -336,7 +336,7 @@ export function HistoryPageClient() {
                                       <StatusIndicator status={user.presenceStatus} className="w-3 h-3 top-0 right-0" />
                                     </div>
                                     <div className="flex flex-col sm:items-center sm:flex-row sm:gap-1.5">
-                                        <span className="font-bold">Seu Palpite:</span>
+                                        <span className="font-bold">Você:</span>
                                         <div className='flex items-center gap-1'>
                                             <div className="sm:hidden">
                                                 {champ?.championPredictionSettings?.active && (
