@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user) {
         setUser(null);
         setLoading(false);
-         if (window.location.pathname !== '/' && window.location.pathname !== '/signup' && window.location.pathname !== '/forgot-password') {
+         if (window.location.pathname !== '/' && window.location.pathname !== '/signup' && window.location.pathname !== '/forgot-password' && window.location.pathname !== '/reset-password') {
             window.location.href = '/';
         }
       }
@@ -42,11 +42,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (doc.exists()) {
           setUser({ id: doc.id, ...doc.data() } as UserType);
         } else {
+          // Usuário do Firebase existe, mas não o documento do Firestore (ex: durante o cadastro)
           setUser(null);
         }
-        setLoading(false);
+        setLoading(false); // Agora o carregamento termina aqui
       });
       return () => unsubscribeFirestore();
+    } else {
+      // Garante que se o firebaseUser for nulo (logout), o estado de loading seja falso
+      setLoading(false);
     }
   }, [firebaseUser]);
 
