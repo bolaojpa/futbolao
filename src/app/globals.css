@@ -206,3 +206,15 @@
 .badge-erro-solid {
     @apply bg-black/10 border-transparent text-white;
 }
+
+/* Confetti Fade Out */
+@keyframes fall {
+  from {
+    transform: translateY(-20vh) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(120vh) rotate(720deg);
+    opacity: 0;
+  }
+}

@@ -273,6 +273,8 @@ export function LeaderboardPageClient() {
   }
   
   const userChampionshipOptions = championships.filter(c => authUser && c.participantes.includes(authUser.id));
+  const leader = sortedTableUsers.length > 0 ? sortedTableUsers[0] : null;
+
 
   return (
     <TooltipProvider>
@@ -301,45 +303,33 @@ export function LeaderboardPageClient() {
                     </Select>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-8">
-                {sortedTableUsers.slice(0, 3).map((user, index) => (
-                    <Card key={user.id} className={cn(
-                        "relative overflow-hidden",
-                        index === 1 && "md:order-1",
-                        index === 0 && "md:order-2 md:scale-105",
-                        index === 2 && "md:order-3",
-                    )}>
-                        <CardHeader>
-                            <Link href={`/dashboard/profile?userId=${user.id}`} className="block w-fit mx-auto">
-                            <div className={cn(
-                                "w-24 h-24 rounded-full mx-auto p-1",
-                                index === 0 && "bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse",
-                                index === 1 && "bg-gradient-to-tr from-slate-300 to-slate-500",
-                                index === 2 && "bg-gradient-to-tr from-amber-600 to-yellow-700",
-                            )}>
-                                <Avatar className="w-full h-full border-4 border-background">
-                                    <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                    <AvatarFallback>{user.apelido.substring(0,2)}</AvatarFallback>
-                                </Avatar>
-                            </div>
-                            </Link>
-                            <CardTitle className="mt-4 text-2xl font-headline">
-                                <Link href={`/dashboard/profile?userId=${user.id}`} className="hover:underline">
-                                    {user.apelido}
+                 {leader && (
+                    <div className="text-center mb-8">
+                        <Card key={leader.id} className="relative overflow-hidden inline-block">
+                            <CardHeader>
+                                <Link href={`/dashboard/profile?userId=${leader.id}`} className="block w-fit mx-auto">
+                                <div className="w-24 h-24 rounded-full mx-auto p-1 bg-gradient-to-tr from-yellow-400 to-amber-600 animate-leader-pulse">
+                                    <Avatar className="w-full h-full border-4 border-background">
+                                        <AvatarImage src={leader.fotoPerfil} alt={leader.apelido} />
+                                        <AvatarFallback>{leader.apelido.substring(0,2)}</AvatarFallback>
+                                    </Avatar>
+                                </div>
                                 </Link>
-                            </CardTitle>
-                            <CardDescription className="text-lg font-bold text-primary">{user.pontos} pts</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex justify-center text-3xl">
-                                {index === 0 && <Medal className="w-10 h-10 text-yellow-500 fill-yellow-400" />}
-                                {index === 1 && <Award className="w-10 h-10 text-slate-400 fill-slate-400" />}
-                                {index === 2 && <Award className="w-10 h-10 text-amber-700 fill-amber-700" />}
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-                </div>
+                                <CardTitle className="mt-4 text-2xl font-headline">
+                                    <Link href={`/dashboard/profile?userId=${leader.id}`} className="hover:underline">
+                                        {leader.apelido}
+                                    </Link>
+                                </CardTitle>
+                                <CardDescription className="text-lg font-bold text-primary">{leader.pontos} pts</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex justify-center text-3xl">
+                                    <Medal className="w-10 h-10 text-yellow-500 fill-yellow-400" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
                 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                     <h3 className="text-xl font-bold font-headline">Classificação Geral</h3>

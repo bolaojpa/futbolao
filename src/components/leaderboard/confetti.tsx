@@ -21,8 +21,7 @@ export function Confetti() {
     const newPieces = Array.from({ length: 150 }, (_, i) => {
       const style: React.CSSProperties = {
         left: `${Math.random() * 100}%`,
-        top: `${-20 - Math.random() * 100}%`,
-        transform: `rotate(${Math.random() * 360}deg)`,
+        top: `${-20 - Math.random() * 100}px`, // Start above the viewport
         animation: `fall ${4 + Math.random() * 6}s linear ${Math.random() * 2}s forwards`,
       };
       return { id: i, style };
@@ -30,20 +29,7 @@ export function Confetti() {
 
     setPieces(newPieces);
 
-    const styleSheet = document.createElement("style");
-    styleSheet.innerHTML = `
-      @keyframes fall {
-        to {
-          top: 120%;
-          transform: rotate(${Math.random() * 720}deg);
-        }
-      }
-    `;
-    document.head.appendChild(styleSheet);
-    
-    return () => {
-      document.head.removeChild(styleSheet);
-    };
+    // No need to inject stylesheet if it's in globals.css
 
   }, []);
 
