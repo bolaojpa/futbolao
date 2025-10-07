@@ -753,18 +753,27 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
 }
 
 /**
- * Updates a user's last login and last activity timestamps.
+ * Updates a user's last login and last activity timestamps, and their providerId.
  * @param userId - The ID of the user to update.
+ * @param providerId - The provider ID from the login method.
  */
-export async function updateUserLastLogin(userId: string): Promise<void> {
+export async function updateUserLastLogin(userId: string, providerId: string): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, {
+    const updateData: any = {
         ultimoLogin: serverTimestamp(),
         ultimaAtividade: {
             timestamp: serverTimestamp(),
             description: "Fez login"
         },
-    });
+    };
+
+    // Only update providerId if it's different, to avoid unnecessary writes.
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists() && userDoc.data().providerId !== providerId) {
+        updateData.providerId = providerId;
+    }
+
+    await updateDoc(userDocRef, updateData);
 }
 
 /**

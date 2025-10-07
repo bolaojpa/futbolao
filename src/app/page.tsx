@@ -63,8 +63,9 @@ export default function WelcomePage() {
 
     const handleRedirectBasedOnUser = async (user: FirebaseUser) => {
         const userDocRef = doc(db, "users", user.uid);
+        const providerId = user.providerData[0]?.providerId || 'password';
         try {
-            await updateUserLastLogin(user.uid);
+            await updateUserLastLogin(user.uid, providerId); // Passa o providerId
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
                 const userData = userDoc.data() as UserType;
