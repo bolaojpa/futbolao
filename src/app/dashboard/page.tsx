@@ -134,31 +134,29 @@ export default function DashboardPage() {
 
     const userPredictions = useMemo(() => allPredictions.filter(p => p.userId === user?.id), [allPredictions, user]);
 
-    const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
+    const calculateLivePoints = (match: Match, prediction: Prediction, championship: Championship): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
         const livePlacarA = match.placarA ?? 0;
         const livePlacarB = match.placarB ?? 0;
     
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         
-        const championship = allChampionships.find(c => c.id === match.campeonatoId);
-        const pontuacao = championship?.pontuacao;
+        const pontuacao = championship.pontuacao;
     
-        if (guessA === null || guessB === null || !pontuacao) {
+        if (guessA === null || guessB === null) {
             return { pontos: 0, acertoTipo: 'erro' };
         }
     
         const acertouPlacarExato = guessA === livePlacarA && guessB === livePlacarB;
         const finalWinner = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
-        const acertouSituacao = finalWinner === guessWinner;
         
         let pontosGanhos = 0;
         let acertoTipo: Prediction['acertoTipo'] = 'erro';
     
         const usouCombo = !!prediction.palpiteCombo;
         const totalGolsFinal = livePlacarA + livePlacarB;
-        const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
-    
+        const acertouGols = usouCombo && pontuacao.combo?.ativo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
             acertoTipo = 'bucha';
@@ -166,14 +164,14 @@ export default function DashboardPage() {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
                 acertoTipo = 'combo';
             }
-        } else if (acertouSituacao) {
+        } else if (finalWinner === guessWinner) { // Situação correta, mas não placar exato
             pontosGanhos = pontuacao.tradicional.situacao;
             acertoTipo = 'situacao';
              if (acertouGols && pontuacao.combo.ativo) {
                 pontosGanhos += pontuacao.combo.pontosGols;
                 acertoTipo = 'bonus';
             }
-        } else if (acertouGols && pontuacao.combo.ativo) {
+        } else if (acertouGols && pontuacao.combo.ativo) { // Errou placar e situação, mas acertou os gols
             pontosGanhos = pontuacao.combo.pontosGols;
             acertoTipo = 'gols';
         }
@@ -202,7 +200,7 @@ export default function DashboardPage() {
                     if (match.campeonatoId === championship.id) {
                         const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === u.id);
                         if (prediction) {
-                             const result = calculateLivePoints(match, prediction);
+                             const result = calculateLivePoints(match, prediction, championship);
                             basePoints += result.pontos;
                             if (result.acertoTipo === 'bucha' || result.acertoTipo === 'combo') baseExatos++;
                             if (result.acertoTipo === 'situacao' || result.acertoTipo === 'bonus') baseSituacoes++;
@@ -399,7 +397,7 @@ export default function DashboardPage() {
                                         const teamB = allTeams.find(t => t.name === match.timeB);
 
                                         const userPrediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
-                                        const { acertoTipo: currentUserAcertoTipo } = userPrediction ? calculateLivePoints(match, userPrediction) : { pontos: 0, acertoTipo: 'erro' };
+                                        const { acertoTipo: currentUserAcertoTipo } = userPrediction && championship ? calculateLivePoints(match, userPrediction, championship) : { pontos: 0, acertoTipo: 'erro' };
                                         
                                         const cardStatusClass = !userPrediction ? 'bg-orange-500 text-white' : getPredictionStatusClass(currentUserAcertoTipo);
 
@@ -471,7 +469,7 @@ export default function DashboardPage() {
                                                                             );
                                                                         }
                                                                         
-                                                                        const { pontos: livePoints, acertoTipo } = calculateLivePoints(match, prediction);
+                                                                        const { pontos: livePoints, acertoTipo } = championship ? calculateLivePoints(match, prediction, championship) : { pontos: 0, acertoTipo: 'erro' };
                                                                         
                                                                         return (
                                                                             <li key={participant.id} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(acertoTipo))}>
@@ -562,10 +560,15 @@ export default function DashboardPage() {
 
                         {upcomingMatches.length > 0 && (
                             <section>
-                               <h2 className="text-2xl font-bold font-headline flex items-center gap-2 mb-4">
-                                    <Calendar className="w-6 h-6 text-primary" />
-                                    Próximos Jogos
-                                </h2>
+                               <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                                        <Calendar className="w-6 h-6 text-primary" />
+                                        Próximos Jogos
+                                    </h2>
+                                    <Button asChild variant="link">
+                                        <Link href="/dashboard/predictions">Ver mais &rarr;</Link>
+                                    </Button>
+                                </div>
                                 <div className="w-full space-y-4">
                                     {upcomingMatches.map(match => {
                                             const teamA = allTeams.find(t => t.name === match.timeA);
@@ -633,7 +636,7 @@ export default function DashboardPage() {
                                         Resultados Recentes
                                     </h2>
                                     <Button asChild variant="link">
-                                        <Link href="/dashboard/history">Ver histórico completo &rarr;</Link>
+                                        <Link href="/dashboard/history">Ver mais &rarr;</Link>
                                     </Button>
                                 </div>
                                 <div className="w-full space-y-4">
@@ -812,4 +815,3 @@ export default function DashboardPage() {
         </TooltipProvider>
     );
 }
-
