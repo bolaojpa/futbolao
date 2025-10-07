@@ -207,7 +207,7 @@ export function ProfilePageClient() {
     const acertouPlacarExato = guessA === liveA && guessB === liveB;
     const finalWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
     const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
-    const acertouSituacao = finalWinner === guessWinner;
+    const acertouSituacao = !acertouPlacarExato && finalWinner === guessWinner;
     
     let pontosGanhos = 0;
     let acertoTipo: Prediction['acertoTipo'] = 'erro';
@@ -286,7 +286,7 @@ export function ProfilePageClient() {
             const result = calculateLivePoints(match, prediction, champ);
             livePoints += result.pontos;
             if (result.acertoTipo === 'bucha' || result.acertoTipo === 'combo') liveExatos++;
-            if (result.acertoTipo === 'situacao' || result.acertoTipo === 'bonus') liveSituacoes++;
+            if (result.acertoTipo === 'situacao') liveSituacoes++;
             if (result.acertoTipo === 'combo') liveCombos++;
             if (result.acertoTipo === 'bonus') liveBonus++;
             if (result.acertoTipo === 'gols') liveGols++;

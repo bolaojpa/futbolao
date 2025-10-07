@@ -100,7 +100,7 @@ export function AdminRankingPageClient() {
     const acertouPlacarExato = guessA === liveA && guessB === liveB;
     const finalWinner = liveA > liveB ? 'A' : liveA < liveB ? 'B' : 'E';
     const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
-    const acertouSituacao = finalWinner === guessWinner;
+    const acertouSituacao = !acertouPlacarExato && finalWinner === guessWinner;
     
     let pontosGanhos = 0;
     let acertouCombo = false;
