@@ -41,12 +41,38 @@ export async function getUsers(): Promise<UserType[]> {
 export async function updateUserProfile(userId: string, data: Partial<Pick<UserType, 'nome' | 'apelido' | 'timeCoracao' | 'urlImagemPersonalizada' | 'fotoPerfil'>>): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
     
+    // Fetch current user data to compare
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) {
+        throw new Error("User not found");
+    }
+    const currentUserData = userDoc.data() as UserType;
+
     // Determine a descrição da atividade
-    let activityDescription = "Atualizou o perfil";
-    if (data.nome) activityDescription = "Atualizou o nome";
-    if (data.apelido) activityDescription = "Atualizou o apelido";
-    if (data.urlImagemPersonalizada) activityDescription = "Alterou a foto de perfil";
-    else if (data.urlImagemPersonalizada === '') activityDescription = "Removeu a foto personalizada";
+    let activityDescription = "Atualizou o perfil"; // Default
+    const changedFields: string[] = [];
+
+    if (data.nome && data.nome !== currentUserData.nome) {
+        changedFields.push("nome");
+    }
+    if (data.apelido && data.apelido !== currentUserData.apelido) {
+        changedFields.push("apelido");
+    }
+    if (data.timeCoracao && data.timeCoracao !== currentUserData.timeCoracao) {
+        changedFields.push("time do coração");
+    }
+    if (data.urlImagemPersonalizada && data.urlImagemPersonalizada !== currentUserData.urlImagemPersonalizada) {
+        changedFields.push("foto de perfil");
+    } else if (data.urlImagemPersonalizada === '' && currentUserData.urlImagemPersonalizada) {
+        changedFields.push("foto de perfil (removida)");
+    }
+
+    if (changedFields.length === 1) {
+        activityDescription = `Atualizou o ${changedFields[0]}`;
+    } else if (changedFields.length > 1) {
+        activityDescription = `Atualizou ${changedFields.join(', ')}`;
+    }
+
 
     const updateData: Partial<UserType> & { ultimaAtividade: any } = {
         ...data,
@@ -59,6 +85,10 @@ export async function updateUserProfile(userId: string, data: Partial<Pick<UserT
     // Se uma nova URL personalizada for fornecida, atualiza também a foto de perfil principal.
     if (data.urlImagemPersonalizada) {
         updateData.fotoPerfil = data.urlImagemPersonalizada;
+    } else if (data.urlImagemPersonalizada === '') {
+        // Se a imagem foi removida, precisamos de um fallback.
+        // Essa lógica já está no componente, mas é bom ter um fallback aqui também.
+        updateData.fotoPerfil = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserData.nome)}&background=random`;
     }
 
     await updateDoc(userDocRef, updateData);
@@ -96,7 +126,13 @@ export async function updateUserStatus(userId: string, newStatus: UserType['stat
         );
     }
     
-    await updateDoc(userDocRef, { status: newStatus });
+    await updateDoc(userDocRef, { 
+        status: newStatus,
+        ultimaAtividade: {
+            timestamp: serverTimestamp(),
+            description: `Teve seu status alterado para "${newStatus}"`,
+        }
+    });
 }
 
 
