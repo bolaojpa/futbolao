@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -288,7 +286,6 @@ export default function AdminDashboardPage() {
             let candidates: UserType[] = [];
             let bestTier = { rank: Infinity, pick: Infinity };
         
-            // 1. Encontrar o melhor "tier" de acerto
             for (let rankIndex = 0; rankIndex < finalRankingOrder.length; rankIndex++) {
                 const rankedTeam = finalRankingOrder[rankIndex];
                 for (let pickIndex = 0; pickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); pickIndex++) {
@@ -306,7 +303,6 @@ export default function AdminDashboardPage() {
         
             if (candidates.length === 0) return { winnerIds: [], validPicks: {} };
         
-            // 2. Desempate com palpites subsequentes
             if (candidates.length > 1) {
                 for (let nextPickIndex = 0; nextPickIndex < (championship.championPredictionSettings?.numberOfPicks || 0); nextPickIndex++) {
                     if (candidates.length <= 1) break;
@@ -334,7 +330,6 @@ export default function AdminDashboardPage() {
                 }
             }
         
-            // 3. Desempate pelo jogo da Final
             if (candidates.length > 1) {
                 const finalMatch = allMatches.filter(m => m.campeonatoId === championship.id && m.fase.toLowerCase().includes('final')).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
                 if (finalMatch) {
