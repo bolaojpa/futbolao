@@ -98,33 +98,35 @@ export function ChampionPrediction({ championships, teams, user, allMatches }: C
         const locked: Championship[] = [];
         if (!user || !championships) return { openForPrediction: [], lockedPredictions: [] };
 
-        championships.forEach(champ => {
-            if (!champ.championPredictionSettings?.active) return;
-            
-            const hasPrediction = user.championPicks?.some(p => p.championshipId === champ.id);
-            
-            // Lógica de fechamento baseada na primeira partida
-            const firstMatch = allMatches
-                .filter(m => m.campeonatoId === champ.id)
-                .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0];
-            
-            let isPredictionOpen = true;
-            if (firstMatch) {
-                const closingTime = subMinutes(parseISO(firstMatch.data), 15);
-                isPredictionOpen = isFuture(closingTime);
-            } else {
-                // Se não houver jogos, use a data de início do campeonato como fallback
-                const startDateString = typeof champ.dataInicio === 'string' ? champ.dataInicio : champ.dataInicio.toISOString();
-                isPredictionOpen = isFuture(parseISO(startDateString));
-            }
+        championships
+            .filter(champ => champ.status === 'ativo') // Apenas campeonatos ativos
+            .forEach(champ => {
+                if (!champ.championPredictionSettings?.active) return;
+                
+                const hasPrediction = user.championPicks?.some(p => p.championshipId === champ.id);
+                
+                // Lógica de fechamento baseada na primeira partida
+                const firstMatch = allMatches
+                    .filter(m => m.campeonatoId === champ.id)
+                    .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0];
+                
+                let isPredictionOpen = true;
+                if (firstMatch) {
+                    const closingTime = subMinutes(parseISO(firstMatch.data), 15);
+                    isPredictionOpen = isFuture(closingTime);
+                } else {
+                    // Se não houver jogos, use a data de início do campeonato como fallback
+                    const startDateString = typeof champ.dataInicio === 'string' ? champ.dataInicio : champ.dataInicio.toISOString();
+                    isPredictionOpen = isFuture(parseISO(startDateString));
+                }
 
 
-            if (isPredictionOpen) {
-                open.push(champ);
-            } else if (hasPrediction) {
-                locked.push(champ);
-            }
-        });
+                if (isPredictionOpen) {
+                    open.push(champ);
+                } else if (hasPrediction) {
+                    locked.push(champ);
+                }
+            });
         return { openForPrediction: open, lockedPredictions: locked };
     }, [championships, user, allMatches]);
     
