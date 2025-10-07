@@ -6,6 +6,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserType } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: UserType | null;
@@ -24,6 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       if (!user) {
+        // Se o usuário do Firebase for nulo (logout ou não autenticado),
+        // paramos de carregar imediatamente.
         setUser(null);
         setLoading(false);
       }
@@ -42,13 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Usuário do Firebase existe, mas não o documento do Firestore (ex: durante o cadastro)
           setUser(null);
         }
-        setLoading(false); // Agora o carregamento termina aqui
+        // O estado de carregamento só termina DEPOIS que a busca no Firestore é concluída.
+        setLoading(false);
       });
       return () => unsubscribeFirestore();
-    } else {
-      // Garante que se o firebaseUser for nulo (logout), o estado de loading seja falso
-      setLoading(false);
     }
+    // Não alteramos o 'loading' para 'false' aqui se firebaseUser for nulo,
+    // pois o onAuthStateChanged já cuida disso.
   }, [firebaseUser]);
 
   const value = { firebaseUser, user, loading };
