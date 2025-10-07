@@ -565,7 +565,8 @@ export default function DashboardPage() {
                                         const teamB = allTeams.find(t => t.name === match.timeB);
                                         const userPrediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
                                         const ghostPrediction = allUsers.find(u => u.isGhost) ? allPredictions.find(p => p.matchId === match.id && p.userId === allUsers.find(u => u.isGhost)!.id) : null;
-                                        
+                                        const isCloseToStart = differenceInHours(parseISO(match.data), new Date()) < 2;
+
                                         return (
                                             <Link href={`/dashboard/predictions#${match.id}`} key={match.id} className="block group">
                                                 <Card className="h-full hover:border-primary/50 transition-colors">
@@ -593,7 +594,10 @@ export default function DashboardPage() {
                                                                 </div>
                                                             </div>
                                                             <div className='flex flex-col items-center justify-center mt-2 gap-2'>
-                                                                <Countdown targetDate={match.data} />
+                                                                 <Badge variant={isCloseToStart ? 'destructive' : 'outline'} className={cn('gap-2 text-sm', isCloseToStart && 'animate-pulse')}>
+                                                                    <AlarmClock className="h-4 w-4"/>
+                                                                    <Countdown targetDate={match.data} prefix='' />
+                                                                </Badge>
                                                                 {userPrediction?.palpiteUsuario.placarA !== null && (
                                                                     <div className="font-semibold text-sm">Seu Palpite: {userPrediction?.palpiteUsuario.placarA} - {userPrediction?.palpiteUsuario.placarB}</div>
                                                                 )}
