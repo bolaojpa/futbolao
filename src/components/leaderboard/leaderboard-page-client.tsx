@@ -94,11 +94,10 @@ export function LeaderboardPageClient() {
     }
   }, [championships, championshipIdFromQuery, authUser, authLoading]);
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonus: boolean; gols: boolean; } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction, championship: Championship | undefined): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonus: boolean; gols: boolean; } => {
     const liveA = match.placarA ?? 0;
     const liveB = match.placarB ?? 0;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-    const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (guessA === null || guessB === null || !championship) {
       return { pontos: 0, exato: false, situacao: false, combo: false, bonus: false, gols: false };
@@ -118,22 +117,22 @@ export function LeaderboardPageClient() {
 
     const usouCombo = !!prediction.palpiteCombo;
     const totalGolsFinal = liveA + liveB;
-    const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+    const acertouGols = usouCombo && pontuacao.combo?.ativo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
     if (acertouPlacarExato) {
-        pontosGanhos += pontuacao.tradicional.exato;
+        pontosGanhos = pontuacao.tradicional.exato;
         if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
             acertouCombo = true;
         }
     } else if (acertouSituacao) {
-        pontosGanhos += pontuacao.tradicional.situacao;
+        pontosGanhos = pontuacao.tradicional.situacao;
         if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos += pontuacao.combo.pontosGols;
             acertouBonus = true;
         }
     } else if (acertouGols && pontuacao.combo?.ativo) {
-        pontosGanhos += pontuacao.combo.pontosGols;
+        pontosGanhos = pontuacao.combo.pontosGols;
         acertouGolsSozinho = true;
     }
 
@@ -174,7 +173,7 @@ export function LeaderboardPageClient() {
       liveMatchesForChamp.forEach(match => {
           const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
           if (prediction) {
-              const result = calculateLivePoints(match, prediction);
+              const result = calculateLivePoints(match, prediction, selectedChampionship);
               basePoints += result.pontos;
               if (result.exato) baseExatos++;
               if (result.situacao) baseSituacoes++;

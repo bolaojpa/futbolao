@@ -123,14 +123,13 @@ export default function AdminDashboardPage() {
         }
     };
 
-     const calculatePointsForSingleMatch = (match: Match, prediction: Prediction): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
+     const calculatePointsForSingleMatch = (match: Match, prediction: Prediction, championship: Championship | undefined): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
         const { placarA: finalA, placarB: finalB } = match;
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         
-        const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao;
 
-        if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao) {
+        if (finalA === undefined || finalA === null || finalB === undefined || finalB === null || !pontuacao || guessA === null || guessB === null) {
             return { pontos: 0, acertoTipo: 'erro' };
         }
 
@@ -144,23 +143,23 @@ export default function AdminDashboardPage() {
         
         const usouCombo = !!prediction.palpiteCombo;
         const totalGolsFinal = finalA + finalB;
-        const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+        const acertouGols = usouCombo && pontuacao.combo?.ativo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
             acertoTipo = 'bucha';
-            if (acertouGols && pontuacao.combo.ativo) {
+            if (acertouGols && pontuacao.combo?.ativo) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
                 acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
             pontosGanhos = pontuacao.tradicional.situacao;
             acertoTipo = 'situacao';
-             if (acertouGols && pontuacao.combo.ativo) {
+             if (acertouGols && pontuacao.combo?.ativo) {
                 pontosGanhos += pontuacao.combo.pontosGols;
                 acertoTipo = 'bonus';
             }
-        } else if (acertouGols && pontuacao.combo.ativo) {
+        } else if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos = pontuacao.combo.pontosGols;
             acertoTipo = 'gols';
         }
@@ -201,7 +200,7 @@ export default function AdminDashboardPage() {
             for (const prediction of match.predictions) {
                 const user = allUsers.find(u => u.id === prediction.userId);
                 if (user) {
-                     const result = calculatePointsForSingleMatch(finalizedMatch, prediction);
+                     const result = calculatePointsForSingleMatch(finalizedMatch, prediction, championship);
                      await updateUserStatsAfterMatch(user.id, championship.id, result.pontos, result.acertoTipo, prediction.id!);
                 }
             }
@@ -216,7 +215,7 @@ export default function AdminDashboardPage() {
                     const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
 
                     if (userBefore && userAfter) {
-                        const pontosGanhos = calculatePointsForSingleMatch(finalizedMatch, prediction).pontos;
+                        const pontosGanhos = calculatePointsForSingleMatch(finalizedMatch, prediction, championship).pontos;
                         
                         const getPosition = (userList: UserType[], userId: string, champId: string) => {
                              const sorted = userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0))
@@ -276,19 +275,24 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const calculateSimulatedPoints = (match: Match, prediction: Prediction): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
+    const calculateSimulatedPoints = (match: Match, prediction: Prediction, championship: Championship | undefined): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
         const liveScore = scores[match.id];
-        if (!liveScore || liveScore.placarA === '' || liveScore.placarB === '') return { pontos: 0, acertoTipo: 'erro' };
         
-        const livePlacarA = Number(liveScore.placarA);
-        const livePlacarB = Number(liveScore.placarB);
+        const livePlacarA = liveScore ? (liveScore.placarA !== '' ? Number(liveScore.placarA) : (match.placarA ?? 0)) : (match.placarA ?? 0);
+        const livePlacarB = liveScore ? (liveScore.placarB !== '' ? Number(liveScore.placarB) : (match.placarB ?? 0)) : (match.placarB ?? 0);
+
+        if (isNaN(livePlacarA) || isNaN(livePlacarB)) {
+            return { pontos: 0, acertoTipo: 'erro' };
+        }
         
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         
-        const championship = allChampionships.find(c => c.id === match.campeonatoId);
         const pontuacao = championship?.pontuacao;
-        if (!pontuacao) return { pontos: 0, acertoTipo: 'erro' };
         
+        if (guessA === null || guessB === null || !pontuacao) {
+            return { pontos: 0, acertoTipo: 'erro' };
+        }
+
         const acertouPlacarExato = guessA === livePlacarA && guessB === livePlacarB;
         const finalWinner = livePlacarA > livePlacarB ? 'A' : livePlacarA < livePlacarB ? 'B' : 'E';
         const guessWinner = guessA > guessB ? 'A' : guessA < guessB ? 'B' : 'E';
@@ -299,23 +303,23 @@ export default function AdminDashboardPage() {
         
         const usouCombo = !!prediction.palpiteCombo;
         const totalGolsFinal = livePlacarA + livePlacarB;
-        const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+        const acertouGols = usouCombo && pontuacao.combo?.ativo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
         if (acertouPlacarExato) {
             pontosGanhos = pontuacao.tradicional.exato;
             acertoTipo = 'bucha';
-            if (acertouGols && pontuacao.combo.ativo) {
+            if (acertouGols && pontuacao.combo?.ativo) {
                 pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
                 acertoTipo = 'combo';
             }
         } else if (acertouSituacao) {
             pontosGanhos = pontuacao.tradicional.situacao;
             acertoTipo = 'situacao';
-             if (acertouGols && pontuacao.combo.ativo) {
+             if (acertouGols && pontuacao.combo?.ativo) {
                 pontosGanhos += pontuacao.combo.pontosGols;
                 acertoTipo = 'bonus';
             }
-        } else if (acertouGols && pontuacao.combo.ativo) {
+        } else if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos = pontuacao.combo.pontosGols;
             acertoTipo = 'gols';
         }
@@ -464,7 +468,7 @@ export default function AdminDashboardPage() {
                                                             );
                                                         }
                                                         
-                                                        const { pontos: simulatedPoints, acertoTipo: simulatedAcertoTipo } = calculateSimulatedPoints(match, prediction);
+                                                        const { pontos: simulatedPoints, acertoTipo: simulatedAcertoTipo } = calculateSimulatedPoints(match, prediction, championship);
                                                         
                                                         return (
                                                         <li key={prediction.id} className={cn("flex justify-between items-center p-4 border-t", getPredictionStatusClass(simulatedAcertoTipo))}>

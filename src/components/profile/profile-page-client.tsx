@@ -195,11 +195,10 @@ export function ProfilePageClient() {
     }
   }, [championships, selectedChampionshipId]);
 
-  const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
+  const calculateLivePoints = (match: Match, prediction: Prediction, championship: Championship | undefined): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
     const liveA = match.placarA ?? 0;
     const liveB = match.placarB ?? 0;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
-    const championship = championships.find(c => c.id === match.campeonatoId);
     
     if (guessA === null || guessB === null || !championship) {
       return { pontos: 0, acertoTipo: 'erro' };
@@ -217,23 +216,23 @@ export function ProfilePageClient() {
 
     const usouCombo = !!prediction.palpiteCombo;
     const totalGolsFinal = liveA + liveB;
-    const acertouGols = usouCombo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
+    const acertouGols = usouCombo && pontuacao.combo?.ativo && prediction.palpiteCombo?.totalGols === totalGolsFinal;
 
     if (acertouPlacarExato) {
         pontosGanhos = pontuacao.tradicional.exato;
         acertoTipo = 'bucha';
-        if (acertouGols && pontuacao.combo.ativo) {
+        if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
             acertoTipo = 'combo';
         }
     } else if (acertouSituacao) {
         pontosGanhos = pontuacao.tradicional.situacao;
         acertoTipo = 'situacao';
-        if (acertouGols && pontuacao.combo.ativo) {
+        if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos += pontuacao.combo.pontosGols;
             acertoTipo = 'bonus';
         }
-    } else if (acertouGols && pontuacao.combo.ativo) {
+    } else if (acertouGols && pontuacao.combo?.ativo) {
         pontosGanhos = pontuacao.combo.pontosGols;
         acertoTipo = 'gols';
     }
@@ -286,7 +285,7 @@ export function ProfilePageClient() {
     liveMatchesForChamp.forEach(match => {
         const prediction = userPredictions.find(p => p.matchId === match.id);
         if (prediction) {
-            const result = calculateLivePoints(match, prediction);
+            const result = calculateLivePoints(match, prediction, champ);
             livePoints += result.pontos;
             if (result.acertoTipo === 'bucha' || result.acertoTipo === 'combo') liveExatos++;
             if (result.acertoTipo === 'situacao' || result.acertoTipo === 'bonus') liveSituacoes++;
