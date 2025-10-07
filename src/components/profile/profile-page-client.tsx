@@ -196,11 +196,12 @@ export function ProfilePageClient() {
   }, [championships, selectedChampionshipId]);
 
   const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; acertoTipo: Prediction['acertoTipo'] } => {
-    const { placarA: liveA, placarB: liveB } = match;
+    const liveA = match.placarA ?? 0;
+    const liveB = match.placarB ?? 0;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
-    if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
+    if (guessA === null || guessB === null || !championship) {
       return { pontos: 0, acertoTipo: 'erro' };
     }
 

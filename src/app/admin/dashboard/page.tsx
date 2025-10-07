@@ -376,10 +376,13 @@ export default function AdminDashboardPage() {
     
     const calculateSimulatedPoints = (match: Match, prediction: Prediction): { pontos: number, acertoTipo: Prediction['acertoTipo'] } => {
         const liveScore = scores[match.id];
-        if (!liveScore || liveScore.placarA === '' || liveScore.placarB === '') return { pontos: 0, acertoTipo: 'erro' };
         
-        const livePlacarA = Number(liveScore.placarA);
-        const livePlacarB = Number(liveScore.placarB);
+        const livePlacarA = liveScore ? Number(liveScore.placarA) : (match.placarA ?? 0);
+        const livePlacarB = liveScore ? Number(liveScore.placarB) : (match.placarB ?? 0);
+
+        if (isNaN(livePlacarA) || isNaN(livePlacarB)) {
+            return { pontos: 0, acertoTipo: 'erro' };
+        }
         
         const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
         

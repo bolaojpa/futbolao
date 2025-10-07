@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { UserType, Championship, Match, Prediction, TiebreakerRule } from '@/lib/types';
-import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, BarChart3, Loader2, Gem, Goal, Ghost, Trophy } from 'lucide-react';
+import { Medal, Award, Flashlight, ArrowUp, ArrowDown, Minus, Trophy, Loader2, Gem, Goal, Ghost } from 'lucide-react';
 import { Confetti } from '@/components/leaderboard/confetti';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -86,7 +86,8 @@ export function LeaderboardPageClient() {
     } else {
         const userChampionships = championships.filter(c => c.participantes.includes(authUser.id));
         if (userChampionships.length > 0) {
-            setSelectedChampionshipId(userChampionships[0].id);
+            const activeChampionship = userChampionships.find(c => c.status === 'ativo');
+            setSelectedChampionshipId(activeChampionship ? activeChampionship.id : userChampionships[0].id);
         } else {
             setSelectedChampionshipId(null);
         }
@@ -94,11 +95,12 @@ export function LeaderboardPageClient() {
   }, [championships, championshipIdFromQuery, authUser, authLoading]);
 
   const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonus: boolean; gols: boolean; } => {
-    const { placarA: liveA, placarB: liveB } = match;
+    const liveA = match.placarA ?? 0;
+    const liveB = match.placarB ?? 0;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
-    if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
+    if (guessA === null || guessB === null || !championship) {
       return { pontos: 0, exato: false, situacao: false, combo: false, bonus: false, gols: false };
     }
 

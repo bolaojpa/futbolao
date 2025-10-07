@@ -89,11 +89,12 @@ export function AdminRankingPageClient() {
   }, [championshipIdFromQuery]);
 
   const calculateLivePoints = (match: Match, prediction: Prediction): { pontos: number; exato: boolean; situacao: boolean; combo: boolean; bonus: boolean; gols: boolean; } => {
-    const { placarA: liveA, placarB: liveB } = match;
+    const liveA = match.placarA ?? 0;
+    const liveB = match.placarB ?? 0;
     const { placarA: guessA, placarB: guessB } = prediction.palpiteUsuario;
     const championship = championships.find(c => c.id === match.campeonatoId);
     
-    if (liveA === undefined || liveA === null || liveB === undefined || liveB === null || !championship) {
+    if (guessA === null || guessB === null || !championship) {
       return { pontos: 0, exato: false, situacao: false, combo: false, bonus: false, gols: false };
     }
 
@@ -115,17 +116,17 @@ export function AdminRankingPageClient() {
 
     if (acertouPlacarExato) {
         pontosGanhos += pontuacao.tradicional.exato;
-        if (acertouGols && pontuacao.combo) {
+        if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos += pontuacao.combo.bonusPlacarExatoGols;
             acertouCombo = true;
         }
     } else if (acertouSituacao) {
         pontosGanhos += pontuacao.tradicional.situacao;
-        if (acertouGols && pontuacao.combo) {
+        if (acertouGols && pontuacao.combo?.ativo) {
             pontosGanhos += pontuacao.combo.pontosGols;
             acertouBonus = true;
         }
-    } else if (acertouGols && pontuacao.combo) {
+    } else if (acertouGols && pontuacao.combo?.ativo) {
         pontosGanhos += pontuacao.combo.pontosGols;
         acertouGolsSozinho = true;
     }
