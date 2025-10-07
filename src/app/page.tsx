@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs, updateDoc as firestoreUpdateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { getSystemSettings, updateUserLastLogin, getTeams } from '@/lib/firebase/firestore';
+import { getSystemSettings, updateUserLastLogin, getTeams, addLog } from '@/lib/firebase/firestore';
 import type { Team, UserType } from '@/lib/types';
 import { Combobox } from '@/components/ui/combobox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -66,7 +67,13 @@ export default function WelcomePage() {
             await updateUserLastLogin(user.uid);
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
-                const userData = userDoc.data();
+                const userData = userDoc.data() as UserType;
+                 await addLog({
+                    action: 'login',
+                    actor: { id: userData.id, apelido: userData.apelido, funcao: userData.funcao },
+                    details: `Login bem-sucedido via ${user.providerData[0]?.providerId || 'email'}.`
+                });
+
                 if (userData.funcao === 'admin' || userData.funcao === 'moderator') router.push('/admin');
                 else if (userData.status === 'pendente') router.push('/pending-approval');
                 else if (userData.status === 'bloqueado') router.push('/account-blocked');
@@ -103,15 +110,12 @@ export default function WelcomePage() {
                     id: googleUser.uid, nome: googleUser.displayName, apelido: googleUser.displayName?.split(' ')[0] || googleUser.email, email: googleUser.email, fotoPerfil: googleUser.photoURL, status: 'pendente', funcao: 'usuario', dataCadastro: serverTimestamp(), titulos: 0, totalJogos: 0, championshipStats: [], urlImagemPersonalizada: '', presenceStatus: 'Disponível', providerId: providerId,
                 });
             } else {
-                // Se o usuário já existe, atualiza as informações que podem mudar
-                // e garante que o providerId reflita o último método de login.
                 const existingData = userDoc.data() as UserType;
                 const updates: Partial<UserType> = { 
                     nome: googleUser.displayName || existingData.nome,
-                    providerId: providerId // Sempre atualiza para "google.com" neste fluxo
+                    providerId: providerId 
                 };
                 
-                // Só atualiza a foto se o usuário não tiver definido uma URL personalizada.
                 if (!existingData.urlImagemPersonalizada && googleUser.photoURL) {
                     updates.fotoPerfil = googleUser.photoURL;
                 }
@@ -133,6 +137,11 @@ export default function WelcomePage() {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             handleRedirectBasedOnUser(userCredential.user);
         } catch (error: any) {
+            await addLog({
+                action: 'login_fail',
+                actor: { id: 'system', apelido: email, funcao: 'usuario' },
+                details: `Falha no login para o email: ${email}`
+            });
             toast({
                 variant: "destructive",
                 title: "Erro de Login",
@@ -291,4 +300,3 @@ export default function WelcomePage() {
         </div>
     );
 }
-

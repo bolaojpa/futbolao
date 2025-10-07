@@ -134,17 +134,30 @@ export interface Team {
 }
 
 
+export type LogAction = 
+  | 'login' 
+  | 'login_fail' 
+  | 'prediction_update' 
+  | 'profile_update' 
+  | 'user_management' 
+  | 'championship_update' 
+  | 'match_update'
+  | 'system_message' 
+  | 'ai_notification'
+  | 'settings_update';
+
 export interface Log {
     id: string;
-    timestamp: string;
+    timestamp: Timestamp;
     actor: {
         id: string;
         apelido: string;
-        type: 'admin' | 'moderator' | 'user';
+        funcao: 'admin' | 'moderador' | 'usuario';
     };
-    action: 'login' | 'login_fail' | 'prediction_update' | 'profile_update' | 'user_management' | 'championship_create' | 'emergency_message' | 'ai_notification';
+    action: LogAction;
     details: string | object;
 }
+
 
 export interface Notification {
     id: string;

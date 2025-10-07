@@ -21,7 +21,49 @@ import {
   setDoc,
   arrayUnion,
 } from 'firebase/firestore';
-import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage, SupportMessage, SupportReply } from '../types';
+import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage, SupportMessage, SupportReply, Log } from '../types';
+
+/**
+ * Adds a new log entry to the 'logs' collection.
+ * @param logData - The data for the new log entry.
+ */
+export async function addLog(logData: Omit<Log, 'id' | 'timestamp'>): Promise<void> {
+    try {
+        const logsCollection = collection(db, 'logs');
+        await addDoc(logsCollection, {
+            ...logData,
+            timestamp: serverTimestamp(),
+        });
+    } catch (error) {
+        console.error("Error adding log:", error);
+        // Em um app de produção, você poderia usar um serviço de logging de erros aqui.
+    }
+}
+
+/**
+ * Fetches all logs from the Firestore 'logs' collection, ordered by timestamp descending.
+ */
+export async function getLogs(): Promise<Log[]> {
+    const logsCollection = collection(db, 'logs');
+    const q = query(logsCollection, orderBy('timestamp', 'desc'));
+    const logSnapshot = await getDocs(q);
+    const logList = logSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Log));
+    return logList;
+}
+
+/**
+ * Deletes multiple logs from Firestore in a single batch operation.
+ * @param logIds - An array of log IDs to delete.
+ */
+export async function deleteLogs(logIds: string[]): Promise<void> {
+    const batch = writeBatch(db);
+    logIds.forEach(logId => {
+        const logDocRef = doc(db, 'logs', logId);
+        batch.delete(logDocRef);
+    });
+    await batch.commit();
+}
+
 
 /**
  * Fetches all users from the Firestore 'users' collection.
@@ -87,9 +129,17 @@ export async function updateUserProfile(userId: string, data: Partial<Pick<UserT
         updateData.fotoPerfil = data.urlImagemPersonalizada;
     } else if (data.urlImagemPersonalizada === '') {
         // Se a imagem foi removida, precisamos de um fallback.
-        // Essa lógica já está no componente, mas é bom ter um fallback aqui também.
-        updateData.fotoPerfil = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserData.nome)}&background=random`;
+        const fallbackImage = currentUserData.providerId === 'google.com' 
+            ? (await getDoc(userDocRef)).data()?.originalPhotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserData.nome)}&background=random`
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserData.nome)}&background=random`;
+        updateData.fotoPerfil = fallbackImage;
     }
+    
+    await addLog({
+        action: 'profile_update',
+        actor: { id: userId, apelido: currentUserData.apelido, funcao: currentUserData.funcao },
+        details: activityDescription,
+    });
 
     await updateDoc(userDocRef, updateData);
 }
