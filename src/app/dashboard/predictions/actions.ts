@@ -3,7 +3,7 @@
 'use server';
 
 import { suggestPredictions, SuggestPredictionsOutput } from '@/ai/flows/suggest-predictions';
-import type { Prediction, UserType, SuggestPredictionsInput } from '@/lib/types';
+import type { Prediction, UserType, SuggestPredictionsInput, Match } from '@/lib/types';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { addLog } from '@/lib/firebase/firestore';
@@ -29,6 +29,11 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
         );
         const snapshot = await getDocs(q);
 
+        const matchDocRef = doc(db, 'matches', data.matchId);
+        const matchDoc = await getDoc(matchDocRef);
+        const matchData = matchDoc.data() as Match | undefined;
+        const matchName = matchData ? `${matchData.timeA} vs ${matchData.timeB}` : `partida desconhecida`;
+
         const userDocRef = doc(db, 'users', data.userId);
         const palpiteText = `${data.palpiteUsuario.placarA}-${data.palpiteUsuario.placarB}`;
         const ultimoPalpite = {
@@ -46,7 +51,7 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
-            activityDescription = `Fez um novo palpite (${palpiteText})`;
+            activityDescription = `Fez um novo palpite (${palpiteText}) para ${matchName}`;
         } else {
             const docId = snapshot.docs[0].id;
             const docRef = doc(db, 'predictions', docId);
@@ -54,7 +59,7 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
                 palpiteUsuario: data.palpiteUsuario,
                 updatedAt: serverTimestamp(),
             });
-            activityDescription = `Alterou um palpite para (${palpiteText})`;
+            activityDescription = `Alterou um palpite para (${palpiteText}) em ${matchName}`;
         }
         
         const ultimaAtividade = {
@@ -92,6 +97,12 @@ export async function saveComboPick(userId: string, matchId: string, totalGols: 
         const snapshot = await getDocs(q);
         const now = serverTimestamp();
         let activityDescription = '';
+        
+        const matchDocRef = doc(db, 'matches', matchId);
+        const matchDoc = await getDoc(matchDocRef);
+        const matchData = matchDoc.data() as Match | undefined;
+        const matchName = matchData ? `${matchData.timeA} vs ${matchData.timeB}` : `partida desconhecida`;
+
 
         if (snapshot.empty) {
              await addDoc(predictionsRef, {
@@ -104,7 +115,7 @@ export async function saveComboPick(userId: string, matchId: string, totalGols: 
                 createdAt: now,
                 updatedAt: now,
             });
-            activityDescription = `Usou uma Ficha de Combo (${totalGols} gols)`;
+            activityDescription = `Usou uma Ficha de Combo (${totalGols} gols) em ${matchName}`;
         } else {
             const docId = snapshot.docs[0].id;
             const docRef = doc(db, 'predictions', docId);
@@ -113,8 +124,8 @@ export async function saveComboPick(userId: string, matchId: string, totalGols: 
                 updatedAt: now,
             });
             activityDescription = totalGols !== null 
-                ? `Alterou uma Ficha de Combo para (${totalGols} gols)`
-                : `Removeu uma Ficha de Combo`;
+                ? `Alterou uma Ficha de Combo para (${totalGols} gols) em ${matchName}`
+                : `Removeu uma Ficha de Combo de ${matchName}`;
         }
         
         const userDocRef = doc(db, 'users', userId);
