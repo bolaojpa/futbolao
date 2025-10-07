@@ -164,13 +164,24 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
         };
 
         try {
-            const actionText = match ? 'editou' : 'criou';
-            const logDetails = `O admin ${actionText} a partida: ${data.timeA} vs ${data.timeB} para a fase "${data.fase}" do campeonato "${selectedChampionship.nome}".`;
+            let logDetails = '';
+            if (match) { // Se está editando
+                const changes = [];
+                if (data.timeA !== match.timeA || data.timeB !== match.timeB) changes.push('times');
+                if (data.fase !== match.fase) changes.push('fase');
+                if (combinedDate.toISOString() !== match.data) changes.push('data/hora');
+                if (data.predictionsLocked !== match.predictionsLocked) changes.push('bloqueio de palpites');
 
-            if (match) {
+                if (changes.length > 0) {
+                     logDetails = `O admin alterou ${changes.join(', ')} da partida ${data.timeA} vs ${data.timeB}.`;
+                } else {
+                    logDetails = `O admin salvou a partida ${data.timeA} vs ${data.timeB} sem fazer alterações.`;
+                }
+
                 await updateMatch(match.id, matchData);
                 toast({ title: "Partida Atualizada!", description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.` });
-            } else {
+            } else { // Se está criando
+                logDetails = `O admin criou a partida: ${data.timeA} vs ${data.timeB} para a fase "${data.fase}" do campeonato "${selectedChampionship.nome}".`;
                 await addMatch(matchData as Omit<Match, 'id'>);
                 toast({ title: "Partida Criada!", description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.` });
             }
