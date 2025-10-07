@@ -484,9 +484,20 @@ export async function updateChampionship(championshipId: string, championshipDat
     const champName = champDoc.data()?.nome || 'desconhecido';
     
     let details = `Editou o campeonato "${champName}".`;
+    // Create specific log messages for significant status changes
     if (championshipData.status) {
-        details = `Alterou o status do campeonato "${champName}" para "${championshipData.status}".`
+        if (championshipData.status === 'arquivado' && champDoc.data()?.status === 'ativo') {
+             details = `Finalizou o campeonato "${champName}".`;
+        } else if (championshipData.status === 'ativo' && champDoc.data()?.status === 'arquivado') {
+            details = `Restaurou o campeonato arquivado "${champName}".`;
+        } else if (championshipData.status === 'arquivado' && champDoc.data()?.status !== 'ativo') {
+            // This case handles archiving from a non-active state (like if it was already finalized)
+            details = `Arquivou o campeonato "${champName}".`;
+        } else {
+             details = `Alterou o status do campeonato "${champName}" para "${championshipData.status}".`
+        }
     }
+
      await addLog({
       action: 'championship_update',
       actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
