@@ -22,6 +22,7 @@ import {
   arrayUnion,
 } from 'firebase/firestore';
 import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage, SupportMessage, SupportReply, Log } from '../types';
+import { useAuth } from '@/hooks/use-auth';
 
 /**
  * Adds a new log entry to the 'logs' collection.
@@ -83,39 +84,27 @@ export async function getUsers(): Promise<UserType[]> {
 export async function updateUserProfile(userId: string, data: Partial<Pick<UserType, 'nome' | 'apelido' | 'timeCoracao' | 'urlImagemPersonalizada' | 'fotoPerfil'>>): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
     
-    // Fetch current user data to compare
     const userDoc = await getDoc(userDocRef);
     if (!userDoc.exists()) {
         throw new Error("User not found");
     }
     const currentUserData = userDoc.data() as UserType;
 
-    // Determine a descrição da atividade
-    let activityDescription = "Atualizou o perfil"; // Default
     const changedFields: string[] = [];
-
-    if (data.nome && data.nome !== currentUserData.nome) {
-        changedFields.push("nome");
-    }
-    if (data.apelido && data.apelido !== currentUserData.apelido) {
-        changedFields.push("apelido");
-    }
-    if (data.timeCoracao && data.timeCoracao !== currentUserData.timeCoracao) {
-        changedFields.push("time do coração");
-    }
+    if (data.nome && data.nome !== currentUserData.nome) changedFields.push("nome");
+    if (data.apelido && data.apelido !== currentUserData.apelido) changedFields.push("apelido");
+    if (data.timeCoracao !== undefined && data.timeCoracao !== currentUserData.timeCoracao) changedFields.push("time do coração");
     if (data.urlImagemPersonalizada && data.urlImagemPersonalizada !== currentUserData.urlImagemPersonalizada) {
-        changedFields.push("foto de perfil");
+      changedFields.push("foto de perfil");
     } else if (data.urlImagemPersonalizada === '' && currentUserData.urlImagemPersonalizada) {
-        changedFields.push("foto de perfil (removida)");
+      changedFields.push("foto de perfil (removida)");
     }
-
-    if (changedFields.length === 1) {
-        activityDescription = `Atualizou o ${changedFields[0]}`;
-    } else if (changedFields.length > 1) {
-        activityDescription = `Atualizou ${changedFields.join(', ')}`;
+    
+    let activityDescription = "Atualizou o perfil";
+    if (changedFields.length > 0) {
+      activityDescription = `Atualizou ${changedFields.join(', ')}`;
     }
-
-
+    
     const updateData: Partial<UserType> & { ultimaAtividade: any } = {
         ...data,
         ultimaAtividade: {
@@ -124,14 +113,10 @@ export async function updateUserProfile(userId: string, data: Partial<Pick<UserT
         }
     };
     
-    // Se uma nova URL personalizada for fornecida, atualiza também a foto de perfil principal.
     if (data.urlImagemPersonalizada) {
         updateData.fotoPerfil = data.urlImagemPersonalizada;
     } else if (data.urlImagemPersonalizada === '') {
-        // Se a imagem foi removida, precisamos de um fallback.
-        const fallbackImage = currentUserData.providerId === 'google.com' 
-            ? (await getDoc(userDocRef)).data()?.originalPhotoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserData.nome)}&background=random`
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUserData.nome)}&background=random`;
+        const fallbackImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.nome || currentUserData.nome)}&background=random`;
         updateData.fotoPerfil = fallbackImage;
     }
     
@@ -144,6 +129,7 @@ export async function updateUserProfile(userId: string, data: Partial<Pick<UserT
     await updateDoc(userDocRef, updateData);
 }
 
+
 /**
  * Updates a single field for a specific user.
  * @param userId - The ID of the user to update.
@@ -151,6 +137,23 @@ export async function updateUserProfile(userId: string, data: Partial<Pick<UserT
  */
 export async function updateUserField(userId: string, data: Partial<UserType>): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) throw new Error("User not found");
+    const currentUserData = userDoc.data() as UserType;
+
+    let logDetail = `O campo '${Object.keys(data)[0]}' do usuário ${currentUserData.apelido} foi atualizado.`;
+    if ('isGhost' in data) {
+      logDetail = data.isGhost
+        ? `Definiu o usuário ${currentUserData.apelido} como jogador IA.`
+        : `Removeu o modo fantasma do usuário ${currentUserData.apelido}.`;
+    }
+
+    await addLog({
+        action: 'user_management',
+        actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' }, // Assumindo que a ação é feita por um admin
+        details: logDetail,
+    });
+
     await updateDoc(userDocRef, data);
 }
 
@@ -165,16 +168,23 @@ export async function updateUserField(userId: string, data: Partial<UserType>): 
 export async function updateUserStatus(userId: string, newStatus: UserType['status']) {
     const userDocRef = doc(db, 'users', userId);
     
-    // Check if user is being approved to send a welcome notification
     const userDoc = await getDoc(userDocRef);
-    if (userDoc.exists() && userDoc.data().status === 'pendente' && newStatus === 'ativo') {
-        const userData = userDoc.data() as UserType;
+    if (!userDoc.exists()) throw new Error("User not found");
+    const userData = userDoc.data() as UserType;
+    
+    if (userData.status === 'pendente' && newStatus === 'ativo') {
         await addToastNotification(
             userId, 
             `Bem-vindo(a), ${userData.apelido || userData.nome}!`,
             'Seu cadastro foi aprovado. Dê seus palpites e boa sorte!'
         );
     }
+    
+    await addLog({
+      action: 'user_management',
+      actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' }, // Assumindo que a ação é feita por um admin
+      details: `Alterou o status de "${userData.apelido}" de "${userData.status}" para "${newStatus}".`,
+    });
     
     await updateDoc(userDocRef, { 
         status: newStatus,
@@ -193,8 +203,20 @@ export async function updateUserStatus(userId: string, newStatus: UserType['stat
  */
 export async function updateUserRole(userId: string, newRole: UserType['funcao']) {
     const userDocRef = doc(db, 'users', userId);
+    
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) throw new Error("User not found");
+    const userData = userDoc.data() as UserType;
+    
+    await addLog({
+        action: 'user_management',
+        actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' }, // Assumindo que a ação é feita por um admin
+        details: `Alterou a função de "${userData.apelido}" de "${userData.funcao}" para "${newRole}".`,
+    });
+
     await updateDoc(userDocRef, { funcao: newRole });
 }
+
 
 /**
  * Deletes multiple users from Firestore in a single batch operation.
@@ -203,10 +225,19 @@ export async function updateUserRole(userId: string, newRole: UserType['funcao']
 export async function deleteUsers(userIds: string[]): Promise<void> {
     const batch = writeBatch(db);
 
-    userIds.forEach(userId => {
+    for (const userId of userIds) {
         const userDocRef = doc(db, 'users', userId);
-        batch.delete(userDocRef);
-    });
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            const userData = userDoc.data() as UserType;
+             await addLog({
+                action: 'user_management',
+                actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' }, // Assumindo que a ação é feita por um admin
+                details: `Excluiu o usuário "${userData.apelido}" (ID: ${userId}).`,
+            });
+            batch.delete(userDocRef);
+        }
+    }
 
     await batch.commit();
 }
@@ -291,6 +322,9 @@ export async function updateUserStatsAfterMatch(
 export async function resetUserStats(userId: string): Promise<void> {
     const batch = writeBatch(db);
 
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const userData = userDoc.data() as UserType;
+
     // 1. Reset user document stats
     const userDocRef = doc(db, 'users', userId);
     batch.update(userDocRef, {
@@ -307,6 +341,12 @@ export async function resetUserStats(userId: string): Promise<void> {
 
     predictionsSnapshot.forEach(predictionDoc => {
         batch.delete(predictionDoc.ref);
+    });
+    
+    await addLog({
+        action: 'user_management',
+        actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' }, // Assumindo que a ação é feita por um admin
+        details: `Resetou as estatísticas do usuário "${userData.apelido}".`,
     });
 
     // 3. Commit all operations
@@ -332,6 +372,11 @@ export async function getTeams(): Promise<Team[]> {
 export async function addTeam(teamData: Omit<Team, 'id'>): Promise<Team> {
   const teamsCollection = collection(db, 'teams');
   const docRef = await addDoc(teamsCollection, teamData);
+  await addLog({
+      action: 'championship_update',
+      actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+      details: `Adicionou a equipe "${teamData.name}".`,
+  });
   return { id: docRef.id, ...teamData };
 }
 
@@ -343,6 +388,11 @@ export async function addTeam(teamData: Omit<Team, 'id'>): Promise<Team> {
 export async function updateTeam(teamId: string, teamData: Partial<Omit<Team, 'id'>>): Promise<void> {
     const teamDocRef = doc(db, 'teams', teamId);
     await updateDoc(teamDocRef, teamData);
+    await addLog({
+      action: 'championship_update',
+      actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+      details: `Editou a equipe "${teamData.name}".`,
+  });
 }
 
 /**
@@ -351,12 +401,15 @@ export async function updateTeam(teamId: string, teamData: Partial<Omit<Team, 'i
  */
 export async function deleteTeams(teamIds: string[]): Promise<void> {
     const batch = writeBatch(db);
-
     teamIds.forEach(teamId => {
         const teamDocRef = doc(db, 'teams', teamId);
         batch.delete(teamDocRef);
     });
-
+    await addLog({
+        action: 'championship_update',
+        actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+        details: `Excluiu ${teamIds.length} equipe(s).`,
+    });
     await batch.commit();
 }
 
@@ -372,6 +425,11 @@ export async function deleteAllTeams(): Promise<void> {
         batch.delete(doc.ref);
     });
 
+    await addLog({
+        action: 'championship_update',
+        actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+        details: `Excluiu TODAS as equipes do sistema.`,
+    });
     await batch.commit();
 }
 
@@ -400,7 +458,11 @@ export async function addChampionship(championshipData: Omit<Championship, 'id' 
         createdAt: serverTimestamp() 
     };
     const docRef = await addDoc(championshipsCollection, dataWithTimestamp);
-    // Return a complete Championship object, although createdAt will be a server value
+    await addLog({
+      action: 'championship_update',
+      actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+      details: `Criou o campeonato "${championshipData.nome}".`,
+    });
     return { 
       id: docRef.id, 
       ...championshipData, 
@@ -416,6 +478,21 @@ export async function addChampionship(championshipData: Omit<Championship, 'id' 
  */
 export async function updateChampionship(championshipId: string, championshipData: Partial<Omit<Championship, 'id'>>): Promise<void> {
     const championshipDocRef = doc(db, 'championships', championshipId);
+    
+    // Log the change
+    const champDoc = await getDoc(championshipDocRef);
+    const champName = champDoc.data()?.nome || 'desconhecido';
+    
+    let details = `Editou o campeonato "${champName}".`;
+    if (championshipData.status) {
+        details = `Alterou o status do campeonato "${champName}" para "${championshipData.status}".`
+    }
+     await addLog({
+      action: 'championship_update',
+      actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+      details: details,
+    });
+    
     await updateDoc(championshipDocRef, championshipData);
 }
 
@@ -426,6 +503,9 @@ export async function updateChampionship(championshipId: string, championshipDat
 export async function deleteChampionship(championshipId: string): Promise<void> {
     const batch = writeBatch(db);
     
+    const champDoc = await getDoc(doc(db, 'championships', championshipId));
+    const champName = champDoc.data()?.nome || 'desconhecido';
+
     // 1. Find all matches for the championship
     const matchesRef = collection(db, 'matches');
     const matchesQuery = query(matchesRef, where('campeonatoId', '==', championshipId));
@@ -435,7 +515,6 @@ export async function deleteChampionship(championshipId: string): Promise<void> 
 
     // 2. For each match, find and delete all associated predictions
     if (matchIds.length > 0) {
-        // Firestore limita queries 'in' a 30 itens. Se houver mais, precisa de múltiplos batches.
         const BATCH_SIZE = 30;
         for (let i = 0; i < matchIds.length; i += BATCH_SIZE) {
             const matchIdBatch = matchIds.slice(i, i + BATCH_SIZE);
@@ -456,6 +535,12 @@ export async function deleteChampionship(championshipId: string): Promise<void> 
     // 4. Delete the championship document itself
     const championshipDocRef = doc(db, 'championships', championshipId);
     batch.delete(championshipDocRef);
+
+    await addLog({
+      action: 'championship_update',
+      actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+      details: `Excluiu o campeonato "${champName}" e todos os seus dados.`,
+    });
 
     // 5. Commit the batch
     await batch.commit();
@@ -693,6 +778,11 @@ export async function updateUserPresenceStatus(userId: string, newStatus: UserTy
  */
 export async function updateUrgentMessage(messageData: Partial<EmergencyMessage>): Promise<void> {
     const urgentMessageRef = doc(db, 'system_messages', 'urgent');
+    await addLog({
+      action: 'system_message',
+      actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+      details: `Enviou uma mensagem urgente: "${messageData.title}".`,
+    });
     await setDoc(urgentMessageRef, messageData, { merge: true });
 }
 
@@ -830,5 +920,10 @@ export async function getSystemSettings(): Promise<SystemSettings> {
  */
 export async function updateSystemSettings(settings: Partial<SystemSettings>): Promise<void> {
     const settingsRef = doc(db, 'system_settings', 'global');
+    await addLog({
+      action: 'settings_update',
+      actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
+      details: `Alterou as configurações gerais do sistema.`,
+    });
     await setDoc(settingsRef, settings, { merge: true });
 }
