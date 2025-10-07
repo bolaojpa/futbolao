@@ -109,8 +109,13 @@ export function AdminMatchesPageClient() {
         setChampionships(championshipsData);
         if (championshipIdFromQuery) {
             setSelectedChampionship(championshipIdFromQuery);
-        } else if (championshipsData.length > 0) {
-            setSelectedChampionship(championshipsData[0].id);
+        } else {
+            const activeChampionship = championshipsData.find(c => c.status === 'ativo');
+            if (activeChampionship) {
+                setSelectedChampionship(activeChampionship.id);
+            } else if (championshipsData.length > 0) {
+                 setSelectedChampionship('all');
+            }
         }
     });
 
@@ -213,8 +218,8 @@ export function AdminMatchesPageClient() {
                   <SelectValue placeholder="Filtrar por campeonato" />
               </SelectTrigger>
               <SelectContent>
-                  <SelectItem value="all">Todos os Campeonatos</SelectItem>
-                  {championships.map(champ => (
+                  <SelectItem value="all">Todos os Campeonatos Ativos</SelectItem>
+                  {championships.filter(c => c.status === 'ativo').map(champ => (
                       <SelectItem key={champ.id} value={champ.id}>{champ.nome}</SelectItem>
                   ))}
               </SelectContent>
