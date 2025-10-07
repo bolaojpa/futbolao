@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -29,7 +30,7 @@ import { doc, onSnapshot, collection, query, where, Timestamp } from 'firebase/f
 import { db } from '@/lib/firebase';
 import { getChampionships } from '@/lib/firebase/firestore';
 
-const TimeAgo = ({ dateValue }: { dateValue: string | Date | Timestamp | undefined | null }) => {
+const TimeAgo = ({ dateValue, description }: { dateValue: string | Date | Timestamp | undefined | null, description?: string }) => {
     const [timeAgo, setTimeAgo] = useState('');
     useEffect(() => {
         if (!dateValue) {
@@ -54,7 +55,13 @@ const TimeAgo = ({ dateValue }: { dateValue: string | Date | Timestamp | undefin
     }, [dateValue]);
 
     if (!timeAgo) return null;
-    return <>{timeAgo}</>;
+    
+    return (
+        <span>
+            {description && `${description} `}
+            {timeAgo}
+        </span>
+    );
 };
 
 type StatCardVariant = 'default' | 'exact' | 'situation' | 'combo' | 'bonus' | 'gols' | 'error' | 'leader';
@@ -434,9 +441,7 @@ export function ProfilePageClient() {
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Clock className="w-4 h-4" />
-                                <span>
-                                    Última atividade: <TimeAgo dateValue={ultimaAtividade} />
-                                </span>
+                                <TimeAgo dateValue={ultimaAtividade?.timestamp} description={ultimaAtividade?.description} />
                             </div>
                             {lastGuessMatch && (
                                 <Link href={getLastGuessLink()} className="group flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">

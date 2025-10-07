@@ -18,7 +18,10 @@ export interface UserType {
     isGhost?: boolean;
     posicaoVariacao?: 'up' | 'down' | 'stable';
     dataCadastro: string | Timestamp;
-    ultimaAtividade: string | Timestamp;
+    ultimaAtividade?: {
+        timestamp: string | Timestamp;
+        description: string;
+    };
     ultimoLogin: string | Timestamp;
     presenceStatus: 'Disponível' | 'Ausente' | 'Ocupado' | 'Não perturbe' | 'Offline';
     ultimoPalpite?: { matchId: string; palpite: string } | null;

@@ -40,7 +40,21 @@ export async function getUsers(): Promise<UserType[]> {
  */
 export async function updateUserProfile(userId: string, data: Partial<Pick<UserType, 'nome' | 'apelido' | 'timeCoracao' | 'urlImagemPersonalizada' | 'fotoPerfil'>>): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
-    const updateData: Partial<UserType> = { ...data, ultimaAtividade: serverTimestamp() };
+    
+    // Determine a descrição da atividade
+    let activityDescription = "Atualizou o perfil";
+    if (data.nome) activityDescription = "Atualizou o nome";
+    if (data.apelido) activityDescription = "Atualizou o apelido";
+    if (data.urlImagemPersonalizada) activityDescription = "Alterou a foto de perfil";
+    else if (data.urlImagemPersonalizada === '') activityDescription = "Removeu a foto personalizada";
+
+    const updateData: Partial<UserType> & { ultimaAtividade: any } = {
+        ...data,
+        ultimaAtividade: {
+            timestamp: serverTimestamp(),
+            description: activityDescription,
+        }
+    };
     
     // Se uma nova URL personalizada for fornecida, atualiza também a foto de perfil principal.
     if (data.urlImagemPersonalizada) {
@@ -169,7 +183,10 @@ export async function updateUserStatsAfterMatch(
             transaction.update(userRef, { 
                 championshipStats: champStats,
                 totalJogos: increment(1),
-                ultimaAtividade: serverTimestamp(),
+                ultimaAtividade: {
+                    timestamp: serverTimestamp(),
+                    description: "Pontuação atualizada após partida."
+                },
             });
         });
     } catch (e) {
@@ -471,9 +488,13 @@ export async function addOrUpdatePrediction(predictionData: Partial<Omit<Predict
             matchId: predictionData.matchId,
             palpite: `${predictionData.palpiteUsuario.placarA}-${predictionData.palpiteUsuario.placarB}`
         };
-        await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade: now });
+        const ultimaAtividade = {
+            timestamp: now,
+            description: `Fez um palpite (${ultimoPalpite.palpite})`
+        };
+        await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade });
     } else {
-        await updateDoc(userDocRef, { ultimaAtividade: now });
+        await updateDoc(userDocRef, { ultimaAtividade: { timestamp: now, description: 'Atualizou um palpite' } });
     }
 }
 
@@ -555,10 +576,12 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
  */
 export async function updateUserLastLogin(userId: string): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
-    const now = serverTimestamp();
     await updateDoc(userDocRef, {
-        ultimoLogin: now,
-        ultimaAtividade: now, // Also update last activity on login
+        ultimoLogin: serverTimestamp(),
+        ultimaAtividade: {
+            timestamp: serverTimestamp(),
+            description: "Fez login"
+        },
     });
 }
 
@@ -571,7 +594,10 @@ export async function updateUserPresenceStatus(userId: string, newStatus: UserTy
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, { 
       presenceStatus: newStatus,
-      ultimaAtividade: serverTimestamp(),
+      ultimaAtividade: {
+          timestamp: serverTimestamp(),
+          description: `Alterou o status para "${newStatus}"`
+      },
     });
 }
 

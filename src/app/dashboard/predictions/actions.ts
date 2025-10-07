@@ -33,6 +33,10 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
             matchId: data.matchId,
             palpite: `${data.palpiteUsuario.placarA}-${data.palpiteUsuario.placarB}`
         };
+        const ultimaAtividade = {
+            timestamp: serverTimestamp(),
+            description: `Fez um palpite (${ultimoPalpite.palpite})`
+        };
 
         if (snapshot.empty) {
             await addDoc(predictionsRef, {
@@ -51,7 +55,7 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
             });
         }
         
-        await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade: serverTimestamp() });
+        await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade });
         return { success: true };
 
     } catch (error) {
@@ -71,6 +75,7 @@ export async function saveComboPick(userId: string, matchId: string, totalGols: 
             limit(1)
         );
         const snapshot = await getDocs(q);
+        const now = serverTimestamp();
 
         if (snapshot.empty) {
             // Se não houver palpite, cria um com placar nulo mas com o combo
@@ -81,8 +86,8 @@ export async function saveComboPick(userId: string, matchId: string, totalGols: 
                 palpiteCombo: totalGols !== null ? { totalGols } : null,
                 pontos: 0,
                 acertoTipo: 'erro',
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
+                createdAt: now,
+                updatedAt: now,
             });
         } else {
             // Se houver palpite, apenas atualiza o combo
@@ -90,12 +95,12 @@ export async function saveComboPick(userId: string, matchId: string, totalGols: 
             const docRef = doc(db, 'predictions', docId);
             await updateDoc(docRef, {
                 palpiteCombo: totalGols !== null ? { totalGols } : null,
-                updatedAt: serverTimestamp(),
+                updatedAt: now,
             });
         }
         
         const userDocRef = doc(db, 'users', userId);
-        await updateDoc(userDocRef, { ultimaAtividade: serverTimestamp() });
+        await updateDoc(userDocRef, { ultimaAtividade: { timestamp: now, description: "Usou uma Ficha de Combo" } });
 
         return { success: true };
 
@@ -123,7 +128,11 @@ export async function saveChampionPicks(userId: string, championshipId: string, 
         const otherPicks = existingPicks.filter((p: any) => p.championshipId !== championshipId);
 
         await updateDoc(userRef, {
-            championPicks: [...otherPicks, { championshipId, teams }]
+            championPicks: [...otherPicks, { championshipId, teams }],
+            ultimaAtividade: {
+                timestamp: serverTimestamp(),
+                description: "Salvou palpites de campeão"
+            }
         });
         
         return { success: true };
