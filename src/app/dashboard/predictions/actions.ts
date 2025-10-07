@@ -6,6 +6,7 @@ import { suggestPredictions, SuggestPredictionsOutput } from '@/ai/flows/suggest
 import type { Prediction, UserType, SuggestPredictionsInput } from '@/lib/types';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs, limit, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { addLog } from '@/lib/firebase/firestore';
 
 export async function getAiSuggestion(input: SuggestPredictionsInput): Promise<SuggestPredictionsOutput | { error: string }> {
   try {
@@ -17,7 +18,7 @@ export async function getAiSuggestion(input: SuggestPredictionsInput): Promise<S
   }
 }
 
-export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' | 'updatedAt' | 'pontos' | 'palpiteCombo'>): Promise<{ success: boolean; error?: string; }> {
+export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' | 'updatedAt' | 'pontos' | 'palpiteCombo'>, actor: Pick<UserType, 'id' | 'apelido' | 'funcao'>): Promise<{ success: boolean; error?: string; }> {
     try {
         const predictionsRef = collection(db, 'predictions');
         const q = query(
@@ -29,14 +30,13 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
         const snapshot = await getDocs(q);
 
         const userDocRef = doc(db, 'users', data.userId);
+        const palpiteText = `${data.palpiteUsuario.placarA}-${data.palpiteUsuario.placarB}`;
         const ultimoPalpite = {
             matchId: data.matchId,
-            palpite: `${data.palpiteUsuario.placarA}-${data.palpiteUsuario.placarB}`
+            palpite: palpiteText
         };
-        const ultimaAtividade = {
-            timestamp: serverTimestamp(),
-            description: `Fez um palpite (${ultimoPalpite.palpite})`
-        };
+        
+        let activityDescription: string;
 
         if (snapshot.empty) {
             await addDoc(predictionsRef, {
@@ -46,6 +46,7 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
+            activityDescription = `Fez um novo palpite (${palpiteText})`;
         } else {
             const docId = snapshot.docs[0].id;
             const docRef = doc(db, 'predictions', docId);
@@ -53,9 +54,23 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
                 palpiteUsuario: data.palpiteUsuario,
                 updatedAt: serverTimestamp(),
             });
+            activityDescription = `Alterou um palpite para (${palpiteText})`;
         }
         
+        const ultimaAtividade = {
+            timestamp: serverTimestamp(),
+            description: activityDescription,
+        };
+
         await updateDoc(userDocRef, { ultimoPalpite, ultimaAtividade });
+
+        // Adiciona log da ação
+        await addLog({
+            action: 'prediction_update',
+            actor: actor,
+            details: activityDescription,
+        });
+
         return { success: true };
 
     } catch (error) {
@@ -65,7 +80,7 @@ export async function savePrediction(data: Omit<Prediction, 'id' | 'createdAt' |
 }
 
 
-export async function saveComboPick(userId: string, matchId: string, totalGols: number | null): Promise<{ success: boolean; error?: string }> {
+export async function saveComboPick(userId: string, matchId: string, totalGols: number | null, actor: Pick<UserType, 'id' | 'apelido' | 'funcao'>): Promise<{ success: boolean; error?: string }> {
      try {
         const predictionsRef = collection(db, 'predictions');
         const q = query(
@@ -76,9 +91,9 @@ export async function saveComboPick(userId: string, matchId: string, totalGols: 
         );
         const snapshot = await getDocs(q);
         const now = serverTimestamp();
+        let activityDescription = '';
 
         if (snapshot.empty) {
-            // Se não houver palpite, cria um com placar nulo mas com o combo
              await addDoc(predictionsRef, {
                 matchId,
                 userId,
@@ -89,18 +104,27 @@ export async function saveComboPick(userId: string, matchId: string, totalGols: 
                 createdAt: now,
                 updatedAt: now,
             });
+            activityDescription = `Usou uma Ficha de Combo (${totalGols} gols)`;
         } else {
-            // Se houver palpite, apenas atualiza o combo
             const docId = snapshot.docs[0].id;
             const docRef = doc(db, 'predictions', docId);
             await updateDoc(docRef, {
                 palpiteCombo: totalGols !== null ? { totalGols } : null,
                 updatedAt: now,
             });
+            activityDescription = totalGols !== null 
+                ? `Alterou uma Ficha de Combo para (${totalGols} gols)`
+                : `Removeu uma Ficha de Combo`;
         }
         
         const userDocRef = doc(db, 'users', userId);
-        await updateDoc(userDocRef, { ultimaAtividade: { timestamp: now, description: "Usou uma Ficha de Combo" } });
+        await updateDoc(userDocRef, { ultimaAtividade: { timestamp: now, description: activityDescription } });
+
+        await addLog({
+            action: 'prediction_update',
+            actor: actor,
+            details: activityDescription,
+        });
 
         return { success: true };
 

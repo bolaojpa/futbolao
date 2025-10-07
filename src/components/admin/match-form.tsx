@@ -36,7 +36,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Combobox } from '../ui/combobox';
 import { useToast } from '@/hooks/use-toast';
-import { addMatch, updateMatch } from '@/lib/firebase/firestore';
+import { addMatch, updateMatch, addLog } from '@/lib/firebase/firestore';
+import { useAuth } from '@/hooks/use-auth';
 import { Switch } from '../ui/switch';
 
 
@@ -67,6 +68,7 @@ interface MatchFormProps {
 
 export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, championshipId, championships, teams }: MatchFormProps) {
     const { toast } = useToast();
+    const { user: adminUser } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm<MatchFormValues>({
@@ -146,7 +148,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
             maxScore += selectedChampionship.pontuacao.tradicional.exato;
         }
         if (selectedChampionship.pontuacao.combo?.ativo) {
-            maxScore += (selectedChampionship.pontuacao.combo.gols ?? 0) + (selectedChampionship.pontuacao.combo.placar ?? 0);
+            maxScore += (selectedChampionship.pontuacao.combo.bonusPlacarExatoGols ?? 0) + (selectedChampionship.pontuacao.combo.pontosGols ?? 0);
         }
         
         const matchData: Partial<Omit<Match, 'id'>> = {
@@ -162,12 +164,23 @@ export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, champions
         };
 
         try {
+            const actionText = match ? 'editou' : 'criou';
+            const logDetails = `O admin ${actionText} a partida: ${data.timeA} vs ${data.timeB} para a fase "${data.fase}" do campeonato "${selectedChampionship.nome}".`;
+
             if (match) {
                 await updateMatch(match.id, matchData);
                 toast({ title: "Partida Atualizada!", description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.` });
             } else {
                 await addMatch(matchData as Omit<Match, 'id'>);
                 toast({ title: "Partida Criada!", description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.` });
+            }
+
+            if (adminUser) {
+                await addLog({
+                    action: 'match_update',
+                    actor: { id: adminUser.id, apelido: adminUser.apelido, funcao: adminUser.funcao },
+                    details: logDetails,
+                });
             }
             onSubmitSuccess();
         } catch (error) {

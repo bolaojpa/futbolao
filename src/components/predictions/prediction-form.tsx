@@ -221,7 +221,7 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
                                 matchId: match.id,
                                 userId: ghostUser.id,
                                 palpiteUsuario: { placarA, placarB },
-                            });
+                            }, {id: ghostUser.id, apelido: ghostUser.apelido, funcao: ghostUser.funcao });
                         }
                     } catch (error) {
                         console.error(`AI prediction failed for ghost user on match ${match.id}:`, error);
@@ -285,7 +285,7 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
             return;
         }
 
-        await saveComboPick(user.id, matchId, comboState.totalGols);
+        await saveComboPick(user.id, matchId, comboState.totalGols, { id: user.id, apelido: user.apelido, funcao: user.funcao });
         setComboUiState(prev => ({
             ...prev,
             [matchId]: { ...prev[matchId], isEditing: false }
@@ -298,7 +298,7 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
 
     const handleRemoveCombo = async (matchId: string) => {
         if (!user) return;
-        await saveComboPick(user.id, matchId, null); // Salva como null para remover
+        await saveComboPick(user.id, matchId, null, { id: user.id, apelido: user.apelido, funcao: user.funcao }); // Salva como null para remover
         handleCancelCombo(matchId); // Remove do estado da UI
         toast({
             title: "Ficha Removida",
@@ -338,7 +338,7 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
                     placarA: currentScore.placarA,
                     placarB: currentScore.placarB,
                 },
-            });
+            }, { id: user.id, apelido: user.apelido, funcao: user.funcao });
 
             toast({
                 title: `Palpite ${isEditing ? 'Alterado' : 'Enviado'}!`,
@@ -486,7 +486,7 @@ export function PredictionForm({ championships, allTeams, allMatches, allUsers, 
                 <div className="space-y-8">
                     {Object.entries(groupedMatches).map(([phase, matches]) => {
                         const championshipForPhase = championships.find(c => c.id === matches[0]?.campeonatoId);
-                        const comboCota = championshipForPhase?.pontuacao?.combo?.cotasPorFase?.find(c => c.fase === phase);
+                        const comboCota = championshipForPhase?.pontuacao.combo?.cotasPorFase?.find(c => c.fase === phase);
                         const tokensUsedInPhase = comboTokensUsedByPhase[phase] || 0;
                         const tokensRemaining = comboCota ? comboCota.quantidade - tokensUsedInPhase : 0;
 
