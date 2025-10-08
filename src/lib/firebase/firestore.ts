@@ -1007,6 +1007,7 @@ export async function updateSystemSettings(settings: Partial<SystemSettings>): P
 
 export async function recalculateScoresForMatch(matchId: string): Promise<void> {
   await runTransaction(db, async (transaction) => {
+    // READ PHASE: Gather all necessary documents first.
     const matchRef = doc(db, 'matches', matchId);
     const matchDoc = await transaction.get(matchRef);
     if (!matchDoc.exists()) throw new Error(`Match ${matchId} not found.`);
@@ -1017,45 +1018,57 @@ export async function recalculateScoresForMatch(matchId: string): Promise<void> 
     if (!championshipDoc.exists()) throw new Error(`Championship ${matchData.campeonatoId} not found.`);
     const championshipData = championshipDoc.data() as Championship;
 
+    // This is not a transactional read, but it's okay because we are not writing to it.
     const predictionsQuery = query(collection(db, 'predictions'), where('matchId', '==', matchId));
     const predictionsSnapshot = await getDocs(predictionsQuery);
 
+    const userDocsToRead: { [userId: string]: ReturnType<typeof doc> } = {};
+    predictionsSnapshot.forEach(predDoc => {
+        const userId = predDoc.data().userId;
+        if (!userDocsToRead[userId]) {
+            userDocsToRead[userId] = doc(db, 'users', userId);
+        }
+    });
+
+    const userDocSnapshots = await Promise.all(
+        Object.values(userDocsToRead).map(ref => transaction.get(ref))
+    );
+
+    const userDocsMap: { [userId: string]: any } = {};
+    userDocSnapshots.forEach(snap => {
+        if (snap.exists()) {
+            userDocsMap[snap.id] = snap.data();
+        }
+    });
+    
+    // WRITE PHASE: Now that all reads are done, perform calculations and writes.
     const userPointsMap: { [userId: string]: { oldPoints: number, newPoints: number } } = {};
     
-    // Primeiro, calcula as novas pontuações e armazena os pontos antigos.
     for (const predDoc of predictionsSnapshot.docs) {
       const prediction = predDoc.data() as Prediction;
       const oldPoints = prediction.pontos;
       const { pontos: newPoints, acertoTipo: newAcertoTipo } = calculatePointsForSingleMatch(matchData, prediction, championshipData);
 
-      userPointsMap[prediction.userId] = {
-        oldPoints,
-        newPoints
-      };
+      userPointsMap[prediction.userId] = { oldPoints, newPoints };
       
       transaction.update(predDoc.ref, { pontos: newPoints, acertoTipo: newAcertoTipo });
     }
 
-    // Agora, atualiza os stats agregados de cada usuário
     for (const userId in userPointsMap) {
-      const userRef = doc(db, 'users', userId);
-      const userDoc = await transaction.get(userRef);
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data() as UserType;
-        const champStats = userData.championshipStats?.find(s => s.championshipId === championshipData.id);
+      const userRef = userDocsToRead[userId];
+      const userData = userDocsMap[userId];
+      
+      if (userData) {
+        const champStats = (userData.championshipStats as UserType['championshipStats'])?.find(s => s.championshipId === championshipData.id);
         
         if (champStats) {
           const { oldPoints, newPoints } = userPointsMap[userId];
           const pointDifference = newPoints - oldPoints;
           
           champStats.pontos += pointDifference;
-
-          // Idealmente, recalcular acertosExatos e acertosSituacao do zero, mas por simplicidade, vamos assumir que isso é menos comum.
-          // Para uma implementação mais robusta, seria necessário recontar todos os acertos.
-          // Por agora, vamos apenas ajustar os pontos.
-
-          transaction.update(userRef, { championshipStats: userData.championshipStats });
+          
+          const updatedStats = userData.championshipStats.map((s: any) => s.championshipId === championshipData.id ? champStats : s);
+          transaction.update(userRef, { championshipStats: updatedStats });
         }
       }
     }
