@@ -30,7 +30,7 @@ import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { Match, Championship, Team, UserType, Prediction } from '@/lib/types';
-import { updateMatch, deleteMatch, getTeams } from '@/lib/firebase/firestore';
+import { updateMatch, deleteMatch, getTeams, recalculateScoresForMatch } from '@/lib/firebase/firestore';
 import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -146,19 +146,24 @@ export function AdminHistoryPageClient() {
     if (!editingMatch) return;
 
     try {
-      await updateMatch(editingMatch.id, {
-        placarA: Number(editingScore.placarA),
-        placarB: Number(editingScore.placarB),
-      });
-      // A atualização dos pontos agora deve ser tratada por uma cloud function
-      // para garantir a consistência dos dados.
-      toast({
-          title: "Placar Atualizado",
-          description: `O placar de ${editingMatch.timeA} vs ${editingMatch.timeB} foi alterado. A re-pontuação será processada em segundo plano.`,
-      });
-      setIsEditModalOpen(false);
+        const newScoreA = Number(editingScore.placarA);
+        const newScoreB = Number(editingScore.placarB);
+
+        await updateMatch(editingMatch.id, {
+            placarA: newScoreA,
+            placarB: newScoreB,
+        });
+        
+        await recalculateScoresForMatch(editingMatch.id);
+
+        toast({
+            title: "Placar Atualizado!",
+            description: `O placar de ${editingMatch.timeA} vs ${editingMatch.timeB} foi alterado e as pontuações foram recalculadas.`,
+        });
+        setIsEditModalOpen(false);
     } catch (error) {
-        toast({ title: 'Erro ao salvar o placar', variant: 'destructive' });
+        console.error("Error updating score and recalculating:", error);
+        toast({ title: 'Erro ao salvar o placar e recalcular', variant: 'destructive', description: "Verifique o console para mais detalhes." });
     }
   };
 
@@ -460,7 +465,7 @@ export function AdminHistoryPageClient() {
                 <DialogTitle>Editar Placar Final</DialogTitle>
                 {editingMatch && (
                     <DialogDescription>
-                        Ajuste o resultado da partida: {editingMatch.timeA} vs {editingMatch.timeB}.
+                        Ajuste o resultado da partida: {editingMatch.timeA} vs {editingMatch.timeB}. Esta ação irá recalcular os pontos para todos os usuários.
                     </DialogDescription>
                 )}
             </DialogHeader>
@@ -481,7 +486,7 @@ export function AdminHistoryPageClient() {
                 </DialogClose>
                 <Button onClick={handleSaveScore}>
                     <Save className="mr-2 h-4 w-4" />
-                    Salvar Placar
+                    Salvar e Recalcular
                 </Button>
             </DialogFooter>
         </DialogContent>
