@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -180,6 +181,7 @@ export default function AdminDashboardPage() {
             const championship = allChampionships.find(c => c.id === match.campeonatoId);
             if (!championship) throw new Error("Campeonato não encontrado para a partida.");
 
+            // PASSO 1: Capturar o ranking ANTES da atualização
             const usersBeforeUpdate = await getUsers();
             const usersInChampBefore = usersBeforeUpdate.filter(u => championship.participantes.includes(u.id));
             
@@ -189,6 +191,7 @@ export default function AdminDashboardPage() {
 
             const rankingBefore = getRanking(usersInChampBefore);
 
+            // PASSO 2: Atualizar a partida e os pontos dos usuários
             await updateMatch(match.id, { 
                 status: 'Finalizado',
                 placarA: finalScoreA,
@@ -207,29 +210,32 @@ export default function AdminDashboardPage() {
                      await updateUserStatsAfterMatch(user.id, championship.id, result.pontos, result.acertoTipo, prediction.id!);
                 }
             }
-
+            
+            // PASSO 3: Capturar o ranking DEPOIS da atualização
             const usersAfterUpdate = await getUsers();
             const usersInChampAfter = usersAfterUpdate.filter(u => championship.participantes.includes(u.id));
             const rankingAfter = getRanking(usersInChampAfter);
 
+            // PASSO 4: Comparar os rankings e salvar a variação
             for (const user of usersInChampAfter) {
                 const oldIndex = rankingBefore.indexOf(user.id);
                 const newIndex = rankingAfter.indexOf(user.id);
                 
                 let variation: UserType['posicaoVariacao'] = 'stable';
-                if (oldIndex === -1) { // Novo participante
+                if (oldIndex === -1) { // Usuário novo no ranking
                     variation = 'up';
-                } else if (oldIndex > newIndex) {
+                } else if (newIndex < oldIndex) { // Subiu
                     variation = 'up';
-                } else if (oldIndex < newIndex) {
+                } else if (newIndex > oldIndex) { // Desceu
                     variation = 'down';
                 }
 
                 await updateUserField(user.id, { posicaoVariacao: variation });
             }
 
-            setAllUsers(usersAfterUpdate);
+            setAllUsers(usersAfterUpdate); // Atualiza o estado local para refletir as mudanças
 
+            // PASSO 5: Enviar notificações (se habilitado)
             const systemSettings = await getSystemSettings();
             if (systemSettings.enablePerformanceNotifications) {
                 for (const prediction of match.predictions) {
@@ -256,7 +262,6 @@ export default function AdminDashboardPage() {
                     }
                 }
             }
-
 
         } catch (error) {
              console.error("Erro ao finalizar partida: ", error);
