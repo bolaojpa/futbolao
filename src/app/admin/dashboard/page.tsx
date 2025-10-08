@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import type { Match, Prediction, UserType, Championship, Team } from '@/lib/types';
-import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch, getSystemSettings } from '@/lib/firebase/firestore';
+import { getMatches, updateMatch, getUsers, getChampionships, getTeams, getPredictionsForMatch, addToastNotification, updateUserStatsAfterMatch, getSystemSettings, updateUserField } from '@/lib/firebase/firestore';
 import { format, parseISO, isPast } from 'date-fns';
 import { Flag, LayoutDashboard, Save, Swords, Zap, Users, Eye, ChevronDown, Trophy, Gem, Goal, AlertTriangle, Ghost } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -177,7 +177,13 @@ export default function AdminDashboardPage() {
         const finalizedMatch = { ...match, status: 'Finalizado', placarA: finalScoreA, placarB: finalScoreB } as const;
 
         try {
-            const usersBeforeUpdate = [...allUsers];
+            const championship = allChampionships.find(c => c.id === match.campeonatoId);
+            if (!championship) throw new Error("Campeonato não encontrado para a partida.");
+
+            const usersInChamp = allUsers.filter(u => championship.participantes.includes(u.id));
+            
+            const getRanking = (userList: UserType[]) => userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos ?? 0)).map(u => u.id);
+            const rankingBefore = getRanking(usersInChamp);
 
             await updateMatch(match.id, { 
                 status: 'Finalizado',
@@ -190,11 +196,6 @@ export default function AdminDashboardPage() {
                 description: `A partida ${match.timeA} vs ${match.timeB} foi movida para o histórico. Consolidando pontos...`,
             });
             
-            const championship = allChampionships.find(c => c.id === match.campeonatoId);
-            if (!championship) {
-                throw new Error("Campeonato não encontrado para a partida.");
-            }
-            
             for (const prediction of match.predictions) {
                 const user = allUsers.find(u => u.id === prediction.userId);
                 if (user) {
@@ -206,28 +207,33 @@ export default function AdminDashboardPage() {
             const usersAfterUpdate = await getUsers();
             setAllUsers(usersAfterUpdate);
 
+            const usersInChampAfter = usersAfterUpdate.filter(u => championship.participantes.includes(u.id));
+            const rankingAfter = getRanking(usersInChampAfter);
+
+            for (const user of usersInChamp) {
+                const oldIndex = rankingBefore.indexOf(user.id);
+                const newIndex = rankingAfter.indexOf(user.id);
+                let variation: UserType['posicaoVariacao'] = 'stable';
+                if (oldIndex > newIndex) variation = 'up';
+                if (oldIndex < newIndex) variation = 'down';
+                await updateUserField(user.id, { posicaoVariacao: variation });
+            }
+
             const systemSettings = await getSystemSettings();
             if (systemSettings.enablePerformanceNotifications) {
                 for (const prediction of match.predictions) {
-                    const userBefore = usersBeforeUpdate.find(u => u.id === prediction.userId);
                     const userAfter = usersAfterUpdate.find(u => u.id === prediction.userId);
 
-                    if (userBefore && userAfter) {
+                    if (userAfter) {
                         const pontosGanhos = calculatePointsForSingleMatch(finalizedMatch, prediction, championship).pontos;
-                        
-                        const getPosition = (userList: UserType[], userId: string, champId: string) => {
-                             const sorted = userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === champId)?.pontos ?? 0))
-                             return sorted.findIndex(u => u.id === userId) + 1;
-                        }
-
-                        const oldPosition = getPosition(usersBeforeUpdate, userBefore.id, championship.id);
-                        const newPosition = getPosition(usersAfterUpdate, userAfter.id, championship.id);
+                        const oldPosition = rankingBefore.indexOf(userAfter.id) + 1;
+                        const newPosition = rankingAfter.indexOf(userAfter.id) + 1;
 
                         const notificationData = {
                             apelido: userAfter.apelido,
                             pontosGanhos: pontosGanhos,
-                            posicaoAnterior: oldPosition > 0 ? oldPosition : usersBeforeUpdate.length,
-                            novaPosicao: newPosition > 0 ? newPosition : usersAfterUpdate.length,
+                            posicaoAnterior: oldPosition > 0 ? oldPosition : usersInChamp.length,
+                            novaPosicao: newPosition > 0 ? newPosition : usersInChamp.length,
                             nomePartida: `${match.timeA} vs ${match.timeB}`
                         };
 
@@ -239,7 +245,6 @@ export default function AdminDashboardPage() {
                     }
                 }
             }
-
 
         } catch (error) {
              console.error("Erro ao finalizar partida: ", error);
