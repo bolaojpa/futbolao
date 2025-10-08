@@ -180,13 +180,14 @@ export default function AdminDashboardPage() {
             const championship = allChampionships.find(c => c.id === match.campeonatoId);
             if (!championship) throw new Error("Campeonato não encontrado para a partida.");
 
-            const usersInChamp = allUsers.filter(u => championship.participantes.includes(u.id));
+            const usersBeforeUpdate = await getUsers();
+            const usersInChampBefore = usersBeforeUpdate.filter(u => championship.participantes.includes(u.id));
             
             const getRanking = (userList: UserType[]) => userList
                 .sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos ?? 0))
                 .map(u => u.id);
 
-            const rankingBefore = getRanking([...usersInChamp]);
+            const rankingBefore = getRanking(usersInChampBefore);
 
             await updateMatch(match.id, { 
                 status: 'Finalizado',
@@ -208,21 +209,26 @@ export default function AdminDashboardPage() {
             }
 
             const usersAfterUpdate = await getUsers();
-            setAllUsers(usersAfterUpdate);
-
             const usersInChampAfter = usersAfterUpdate.filter(u => championship.participantes.includes(u.id));
             const rankingAfter = getRanking(usersInChampAfter);
 
-            for (const user of usersInChamp) {
+            for (const user of usersInChampAfter) {
                 const oldIndex = rankingBefore.indexOf(user.id);
                 const newIndex = rankingAfter.indexOf(user.id);
                 
                 let variation: UserType['posicaoVariacao'] = 'stable';
-                if (oldIndex > newIndex) variation = 'up';
-                if (oldIndex < newIndex && oldIndex !== -1) variation = 'down'; // check oldIndex !== -1 for new participants
+                if (oldIndex === -1) { // Novo participante
+                    variation = 'up';
+                } else if (oldIndex > newIndex) {
+                    variation = 'up';
+                } else if (oldIndex < newIndex) {
+                    variation = 'down';
+                }
 
                 await updateUserField(user.id, { posicaoVariacao: variation });
             }
+
+            setAllUsers(usersAfterUpdate);
 
             const systemSettings = await getSystemSettings();
             if (systemSettings.enablePerformanceNotifications) {
@@ -237,8 +243,8 @@ export default function AdminDashboardPage() {
                         const notificationData = {
                             apelido: userAfter.apelido,
                             pontosGanhos: pontosGanhos,
-                            posicaoAnterior: oldPosition > 0 ? oldPosition : usersInChamp.length,
-                            novaPosicao: newPosition > 0 ? newPosition : usersInChamp.length,
+                            posicaoAnterior: oldPosition > 0 ? oldPosition : usersInChampBefore.length + 1,
+                            novaPosicao: newPosition > 0 ? newPosition : usersInChampAfter.length,
                             nomePartida: `${match.timeA} vs ${match.timeB}`
                         };
 
@@ -250,6 +256,7 @@ export default function AdminDashboardPage() {
                     }
                 }
             }
+
 
         } catch (error) {
              console.error("Erro ao finalizar partida: ", error);
@@ -672,5 +679,3 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
-
-    
