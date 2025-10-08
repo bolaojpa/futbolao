@@ -182,8 +182,11 @@ export default function AdminDashboardPage() {
 
             const usersInChamp = allUsers.filter(u => championship.participantes.includes(u.id));
             
-            const getRanking = (userList: UserType[]) => userList.sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos ?? 0)).map(u => u.id);
-            const rankingBefore = getRanking(usersInChamp);
+            const getRanking = (userList: UserType[]) => userList
+                .sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos ?? 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos ?? 0))
+                .map(u => u.id);
+
+            const rankingBefore = getRanking([...usersInChamp]);
 
             await updateMatch(match.id, { 
                 status: 'Finalizado',
@@ -213,9 +216,11 @@ export default function AdminDashboardPage() {
             for (const user of usersInChamp) {
                 const oldIndex = rankingBefore.indexOf(user.id);
                 const newIndex = rankingAfter.indexOf(user.id);
+                
                 let variation: UserType['posicaoVariacao'] = 'stable';
                 if (oldIndex > newIndex) variation = 'up';
-                if (oldIndex < newIndex) variation = 'down';
+                if (oldIndex < newIndex && oldIndex !== -1) variation = 'down'; // check oldIndex !== -1 for new participants
+
                 await updateUserField(user.id, { posicaoVariacao: variation });
             }
 
@@ -487,7 +492,7 @@ export default function AdminDashboardPage() {
                                                                     value={score.placarB}
                                                                     onChange={(e) => handleScoreChange(match.id, 'placarB', e.target.value)}
                                                                     min="0"
-                                                                />
+                                                                    />
                                                             </div>
                                                             <div className='flex-1 flex flex-row items-center justify-start gap-3'>
                                                                 <div className='flex h-14 w-14 items-center justify-center'>
@@ -667,3 +672,5 @@ export default function AdminDashboardPage() {
         </TooltipProvider>
     );
 }
+
+    
