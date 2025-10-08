@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -23,6 +24,7 @@ import {
   Send,
   BarChart3,
   LifeBuoy,
+  Mail,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -36,13 +38,25 @@ export function AdminSidebar() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
   const [hasPendingUsers, setHasPendingUsers] = useState(false);
+  const [hasUnreadSupport, setHasUnreadSupport] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, "users"), where("status", "==", "pendente"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    // Listener for pending users
+    const usersQuery = query(collection(db, "users"), where("status", "==", "pendente"));
+    const unsubUsers = onSnapshot(usersQuery, (querySnapshot) => {
       setHasPendingUsers(!querySnapshot.empty);
     });
-    return () => unsubscribe();
+
+    // Listener for unread support messages
+    const supportQuery = query(collection(db, "support_messages"), where("isReadByAdmin", "==", false));
+    const unsubSupport = onSnapshot(supportQuery, (querySnapshot) => {
+      setHasUnreadSupport(!querySnapshot.empty);
+    });
+    
+    return () => {
+      unsubUsers();
+      unsubSupport();
+    };
   }, []);
 
 
@@ -71,7 +85,7 @@ export function AdminSidebar() {
   
   const bottomMenuItems = [
       { href: '/admin/settings', label: 'Configurações', icon: Settings },
-      { href: '/admin/support', label: 'Suporte', icon: LifeBuoy },
+      { href: '/admin/support', label: 'Suporte', icon: LifeBuoy, hasNotification: hasUnreadSupport },
   ]
 
   return (
@@ -120,9 +134,15 @@ export function AdminSidebar() {
                             isActive={pathname.startsWith(item.href)}
                             tooltip={{ children: item.label, side: 'right' }}
                         >
-                            <div>
+                            <div className="relative">
                               <item.icon />
                               <span>{item.label}</span>
+                               {item.hasNotification && (
+                                <Mail className={cn(
+                                  "absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-primary animate-pulse",
+                                  "group-data-[state=collapsed]:hidden"
+                                )} />
+                              )}
                             </div>
                         </SidebarMenuButton>
                     </Link>
