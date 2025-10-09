@@ -3,10 +3,12 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/hooks/use-auth';
+import { PwaManager } from '@/components/shared/pwa-manager';
 
 export const metadata: Metadata = {
   title: 'FutBolão Pro',
   description: 'Seu app de palpites de futebol',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -20,6 +22,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+        <meta name="theme-color" content="#221f1f" />
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
@@ -31,6 +34,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <Toaster />
+            <PwaManager />
           </AuthProvider>
         </ThemeProvider>
       </body>
