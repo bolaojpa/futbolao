@@ -26,7 +26,7 @@ import Image from 'next/image';
 
 function AppLogo({ logoUrl }: { logoUrl?: string }) {
     if (logoUrl) {
-        return <Image src={logoUrl} alt="Logo" width={80} height={80} className="object-contain" unoptimized />;
+        return <Image src={logoUrl} alt="Logo" width={120} height={120} className="object-contain" unoptimized />;
     }
 
     return (
@@ -210,7 +210,7 @@ export default function WelcomePage() {
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-            <div className="flex flex-col items-center justify-center text-center mb-8 h-20">
+            <div className="flex flex-col items-center justify-center text-center h-28">
                 <AppLogo logoUrl={settings?.logoUrl} />
             </div>
             <p className="text-muted-foreground mt-4 text-lg mb-8">Seu app de palpites de futebol.</p>
