@@ -95,12 +95,12 @@ export function AppSidebar() {
     <Sidebar variant="sidebar" collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4 justify-center items-center">
         {logoUrl ? (
-             <Image src={logoUrl} alt="Logo" width={32} height={32} className="w-8 h-8 group-data-[state=collapsed]:w-6 group-data-[state=collapsed]:h-6 transition-all object-contain" unoptimized />
+             <Image src={logoUrl} alt="Logo" width={40} height={40} className="w-10 h-10 group-data-[state=collapsed]:w-8 group-data-[state=collapsed]:h-8 transition-all object-contain" unoptimized />
         ) : (
             <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
-            className="w-8 h-8 text-primary group-data-[state=collapsed]:w-6 group-data-[state=collapsed]:h-6 transition-all"
+            className="w-10 h-10 text-primary group-data-[state=collapsed]:w-8 group-data-[state=collapsed]:h-8 transition-all"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
@@ -112,9 +112,6 @@ export function AppSidebar() {
             <path d="m12 12-2 4 4 2 2-4-4-2z" />
             </svg>
         )}
-        <span className="font-bold text-lg text-sidebar-foreground group-data-[state=collapsed]:hidden">
-          FutBolão Pro
-        </span>
       </SidebarHeader>
 
       <SidebarMenu className="flex-1 p-2">

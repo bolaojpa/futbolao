@@ -26,11 +26,11 @@ import Image from 'next/image';
 
 function AppLogo({ logoUrl }: { logoUrl?: string }) {
     if (logoUrl) {
-        return <Image src={logoUrl} alt="Logo" width={48} height={48} className="object-contain" unoptimized />;
+        return <Image src={logoUrl} alt="Logo" width={64} height={64} className="object-contain" unoptimized />;
     }
 
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-12 h-12 text-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-16 h-16 text-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2a10 10 0 1 0 10 10" />
             <path d="M12 2a10 10 0 1 0-7.07 17.07" />
             <path d="m12 12-2 4 4 2 2-4-4-2z" />
@@ -212,8 +212,7 @@ export default function WelcomePage() {
         <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
             <div className="flex flex-col items-center justify-center text-center mb-8">
                 <AppLogo logoUrl={settings?.logoUrl} />
-                <h1 className="text-4xl font-bold font-headline mt-4">FutBolão Pro</h1>
-                <p className="text-muted-foreground mt-2">Seu app de palpites de futebol.</p>
+                <p className="text-muted-foreground mt-4 text-lg">Seu app de palpites de futebol.</p>
             </div>
             <Tabs defaultValue="login" className="w-full max-w-md">
                 <TabsList className="grid w-full grid-cols-2">
