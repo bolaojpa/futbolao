@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -25,9 +26,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect } from 'react';
-import { onSnapshot, collection, query, where } from 'firebase/firestore';
+import { onSnapshot, collection, query, where, doc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import type { SupportMessage } from '@/lib/types';
+import type { SystemSettings } from '@/lib/types';
+import Image from 'next/image';
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -35,6 +37,19 @@ export function AppSidebar() {
   const { setOpenMobile } = useSidebar();
   const { user } = useAuth();
   const [hasUnreadSupport, setHasUnreadSupport] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const settingsRef = doc(db, 'system_settings', 'global');
+    const unsubSettings = onSnapshot(settingsRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const settings = docSnap.data() as SystemSettings;
+            setLogoUrl(settings.logoUrl);
+        }
+    });
+
+    return () => unsubSettings();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -79,20 +94,24 @@ export function AppSidebar() {
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4 justify-center items-center">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          className="w-8 h-8 text-primary group-data-[state=collapsed]:w-6 group-data-[state=collapsed]:h-6 transition-all"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 2a10 10 0 1 0 10 10" />
-          <path d="M12 2a10 10 0 1 0-7.07 17.07" />
-          <path d="m12 12-2 4 4 2 2-4-4-2z" />
-        </svg>
+        {logoUrl ? (
+             <Image src={logoUrl} alt="Logo" width={32} height={32} className="w-8 h-8 group-data-[state=collapsed]:w-6 group-data-[state=collapsed]:h-6 transition-all object-contain" unoptimized />
+        ) : (
+            <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className="w-8 h-8 text-primary group-data-[state=collapsed]:w-6 group-data-[state=collapsed]:h-6 transition-all"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            >
+            <path d="M12 2a10 10 0 1 0 10 10" />
+            <path d="M12 2a10 10 0 1 0-7.07 17.07" />
+            <path d="m12 12-2 4 4 2 2-4-4-2z" />
+            </svg>
+        )}
         <span className="font-bold text-lg text-sidebar-foreground group-data-[state=collapsed]:hidden">
           FutBolão Pro
         </span>

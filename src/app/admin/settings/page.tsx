@@ -3,20 +3,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Settings, Shield, Trash2, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2, Palette } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Settings, Shield, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2, Palette, Image as ImageIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getSystemSettings, updateSystemSettings } from '@/lib/firebase/firestore';
 import { ThemeSettings } from '@/components/settings/theme-settings';
+import { Input } from '@/components/ui/input';
+import Image from 'next/image';
+import type { SystemSettings } from '@/lib/types';
 
-interface SystemSettings {
-    allowRegistrations: boolean;
-    enablePerformanceNotifications: boolean;
-    enablePredictionConsultation: boolean;
-}
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
@@ -24,6 +22,7 @@ export default function AdminSettingsPage() {
         allowRegistrations: true,
         enablePerformanceNotifications: true,
         enablePredictionConsultation: true,
+        logoUrl: '',
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -92,6 +91,43 @@ export default function AdminSettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <ThemeSettings />
+                </CardContent>
+            </Card>
+
+             <Card className="max-w-2xl">
+                <CardHeader>
+                     <div className="flex items-center gap-2">
+                        <ImageIcon className="h-5 w-5" />
+                        <CardTitle>Logotipo do Aplicativo</CardTitle>
+                    </div>
+                    <CardDescription>
+                        Insira a URL da imagem que será usada como logotipo em todo o sistema.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="logo-url">URL da Logotipo</Label>
+                        <Input
+                            id="logo-url"
+                            placeholder="https://exemplo.com/sua-logo.png"
+                            value={settings.logoUrl || ''}
+                            onChange={(e) => setSettings(prev => ({...prev, logoUrl: e.target.value }))}
+                        />
+                    </div>
+                    {settings.logoUrl && (
+                        <div className="flex flex-col items-center gap-4 rounded-lg border p-4 bg-muted/50">
+                            <Label>Pré-visualização</Label>
+                            <Image 
+                                src={settings.logoUrl}
+                                alt="Pré-visualização da logotipo"
+                                width={80}
+                                height={80}
+                                className="object-contain rounded-md bg-background p-2"
+                                unoptimized // Permite carregar de qualquer URL
+                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                            />
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

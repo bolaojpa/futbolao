@@ -21,7 +21,7 @@ import {
   setDoc,
   arrayUnion,
 } from 'firebase/firestore';
-import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage, SupportMessage, SupportReply, Log } from '../types';
+import type { UserType, Team, Championship, Match, Prediction, Notification, EmergencyMessage, SupportMessage, SupportReply, Log, SystemSettings } from '../types';
 import { useAuth } from '@/hooks/use-auth';
 
 /**
@@ -965,11 +965,6 @@ export async function markConversationAsReadByAdmin(conversationId: string) {
 
 // SYSTEM SETTINGS
 
-interface SystemSettings {
-    allowRegistrations: boolean;
-    enablePerformanceNotifications: boolean;
-    enablePredictionConsultation: boolean;
-}
 
 /**
  * Fetches the global system settings from Firestore.
@@ -987,6 +982,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
             allowRegistrations: true,
             enablePerformanceNotifications: true,
             enablePredictionConsultation: true,
+            logoUrl: '',
         };
     }
 }

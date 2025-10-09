@@ -18,12 +18,17 @@ import { doc, getDoc, setDoc, serverTimestamp, query, collection, where, getDocs
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getSystemSettings, updateUserLastLogin, getTeams, addLog } from '@/lib/firebase/firestore';
-import type { Team, UserType } from '@/lib/types';
+import type { Team, UserType, SystemSettings } from '@/lib/types';
 import { Combobox } from '@/components/ui/combobox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GoogleIcon } from '@/components/shared/icons';
+import Image from 'next/image';
 
-function AppLogo() {
+function AppLogo({ logoUrl }: { logoUrl?: string }) {
+    if (logoUrl) {
+        return <Image src={logoUrl} alt="Logo" width={48} height={48} className="object-contain" unoptimized />;
+    }
+
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-12 h-12 text-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2a10 10 0 1 0 10 10" />
@@ -37,6 +42,7 @@ export default function WelcomePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [settings, setSettings] = useState<SystemSettings | null>(null);
 
     // Common state for both forms
     const [email, setEmail] = useState('');
@@ -50,15 +56,17 @@ export default function WelcomePage() {
     const [teams, setTeams] = useState<Team[]>([]);
 
     useEffect(() => {
-        async function fetchTeams() {
+        async function fetchData() {
             try {
                 const fetchedTeams = await getTeams();
                 setTeams(fetchedTeams.filter(t => t.type === 'club'));
+                const fetchedSettings = await getSystemSettings();
+                setSettings(fetchedSettings);
             } catch (error) {
-                toast({ title: "Erro ao buscar times", variant: "destructive" });
+                toast({ title: "Erro ao buscar dados iniciais", variant: "destructive" });
             }
         }
-        fetchTeams();
+        fetchData();
     }, [toast]);
 
     const handleRedirectBasedOnUser = async (user: FirebaseUser) => {
@@ -91,8 +99,8 @@ export default function WelcomePage() {
 
     const handleGoogleAuth = async (isSigningUp: boolean) => {
         setIsLoading(true);
-        const settings = await getSystemSettings();
-        if (isSigningUp && !settings.allowRegistrations) {
+        const currentSettings = settings || await getSystemSettings();
+        if (isSigningUp && !currentSettings.allowRegistrations) {
             toast({ variant: "destructive", title: "Cadastro Desabilitado", description: "O cadastro de novos usuários está temporariamente desabilitado." });
             setIsLoading(false);
             return;
@@ -155,8 +163,8 @@ export default function WelcomePage() {
     
     const handleEmailSignup = async (e: React.FormEvent) => {
         e.preventDefault();
-        const settings = await getSystemSettings();
-        if (!settings.allowRegistrations) {
+        const currentSettings = settings || await getSystemSettings();
+        if (!currentSettings.allowRegistrations) {
             toast({ variant: "destructive", title: "Cadastro Desabilitado", description: "O cadastro de novos usuários está temporariamente desabilitado. Fale com o administrador." });
             return;
         }
@@ -203,7 +211,7 @@ export default function WelcomePage() {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
             <div className="flex flex-col items-center justify-center text-center mb-8">
-                <AppLogo />
+                <AppLogo logoUrl={settings?.logoUrl} />
                 <h1 className="text-4xl font-bold font-headline mt-4">FutBolão Pro</h1>
                 <p className="text-muted-foreground mt-2">Seu app de palpites de futebol.</p>
             </div>

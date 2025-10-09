@@ -233,3 +233,11 @@ const SuggestPredictionsInputSchema = z.object({
     }))
     .describe('Uma lista de palpites agregados de outros usuários para a partida.'),
 });
+
+
+export interface SystemSettings {
+    allowRegistrations: boolean;
+    enablePerformanceNotifications: boolean;
+    enablePredictionConsultation: boolean;
+    logoUrl?: string;
+}
