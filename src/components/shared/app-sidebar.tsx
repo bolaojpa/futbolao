@@ -93,14 +93,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="sidebar" collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4 justify-center items-center">
+      <SidebarHeader className="p-4 justify-center items-center h-20">
         {logoUrl ? (
-             <Image src={logoUrl} alt="Logo" width={40} height={40} className="w-10 h-10 group-data-[state=collapsed]:w-8 group-data-[state=collapsed]:h-8 transition-all object-contain" unoptimized />
+             <Image src={logoUrl} alt="Logo" width={56} height={56} className="w-14 h-14 group-data-[state=collapsed]:w-10 group-data-[state=collapsed]:h-10 transition-all object-contain" unoptimized />
         ) : (
             <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
-            className="w-10 h-10 text-primary group-data-[state=collapsed]:w-8 group-data-[state=collapsed]:h-8 transition-all"
+            className="w-14 h-14 text-primary group-data-[state=collapsed]:w-10 group-data-[state=collapsed]:h-10 transition-all"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
