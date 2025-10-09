@@ -2,18 +2,63 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Shield, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2, Palette, Image as ImageIcon } from 'lucide-react';
+import { Settings, Shield, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2, Palette, Image as ImageIcon, Upload, Crop, Trash2, AlertTriangle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getSystemSettings, updateSystemSettings } from '@/lib/firebase/firestore';
 import { ThemeSettings } from '@/components/settings/theme-settings';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import type { SystemSettings } from '@/lib/types';
+import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
+
+// Helper function from edit-profile-form
+function getCroppedImg(image: HTMLImageElement, crop: CropType): Promise<string> {
+    const canvas = document.createElement("canvas");
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+        throw new Error("Could not get 2D context from canvas");
+    }
+
+    ctx.drawImage(
+        image,
+        crop.x * scaleX,
+        crop.y * scaleY,
+        crop.width * scaleX,
+        crop.height * scaleY,
+        0,
+        0,
+        crop.width,
+        crop.height
+    );
+
+    return new Promise<string>((resolve, reject) => {
+        canvas.toBlob(blob => {
+            if (!blob) {
+                reject(new Error('Canvas is empty'));
+                return;
+            }
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = () => {
+                resolve(reader.result as string);
+            };
+        }, 'image/png', 0.8); // Compress image slightly
+    });
+}
 
 
 export default function AdminSettingsPage() {
@@ -26,6 +71,15 @@ export default function AdminSettingsPage() {
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    // State for image cropper
+    const [imgSrc, setImgSrc] = useState('');
+    const [crop, setCrop] = useState<CropType>();
+    const [completedCrop, setCompletedCrop] = useState<CropType>();
+    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const imgRef = useRef<HTMLImageElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     useEffect(() => {
         async function fetchSettings() {
@@ -58,6 +112,62 @@ export default function AdminSettingsPage() {
             setSaving(false);
         }
     };
+    
+    // Image Cropper handlers
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setCrop(undefined); // Reset crop on new image
+            const reader = new FileReader();
+            reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''));
+            reader.readAsDataURL(e.target.files[0]);
+            setIsCropModalOpen(true);
+            if(fileInputRef.current) fileInputRef.current.value = ''; // Reset file input
+        }
+    };
+    
+    const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+        const { width, height } = e.currentTarget;
+        const aspect = 1; 
+        const newCrop = centerCrop(
+            makeAspectCrop(
+                {
+                    unit: '%',
+                    width: 90,
+                },
+                aspect,
+                width,
+                height
+            ),
+            width,
+            height
+        );
+        setCrop(newCrop);
+        setCompletedCrop(newCrop);
+    };
+
+    const handleCropComplete = async () => {
+        if (completedCrop && imgRef.current) {
+            try {
+                const dataUrl = await getCroppedImg(imgRef.current, completedCrop);
+                setSettings(prev => ({...prev, logoUrl: dataUrl }));
+                setIsCropModalOpen(false);
+            } catch (e) {
+                console.error(e);
+                toast({
+                    title: "Erro ao recortar imagem",
+                    variant: "destructive",
+                });
+            }
+        }
+    };
+     const handleRemoveImage = () => {
+        setSettings(prev => ({...prev, logoUrl: '' }));
+        toast({
+            title: "Logotipo removida",
+            description: "Clique em 'Salvar Alterações' para confirmar e reverter para a logo padrão.",
+        });
+    };
+
 
     if (loading) {
         return (
@@ -68,6 +178,7 @@ export default function AdminSettingsPage() {
     }
 
     return (
+      <>
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 space-y-8">
             <div className="flex items-center gap-4">
                 <Settings className="h-8 w-8 text-primary" />
@@ -101,33 +212,59 @@ export default function AdminSettingsPage() {
                         <CardTitle>Logotipo do Aplicativo</CardTitle>
                     </div>
                     <CardDescription>
-                        Insira a URL da imagem que será usada como logotipo em todo o sistema.
+                        Faça o upload de uma imagem que será usada como logotipo em todo o sistema.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="logo-url">URL da Logotipo</Label>
-                        <Input
-                            id="logo-url"
-                            placeholder="https://exemplo.com/sua-logo.png"
-                            value={settings.logoUrl || ''}
-                            onChange={(e) => setSettings(prev => ({...prev, logoUrl: e.target.value }))}
-                        />
-                    </div>
-                    {settings.logoUrl && (
-                        <div className="flex flex-col items-center gap-4 rounded-lg border p-4 bg-muted/50">
-                            <Label>Pré-visualização</Label>
-                            <Image 
+                     <div className="flex items-center gap-4">
+                        {settings.logoUrl && (
+                             <Image 
                                 src={settings.logoUrl}
                                 alt="Pré-visualização da logotipo"
-                                width={80}
-                                height={80}
-                                className="object-contain rounded-md bg-background p-2"
-                                unoptimized // Permite carregar de qualquer URL
-                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                                width={64}
+                                height={64}
+                                className="object-contain rounded-md bg-muted p-1 border"
+                                unoptimized
                             />
-                        </div>
-                    )}
+                        )}
+                        <Input 
+                            type="file" 
+                            accept="image/png, image/jpeg, image/webp"
+                            className="hidden"
+                            onChange={handleFileChange}
+                            ref={fileInputRef}
+                            id="logo-upload"
+                        />
+                        <label htmlFor="logo-upload" className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer")}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            {settings.logoUrl ? 'Alterar Imagem' : 'Escolher Imagem'}
+                        </label>
+                         {settings.logoUrl && (
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="icon" type="button">
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="sr-only">Remover Imagem</span>
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="flex items-center gap-2">
+                                            <AlertTriangle className="text-destructive"/>
+                                            Remover Logotipo?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Tem certeza de que deseja remover a logotipo personalizada? O sistema voltará a usar a logo padrão.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleRemoveImage}>Sim, remover</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -218,5 +355,41 @@ export default function AdminSettingsPage() {
             </div>
 
         </div>
+        
+         <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Recortar Logotipo</DialogTitle>
+                </DialogHeader>
+                {imgSrc && (
+                    <div className="my-4 flex justify-center">
+                        <ReactCrop
+                            crop={crop}
+                            onChange={(_, percentCrop) => setCrop(percentCrop)}
+                            onComplete={(c) => setCompletedCrop(c)}
+                            aspect={1}
+                            circularCrop
+                        >
+                            <img
+                                ref={imgRef}
+                                alt="Crop me"
+                                src={imgSrc}
+                                onLoad={onImageLoad}
+                                style={{ maxHeight: '70vh' }}
+                            />
+                        </ReactCrop>
+                    </div>
+                )}
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCropModalOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleCropComplete}>
+                         <Crop className="mr-2 h-4 w-4"/>
+                        Confirmar Recorte
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+      </>
     );
 }
+
