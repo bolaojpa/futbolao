@@ -179,7 +179,7 @@ export default function WelcomePage() {
             await setDoc(doc(db, "users", user.uid), {
                 id: user.uid,
                 nome,
-                apelido: apelido || '',
+                apelido: apelido || nome.split(' ')[0],
                 email: user.email,
                 fotoPerfil: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(nome)}&background=random`,
                 status: 'pendente',

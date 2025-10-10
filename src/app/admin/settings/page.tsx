@@ -20,6 +20,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { savePwaIcon } from './actions';
+
 
 // Helper function from edit-profile-form
 function getCroppedImg(image: HTMLImageElement, crop: CropType): Promise<string> {
@@ -81,6 +83,7 @@ export default function AdminSettingsPage() {
     const [cropTarget, setCropTarget] = useState<'logo' | 'pwaIcon'>('logo');
     const imgRef = useRef<HTMLImageElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const pwaFileInputRef = useRef<HTMLInputElement>(null);
 
 
     useEffect(() => {
@@ -124,7 +127,8 @@ export default function AdminSettingsPage() {
             reader.readAsDataURL(e.target.files[0]);
             setCropTarget(target);
             setIsCropModalOpen(true);
-            if(fileInputRef.current) fileInputRef.current.value = '';
+            // Limpa o valor do input para permitir o mesmo arquivo ser selecionado novamente
+            if (e.target) e.target.value = '';
         }
     };
     
@@ -146,19 +150,24 @@ export default function AdminSettingsPage() {
                 const dataUrl = await getCroppedImg(imgRef.current, completedCrop);
                 if (cropTarget === 'logo') {
                     setSettings(prev => ({...prev, logoUrl: dataUrl }));
-                } else {
-                     // Lógica PWA será adicionada no backend para salvar os ícones
-                     toast({ title: "Ícone do PWA Atualizado", description: "O ícone do aplicativo para instalação foi atualizado. Pode ser necessário reinstalar o PWA para ver a mudança." });
+                    toast({ title: "Logotipo pronta", description: "A nova logotipo está pronta. Clique em 'Salvar Todas as Configurações' para aplicá-la." });
+                } else if (cropTarget === 'pwaIcon') {
+                     const result = await savePwaIcon(dataUrl);
+                     if (result.success) {
+                        toast({ title: "Ícone do App Atualizado!", description: "O novo ícone foi salvo. Pode ser necessário reinstalar o app para ver a mudança.", duration: 8000 });
+                     } else {
+                        throw new Error(result.error);
+                     }
                 }
                 setIsCropModalOpen(false);
             } catch (e) {
                 console.error(e);
-                toast({ title: "Erro ao recortar imagem", variant: "destructive" });
+                toast({ title: "Erro ao processar imagem", description: (e as Error).message, variant: "destructive" });
             }
         }
     };
 
-     const handleRemoveImage = (target: 'logo' | 'pwaIcon') => {
+     const handleRemoveImage = (target: 'logo') => {
         if (target === 'logo') {
             setSettings(prev => ({...prev, logoUrl: '' }));
             toast({
@@ -166,7 +175,6 @@ export default function AdminSettingsPage() {
                 description: "Clique em 'Salvar Alterações' para confirmar e reverter para a logo padrão.",
             });
         }
-        // Adicionar lógica para remover ícone PWA se necessário
     };
 
 
@@ -261,7 +269,7 @@ export default function AdminSettingsPage() {
                     <Separator />
                      <div>
                         <Label className="text-base font-semibold">Ícone do App (PWA)</Label>
-                        <p className="text-sm text-muted-foreground mb-4">Ícone que aparece na tela inicial do celular após a instalação.</p>
+                        <p className="text-sm text-muted-foreground mb-4">Ícone que aparece na tela inicial do celular após a instalação. <strong className="text-primary">Use apenas imagens PNG.</strong></p>
                         <div className="flex items-center gap-4">
                              <Image 
                                 src="/logo-192x192.png"
@@ -269,12 +277,14 @@ export default function AdminSettingsPage() {
                                 width={64}
                                 height={64}
                                 className="object-contain rounded-md bg-muted p-1 border"
+                                key={Date.now()} // Força o re-render da imagem
                             />
                             <Input 
                                 type="file" 
-                                accept="image/png" // Apenas PNG para garantir a transparência
+                                accept="image/png"
                                 className="hidden"
                                 onChange={(e) => handleFileChange(e, 'pwaIcon')}
+                                ref={pwaFileInputRef}
                                 id="pwa-icon-upload"
                             />
                             <label htmlFor="pwa-icon-upload" className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer")}>
@@ -413,4 +423,3 @@ export default function AdminSettingsPage() {
       </>
     );
 }
-
