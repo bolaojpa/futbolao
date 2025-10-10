@@ -7,8 +7,11 @@ import { PwaManager } from '@/components/shared/pwa-manager';
 
 export const metadata: Metadata = {
   title: 'FutBolão Pro',
-  description: 'Seu app de palpites de futebol',
+  description: 'Desafio Entre Amigos',
   manifest: '/manifest.json',
+  icons: {
+    apple: '/logo-192x192.png',
+  },
 };
 
 export default function RootLayout({
@@ -22,7 +25,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
-        <meta name="theme-color" content="#221f1f" />
+        <meta name="theme-color" content="#1a1a1a" />
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
