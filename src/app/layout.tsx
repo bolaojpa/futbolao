@@ -6,7 +6,7 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { PwaManager } from '@/components/shared/pwa-manager';
 
 export const metadata: Metadata = {
-  title: 'FutBolão Pro',
+  title: 'FutBolão',
   description: 'Desafio Entre Amigos',
   manifest: '/manifest.json',
   icons: {
