@@ -213,14 +213,14 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleDeleteSelected = async () => {
-        const userIdsToDelete = Array.from(selectedUsers);
+    const handleDeleteSelected = async (userIdsToDelete: string[]) => {
+        if (userIdsToDelete.length === 0) return;
         try {
             await deleteUsers(userIdsToDelete);
             await fetchUsers(); // Re-fetch
             toast({
-                title: "Usuários Removidos",
-                description: `${selectedUsers.size} usuário(s) foram removidos permanentemente.`,
+                title: "Usuário(s) Removido(s)",
+                description: `${userIdsToDelete.length} usuário(s) foram removidos permanentemente.`,
             });
             setSelectedUsers(new Set());
         } catch (error) {
@@ -269,7 +269,7 @@ export default function AdminUsersPage() {
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir usuários</AlertDialogAction>
+                                        <AlertDialogAction onClick={() => handleDeleteSelected(Array.from(selectedUsers))}>Sim, excluir usuários</AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
@@ -439,7 +439,7 @@ export default function AdminUsersPage() {
                                                                             </AlertDialogHeader>
                                                                             <AlertDialogFooter>
                                                                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                                <AlertDialogAction onClick={() => handleDeleteSelected()}>Sim, recusar</AlertDialogAction>
+                                                                                <AlertDialogAction onClick={() => handleDeleteSelected([user.id])}>Sim, recusar</AlertDialogAction>
                                                                             </AlertDialogFooter>
                                                                         </AlertDialogContent>
                                                                     </AlertDialog>
@@ -543,4 +543,3 @@ export default function AdminUsersPage() {
         </TooltipProvider>
     );
 }
-
