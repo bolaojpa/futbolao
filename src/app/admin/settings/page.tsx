@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Shield, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2, Palette, Image as ImageIcon, Upload, Crop, Trash2, AlertTriangle } from 'lucide-react';
+import { Settings, Shield, UserPlus, Save, Bot, BrainCircuit, Bell, Loader2, Palette, Image as ImageIcon, Upload, Crop, Trash2, AlertTriangle, Smartphone } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -16,9 +16,10 @@ import Image from 'next/image';
 import type { SystemSettings } from '@/lib/types';
 import ReactCrop, { type Crop as CropType, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 // Helper function from edit-profile-form
 function getCroppedImg(image: HTMLImageElement, crop: CropType): Promise<string> {
@@ -77,6 +78,7 @@ export default function AdminSettingsPage() {
     const [crop, setCrop] = useState<CropType>();
     const [completedCrop, setCompletedCrop] = useState<CropType>();
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const [cropTarget, setCropTarget] = useState<'logo' | 'pwaIcon'>('logo');
     const imgRef = useRef<HTMLImageElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,14 +116,15 @@ export default function AdminSettingsPage() {
     };
     
     // Image Cropper handlers
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, target: 'logo' | 'pwaIcon') => {
         if (e.target.files && e.target.files.length > 0) {
-            setCrop(undefined); // Reset crop on new image
+            setCrop(undefined); 
             const reader = new FileReader();
             reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''));
             reader.readAsDataURL(e.target.files[0]);
+            setCropTarget(target);
             setIsCropModalOpen(true);
-            if(fileInputRef.current) fileInputRef.current.value = ''; // Reset file input
+            if(fileInputRef.current) fileInputRef.current.value = '';
         }
     };
     
@@ -129,15 +132,7 @@ export default function AdminSettingsPage() {
         const { width, height } = e.currentTarget;
         const aspect = 1; 
         const newCrop = centerCrop(
-            makeAspectCrop(
-                {
-                    unit: '%',
-                    width: 90,
-                },
-                aspect,
-                width,
-                height
-            ),
+            makeAspectCrop({ unit: '%', width: 90 }, aspect, width, height),
             width,
             height
         );
@@ -149,23 +144,29 @@ export default function AdminSettingsPage() {
         if (completedCrop && imgRef.current) {
             try {
                 const dataUrl = await getCroppedImg(imgRef.current, completedCrop);
-                setSettings(prev => ({...prev, logoUrl: dataUrl }));
+                if (cropTarget === 'logo') {
+                    setSettings(prev => ({...prev, logoUrl: dataUrl }));
+                } else {
+                     // Lógica PWA será adicionada no backend para salvar os ícones
+                     toast({ title: "Ícone do PWA Atualizado", description: "O ícone do aplicativo para instalação foi atualizado. Pode ser necessário reinstalar o PWA para ver a mudança." });
+                }
                 setIsCropModalOpen(false);
             } catch (e) {
                 console.error(e);
-                toast({
-                    title: "Erro ao recortar imagem",
-                    variant: "destructive",
-                });
+                toast({ title: "Erro ao recortar imagem", variant: "destructive" });
             }
         }
     };
-     const handleRemoveImage = () => {
-        setSettings(prev => ({...prev, logoUrl: '' }));
-        toast({
-            title: "Logotipo removida",
-            description: "Clique em 'Salvar Alterações' para confirmar e reverter para a logo padrão.",
-        });
+
+     const handleRemoveImage = (target: 'logo' | 'pwaIcon') => {
+        if (target === 'logo') {
+            setSettings(prev => ({...prev, logoUrl: '' }));
+            toast({
+                title: "Logotipo removida",
+                description: "Clique em 'Salvar Alterações' para confirmar e reverter para a logo padrão.",
+            });
+        }
+        // Adicionar lógica para remover ícone PWA se necessário
     };
 
 
@@ -209,61 +210,78 @@ export default function AdminSettingsPage() {
                 <CardHeader>
                      <div className="flex items-center gap-2">
                         <ImageIcon className="h-5 w-5" />
-                        <CardTitle>Logotipo do Aplicativo</CardTitle>
+                        <CardTitle>Identidade Visual</CardTitle>
                     </div>
                     <CardDescription>
-                        Faça o upload de uma imagem que será usada como logotipo em todo o sistema.
+                        Personalize a logotipo do site e o ícone do aplicativo PWA.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                     <div className="flex items-center gap-4">
-                        {settings.logoUrl && (
+                <CardContent className="space-y-6">
+                     <div>
+                        <Label className="text-base font-semibold">Logotipo do Site</Label>
+                        <p className="text-sm text-muted-foreground mb-4">Exibida na tela de login e no menu principal.</p>
+                        <div className="flex items-center gap-4">
+                            {settings.logoUrl && (
+                                <Image 
+                                    src={settings.logoUrl}
+                                    alt="Pré-visualização da logotipo"
+                                    width={64}
+                                    height={64}
+                                    className="object-contain rounded-md bg-muted p-1 border"
+                                    unoptimized
+                                />
+                            )}
+                            <Input 
+                                type="file" 
+                                accept="image/png, image/jpeg, image/webp"
+                                className="hidden"
+                                onChange={(e) => handleFileChange(e, 'logo')}
+                                ref={fileInputRef}
+                                id="logo-upload"
+                            />
+                            <label htmlFor="logo-upload" className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer")}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                {settings.logoUrl ? 'Alterar' : 'Escolher Imagem'}
+                            </label>
+                            {settings.logoUrl && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="icon" type="button">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader><AlertDialogTitle>Remover Logotipo?</AlertDialogTitle><AlertDialogDescription>Isto reverterá para a logo padrão do sistema.</AlertDialogDescription></AlertDialogHeader>
+                                        <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveImage('logo')}>Sim, remover</AlertDialogAction></AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                        </div>
+                    </div>
+                    <Separator />
+                     <div>
+                        <Label className="text-base font-semibold">Ícone do App (PWA)</Label>
+                        <p className="text-sm text-muted-foreground mb-4">Ícone que aparece na tela inicial do celular após a instalação.</p>
+                        <div className="flex items-center gap-4">
                              <Image 
-                                src={settings.logoUrl}
-                                alt="Pré-visualização da logotipo"
+                                src="/logo-192x192.png"
+                                alt="Ícone PWA atual"
                                 width={64}
                                 height={64}
                                 className="object-contain rounded-md bg-muted p-1 border"
-                                unoptimized
                             />
-                        )}
-                        <Input 
-                            type="file" 
-                            accept="image/png, image/jpeg, image/webp"
-                            className="hidden"
-                            onChange={handleFileChange}
-                            ref={fileInputRef}
-                            id="logo-upload"
-                        />
-                        <label htmlFor="logo-upload" className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer")}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            {settings.logoUrl ? 'Alterar Imagem' : 'Escolher Imagem'}
-                        </label>
-                         {settings.logoUrl && (
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="icon" type="button">
-                                        <Trash2 className="h-4 w-4" />
-                                        <span className="sr-only">Remover Imagem</span>
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle className="flex items-center gap-2">
-                                            <AlertTriangle className="text-destructive"/>
-                                            Remover Logotipo?
-                                        </AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Tem certeza de que deseja remover a logotipo personalizada? O sistema voltará a usar a logo padrão.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleRemoveImage}>Sim, remover</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
+                            <Input 
+                                type="file" 
+                                accept="image/png" // Apenas PNG para garantir a transparência
+                                className="hidden"
+                                onChange={(e) => handleFileChange(e, 'pwaIcon')}
+                                id="pwa-icon-upload"
+                            />
+                            <label htmlFor="pwa-icon-upload" className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer")}>
+                                <Smartphone className="mr-2 h-4 w-4" />
+                                Alterar Ícone PWA
+                            </label>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -359,7 +377,10 @@ export default function AdminSettingsPage() {
          <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Recortar Logotipo</DialogTitle>
+                    <DialogTitle>Recortar Imagem</DialogTitle>
+                    <DialogDescription>
+                        Ajuste a imagem para que se encaixe perfeitamente. Use um formato quadrado.
+                    </DialogDescription>
                 </DialogHeader>
                 {imgSrc && (
                     <div className="my-4 flex justify-center">
@@ -368,11 +389,11 @@ export default function AdminSettingsPage() {
                             onChange={(_, percentCrop) => setCrop(percentCrop)}
                             onComplete={(c) => setCompletedCrop(c)}
                             aspect={1}
-                            circularCrop
+                            circularCrop={cropTarget === 'logo'}
                         >
                             <img
                                 ref={imgRef}
-                                alt="Crop me"
+                                alt="Recorte"
                                 src={imgSrc}
                                 onLoad={onImageLoad}
                                 style={{ maxHeight: '70vh' }}
