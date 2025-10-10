@@ -418,10 +418,32 @@ export default function AdminUsersPage() {
                                                             <DropdownMenuLabel>Ações de Moderação</DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
                                                             {user.status === 'pendente' && (
-                                                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
-                                                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-                                                                    <span>Aprovar Cadastro</span>
-                                                                </DropdownMenuItem>
+                                                                <>
+                                                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
+                                                                        <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                                                        <span>Aprovar Cadastro</span>
+                                                                    </DropdownMenuItem>
+                                                                    <AlertDialog>
+                                                                        <AlertDialogTrigger asChild>
+                                                                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => e.preventDefault()}>
+                                                                                <UserX className="mr-2 h-4 w-4" />
+                                                                                Recusar Cadastro
+                                                                            </DropdownMenuItem>
+                                                                        </AlertDialogTrigger>
+                                                                        <AlertDialogContent>
+                                                                            <AlertDialogHeader>
+                                                                                <AlertDialogTitle>Recusar e excluir usuário?</AlertDialogTitle>
+                                                                                <AlertDialogDescription>
+                                                                                    Esta ação removerá permanentemente o registro de "{user.apelido || user.nome}". O usuário não será notificado. Esta ação não pode ser desfeita.
+                                                                                </AlertDialogDescription>
+                                                                            </AlertDialogHeader>
+                                                                            <AlertDialogFooter>
+                                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                                <AlertDialogAction onClick={() => handleDeleteSelected()}>Sim, recusar</AlertDialogAction>
+                                                                            </AlertDialogFooter>
+                                                                        </AlertDialogContent>
+                                                                    </AlertDialog>
+                                                                </>
                                                             )}
                                                             {user.status === 'ativo' && user.funcao !== 'admin' && (
                                                                 <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'bloqueado')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
