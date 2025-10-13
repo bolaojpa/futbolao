@@ -100,8 +100,12 @@ export default function WelcomePage() {
     const handleGoogleAuth = async (isSigningUp: boolean) => {
         setIsLoading(true);
         const currentSettings = settings || await getSystemSettings();
-        if (isSigningUp && !currentSettings.allowRegistrations) {
-            toast({ variant: "destructive", title: "Cadastro Desabilitado", description: "O cadastro de novos usuários está temporariamente desabilitado." });
+        
+        const userDocRefForCheck = isSigningUp ? null : auth.currentUser ? doc(db, "users", auth.currentUser.uid) : null;
+        const userDocForCheck = userDocRefForCheck ? await getDoc(userDocRefForCheck) : null;
+
+        if (isSigningUp && !currentSettings.allowRegistrations && !userDocForCheck?.exists()) {
+            toast({ variant: "destructive", title: "Cadastro Desabilitado", description: "O cadastro de novos usuários está temporariamente desabilitado pelo administrador." });
             setIsLoading(false);
             return;
         }
@@ -115,6 +119,13 @@ export default function WelcomePage() {
             const providerId = googleUser.providerData[0]?.providerId || 'google.com';
 
             if (!userDoc.exists()) {
+                if (!currentSettings.allowRegistrations) {
+                    await auth.signOut(); // Força o logout se o usuário não existe e o cadastro está fechado.
+                    toast({ variant: "destructive", title: "Cadastro Desabilitado", description: "O cadastro de novos usuários está temporariamente desabilitado pelo administrador." });
+                    setIsLoading(false);
+                    return;
+                }
+
                 await setDoc(userDocRef, {
                     id: googleUser.uid, nome: googleUser.displayName, apelido: googleUser.displayName?.split(' ')[0] || googleUser.email, email: googleUser.email, fotoPerfil: googleUser.photoURL, status: 'pendente', funcao: 'usuario', dataCadastro: serverTimestamp(), titulos: 0, totalJogos: 0, championshipStats: [], urlImagemPersonalizada: '', presenceStatus: 'Disponível', providerId: providerId,
                 });
@@ -206,6 +217,8 @@ export default function WelcomePage() {
             setIsLoading(false);
         }
     };
+    
+    const isRegistrationAllowed = settings?.allowRegistrations ?? true;
 
 
     return (
@@ -261,10 +274,12 @@ export default function WelcomePage() {
                      <Card className="shadow-none border-t-0 rounded-t-none">
                         <CardHeader className="text-center">
                             <CardTitle className="text-2xl font-headline">Crie sua conta</CardTitle>
-                            <CardDescription>É rápido e fácil. Vamos começar!</CardDescription>
+                            <CardDescription>
+                                {isRegistrationAllowed ? "É rápido e fácil. Vamos começar!" : "O cadastro de novos usuários está temporariamente desabilitado."}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <Button variant="outline" className="w-full" type="button" onClick={() => handleGoogleAuth(true)} disabled={isLoading}>
+                            <Button variant="outline" className="w-full" type="button" onClick={() => handleGoogleAuth(true)} disabled={isLoading || !isRegistrationAllowed}>
                                 <GoogleIcon className="mr-2 h-4 w-4" /> Cadastrar com Google
                             </Button>
                             <div className="flex items-center space-x-2 my-4">
@@ -275,29 +290,29 @@ export default function WelcomePage() {
                             <form onSubmit={handleEmailSignup} className="space-y-4">
                                 <div className="relative">
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <Input type="text" placeholder="Nome completo" className="pl-10" required value={nome} onChange={(e) => setNome(e.target.value)} />
+                                    <Input type="text" placeholder="Nome completo" className="pl-10" required value={nome} onChange={(e) => setNome(e.target.value)} disabled={isLoading || !isRegistrationAllowed} />
                                 </div>
                                 <div className="relative">
                                     <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <Input type="text" placeholder="Apelido (como aparecerá no ranking)" className="pl-10" value={apelido} onChange={(e) => setApelido(e.target.value)} />
+                                    <Input type="text" placeholder="Apelido (como aparecerá no ranking)" className="pl-10" value={apelido} onChange={(e) => setApelido(e.target.value)} disabled={isLoading || !isRegistrationAllowed} />
                                 </div>
                                 <div className="relative">
                                     <Heart className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
-                                    <Combobox options={teams.map(t => ({ label: t.name, value: t.name }))} value={timeCoracao} onChange={setTimeCoracao} placeholder="Time do Coração (opcional)" searchPlaceholder="Buscar time..." notFoundMessage="Nenhum time encontrado." className="pl-10" />
+                                    <Combobox options={teams.map(t => ({ label: t.name, value: t.name }))} value={timeCoracao} onChange={setTimeCoracao} placeholder="Time do Coração (opcional)" searchPlaceholder="Buscar time..." notFoundMessage="Nenhum time encontrado." className="pl-10" disabled={isLoading || !isRegistrationAllowed} />
                                 </div>
                                 <div className="relative">
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <Input type="email" placeholder="seu@email.com" className="pl-10" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                                    <Input type="email" placeholder="seu@email.com" className="pl-10" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading || !isRegistrationAllowed} />
                                 </div>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <Input type="password" placeholder="Crie uma senha forte" className="pl-10" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                                    <Input type="password" placeholder="Crie uma senha forte" className="pl-10" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading || !isRegistrationAllowed} />
                                 </div>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <Input type="password" placeholder="Confirme sua senha" className="pl-10" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                    <Input type="password" placeholder="Confirme sua senha" className="pl-10" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={isLoading || !isRegistrationAllowed} />
                                 </div>
-                                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
+                                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading || !isRegistrationAllowed}>
                                     {isLoading ? 'Criando conta...' : 'Criar Conta com Email'}
                                 </Button>
                             </form>
@@ -308,3 +323,4 @@ export default function WelcomePage() {
         </div>
     );
 }
+
