@@ -744,12 +744,13 @@ export async function addOrUpdatePrediction(predictionData: Partial<Omit<Predict
  * @param title - The title of the toast.
  * @param message - The message content of the toast.
  */
-export async function addToastNotification(userId: string, title: string, message: string) {
+export async function addToastNotification(userId: string, title: string, message: string, href: string = '#') {
   const toastCollection = collection(db, 'toast_notifications');
   await addDoc(toastCollection, {
     userId,
     title,
     message,
+    href,
     createdAt: serverTimestamp(),
   });
 }
@@ -892,6 +893,20 @@ export async function addSupportMessage(data: Omit<SupportMessage, 'id' | 'creat
         lastActivityAt: now,
         readAt: null,
         replies: [],
+    });
+
+    // Notify all admins and moderators
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('funcao', 'in', ['admin', 'moderator']));
+    const adminsSnapshot = await getDocs(q);
+
+    adminsSnapshot.forEach(adminDoc => {
+        addToastNotification(
+            adminDoc.id,
+            `Novo Suporte de ${data.userApelido}`,
+            `Clique para ver a mensagem.`,
+            '/admin/support'
+        );
     });
 }
 
