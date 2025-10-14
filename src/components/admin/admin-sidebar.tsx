@@ -32,13 +32,17 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+  const { user } = useAuth(); // Usando o hook de autenticação
   const [hasPendingUsers, setHasPendingUsers] = useState(false);
   const [hasUnreadSupport, setHasUnreadSupport] = useState(false);
+
+  const isAdmin = user?.funcao === 'admin';
 
   useEffect(() => {
     // Listener for pending users
@@ -71,21 +75,21 @@ export function AdminSidebar() {
   };
 
   const menuItems = [
-    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/users', label: 'Usuários', icon: Users, hasNotification: hasPendingUsers },
-    { href: '/admin/championships', label: 'Campeonatos', icon: Trophy },
-    { href: '/admin/teams', label: 'Equipes', icon: Shield },
-    { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck },
-    { href: '/admin/history', label: 'Histórico de Partidas', icon: History },
-    { href: '/admin/ranking', label: 'Ranking', icon: BarChart3 },
-    { href: '/admin/fame', label: 'Hall da Fama', icon: ShieldCheck },
-    { href: '/admin/logs', label: 'Logs de Atividades', icon: FileClock },
-    { href: '/admin/messaging', label: 'Mensagens', icon: Send },
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'moderator'] },
+    { href: '/admin/users', label: 'Usuários', icon: Users, hasNotification: hasPendingUsers, roles: ['admin', 'moderator'] },
+    { href: '/admin/championships', label: 'Campeonatos', icon: Trophy, roles: ['admin'] },
+    { href: '/admin/teams', label: 'Equipes', icon: Shield, roles: ['admin'] },
+    { href: '/admin/matches', label: 'Partidas', icon: CalendarCheck, roles: ['admin', 'moderator'] },
+    { href: '/admin/history', label: 'Histórico de Partidas', icon: History, roles: ['admin', 'moderator'] },
+    { href: '/admin/ranking', label: 'Ranking', icon: BarChart3, roles: ['admin', 'moderator'] },
+    { href: '/admin/fame', label: 'Hall da Fama', icon: ShieldCheck, roles: ['admin', 'moderator'] },
+    { href: '/admin/logs', label: 'Logs de Atividades', icon: FileClock, roles: ['admin'] },
+    { href: '/admin/messaging', label: 'Mensagens', icon: Send, roles: ['admin'] },
   ];
   
   const bottomMenuItems = [
-      { href: '/admin/settings', label: 'Configurações', icon: Settings },
-      { href: '/admin/support', label: 'Suporte', icon: LifeBuoy, hasNotification: hasUnreadSupport },
+      { href: '/admin/settings', label: 'Configurações', icon: Settings, roles: ['admin'] },
+      { href: '/admin/support', label: 'Suporte', icon: LifeBuoy, hasNotification: hasUnreadSupport, roles: ['admin', 'moderator'] },
   ]
 
   return (
@@ -98,7 +102,7 @@ export function AdminSidebar() {
       </SidebarHeader>
 
       <SidebarMenu className="flex-1 p-2">
-        {menuItems.map((item) => (
+        {menuItems.filter(item => user && item.roles.includes(user.funcao)).map((item) => (
           <SidebarMenuItem key={item.href}>
             <Link href={item.href} passHref onClick={handleLinkClick}>
               <SidebarMenuButton
@@ -126,7 +130,7 @@ export function AdminSidebar() {
 
       <SidebarFooter className="p-2">
          <SidebarMenu>
-            {bottomMenuItems.map((item) => (
+            {bottomMenuItems.filter(item => user && item.roles.includes(user.funcao)).map((item) => (
                 <SidebarMenuItem key={item.href}>
                     <Link href={item.href} passHref onClick={handleLinkClick}>
                         <SidebarMenuButton
