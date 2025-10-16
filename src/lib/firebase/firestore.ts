@@ -200,21 +200,37 @@ export async function updateUserStatus(userId: string, newStatus: UserType['stat
  * Updates the role of a specific user in Firestore.
  * @param userId - The ID of the user to update.
  * @param newRole - The new role to set for the user.
+ * @returns An object indicating success or failure with an error message.
  */
-export async function updateUserRole(userId: string, newRole: UserType['funcao']) {
+export async function updateUserRole(userId: string, newRole: UserType['funcao']): Promise<{ success: boolean; error?: string }> {
     const userDocRef = doc(db, 'users', userId);
-    
     const userDoc = await getDoc(userDocRef);
-    if (!userDoc.exists()) throw new Error("User not found");
+    if (!userDoc.exists()) {
+        return { success: false, error: "Usuário não encontrado." };
+    }
     const userData = userDoc.data() as UserType;
+
+    // Check if user is in an active championship before promoting
+    if (newRole === 'moderator' || newRole === 'admin') {
+        const championshipsRef = collection(db, 'championships');
+        const q = query(championshipsRef, where('status', '==', 'ativo'), where('participantes', 'array-contains', userId));
+        const activeChampionshipsSnapshot = await getDocs(q);
+
+        if (!activeChampionshipsSnapshot.empty) {
+            const champNames = activeChampionshipsSnapshot.docs.map(doc => doc.data().nome).join(', ');
+            const errorMsg = `Este usuário não pode ser promovido pois está participando do(s) seguinte(s) campeonato(s) ativo(s): ${champNames}.`;
+            return { success: false, error: errorMsg };
+        }
+    }
     
     await addLog({
         action: 'user_management',
-        actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' }, // Assumindo que a ação é feita por um admin
+        actor: { id: 'admin', apelido: 'Admin', funcao: 'admin' },
         details: `Alterou a função de "${userData.apelido}" de "${userData.funcao}" para "${newRole}".`,
     });
 
     await updateDoc(userDocRef, { funcao: newRole });
+    return { success: true };
 }
 
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -23,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setLoading(true); // Inicia o carregamento ao detectar mudança no estado do firebaseUser
+      setLoading(true);
       setFirebaseUser(user);
       if (!user) {
         setUser(null);
@@ -38,12 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (firebaseUser) {
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const unsubscribeFirestore = onSnapshot(userDocRef, (doc) => {
+        // Não defina 'loading' aqui, para permitir atualizações em tempo real
         if (doc.exists()) {
           setUser({ id: doc.id, ...doc.data() } as UserType);
         } else {
           setUser(null);
         }
-        setLoading(false); // Finaliza o carregamento após obter os dados do Firestore
+        // O carregamento inicial é finalizado apenas uma vez
+        if (loading) {
+            setLoading(false);
+        }
       }, (error) => {
           console.error("Error listening to user document:", error);
           setUser(null);

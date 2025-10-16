@@ -115,18 +115,19 @@ export default function AdminUsersPage() {
     };
 
     const handleRoleChange = async (userId: string, newRole: UserType['funcao']) => {
-        try {
-            await updateUserRole(userId, newRole);
-            await fetchUsers(); // Re-fetch para atualizar a UI
+        const result = await updateUserRole(userId, newRole);
+        if (result.success) {
+            await fetchUsers();
             toast({
                 title: "Função do Usuário Alterada",
                 description: `O usuário agora tem a função de ${roleConfig[newRole].label}.`,
             });
-        } catch (error) {
-             toast({
-                title: "Erro ao alterar função",
-                description: "Não foi possível atualizar a função do usuário.",
+        } else {
+            toast({
+                title: "Erro ao Alterar Função",
+                description: result.error,
                 variant: "destructive",
+                duration: 9000,
             });
         }
     }
@@ -543,3 +544,4 @@ export default function AdminUsersPage() {
         </TooltipProvider>
     );
 }
+
