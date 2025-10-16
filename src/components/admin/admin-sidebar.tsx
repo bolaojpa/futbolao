@@ -42,8 +42,6 @@ export function AdminSidebar() {
   const [hasPendingUsers, setHasPendingUsers] = useState(false);
   const [hasUnreadSupport, setHasUnreadSupport] = useState(false);
 
-  const isAdmin = user?.funcao === 'admin';
-
   useEffect(() => {
     // Listener for pending users
     const usersQuery = query(collection(db, "users"), where("status", "==", "pendente"));
