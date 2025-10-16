@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -255,24 +254,18 @@ export function ProfilePageClient() {
     const champ = championships.find(c => c.id === selectedChampionshipId);
     if (!champ) return { pontos: 0, acertosExatos: 0, acertosSituacao: 0, combo: 0, bonus: 0, gols: 0, erros: 0 };
     
-    // Stats de partidas finalizadas
-    const baseStats = userToDisplay.championshipStats?.find(s => s.championshipId === selectedChampionshipId) || { pontos: 0, acertosExatos: 0, acertosSituacao: 0 };
-    let finalCombos = 0;
-    let finalBonus = 0;
-    let finalGols = 0;
-    
-    const finalizedPredictionsInChampionship = userPredictions.filter(p => {
+    const finalizedPredictions = userPredictions.filter(p => {
         const match = allMatches.find(m => m.id === p.matchId);
         return match?.campeonatoId === selectedChampionshipId && match?.status === 'Finalizado';
     });
-
-    finalizedPredictionsInChampionship.forEach(p => {
-        if (p.acertoTipo === 'combo') finalCombos++;
-        if (p.acertoTipo === 'bonus') finalBonus++;
-        if (p.acertoTipo === 'gols') finalGols++;
-    });
     
-    // Stats de partidas ao vivo
+    let basePoints = userToDisplay.championshipStats?.find(s => s.championshipId === selectedChampionshipId)?.pontos ?? 0;
+    let baseExatos = finalizedPredictions.filter(p => p.acertoTipo === 'bucha' || p.acertoTipo === 'combo').length;
+    let baseSituacoes = finalizedPredictions.filter(p => p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus').length;
+    let baseCombos = finalizedPredictions.filter(p => p.acertoTipo === 'combo').length;
+    let baseBonus = finalizedPredictions.filter(p => p.acertoTipo === 'bonus').length;
+    let baseGols = finalizedPredictions.filter(p => p.acertoTipo === 'gols').length;
+    
     const liveMatchesForChamp = allMatches.filter(match => 
         match.campeonatoId === selectedChampionshipId &&
         match.status !== 'Finalizado' && 
@@ -280,43 +273,29 @@ export function ProfilePageClient() {
         isPast(parseISO(match.data))
     );
 
-    let livePoints = 0;
-    let liveExatos = 0;
-    let liveSituacoes = 0;
-    let liveCombos = 0;
-    let liveBonus = 0;
-    let liveGols = 0;
-
     liveMatchesForChamp.forEach(match => {
         const prediction = userPredictions.find(p => p.matchId === match.id);
         if (prediction) {
             const result = calculateLivePoints(match, prediction, champ);
-            livePoints += result.pontos;
-            if (result.acertoTipo === 'bucha' || result.acertoTipo === 'combo') liveExatos++;
-            if (result.acertoTipo === 'situacao') liveSituacoes++;
-            if (result.acertoTipo === 'combo') liveCombos++;
-            if (result.acertoTipo === 'bonus') liveBonus++;
-            if (result.acertoTipo === 'gols') liveGols++;
+            basePoints += result.pontos;
+            if (result.exato) baseExatos++;
+            if (result.situacao) baseSituacoes++;
+            if (result.combo) baseCombos++;
+            if (result.bonus) baseBonus++;
+            if (result.gols) baseGols++;
         }
     });
 
-    const totalPontos = (baseStats.pontos || 0) + livePoints;
-    const totalExatos = (baseStats.acertosExatos || 0) + liveExatos;
-    const totalSituacoes = (baseStats.acertosSituacao || 0) + liveSituacoes;
-    const totalCombos = finalCombos + liveCombos;
-    const totalBonus = finalBonus + liveBonus;
-    const totalGols = finalGols + liveGols;
-    const totalAcertos = totalExatos + totalSituacoes;
-    const totalErros = finalizedPredictionsInChampionship.length - totalAcertos;
-
+    const totalAcertos = baseExatos + baseSituacoes + baseCombos + baseBonus + baseGols;
+    const totalErros = finalizedPredictions.length - totalAcertos;
 
     return {
-        pontos: totalPontos,
-        acertosExatos: totalExatos,
-        acertosSituacao: totalSituacoes,
-        combo: totalCombos,
-        bonus: totalBonus,
-        gols: totalGols,
+        pontos: basePoints,
+        acertosExatos: baseExatos,
+        acertosSituacao: baseSituacoes,
+        combo: baseCombos,
+        bonus: baseBonus,
+        gols: baseGols,
         erros: totalErros > 0 ? totalErros : 0,
     };
 

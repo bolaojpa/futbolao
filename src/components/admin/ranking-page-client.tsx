@@ -148,20 +148,16 @@ export function AdminRankingPageClient() {
 
     return participantUsers.map(user => {
       const stats = user.championshipStats?.find(s => s.championshipId === selectedChampionshipId);
+      
+      const finalizedPredictions = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
+      
       let basePoints = stats?.pontos ?? 0;
-      let baseExatos = stats?.acertosExatos ?? 0;
-      let baseSituacoes = stats?.acertosSituacao ?? 0;
-      let baseCombos = 0;
-      let baseBonus = 0;
-      let baseGols = 0;
-
-      const predictionsInChamp = allPredictions.filter(p => p.userId === user.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === selectedChampionshipId && m.status === 'Finalizado'));
-      predictionsInChamp.forEach(p => {
-            if (p.acertoTipo === 'combo') baseCombos++;
-            if (p.acertoTipo === 'bonus') baseBonus++;
-            if (p.acertoTipo === 'gols') baseGols++;
-      })
-
+      let baseExatos = finalizedPredictions.filter(p => p.acertoTipo === 'bucha' || p.acertoTipo === 'combo').length;
+      let baseSituacoes = finalizedPredictions.filter(p => p.acertoTipo === 'situacao' || p.acertoTipo === 'bonus').length;
+      let baseCombos = finalizedPredictions.filter(p => p.acertoTipo === 'combo').length;
+      let baseBonus = finalizedPredictions.filter(p => p.acertoTipo === 'bonus').length;
+      let baseGols = finalizedPredictions.filter(p => p.acertoTipo === 'gols').length;
+      
       liveMatchesForChamp.forEach(match => {
           const prediction = allPredictions.find(p => p.matchId === match.id && p.userId === user.id);
           if (prediction) {
