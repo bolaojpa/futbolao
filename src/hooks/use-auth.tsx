@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setLoading(true); // Inicia o carregamento ao detectar mudança no estado do firebaseUser
       setFirebaseUser(user);
       if (!user) {
         setUser(null);
@@ -37,13 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (firebaseUser) {
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const unsubscribeFirestore = onSnapshot(userDocRef, (doc) => {
-        setLoading(true); // Começa a carregar ao receber novos dados
         if (doc.exists()) {
           setUser({ id: doc.id, ...doc.data() } as UserType);
         } else {
           setUser(null);
         }
-        setLoading(false); // Finaliza o carregamento após atualizar o estado
+        setLoading(false); // Finaliza o carregamento após obter os dados do Firestore
       }, (error) => {
           console.error("Error listening to user document:", error);
           setUser(null);
