@@ -5,10 +5,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockLogs, Log } from '@/lib/data';
-import { format } from 'date-fns';
+import { Log, UserType } from '@/lib/types';
+import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck, Trash2, Bot } from 'lucide-react';
+import { FileClock, User, Shield, LogIn, LogOut, Edit, MessageSquareWarning, Trophy, ChevronLeft, ChevronRight, Search, Eye, ShieldCheck, Trash2, Bot, Settings as SettingsIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,9 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getLogs, deleteLogs as deleteLogsFromDB } from '@/lib/firebase/firestore';
+import { Loader2 } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -29,21 +32,25 @@ const actionConfig = {
     prediction_update: { icon: Edit, color: 'text-blue-500', label: 'Palpite' },
     profile_update: { icon: User, color: 'text-purple-500', label: 'Perfil' },
     user_management: { icon: Shield, color: 'text-amber-500', label: 'Gestão de Usuário' },
-    championship_create: { icon: Trophy, color: 'text-yellow-600', label: 'Campeonato' },
-    emergency_message: { icon: MessageSquareWarning, color: 'text-red-600', label: 'Aviso Urgente' },
+    championship_update: { icon: Trophy, color: 'text-yellow-600', label: 'Campeonato' },
+    match_update: { icon: Edit, color: 'text-cyan-500', label: 'Partida' },
+    system_message: { icon: MessageSquareWarning, color: 'text-red-600', label: 'Aviso Urgente' },
     ai_notification: { icon: Bot, color: 'text-teal-500', label: 'Notificação de IA' },
+    settings_update: { icon: SettingsIcon, color: 'text-gray-500', label: 'Configurações' },
     default: { icon: FileClock, color: 'text-muted-foreground', label: 'Outro' },
 };
 
 type ActionType = keyof typeof actionConfig;
 
-// Componente para evitar erro de hidratação com datas
-const FormattedDate = ({ dateString, formatString = "dd/MM/yyyy HH:mm:ss" }: { dateString: string, formatString?: string }) => {
+const FormattedDate = ({ dateValue, formatString = "dd/MM/yyyy HH:mm:ss" }: { dateValue: Date | Timestamp, formatString?: string }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
-      setFormattedDate(format(new Date(dateString), formatString, { locale: ptBR }));
-    }, [dateString, formatString]);
+      const date = dateValue instanceof Timestamp ? dateValue.toDate() : dateValue;
+      if (isValid(date)) {
+        setFormattedDate(format(date, formatString, { locale: ptBR }));
+      }
+    }, [dateValue, formatString]);
   
     if (!formattedDate) {
       return null; 
@@ -54,13 +61,29 @@ const FormattedDate = ({ dateString, formatString = "dd/MM/yyyy HH:mm:ss" }: { d
 
 export default function AdminLogsPage() {
     const { toast } = useToast();
-    const [logs, setLogs] = useState<Log[]>(mockLogs);
+    const [logs, setLogs] = useState<Log[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [filterType, setFilterType] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedLog, setSelectedLog] = useState<Log | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedLogs, setSelectedLogs] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        const fetchLogs = async () => {
+            setIsLoading(true);
+            try {
+                const fetchedLogs = await getLogs();
+                setLogs(fetchedLogs);
+            } catch (error) {
+                toast({ title: "Erro ao buscar logs", variant: "destructive" });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchLogs();
+    }, [toast]);
     
     const filteredLogs = useMemo(() => {
         return logs.filter(log => {
@@ -78,7 +101,7 @@ export default function AdminLogsPage() {
       currentPage * ITEMS_PER_PAGE
     );
     
-    const uniqueActionTypes = useMemo(() => [...new Set(mockLogs.map(log => log.action))], []);
+    const uniqueActionTypes = useMemo(() => [...new Set(logs.map(log => log.action))].sort(), [logs]);
 
     const handleViewDetails = (log: Log) => {
         setSelectedLog(log);
@@ -109,17 +132,22 @@ export default function AdminLogsPage() {
         }
     };
 
-    const handleDeleteSelected = () => {
-        setLogs(prev => prev.filter(log => !selectedLogs.has(log.id)));
-        toast({
-            title: "Logs Excluídos",
-            description: `${selectedLogs.size} registro(s) de log foram removidos permanentemente.`,
-        });
-        setSelectedLogs(new Set());
+    const handleDeleteSelected = async () => {
+        try {
+            await deleteLogsFromDB(Array.from(selectedLogs));
+            setLogs(prev => prev.filter(log => !selectedLogs.has(log.id)));
+            toast({
+                title: "Logs Excluídos",
+                description: `${selectedLogs.size} registro(s) de log foram removidos permanentemente.`,
+            });
+            setSelectedLogs(new Set());
+        } catch (error) {
+            toast({ title: "Erro ao excluir logs", variant: "destructive" });
+        }
     };
     
     const renderLogDetails = (log: Log) => {
-        if ((log.action === 'emergency_message' || log.action === 'ai_notification') && typeof log.details === 'object' && log.details !== null) {
+        if ((log.action === 'system_message' || log.action === 'ai_notification') && typeof log.details === 'object' && log.details !== null) {
             const details = log.details as { title: string; message: string; target?: string };
             return (
                 <div className="space-y-4">
@@ -238,7 +266,13 @@ export default function AdminLogsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedLogs.length > 0 ? (
+                                {isLoading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell colSpan={5} className="h-12"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : paginatedLogs.length > 0 ? (
                                     paginatedLogs.map(log => {
                                         const config = actionConfig[log.action as ActionType] || actionConfig.default;
                                         const Icon = config.icon;
@@ -252,13 +286,13 @@ export default function AdminLogsPage() {
                                                     />
                                                 </TableCell>
                                                 <TableCell className="hidden md:table-cell font-mono text-xs">
-                                                    <FormattedDate dateString={log.timestamp} />
+                                                    <FormattedDate dateValue={log.timestamp} />
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
-                                                        {log.actor.type === 'admin' ? (
+                                                        {log.actor.funcao === 'admin' ? (
                                                             <Shield className="h-4 w-4 text-destructive" />
-                                                        ) : log.actor.type === 'moderator' ? (
+                                                        ) : log.actor.funcao === 'moderator' ? (
                                                             <ShieldCheck className="h-4 w-4 text-green-500" />
                                                         ) : (
                                                             <User className="h-4 w-4 text-muted-foreground" />
@@ -266,7 +300,7 @@ export default function AdminLogsPage() {
                                                         <div className='flex flex-col'>
                                                             <span className="font-medium">{log.actor.apelido}</span>
                                                             <span className='md:hidden text-xs text-muted-foreground'>
-                                                                <FormattedDate dateString={log.timestamp} formatString="dd/MM/yy HH:mm" />
+                                                                <FormattedDate dateValue={log.timestamp} formatString="dd/MM/yy HH:mm" />
                                                             </span>
                                                         </div>
                                                     </div>
@@ -296,7 +330,8 @@ export default function AdminLogsPage() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-24 text-center">
-                                            Nenhum registro encontrado para os filtros selecionados.
+                                            <p className="font-semibold">Nenhum registro encontrado.</p>
+                                            <p className="text-sm text-muted-foreground">Tente ajustar os filtros de busca.</p>
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -323,6 +358,7 @@ export default function AdminLogsPage() {
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
                         >
+                            Próximo
                             <ChevronRight className="h-4 w-4 ml-2" />
                         </Button>
                     </div>
@@ -338,12 +374,12 @@ export default function AdminLogsPage() {
                             <div className="space-y-4 py-2">
                                 <div>
                                     <h4 className="font-semibold text-sm text-muted-foreground">Data e Hora</h4>
-                                    <p><FormattedDate dateString={selectedLog.timestamp} /></p>
+                                    <p><FormattedDate dateValue={selectedLog.timestamp} /></p>
                                 </div>
                                 <Separator />
                                 <div>
                                     <h4 className="font-semibold text-sm text-muted-foreground">Autor</h4>
-                                    <p>{selectedLog.actor.apelido} ({selectedLog.actor.type})</p>
+                                    <p>{selectedLog.actor.apelido} ({selectedLog.actor.funcao})</p>
                                 </div>
                                 <Separator />
                                 <div>

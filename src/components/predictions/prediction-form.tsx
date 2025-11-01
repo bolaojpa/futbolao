@@ -5,23 +5,27 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { mockMatches, mockUser, mockPredictions } from '@/lib/data';
-import { format, parseISO, differenceInHours, isToday, isPast } from 'date-fns';
+import { format, parseISO, differenceInHours, isToday, isPast, isFuture } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { BrainCircuit, Loader2, Wand2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle } from 'lucide-react';
+import { BrainCircuit, Loader2, Save, ChevronUp, ChevronDown, AlarmClock, Calendar, AlertCircle, Lock, Gem, Check, X, Goal, Ghost } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getAiSuggestion } from '@/app/dashboard/predictions/actions';
+import { getAiSuggestion, savePrediction, saveComboPick } from '@/app/dashboard/predictions/actions';
 import Image from 'next/image';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Countdown } from '@/components/shared/countdown';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useRouter } from 'next/navigation';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import type { Match, Prediction, Team, Championship, UserType } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { getDoc, onSnapshot, collection, doc, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
+import { Label } from '../ui/label';
+import Link from 'next/link';
 
-type Match = typeof mockMatches.upcoming[0];
-
-const NumberInput = ({ value, onChange }: { value: number | null; onChange: (value: number) => void; }) => {
+const NumberInput = ({ value, onChange, disabled }: { value: number | null; onChange: (value: number) => void; disabled?: boolean; }) => {
     const handleIncrement = () => {
         const currentValue = value ?? -1;
         onChange(currentValue + 1);
@@ -32,18 +36,20 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
     };
 
     return (
-        <div className="relative w-20">
+        <div className="relative w-16">
             <Input
                 type="text"
                 readOnly
                 value={value === null ? '' : value}
-                className="w-full h-12 text-center text-2xl font-bold bg-muted border-0 pr-6"
+                className="w-full h-11 text-center text-xl font-bold bg-muted border-0 pr-6 disabled:opacity-75"
+                placeholder="-"
+                disabled={disabled}
             />
             <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center h-full">
-                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleIncrement}>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleIncrement} disabled={disabled}>
                     <ChevronUp className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleDecrement}>
+                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleDecrement} disabled={disabled}>
                     <ChevronDown className="h-4 w-4" />
                 </Button>
             </div>
@@ -52,43 +58,93 @@ const NumberInput = ({ value, onChange }: { value: number | null; onChange: (val
 };
 
 
-export function PredictionForm() {
+interface PredictionFormProps {
+    championships: Championship[];
+    allTeams: Team[];
+    allMatches: Match[];
+    allUsers: UserType[];
+    selectedChampionshipId: string | 'all';
+}
+
+
+export function PredictionForm({ championships, allTeams, allMatches, allUsers, selectedChampionshipId }: PredictionFormProps) {
     const { toast } = useToast();
-    const router = useRouter();
-    const [aiModalState, setAiModalState] = useState<{ open: boolean; suggestion: string | null; match: Match | null }>({ open: false, suggestion: null, match: null });
+    const { user } = useAuth();
+
+    const [userPredictions, setUserPredictions] = useState<Prediction[]>([]);
+    const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
+    const [currentTime, setCurrentTime] = useState(new Date());
+
     const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
     const [lastUpdated, setLastUpdated] = useState<Record<string, Date | null>>({});
     const [scores, setScores] = useState<Record<string, { placarA: number | null; placarB: number | null }>>({});
-    const [isClient, setIsClient] = useState(false);
+    const [comboUiState, setComboUiState] = useState<Record<string, { totalGols: number | null; isEditing: boolean }>>({});
     
-    // Estado para controlar as partidas visíveis
-    const [displayedMatches, setDisplayedMatches] = useState<Match[]>([]);
-    
-    // Armazena as referências dos cards para a rolagem
+    const [aiSuggestion, setAiSuggestion] = useState<{ matchId: string; suggestion: string; justification: string; } | null>(null);
+
     const matchRefs = useRef<Record<string, HTMLElement | null>>({});
+    const processingGhostPrediction = useRef(new Set<string>());
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000); 
+        return () => clearInterval(timer);
+    }, []);
+
+    const activeChampionshipsForUser = useMemo(() => {
+        if (!user) return [];
+        return championships.filter(c => c.status === 'ativo' && c.participantes.includes(user.id));
+    }, [championships, user]);
+
+    const displayedMatches = useMemo(() => {
+        if (activeChampionshipsForUser.length === 0) return [];
+        const champIds = selectedChampionshipId === 'all' 
+            ? activeChampionshipsForUser.map(c => c.id)
+            : [selectedChampionshipId];
+        
+        return allMatches
+            .filter(match => {
+                if (match.status !== 'Agendado') return false;
+                if (!champIds.includes(match.campeonatoId)) return false;
+                return !isPast(parseISO(match.data));
+            })
+            .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    }, [allMatches, activeChampionshipsForUser, currentTime, selectedChampionshipId]);
 
 
     useEffect(() => {
-        setIsClient(true);
-        const initialUpdates: Record<string, Date | null> = {};
-        const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
+        if (!user) return;
         
-        const openMatches = mockMatches.upcoming.filter(match => match.status === 'Agendado' && !isPast(parseISO(match.data)));
-        setDisplayedMatches(openMatches);
+        const unsubPredictions = onSnapshot(collection(db, 'predictions'), (snapshot) => {
+            const allPreds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prediction));
+            setAllPredictions(allPreds);
 
-        mockPredictions.forEach(p => {
-            if (p.userId === mockUser.id && openMatches.some(m => m.id === p.matchId)) {
-                 initialUpdates[p.matchId] = new Date(); 
-                 initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
-            }
+            const predictionsData = allPreds.filter(p => p.userId === user.id);
+            setUserPredictions(predictionsData);
+
+            const initialScores: Record<string, { placarA: number | null; placarB: number | null }> = {};
+            const initialComboState: Record<string, { totalGols: number | null, isEditing: boolean }> = {};
+            const initialUpdates: Record<string, Date | null> = {};
+
+            predictionsData.forEach(p => {
+                initialScores[p.matchId] = { placarA: p.palpiteUsuario.placarA, placarB: p.palpiteUsuario.placarB };
+                if (p.palpiteCombo) {
+                    initialComboState[p.matchId] = { totalGols: p.palpiteCombo.totalGols, isEditing: false };
+                }
+                if (p.updatedAt) {
+                    initialUpdates[p.matchId] = p.updatedAt.toDate();
+                }
+            });
+
+            setScores(prev => ({ ...prev, ...initialScores }));
+            setComboUiState(prev => ({...prev, ...initialComboState}));
+            setLastUpdated(prev => ({ ...prev, ...initialUpdates }));
         });
-        setLastUpdated(initialUpdates);
-        setScores(initialScores);
 
-        // Lógica para rolar para o card do jogo
         if (window.location.hash) {
             const matchId = window.location.hash.substring(1);
-            setTimeout(() => { // Timeout para garantir que o elemento esteja renderizado
+            setTimeout(() => { 
                 const element = matchRefs.current[matchId];
                 if (element) {
                     element.scrollIntoView({
@@ -97,19 +153,89 @@ export function PredictionForm() {
                         inline: 'nearest'
                     });
                 }
-            }, 100);
+            }, 500); 
         }
 
-        // Lógica para remover cards de jogos que já começaram
-        const interval = setInterval(() => {
-            setDisplayedMatches(prevMatches => 
-                prevMatches.filter(match => !isPast(parseISO(match.data)))
-            );
-        }, 1000); // Verifica a cada segundo
+        return () => {
+            unsubPredictions();
+        };
 
-        return () => clearInterval(interval); // Limpa o intervalo quando o componente desmonta
+    }, [user]);
 
-    }, []);
+    // Lógica para o Fantasma fazer o palpite
+    useEffect(() => {
+        const ghostUser = allUsers.find(u => u.isGhost);
+        if (!ghostUser || displayedMatches.length === 0) return;
+
+        const now = new Date();
+        
+        displayedMatches.forEach(match => {
+            const matchDate = parseISO(match.data);
+            const hoursUntilMatch = differenceInHours(matchDate, now);
+            const hasGhostPredicted = allPredictions.some(p => p.matchId === match.id && p.userId === ghostUser.id);
+
+            // Verifica se a partida está dentro da janela de 12 horas e se o fantasma ainda não palpitou.
+            // A flag `processingGhostPrediction` evita múltiplas chamadas simultâneas para a mesma partida.
+            if (hoursUntilMatch <= 12 && !hasGhostPredicted && !processingGhostPrediction.current.has(match.id)) {
+                
+                const makeGhostPrediction = async () => {
+                    processingGhostPrediction.current.add(match.id); // Marca como processando
+
+                    const championship = championships.find(c => c.id === match.campeonatoId);
+                    if (!championship) {
+                        processingGhostPrediction.current.delete(match.id);
+                        return;
+                    }
+                    
+                    const predictionsForMatch = allPredictions.filter(p => p.matchId === match.id && p.userId !== ghostUser.id);
+                    const aggregatedPredictions = predictionsForMatch.reduce((acc, p) => {
+                        const predictionKey = `${p.palpiteUsuario.placarA}-${p.palpiteUsuario.placarB}`;
+                        if (!acc[predictionKey]) {
+                            acc[predictionKey] = { prediction: predictionKey, count: 0 };
+                        }
+                        acc[predictionKey].count++;
+                        return acc;
+                    }, {} as Record<string, { prediction: string; count: number }>);
+                    
+                    const predictionDataForAPI = Object.values(aggregatedPredictions);
+
+                    const sortedUsers = [...allUsers].sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0));
+                    const userRank = sortedUsers.findIndex(u => u.id === ghostUser.id) + 1;
+                    
+                    const totalMatchesInChampionship = allMatches.filter(m => m.campeonatoId === championship.id).length;
+                    const userMatchesPlayed = allPredictions.filter(p => p.userId === ghostUser.id && allMatches.some(m => m.id === p.matchId && m.campeonatoId === championship.id)).length;
+                    
+                    try {
+                        const result = await getAiSuggestion({
+                            userNickname: ghostUser.apelido,
+                            userPosition: userRank,
+                            totalParticipants: championship.participantes.length,
+                            predictionData: predictionDataForAPI,
+                            currentUserMatches: userMatchesPlayed,
+                            totalUserMatches: totalMatchesInChampionship
+                        });
+                        
+                        if ('suggestedPrediction' in result) {
+                            const [placarA, placarB] = result.suggestedPrediction.split('-').map(Number);
+                            await savePrediction({
+                                matchId: match.id,
+                                userId: ghostUser.id,
+                                palpiteUsuario: { placarA, placarB },
+                            }, {id: ghostUser.id, apelido: ghostUser.apelido, funcao: ghostUser.funcao });
+                        }
+                    } catch (error) {
+                        console.error(`AI prediction failed for ghost user on match ${match.id}:`, error);
+                    } finally {
+                        processingGhostPrediction.current.delete(match.id); // Remove a marcação
+                    }
+                };
+
+                makeGhostPrediction();
+            }
+        });
+
+    }, [displayedMatches, allUsers, allPredictions, allMatches, championships]);
+
 
     const handleScoreChange = (matchId: string, team: 'placarA' | 'placarB', value: number) => {
         setScores(prev => ({
@@ -120,75 +246,193 @@ export function PredictionForm() {
             },
         }));
     };
+    
+    const comboTokensUsedByPhase = useMemo(() => {
+        const usage: Record<string, number> = {};
+         userPredictions.forEach(p => {
+            const match = allMatches.find(m => m.id === p.matchId);
+            if (p.palpiteCombo && match && isFuture(parseISO(match.data))) {
+                const phase = match.fase;
+                if (!usage[phase]) {
+                    usage[phase] = 0;
+                }
+                usage[phase]++;
+            }
+        });
+        return usage;
+    }, [userPredictions, allMatches]);
 
-    const handlePredictionSubmit = (match: Match) => {
-        // Simula a verificação do servidor
-        if (isPast(parseISO(match.data))) {
-            toast({
-                title: "Tempo Esgotado!",
-                description: "Esta partida já começou e não pode mais receber palpites.",
-                variant: "destructive",
-            });
-            // Remove o card da UI e redireciona
-            setDisplayedMatches(prev => prev.filter(m => m.id !== match.id));
-            router.push('/dashboard');
+    const handleUseComboToken = (matchId: string) => {
+        setComboUiState(prev => ({
+            ...prev,
+            [matchId]: { totalGols: null, isEditing: true }
+        }));
+    };
+
+    const handleCancelCombo = (matchId: string) => {
+         setComboUiState(prev => {
+            const newState = { ...prev };
+            delete newState[matchId];
+            return newState;
+        });
+    }
+
+    const handleConfirmCombo = async (matchId: string) => {
+        if (!user) return;
+        const comboState = comboUiState[matchId];
+        if (comboState.totalGols === null || comboState.totalGols < 0) {
+            toast({ title: "Valor Inválido", description: "Por favor, insira um número válido de gols.", variant: "destructive" });
             return;
         }
 
-        const isEditing = !!lastUpdated[match.id];
-        
-        toast({
-            title: `Palpite ${isEditing ? 'Alterado' : 'Enviado'}!`,
-            description: `Seu palpite foi ${isEditing ? 'atualizado' : 'registrado'} com sucesso. Boa sorte!`,
-            variant: "default",
+        await saveComboPick(user.id, matchId, comboState.totalGols, { id: user.id, apelido: user.apelido, funcao: user.funcao });
+        setComboUiState(prev => ({
+            ...prev,
+            [matchId]: { ...prev[matchId], isEditing: false }
+        }));
+         toast({
+            title: "Ficha Salva!",
+            description: "Seu palpite de gols foi confirmado para esta partida.",
         });
+    };
 
-        setLastUpdated(prev => ({ ...prev, [match.id]: new Date() }));
+    const handleRemoveCombo = async (matchId: string) => {
+        if (!user) return;
+        await saveComboPick(user.id, matchId, null, { id: user.id, apelido: user.apelido, funcao: user.funcao }); // Salva como null para remover
+        handleCancelCombo(matchId); // Remove do estado da UI
+        toast({
+            title: "Ficha Removida",
+            description: "Sua ficha está disponível para ser usada em outra partida.",
+            variant: "destructive"
+        });
+    };
+
+    const handlePredictionSubmit = async (match: Match) => {
+        if (!user) return;
+
+        const liveMatch = await getDoc(doc(db, 'matches', match.id));
+        const liveMatchData = liveMatch.data() as Match;
+
+        if (isPast(parseISO(liveMatchData.data)) || liveMatchData.predictionsLocked) {
+            toast({
+                title: "Tempo Esgotado!",
+                description: "Esta partida já começou ou está bloqueada para palpites.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const currentScore = scores[match.id];
+        if (currentScore.placarA === null || currentScore.placarB === null) {
+            toast({ title: "Palpite Incompleto", description: "Você precisa preencher o placar da partida.", variant: "destructive" });
+            return;
+        };
+        
+        const isEditing = !!userPredictions.find(p => p.matchId === match.id);
+
+        try {
+            await savePrediction({
+                matchId: match.id,
+                userId: user.id,
+                palpiteUsuario: {
+                    placarA: currentScore.placarA,
+                    placarB: currentScore.placarB,
+                },
+            }, { id: user.id, apelido: user.apelido, funcao: user.funcao });
+
+            toast({
+                title: `Palpite ${isEditing ? 'Alterado' : 'Enviado'}!`,
+                description: `Seu palpite foi ${isEditing ? 'atualizado' : 'registrado'} com sucesso. Boa sorte!`,
+                variant: "default",
+            });
+        } catch (error) {
+            toast({ title: "Erro ao salvar palpite", description: "Não foi possível salvar seu palpite. Tente novamente.", variant: "destructive" });
+        }
     };
 
     const handleAiSuggestion = async (match: Match) => {
+        if (!user) return;
         setLoadingAi(prev => ({ ...prev, [match.id]: true }));
         
-        const mockPredictionsForAI = [
-            { userId: 'user_2', prediction: 'Time A vence por 2 a 1.' },
-            { userId: 'user_3', prediction: 'Empate em 1 a 1.' },
-            { userId: 'user_4', prediction: 'Acho que o Time A ganha de 1 a 0.' },
-            { userId: 'user_5', prediction: '2 a 0 para o Time A.' },
-            { userId: 'user_6', prediction: 'Time B surpreende e vence por 1 a 0.' },
-        ];
-        
-        if (mockPredictionsForAI.length < 5) {
+        const championship = championships.find(c => c.id === match.campeonatoId);
+        if (!championship) {
+            toast({ title: "Erro", description: "Não foi possível encontrar dados do campeonato.", variant: "destructive" });
+            setLoadingAi(prev => ({ ...prev, [match.id]: false }));
+            return;
+        }
+
+        const predictionsForMatch = allPredictions.filter(p => p.matchId === match.id && p.userId !== user.id);
+
+        if (predictionsForMatch.length < 3) {
              toast({
                 title: "Dados Insuficientes",
-                description: "Ainda não há palpites suficientes para gerar uma sugestão da IA.",
+                description: "Ainda não há palpites suficientes de outros jogadores para gerar uma sugestão da IA.",
                 variant: "destructive",
             });
             setLoadingAi(prev => ({ ...prev, [match.id]: false }));
             return;
         }
+        
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const allUsersData = usersSnapshot.docs.map(doc => doc.data() as UserType);
+
+        const aggregatedPredictions = predictionsForMatch.reduce((acc, p) => {
+            const predictionKey = `${p.palpiteUsuario.placarA}-${p.palpiteUsuario.placarB}`;
+            if (!acc[predictionKey]) {
+                acc[predictionKey] = { prediction: predictionKey, count: 0 };
+            }
+            acc[predictionKey].count++;
+            return acc;
+        }, {} as Record<string, { prediction: string; count: number }>);
+
+        const predictionDataForAPI = Object.values(aggregatedPredictions);
+
+        const sortedUsers = [...allUsersData].sort((a,b) => (b.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0) - (a.championshipStats?.find(s => s.championshipId === championship.id)?.pontos || 0));
+        const userRank = sortedUsers.findIndex(u => u.id === user.id) + 1;
+        
+        const totalMatchesInChampionship = allMatches.filter(m => m.campeonatoId === championship.id).length;
+        const userMatchesPlayed = userPredictions.filter(p => allMatches.some(m => m.id === p.matchId && m.campeonatoId === championship.id)).length;
 
         const res = await getAiSuggestion({
-            matchId: match.id,
-            predictionData: mockPredictionsForAI,
+            userNickname: user.apelido,
+            userPosition: userRank,
+            totalParticipants: championship.participantes.length,
+            predictionData: predictionDataForAPI,
+            currentUserMatches: userMatchesPlayed,
+            totalUserMatches: totalMatchesInChampionship
         });
 
-        if (res.error || !res.suggestion) {
+        if ('error' in res || !res.suggestedPrediction) {
              toast({
                 title: "Erro na IA",
-                description: res.error || "Ocorreu um erro desconhecido.",
+                description: ('error' in res && res.error) || "Ocorreu um erro desconhecido.",
                 variant: "destructive",
             });
         } else {
-            setAiModalState({ open: true, suggestion: res.suggestion, match: match });
+            setAiSuggestion({
+                matchId: match.id,
+                suggestion: res.suggestedPrediction,
+                justification: res.justification
+            });
         }
 
         setLoadingAi(prev => ({ ...prev, [match.id]: false }));
     };
     
+    const applyAiSuggestion = () => {
+        if (!aiSuggestion) return;
+        const { matchId, suggestion } = aiSuggestion;
+        const [placarA, placarB] = suggestion.split('-').map(Number);
+        handleScoreChange(matchId, 'placarA', placarA);
+        handleScoreChange(matchId, 'placarB', placarB);
+        setAiSuggestion(null);
+        toast({
+            title: "Sugestão Aplicada!",
+            description: `O placar de ${suggestion} foi preenchido. Agora é só salvar.`,
+        });
+    };
+    
     const UpcomingMatchDate = ({ matchDateString }: { matchDateString: string }) => {
-        if (!isClient) {
-          return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>Carregando...</div>;
-        }
         const matchDate = parseISO(matchDateString);
         const now = new Date();
         const hoursDiff = differenceInHours(matchDate, now);
@@ -207,16 +451,16 @@ export function PredictionForm() {
             <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
               <AlarmClock className="w-3 h-3"/>
               {`Em breve às ${format(matchDate, "HH:mm", { locale: ptBR })}`}
-            </div>
-          );
-        }
-        
-        if (isToday(matchDate)) {
-          return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
-        }
+        </div>
+      );
+    }
     
-        return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
-      };
+    if (isToday(matchDate)) {
+      return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{`Hoje às ${format(matchDate, "HH:mm", { locale: ptBR })}`}</div>;
+    }
+
+    return <div className="text-xs text-muted-foreground flex items-center justify-center gap-2"><Calendar className="w-3 h-3"/>{format(matchDate, "eeee, dd/MM 'às' HH:mm", { locale: ptBR })}</div>;
+  };
 
     const groupedMatches = useMemo(() => {
         return displayedMatches.reduce((acc, match) => {
@@ -230,155 +474,177 @@ export function PredictionForm() {
     }, [displayedMatches]);
 
 
-    if (!isClient) {
-        return <div className="space-y-6">
-            {[1, 2, 3].map(i => (
-                <Card key={i}>
-                    <CardHeader>
-                        <CardTitle>Carregando Partidas...</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-24 bg-muted rounded-md animate-pulse"></div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
+    if (Object.keys(groupedMatches).length === 0) {
+        return null;
     }
-
-    if (displayedMatches.length === 0) {
-        return (
-             <Card>
-                <CardContent className="p-6 text-center">
-                     <p>Não há partidas abertas para palpites no momento. Volte mais tarde!</p>
-                </CardContent>
-            </Card>
-        )
-    }
+    
+    const ghostUser = allUsers.find(u => u.isGhost);
 
     return (
-        <TooltipProvider>
-            <div className="space-y-8">
-                {Object.entries(groupedMatches).map(([phase, matches]) => (
-                     <div key={phase} className="space-y-4">
-                        <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
-                        {matches.map((match) => {
-                            const isEditing = !!lastUpdated[match.id];
-                            const currentScore = scores[match.id] || { placarA: null, placarB: null };
-                            const needsAttention = isClient && differenceInHours(parseISO(match.data), new Date()) < 2 && !isEditing;
+        <>
+            <TooltipProvider>
+                <div className="space-y-8">
+                    {Object.entries(groupedMatches).map(([phase, matches]) => {
+                        const championshipForPhase = championships.find(c => c.id === matches[0]?.campeonatoId);
+                        const comboCota = championshipForPhase?.pontuacao.combo?.cotasPorFase?.find(c => c.fase === phase);
+                        const tokensUsedInPhase = comboTokensUsedByPhase[phase] || 0;
+                        const tokensRemaining = comboCota ? comboCota.quantidade - tokensUsedInPhase : 0;
 
-                            return (
-                                <Card 
-                                    key={match.id} 
-                                    id={match.id} 
-                                    ref={(el) => matchRefs.current[match.id] = el}
-                                    className={cn("relative overflow-hidden scroll-mt-20", needsAttention && "border-accent animate-pulse")}
-                                >
-                                    {needsAttention && (
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <div className="absolute top-2 left-2 z-10">
-                                                    <AlertCircle className="h-5 w-5 text-accent animate-pulse" />
+                        return (
+                        <div key={phase} className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-bold font-headline ml-1">{phase}</h3>
+                                {comboCota && comboCota.quantidade > 0 && (
+                                    <Badge variant="secondary" className="flex items-center gap-2">
+                                        <Gem className="h-4 w-4 text-primary" />
+                                        <span>
+                                             {tokensRemaining === 1 ? 'Ficha Restante' : 'Fichas Restantes'}: {tokensRemaining} / {comboCota.quantidade}
+                                        </span>
+                                    </Badge>
+                                )}
+                            </div>
+                            {matches.map((match) => {
+                                const score = scores[match.id] || { placarA: null, placarB: null };
+                                const teamA = allTeams.find(t => t.name === match.timeA);
+                                const teamB = allTeams.find(t => t.name === match.timeB);
+                                const matchDate = parseISO(match.data);
+                                const isLocked = isPast(matchDate) || match.predictionsLocked;
+                                const showLockMessage = match.predictionsLocked && isFuture(matchDate);
+                                const userHasPredicted = score.placarA !== null && score.placarB !== null;
+                                const isComboActiveForChamp = championshipForPhase?.pontuacao.combo?.ativo;
+                                const comboState = comboUiState[match.id];
+                                const hasUsedCombo = comboState !== undefined && !comboState.isEditing;
+                                
+                                return (
+                                    <Card key={match.id} id={match.id} ref={(el) => matchRefs.current[match.id] = el}>
+                                        <CardHeader>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                                                     {match.iconUrl && <Image src={match.iconUrl} alt="" width={16} height={16} />}
+                                                    <span>{match.campeonato}</span>
                                                 </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="right">
-                                                <p>Palpite necessário! Esta partida começa em breve.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    )}
-                                    <CardHeader className='pb-2 pt-4 text-center'>
-                                        <CardTitle className="text-base font-semibold">{match.campeonato}</CardTitle>
-                                        <div className="text-xs text-muted-foreground">
-                                            <UpcomingMatchDate matchDateString={match.data} />
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex items-center justify-around w-full gap-2">
-                                            <div className='flex-1 flex flex-row items-center justify-end gap-3'>
-                                                <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeA}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{match.timeA}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
+                                                 <UpcomingMatchDate matchDateString={match.data} />
                                             </div>
-
-                                            <div className="flex items-center justify-center gap-2">
-                                                <NumberInput value={currentScore.placarA} onChange={(v) => handleScoreChange(match.id, 'placarA', v)} />
-                                                <span className="font-bold text-muted-foreground text-lg">x</span>
-                                                <NumberInput value={currentScore.placarB} onChange={(v) => handleScoreChange(match.id, 'placarB', v)} />
+                                        </CardHeader>
+                                        <CardContent className="flex flex-col items-center justify-center gap-4">
+                                            <div className="flex items-center justify-center w-full">
+                                                <div className='flex-1 flex flex-row items-center justify-end gap-3'>
+                                                    <span className="font-bold text-lg hidden md:block text-right truncate">{match.timeA}</span>
+                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                        <Image src={teamA?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeA} width={56} height={56} className="object-contain h-full w-auto" />
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-center font-bold text-2xl whitespace-nowrap mx-2">
+                                                   <NumberInput value={score.placarA} onChange={(val) => handleScoreChange(match.id, 'placarA', val)} disabled={isLocked} />
+                                                    <span className="mx-2 text-muted-foreground">-</span>
+                                                    <NumberInput value={score.placarB} onChange={(val) => handleScoreChange(match.id, 'placarB', val)} disabled={isLocked} />
+                                                </div>
+                                                <div className='flex-1 flex flex-row items-center justify-start gap-3'>
+                                                    <div className='flex h-14 w-14 items-center justify-center'>
+                                                         <Image src={teamB?.crestUrl || "https://picsum.photos/128/128"} alt={match.timeB} width={56} height={56} className="object-contain h-full w-auto" />
+                                                    </div>
+                                                    <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                                </div>
                                             </div>
-                                            
-                                            <div className='flex-1 flex flex-row items-center justify-start gap-3'>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Image src="https://picsum.photos/128/128" alt={`Bandeira ${match.timeB}`} width={40} height={40} className="rounded-full border" data-ai-hint="team logo" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{match.timeB}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                                <span className="font-bold text-lg hidden md:block text-left truncate">{match.timeB}</span>
+                                            {showLockMessage && (
+                                                <Badge variant="warning" className="animate-pulse">
+                                                    <Lock className="mr-2 h-3 w-3" />
+                                                    Palpites para esta partida foram bloqueados pelo administrador.
+                                                </Badge>
+                                            )}
+                                        </CardContent>
+                                        <CardFooter className="flex flex-col gap-4">
+                                            <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
+                                                <div className="flex-1 flex gap-2">
+                                                    <Button onClick={() => handlePredictionSubmit(match)} className="w-full sm:w-auto" disabled={isLocked || !userHasPredicted}>
+                                                        {loadingAi[match.id] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                                        {userPredictions.some(p => p.matchId === match.id) ? 'Alterar Palpite' : 'Salvar Palpite'}
+                                                    </Button>
+                                                     {championshipForPhase?.predictionAssist?.active && (
+                                                        <Button onClick={() => handleAiSuggestion(match)} variant="outline" className="w-full sm:w-auto" disabled={isLocked}>
+                                                             {loadingAi[match.id] ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                                            Consultar IA
+                                                        </Button>
+                                                     )}
+                                                </div>
+                                                {isComboActiveForChamp && !isLocked && (
+                                                    <div className="flex items-center gap-2">
+                                                         {comboState?.isEditing ? (
+                                                            <>
+                                                                <div className="relative">
+                                                                     <Goal className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                                     <Input 
+                                                                        type="number"
+                                                                        placeholder="Gols" 
+                                                                        className="w-28 pl-9"
+                                                                        value={comboState.totalGols ?? ''}
+                                                                        onChange={(e) => setComboUiState(prev => ({...prev, [match.id]: {...prev[match.id], totalGols: parseInt(e.target.value) || null}}))}
+                                                                     />
+                                                                </div>
+                                                                 <Button size="icon" onClick={() => handleConfirmCombo(match.id)}><Check className="h-4 w-4"/></Button>
+                                                                 <Button size="icon" variant="destructive" onClick={() => handleCancelCombo(match.id)}><X className="h-4 w-4"/></Button>
+                                                            </>
+                                                         ) : hasUsedCombo ? (
+                                                             <div className="flex items-center gap-2">
+                                                                <Badge variant="success" className="gap-2">
+                                                                    <Gem className="h-3 w-3"/> Ficha usada: {comboState.totalGols} gols
+                                                                </Badge>
+                                                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRemoveCombo(match.id)}>
+                                                                    <X className="h-4 w-4 text-destructive"/>
+                                                                </Button>
+                                                            </div>
+                                                         ) : (
+                                                            <Button 
+                                                                variant="outline" 
+                                                                className="w-full sm:w-auto text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
+                                                                onClick={() => handleUseComboToken(match.id)}
+                                                                disabled={tokensRemaining <= 0}
+                                                            >
+                                                                <Gem className="mr-2 h-4 w-4"/> Usar Ficha de Combo
+                                                            </Button>
+                                                         )}
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    </CardContent>
-                                    <CardFooter className="flex flex-col gap-2 p-4">
-                                        <div className='text-center h-4 mb-2'>
                                             {lastUpdated[match.id] && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    {isEditing ? 'Alterado' : 'Salvo'} em {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss")}
+                                                <p className="text-xs text-muted-foreground w-full text-right">
+                                                    Última alteração: {format(lastUpdated[match.id]!, "dd/MM/yy 'às' HH:mm:ss", { locale: ptBR })}
                                                 </p>
                                             )}
-                                        </div>
-                                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                            <Button 
-                                                variant="outline" 
-                                                onClick={() => handleAiSuggestion(match)} 
-                                                disabled={loadingAi[match.id]}
-                                                className="text-primary border-primary/50 hover:bg-primary/10 hover:text-primary"
-                                            >
-                                                {loadingAi[match.id] ? (
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <BrainCircuit className="mr-2 h-4 w-4" />
-                                                )}
-                                                Consultar IA
-                                            </Button>
-                                            <Button onClick={() => handlePredictionSubmit(match)} className="bg-accent hover:bg-accent/90 text-accent-foreground" disabled={currentScore.placarA === null || currentScore.placarB === null}>
-                                                <Save className="mr-2 h-4 w-4" />
-                                                {isEditing ? 'Alterar Palpite' : 'Salvar Palpite'}
-                                            </Button>
-                                        </div>
-                                    </CardFooter>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
+                                        </CardFooter>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    )})}
+                </div>
+            </TooltipProvider>
 
-            <Dialog open={aiModalState.open} onOpenChange={(isOpen) => setAiModalState(prev => ({...prev, open: isOpen}))}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                             <Wand2 className="h-5 w-5 text-primary" />
-                             Sugestão da IA
-                        </DialogTitle>
-                         {aiModalState.match && (
-                            <DialogDescription>
-                                Confronto: <strong>{aiModalState.match.timeA} vs {aiModalState.match.timeB}</strong>
-                            </DialogDescription>
-                        )}
-                    </DialogHeader>
-                    <div className="py-4 font-semibold text-center text-lg">
-                        <p className="text-sm text-muted-foreground mb-2">Com base na tendência de outros jogadores, esta é a sugestão para sua aposta. Use com sabedoria!</p>
-                        <p className="text-primary">{aiModalState.suggestion}</p>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-        </TooltipProvider>
+            {aiSuggestion && (
+                 <AlertDialog open={!!aiSuggestion} onOpenChange={() => setAiSuggestion(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2">
+                                <BrainCircuit className="h-6 w-6 text-primary" />
+                                Análise da IA
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-base text-left pt-4">
+                                {aiSuggestion.justification}
+                            </AlertDialogDescription>
+                            <div className="pt-4 text-center">
+                                <p className="text-sm text-muted-foreground">Placar Sugerido:</p>
+                                <p className="text-2xl font-bold font-headline">{aiSuggestion.suggestion}</p>
+                            </div>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Fechar</AlertDialogCancel>
+                            <AlertDialogAction onClick={applyAiSuggestion}>
+                                Aplicar Sugestão
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
+        </>
     );
 }

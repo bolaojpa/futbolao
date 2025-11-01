@@ -1,20 +1,21 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockChampionships as initialChampionships, mockHallOfFame, mockUsers } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Award, AlertTriangle, Archive, ArchiveRestore } from 'lucide-react';
+import { Trophy, MoreHorizontal, Pencil, Trash2, ChevronLeft, ChevronRight, Award, AlertTriangle, Archive, ArchiveRestore, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { ChampionshipForm } from '@/components/admin/championship-form';
-import type { Championship } from '@/lib/data';
+import type { Championship, Match, UserType } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getChampionships, addChampionship, updateChampionship, deleteChampionship, getMatches, getUsers } from '@/lib/firebase/firestore';
 
 
 const ITEMS_PER_PAGE = 10;
@@ -42,12 +43,37 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
 
 
 export default function AdminChampionshipsPage() {
-    const [championships, setChampionships] = useState<Championship[]>(initialChampionships);
+    const [championships, setChampionships] = useState<Championship[]>([]);
+    const [allMatches, setAllMatches] = useState<Match[]>([]);
+    const [allUsers, setAllUsers] = useState<UserType[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [editingChampionship, setEditingChampionship] = useState<Championship | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [activeTab, setActiveTab] = useState<ChampionshipStatus>('ativo');
     const { toast } = useToast();
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [championshipsData, matchesData, usersData] = await Promise.all([
+                getChampionships(),
+                getMatches(),
+                getUsers()
+            ]);
+            setChampionships(championshipsData);
+            setAllMatches(matchesData);
+            setAllUsers(usersData);
+        } catch (error) {
+            toast({ title: "Erro ao buscar dados", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const handleCreate = () => {
         setEditingChampionship(null);
@@ -59,90 +85,111 @@ export default function AdminChampionshipsPage() {
         setIsFormOpen(true);
     };
 
-    const handleDelete = (championshipId: string) => {
-        setChampionships(prev => prev.filter(c => c.id !== championshipId));
-        toast({
-            title: "Campeonato Excluído",
-            description: "O campeonato foi removido com sucesso.",
-        });
+    const handleDelete = async (championshipId: string) => {
+        try {
+            await deleteChampionship(championshipId);
+            await fetchData();
+            toast({
+                title: "Campeonato Excluído",
+                description: "O campeonato foi removido com sucesso.",
+            });
+        } catch (error) {
+            toast({ title: "Erro ao excluir", variant: "destructive" });
+        }
     };
 
-    const handleArchive = (championshipId: string, status: 'ativo' | 'arquivado') => {
-         const newStatus = status === 'ativo' ? 'arquivado' : 'ativo';
-         setChampionships(prev => prev.map(c => c.id === championshipId ? { ...c, status: newStatus } : c));
-         toast({
-            title: `Campeonato ${newStatus === 'arquivado' ? 'Arquivado' : 'Restaurado'}`,
-            description: `O campeonato foi movido para os ${newStatus === 'arquivado' ? 'arquivados' : 'ativos'}.`,
-        });
+    const handleArchive = async (championshipId: string, status: 'ativo' | 'arquivado') => {
+        const newStatus = status === 'ativo' ? 'arquivado' : 'ativo';
+        try {
+            await updateChampionship(championshipId, { status: newStatus });
+            await fetchData();
+            toast({
+                title: `Campeonato ${newStatus === 'arquivado' ? 'Arquivado' : 'Restaurado'}`,
+                description: `O campeonato foi movido para os ${newStatus === 'arquivado' ? 'arquivados' : 'ativos'}.`,
+            });
+        } catch (error) {
+            toast({ title: "Erro ao arquivar/restaurar", variant: "destructive" });
+        }
     }
 
-    const handleFinalize = (championship: Championship) => {
-        // Validação: Verifica se a classificação final foi preenchida
-        const isRankingFilled = championship.finalRanking && Object.values(championship.finalRanking).some(v => !!v);
-        if (!isRankingFilled) {
-             toast({
-                title: "Finalização Pendente",
-                description: "É necessário definir a classificação final do campeonato antes de finalizá-lo. Edite o campeonato e preencha a seção de 'Classificação Final' na aba 'Banner'.",
-                variant: "destructive",
-                duration: 10000,
-            });
-            return;
-        }
-
-        // Lógica de finalização
-        setChampionships(prev => prev.map(c => c.id === championship.id ? { ...c, status: 'arquivado' } : c));
-        
-        // Simulação da geração de banner
+    const handleFinalize = async (championship: Championship) => {
         if (championship.banner.ativo) {
-             // Simulação de lógica para encontrar o campeão do palpite de equipe
-            const melhorPalpiteiro = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+            const isRankingFilled = championship.finalRanking && Object.values(championship.finalRanking).some(v => !!v);
+            if (!isRankingFilled) {
+                 toast({
+                    title: "Finalização Pendente",
+                    description: "Para gerar o banner, é necessário definir a classificação final do campeonato. Edite o campeonato e preencha a seção 'Banner'.",
+                    variant: "destructive",
+                    duration: 10000,
+                });
+                return;
+            }
+        }
 
-            mockHallOfFame.push({
-                id: `hof_${championship.id}`,
-                campeonatoLogoUrl: championship.banner.campeonatoLogoUrl || "https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png",
-                campeonatoNome: championship.nome,
-                campeaoGeralNome: championship.finalRanking?.pos1 || 'N/A',
-                campeaoGeralAvatarUrl: mockUsers.find(u => u.apelido === championship.finalRanking?.pos1)?.fotoPerfil || "https://picsum.photos/128/128",
-                modoEquipes: championship.modoEquipes,
-                palpiteiroNome: melhorPalpiteiro.apelido,
-                palpiteiroAvatarUrl: melhorPalpiteiro.fotoPerfil,
-                displayMode: championship.banner.displayMode || 'photo_and_names',
-            });
-             toast({
-                title: "Campeonato Finalizado e Banner Criado!",
-                description: `O campeonato "${championship.nome}" foi finalizado e um banner foi adicionado ao Hall da Fama.`,
-            });
-        } else {
-             toast({
-                title: "Campeonato Finalizado",
-                description: `O campeonato "${championship.nome}" foi finalizado e movido para os arquivados.`,
-            });
+        try {
+            await updateChampionship(championship.id, { status: 'arquivado' });
+             await fetchData();
+            if (championship.banner.ativo) {
+                // Lógica de Hall da Fama (pode ser expandida no futuro)
+                toast({
+                    title: "Campeonato Finalizado e Banner Criado!",
+                    description: `O campeonato "${championship.nome}" foi finalizado e um banner foi adicionado ao Hall da Fama.`,
+                });
+            } else {
+                toast({
+                    title: "Campeonato Finalizado",
+                    description: `O campeonato "${championship.nome}" foi finalizado e movido para os arquivados.`,
+                });
+            }
+        } catch (error) {
+            toast({ title: "Erro ao finalizar", variant: "destructive" });
         }
     };
 
+    const handleFormSubmit = async (data: Omit<Championship, 'status'>) => {
+        try {
+            const dataToSave: Partial<Omit<Championship, 'status'>> = { ...data };
 
-    const handleFormSubmit = (data: Championship) => {
-        if (editingChampionship) {
-            // Lógica de Edição
-            setChampionships(prev => prev.map(c => c.id === data.id ? data : c));
-            toast({
-                title: "Campeonato Atualizado",
-                description: `O campeonato "${data.nome}" foi atualizado.`,
-            });
-        } else {
-            // Lógica de Criação
-            setChampionships(prev => [...prev, data]);
-            toast({
-                title: "Campeonato Criado!",
-                description: `O campeonato "${data.nome}" foi adicionado.`,
-            });
+            if (dataToSave.rodadas === undefined) {
+                delete dataToSave.rodadas;
+            }
+            if (dataToSave.formatoFases === undefined) {
+                delete dataToSave.formatoFases;
+            }
+
+            if (dataToSave.id) {
+                await updateChampionship(dataToSave.id, {
+                    ...dataToSave,
+                    dataInicio: (dataToSave.dataInicio as Date).toISOString(),
+                    dataFim: (dataToSave.dataFim as Date).toISOString(),
+                });
+                toast({
+                    title: "Campeonato Atualizado",
+                    description: `O campeonato "${dataToSave.nome}" foi atualizado.`,
+                });
+            } else {
+                 const { id, ...rest } = dataToSave;
+                await addChampionship({
+                    ...rest,
+                    dataInicio: (dataToSave.dataInicio as Date).toISOString(),
+                    dataFim: (dataToSave.dataFim as Date).toISOString(),
+                } as Omit<Championship, 'id' | 'status' | 'createdAt'>);
+                toast({
+                    title: "Campeonato Criado!",
+                    description: `O campeonato "${dataToSave.nome}" foi adicionado.`,
+                });
+            }
+            await fetchData();
+        } catch (error) {
+            console.error("Error saving championship: ", error);
+            toast({ title: `Erro ao salvar campeonato`, description: "Verifique o console para mais detalhes.", variant: 'destructive' });
         }
     };
-
+    
     const filteredChampionships = useMemo(() => 
         [...championships]
             .filter(c => c.status === activeTab)
-            .sort((a, b) => new Date(b.dataInicio as string).getTime() - new Date(a.dataInicio as string).getTime())
+            .sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime())
     , [championships, activeTab]);
 
     const totalPages = Math.ceil(filteredChampionships.length / ITEMS_PER_PAGE);
@@ -155,6 +202,14 @@ export default function AdminChampionshipsPage() {
         setCurrentPage(1);
     }, [activeTab]);
 
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8">
@@ -177,6 +232,7 @@ export default function AdminChampionshipsPage() {
                         setIsOpen={setIsFormOpen}
                         onSubmit={handleFormSubmit}
                         championship={editingChampionship}
+                        allMatches={allMatches}
                      >
                         <Button onClick={handleCreate}>
                             Criar Novo Campeonato
@@ -198,6 +254,7 @@ export default function AdminChampionshipsPage() {
                                 handleFinalize={handleFinalize}
                                 handleDelete={handleDelete}
                                 handleArchive={handleArchive}
+                                isLoading={isLoading}
                             />
                         </CardContent>
                     </Card>
@@ -217,6 +274,7 @@ export default function AdminChampionshipsPage() {
                                 handleFinalize={handleFinalize}
                                 handleDelete={handleDelete}
                                 handleArchive={handleArchive}
+                                isLoading={isLoading}
                             />
                         </CardContent>
                     </Card>
@@ -255,6 +313,7 @@ export default function AdminChampionshipsPage() {
 
 interface ChampionshipTableProps {
     championships: Championship[];
+    isLoading: boolean;
     handleEdit: (championship: Championship) => void;
     handleFinalize: (championship: Championship) => void;
     handleDelete: (championshipId: string) => void;
@@ -262,7 +321,7 @@ interface ChampionshipTableProps {
 }
 
 
-function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDelete, handleArchive }: ChampionshipTableProps) {
+function ChampionshipTable({ championships, isLoading, handleEdit, handleFinalize, handleDelete, handleArchive }: ChampionshipTableProps) {
     return (
         <Table>
             <TableHeader>
@@ -275,18 +334,26 @@ function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDe
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {championships.length > 0 ? (
+                {isLoading ? (
+                    Array.from({ length: 3 }).map((_, index) => (
+                        <TableRow key={`loading-${index}`}>
+                            <TableCell colSpan={5} className="h-16">
+                                 <div className="h-6 bg-muted rounded-md animate-pulse"></div>
+                            </TableCell>
+                        </TableRow>
+                    ))
+                ) : championships.length > 0 ? (
                     championships.map(champ => (
                         <TableRow key={champ.id}>
                             <TableCell className="font-medium">{champ.nome}</TableCell>
                             <TableCell className="hidden sm:table-cell">
-                                <FormattedDate dateString={champ.dataInicio as unknown as string} />
+                                <FormattedDate dateString={champ.dataInicio as string} />
                             </TableCell>
                             <TableCell className="hidden sm:table-cell">
-                                <FormattedDate dateString={champ.dataFim as unknown as string} />
+                                <FormattedDate dateString={champ.dataFim as string} />
                             </TableCell>
                              <TableCell className="text-center">
-                                {champ.status === 'ativo' && (
+                                {champ.status === 'ativo' ? (
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                              <Button variant="default" size="sm">
@@ -307,6 +374,11 @@ function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDe
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
+                                ) : (
+                                     <Button variant="outline" size="sm" onClick={() => handleArchive(champ.id, champ.status)}>
+                                        <ArchiveRestore className="mr-2 h-4 w-4" />
+                                        Restaurar
+                                    </Button>
                                 )}
                             </TableCell>
                             <TableCell className="text-right">
@@ -322,10 +394,14 @@ function ChampionshipTable({ championships, handleEdit, handleFinalize, handleDe
                                             <Pencil className="mr-2 h-4 w-4" />
                                             Editar
                                         </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleArchive(champ.id, champ.status)}>
+                                            {champ.status === 'ativo' ? <Archive className="mr-2 h-4 w-4" /> : <ArchiveRestore className="mr-2 h-4 w-4" />}
+                                            {champ.status === 'ativo' ? 'Arquivar' : 'Restaurar'}
+                                        </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                                <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => e.preventDefault()}>
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Excluir
                                                 </DropdownMenuItem>

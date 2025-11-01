@@ -1,6 +1,6 @@
 
 import type {NextConfig} from 'next';
-
+ 
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
@@ -37,7 +37,31 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'pt.wikipedia.org',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'crests.football-data.org',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'digitalhub.fifa.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'logodownload.org',
         port: '',
         pathname: '/**',
       },
@@ -46,5 +70,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
     

@@ -30,12 +30,11 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent } from 'lucide-react';
+import { CalendarIcon, Save, Eye, Image as ImageIcon, ChevronsUpDown, Trophy, Shield, Search, X, Users, ClipboardList, Percent, BrainCircuit, Gavel, Palette, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import type { Championship, Team, UserType } from '@/lib/data';
+import type { Championship, Match, Team, UserType, TiebreakerRule } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
@@ -43,7 +42,7 @@ import { Card, CardHeader, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { ChampionBanner, ChampionBannerProps } from '../fame/champion-banner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { mockTeams, mockUsers } from '@/lib/data';
+import { getTeams, getUsers, updateUserField } from '@/lib/firebase/firestore';
 import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
@@ -51,7 +50,10 @@ import { Badge } from '@/components/ui/badge';
 import { Combobox } from '../ui/combobox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 type Fase = {
     nome: string;
@@ -60,14 +62,17 @@ type Fase = {
 }
 
 const championshipFormSchema = z.object({
+  id: z.string().optional(),
   nome: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }).max(50, "O nome não pode ter mais de 50 caracteres."),
   iconUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
   dataInicio: z.date({ required_error: "A data de início é obrigatória." }),
   dataFim: z.date({ required_error: "A data de fim é obrigatória." }),
   tipoCampeonato: z.enum(['liga', 'copa', 'avulso'], { required_error: "Selecione o tipo do campeonato." }),
   modoEquipes: z.enum(['times', 'selecao', 'mista'], { required_error: "Selecione o modo de equipes." }),
+  incluirFantasma: z.boolean().default(false),
   teamIds: z.array(z.string()).min(2, "Selecione pelo menos duas equipes."),
   participantes: z.array(z.string()).min(1, "Selecione pelo menos um participante."),
+  regrasDesempate: z.array(z.string()).optional(),
   formatoFases: z.enum(['fases', 'rodadas']).optional(),
   fases: z.array(z.object({ 
       nome: z.string().min(1, "O nome da fase é obrigatório."), 
@@ -78,20 +83,30 @@ const championshipFormSchema = z.object({
   pontuacao: z.object({
     tradicional: z.object({
         ativo: z.boolean().default(true),
-        exato: z.coerce.number().int().min(1, "A pontuação deve ser no mínimo 1."),
-        situacao: z.coerce.number().int().min(1, "A pontuação deve ser no mínimo 1."),
+        exato: z.coerce.number().int().min(0, "A pontuação deve ser positiva."),
+        situacao: z.coerce.number().int().min(0, "A pontuação deve ser positiva."),
     }),
     combo: z.object({
       ativo: z.boolean().default(false),
-      gols: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(0),
-      placar: z.coerce.number().int().min(0, "A pontuação deve ser positiva.").optional().default(0),
+      bonusPlacarExatoGols: z.coerce.number().int().min(0).default(5),
+      pontosGols: z.coerce.number().int().min(0).default(1),
+      cotasPorFase: z.array(z.object({
+          fase: z.string(),
+          quantidade: z.coerce.number().int().min(0, "A quantidade não pode ser negativa."),
+      })).optional(),
     }).optional(),
   }),
+  predictionAssist: z.object({
+    active: z.boolean().default(false),
+  }).optional(),
   banner: z.object({
     ativo: z.boolean(),
     campeonatoLogoUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
     backgroundUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")).optional(),
     displayMode: z.enum(['photo_and_names', 'names_only']).optional(),
+    titleColor: z.string().optional(),
+    subtitleColor: z.string().optional(),
+    namesColor: z.string().optional(),
   }),
   championPredictionSettings: z.object({
     active: z.boolean(),
@@ -132,16 +147,36 @@ const predefinedPhases = [
 interface ChampionshipFormProps {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
-    onSubmit: (data: Championship) => void;
+    onSubmit: (data: Omit<Championship, 'status'>) => void;
     championship: Championship | null;
+    allMatches: Match[];
     children: React.ReactNode;
 }
 
-export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, children }: ChampionshipFormProps) {
+export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, allMatches, children }: ChampionshipFormProps) {
   const [fasesList, setFasesList] = useState<Array<Fase>>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [teamSearch, setTeamSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
+  const { toast } = useToast();
+  
+  const isChampionshipStarted = useMemo(() => {
+    if (!championship) return false;
+    return allMatches.some(
+      match => match.campeonatoId === championship.id && (match.status === 'Ao Vivo' || match.status === 'Finalizado')
+    );
+  }, [championship, allMatches]);
+  
+  useEffect(() => {
+    async function fetchData() {
+        const [teamsData, usersData] = await Promise.all([getTeams(), getUsers()]);
+        setAllTeams(teamsData);
+        setAllUsers(usersData);
+    }
+    fetchData();
+  }, []);
   
   const form = useForm<ChampionshipFormValues>({
     resolver: zodResolver(championshipFormSchema),
@@ -150,26 +185,30 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         iconUrl: '',
         tipoCampeonato: 'liga',
         modoEquipes: 'times',
+        incluirFantasma: false,
         teamIds: [],
         participantes: [],
+        regrasDesempate: [],
         pontuacao: { 
-            tradicional: { ativo: true, exato: 10, situacao: 5 },
-            combo: { ativo: false, gols: 3, placar: 7 },
+            tradicional: { ativo: true, exato: 6, situacao: 3 },
+            combo: { ativo: false, bonusPlacarExatoGols: 5, pontosGols: 1, cotasPorFase: [] },
         },
+        predictionAssist: { active: false },
         fases: [],
         banner: {
             ativo: false,
             campeonatoLogoUrl: "",
             backgroundUrl: "",
             displayMode: 'photo_and_names',
+            titleColor: '#FFFFFF',
+            subtitleColor: '#FBBF24',
+            namesColor: '#FFFFFF',
         },
         championPredictionSettings: {
             active: false,
             numberOfPicks: 3,
         },
-        finalRanking: {
-            pos1: '', pos2: '', pos3: '', pos4: '', pos5: ''
-        }
+        finalRanking: { pos1: '', pos2: '', pos3: '', pos4: '', pos5: '' }
     },
   });
 
@@ -187,48 +226,71 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   const teamOptionsForRanking = useMemo(() => {
     if (!selectedTeamIds) return [];
 
-    const participatingTeams = mockTeams.filter(team => selectedTeamIds.includes(team.id));
+    const participatingTeams = allTeams.filter(team => selectedTeamIds.includes(team.id));
     return participatingTeams.map(team => ({ label: team.name, value: team.name }));
-  }, [selectedTeamIds]);
+  }, [selectedTeamIds, allTeams]);
 
   const availableTeams = useMemo(() => {
-    return mockTeams
+    return allTeams
       .filter(team => {
         if (modoEquipes === 'mista') return true;
         return team.type === (modoEquipes === 'times' ? 'club' : 'national');
       })
       .filter(team => team.name.toLowerCase().includes(teamSearch.toLowerCase()))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [modoEquipes, teamSearch]);
+  }, [modoEquipes, teamSearch, allTeams]);
   
   const availableUsers = useMemo(() => {
-    return mockUsers
+    return allUsers
       .filter(user => user.status === 'ativo' && user.funcao !== 'admin')
       .filter(user => user.apelido.toLowerCase().includes(userSearch.toLowerCase()) || user.nome.toLowerCase().includes(userSearch.toLowerCase()))
       .sort((a, b) => a.apelido.localeCompare(b.apelido));
-  }, [userSearch]);
+  }, [userSearch, allUsers]);
+
+  const availablePhasesForCombo = useMemo(() => {
+    if (tipoCampeonato === 'liga') {
+        const numRodadas = form.getValues('rodadas') || 0;
+        return Array.from({ length: numRodadas }, (_, i) => `Rodada ${i + 1}`);
+    }
+    if (formatoFases === 'fases') {
+        return fasesList.map(f => f.nome);
+    }
+    if (formatoFases === 'rodadas') {
+        const numRodadas = form.getValues('rodadas') || 0;
+        return Array.from({ length: numRodadas }, (_, i) => `Rodada ${i + 1}`);
+    }
+    return [];
+  }, [tipoCampeonato, formatoFases, fasesList, form.getValues('rodadas')]);
+
 
   useEffect(() => {
     if (isOpen) {
         const defaultData = {
+            id: undefined,
             nome: '',
             iconUrl: '',
             tipoCampeonato: 'liga' as const,
             modoEquipes: 'times' as const,
+            incluirFantasma: false,
             teamIds: [],
             participantes: [],
+            regrasDesempate: [],
             formatoFases: undefined,
             fases: [],
             rodadas: undefined,
             pontuacao: {
-                tradicional: { ativo: true, exato: 10, situacao: 5 },
-                combo: { ativo: false, gols: 3, placar: 7 },
+                tradicional: { ativo: true, exato: 6, situacao: 3 },
+                combo: { ativo: false, bonusPlacarExatoGols: 5, pontosGols: 1, cotasPorFase: [] },
             },
+            predictionAssist: { active: false },
             banner: {
                 ativo: false,
                 campeonatoLogoUrl: "",
                 backgroundUrl: "",
                 displayMode: 'photo_and_names' as const,
+                titleColor: '#FFFFFF',
+                subtitleColor: '#FBBF24',
+                namesColor: '#FFFFFF',
             },
             championPredictionSettings: {
                 active: false,
@@ -242,14 +304,17 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
         if (championship) {
             form.reset({
                 ...defaultData,
+                id: championship.id,
                 nome: championship.nome,
                 iconUrl: championship.iconUrl || '',
                 dataInicio: typeof championship.dataInicio === 'string' ? parseISO(championship.dataInicio) : championship.dataInicio,
                 dataFim: typeof championship.dataFim === 'string' ? parseISO(championship.dataFim) : championship.dataFim,
                 tipoCampeonato: championship.tipoCampeonato,
                 modoEquipes: championship.modoEquipes,
+                incluirFantasma: championship.incluirFantasma || false,
                 teamIds: championship.teamIds || [],
                 participantes: championship.participantes || [],
+                regrasDesempate: championship.regrasDesempate || [],
                 formatoFases: championship.formatoFases,
                 rodadas: championship.rodadas,
                 fases: championship.fases,
@@ -257,7 +322,11 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                     tradicional: championship.pontuacao.tradicional,
                     combo: championship.pontuacao.combo || defaultData.pontuacao.combo,
                 },
-                banner: championship.banner || defaultData.banner,
+                predictionAssist: championship.predictionAssist || defaultData.predictionAssist,
+                banner: {
+                    ...defaultData.banner,
+                    ...championship.banner,
+                },
                 championPredictionSettings: championship.championPredictionSettings || defaultData.championPredictionSettings,
                 finalRanking: championship.finalRanking || defaultData.finalRanking,
             });
@@ -291,39 +360,42 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
       });
   };
 
-  const handleFormSubmit = (data: ChampionshipFormValues) => {
-    const finalData: Championship = {
-      ...championship, 
-      id: championship?.id || `champ_${new Date().getTime()}`,
-      nome: data.nome,
-      iconUrl: data.iconUrl,
-      dataInicio: data.dataInicio.toISOString(),
-      dataFim: data.dataFim.toISOString(),
-      tipoCampeonato: data.tipoCampeonato,
-      modoEquipes: data.modoEquipes,
-      teamIds: data.teamIds,
-      participantes: data.participantes,
-      formatoFases: data.tipoCampeonato === 'liga' ? 'rodadas' : data.formatoFases,
-      rodadas: data.tipoCampeonato === 'liga' ? data.rodadas : (data.formatoFases === 'rodadas' ? data.rodadas : undefined),
-      fases: data.formatoFases === 'fases' ? data.fases : undefined,
-      pontuacao: {
-        tradicional: data.pontuacao.tradicional,
-        combo: data.pontuacao.combo,
-      },
-      banner: { 
-        ativo: data.banner.ativo,
-        campeonatoLogoUrl: data.banner.campeonatoLogoUrl,
-        backgroundUrl: data.banner.backgroundUrl,
-        displayMode: data.banner.displayMode,
-       },
-       championPredictionSettings: {
-        active: data.championPredictionSettings.active,
-        numberOfPicks: data.championPredictionSettings.numberOfPicks || 3,
-       },
-       finalRanking: data.finalRanking,
-       status: championship?.status || 'ativo',
-    };
-    onSubmit(finalData);
+  const handleFormSubmit = async (data: ChampionshipFormValues) => {
+    let finalData = { ...data };
+
+    if (data.incluirFantasma) {
+        const ghostUserRef = doc(db, "users", "GHOST_USER_ID");
+        const ghostUserSnap = await getDoc(ghostUserRef);
+
+        if (!ghostUserSnap.exists()) {
+            await setDoc(ghostUserRef, {
+                id: 'GHOST_USER_ID',
+                nome: 'Lóia (IA)',
+                apelido: 'Lóia',
+                email: 'ghost@futbolao.pro',
+                fotoPerfil: `https://ui-avatars.com/api/?name=L&background=random`,
+                status: 'ativo',
+                funcao: 'usuario',
+                dataCadastro: serverTimestamp(),
+                titulos: 0,
+                totalJogos: 0,
+                championshipStats: [],
+                presenceStatus: 'Disponível',
+                isGhost: true,
+            });
+             toast({ title: "Fantasma Criado!", description: "O jogador Lóia (IA) foi adicionado ao sistema." });
+        }
+        
+        // Garante que o fantasma está na lista de participantes se a opção estiver marcada
+        if (!finalData.participantes.includes('GHOST_USER_ID')) {
+            finalData.participantes.push('GHOST_USER_ID');
+        }
+    } else {
+        // Garante que o fantasma é removido se a opção for desmarcada
+        finalData.participantes = finalData.participantes.filter(pId => pId !== 'GHOST_USER_ID');
+    }
+
+    onSubmit(finalData as Omit<Championship, 'status'>);
     setIsOpen(false);
   };
   
@@ -335,12 +407,17 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
     id: 'preview',
     campeonatoLogoUrl: watchAllFields.banner?.campeonatoLogoUrl || 'https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png',
     campeonatoNome: watchAllFields.nome || 'Nome do Campeonato',
-    campeaoGeralNome: 'Campeão Exemplo',
+    campeaoGeralNome: 'EM BREVE',
     campeaoGeralAvatarUrl: 'https://picsum.photos/128/128',
     modoEquipes: watchAllFields.modoEquipes,
-    palpiteiroNome: 'Melhor Palpiteiro, Segundo Melhor, Terceiro Melhor Colocado',
+    palpiteiroNome: 'EM BREVE',
     palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
     displayMode: watchAllFields.banner?.displayMode || 'photo_and_names',
+    banner: {
+      titleColor: watchAllFields.banner?.titleColor,
+      subtitleColor: watchAllFields.banner?.subtitleColor,
+      namesColor: watchAllFields.banner?.namesColor,
+    }
   };
   
   const rankingPositions = [
@@ -359,6 +436,20 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
 
     return teamOptionsForRanking.filter(option => !selectedValues.includes(option.value));
   };
+  
+  const tiebreakerOptions: { id: TiebreakerRule, label: string, description: string }[] = [
+    { id: 'maiorNumeroExatos', label: 'Maior Nº de Buchas', description: 'Quem acertou mais placares exatos.' },
+    { id: 'maiorNumeroSituacoes', label: 'Maior Nº de Situações', description: 'Quem acertou mais vencedores/empates.' },
+    { id: 'primeiraBucha', label: 'Primeira Bucha', description: 'Quem acertou um placar exato primeiro no campeonato.' },
+  ];
+
+  const handleTiebreakerChange = (ruleId: TiebreakerRule) => {
+    const currentRules = form.getValues('regrasDesempate') || [];
+    const newRules = currentRules.includes(ruleId)
+      ? currentRules.filter(id => id !== ruleId)
+      : [...currentRules, ruleId];
+    form.setValue('regrasDesempate', newRules, { shouldValidate: true });
+  };
 
 
   return (
@@ -376,18 +467,28 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <TooltipProvider>
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="grid w-full grid-cols-5 md:max-w-2xl mx-auto">
+                <TabsList className="grid w-full grid-cols-6 md:max-w-3xl mx-auto">
                     <Tooltip>
                         <TooltipTrigger asChild><TabsTrigger value="general"><ClipboardList className="md:mr-2" /><span className="hidden md:inline">Gerais</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Gerais</p></TooltipContent>
                     </Tooltip>
                     <Tooltip>
+                        <TooltipTrigger asChild><TabsTrigger value="rules"><Gavel className="md:mr-2" /><span className="hidden md:inline">Regras</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent><p>Regras</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
                         <TooltipTrigger asChild><TabsTrigger value="teams"><Shield className="md:mr-2" /><span className="hidden md:inline">Equipes</span></TabsTrigger></TooltipTrigger>
                         <TooltipContent><p>Equipes</p></TooltipContent>
                     </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild><TabsTrigger value="participants"><Users className="md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
-                        <TooltipContent><p>Participantes</p></TooltipContent>
+                     <Tooltip>
+                        <TooltipTrigger asChild><TabsTrigger value="participants" disabled={isChampionshipStarted && !!championship}><Users className="md:mr-2" /><span className="hidden md:inline">Participantes</span></TabsTrigger></TooltipTrigger>
+                        <TooltipContent>
+                            {isChampionshipStarted && !!championship ? (
+                                <p>Não é possível editar participantes após o início do campeonato.</p>
+                            ) : (
+                                <p>Participantes</p>
+                            )}
+                        </TooltipContent>
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild><TabsTrigger value="scoring"><Percent className="md:mr-2" /><span className="hidden md:inline">Pontuação</span></TabsTrigger></TooltipTrigger>
@@ -487,24 +588,20 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             control={form.control}
                             name="tipoCampeonato"
                             render={({ field }) => (
-                                <FormItem className="space-y-3">
+                                <FormItem>
                                 <FormLabel>Tipo do Campeonato</FormLabel>
-                                <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="liga" /></FormControl>
-                                            <FormLabel className="font-normal">Liga (Pontos Corridos)</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="copa" /></FormControl>
-                                            <FormLabel className="font-normal">Copa (Mata-mata)</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="avulso" /></FormControl>
-                                            <FormLabel className="font-normal">Jogos Avulsos (Amistosos)</FormLabel>
-                                        </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
+                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o tipo do campeonato" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="liga">Liga (Pontos Corridos)</SelectItem>
+                                        <SelectItem value="copa">Copa (Mata-mata)</SelectItem>
+                                        <SelectItem value="avulso">Jogos Avulsos (Amistosos)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <FormMessage />
                                 </FormItem>
                             )}
@@ -513,24 +610,20 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             control={form.control}
                             name="modoEquipes"
                             render={({ field }) => (
-                                <FormItem className="space-y-3">
+                                <FormItem>
                                 <FormLabel>Modo de Equipes</FormLabel>
-                                <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="times" /></FormControl>
-                                            <FormLabel className="font-normal">Times (Clubes)</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="selecao" /></FormControl>
-                                            <FormLabel className="font-normal">Seleções Nacionais</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                            <FormControl><RadioGroupItem value="mista" /></FormControl>
-                                            <FormLabel className="font-normal">Mista (Clubes e Seleções)</FormLabel>
-                                        </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o modo de equipes" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="times">Times (Clubes)</SelectItem>
+                                        <SelectItem value="selecao">Seleções Nacionais</SelectItem>
+                                        <SelectItem value="mista">Mista (Clubes e Seleções)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <FormMessage />
                                 </FormItem>
                             )}
@@ -558,20 +651,19 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                     control={form.control}
                                     name="formatoFases"
                                     render={({ field }) => (
-                                        <FormItem className="space-y-2">
+                                        <FormItem>
                                         <FormLabel>Estrutura do Campeonato</FormLabel>
-                                        <FormControl>
-                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl><RadioGroupItem value="fases" /></FormControl>
-                                                    <FormLabel className="font-normal">Baseado em Fases (Mata-mata)</FormLabel>
-                                                </FormItem>
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl><RadioGroupItem value="rodadas" /></FormControl>
-                                                    <FormLabel className="font-normal">Baseado em Rodadas</FormLabel>
-                                                </FormItem>
-                                            </RadioGroup>
-                                        </FormControl>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione a estrutura" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="fases">Baseado em Fases (Mata-mata)</SelectItem>
+                                                <SelectItem value="rodadas">Baseado em Rodadas</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                         </FormItem>
                                     )}
@@ -652,6 +744,93 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                              </div>
                         )}
                     </TabsContent>
+                    <TabsContent value="rules" className="space-y-6">
+                        <Card>
+                             <CardHeader>
+                                <h3 className="text-lg font-semibold">Critérios de Desempate</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Selecione os critérios para desempate no ranking e ordene-os por prioridade. O critério com prioridade 1 será usado primeiro.
+                                </p>
+                             </CardHeader>
+                             <CardContent className="space-y-4">
+                                {(watchAllFields.regrasDesempate || []).map((ruleId, index) => {
+                                    const rule = tiebreakerOptions.find(o => o.id === ruleId);
+                                    if (!rule) return null;
+                                    return (
+                                        <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted">
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-bold text-lg">{index + 1}º</span>
+                                                <div>
+                                                    <p className="font-medium">{rule.label}</p>
+                                                    <p className="text-xs text-muted-foreground">{rule.description}</p>
+                                                </div>
+                                            </div>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => handleTiebreakerChange(rule.id)}>
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    )
+                                })}
+                                <Separator />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full">Adicionar Critério</Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar critério..." />
+                                            <CommandList>
+                                                <CommandEmpty>Nenhum critério encontrado.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {tiebreakerOptions.map((option) => {
+                                                        const isSelected = (watchAllFields.regrasDesempate || []).includes(option.id);
+                                                        return (
+                                                            <CommandItem
+                                                                key={option.id}
+                                                                onSelect={() => handleTiebreakerChange(option.id)}
+                                                                className="flex justify-between"
+                                                                disabled={isSelected}
+                                                            >
+                                                                {option.label}
+                                                                <Checkbox checked={isSelected} className="mr-2" />
+                                                            </CommandItem>
+                                                        )
+                                                    })}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                             </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader className="p-4">
+                                <FormField
+                                    control={form.control}
+                                    name="incluirFantasma"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base flex items-center gap-2">
+                                                    <Bot className="w-4 h-4 text-primary" />
+                                                    Incluir Jogador Fantasma (IA)
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    Adiciona um jogador controlado por IA a este campeonato como homenagem.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardHeader>
+                        </Card>
+                    </TabsContent>
                     <TabsContent value="teams" className="space-y-4">
                         <Card>
                             <CardHeader className="p-4">
@@ -705,7 +884,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                                             />
                                                             </FormControl>
                                                             <Label className="font-normal w-full flex items-center gap-3">
-                                                                <Image src={team.crestUrl} alt={team.name} width={24} height={24} className="object-contain" />
+                                                                <Image src={team.crestUrl} alt="" width={24} height={24} className="object-contain" />
                                                                 {team.name}
                                                             </Label>
                                                         </FormItem>
@@ -827,7 +1006,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                             <FormItem>
                                             <FormLabel>Placar Exato (Bucha)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" placeholder="Ex: 10" {...field} />
+                                                <Input type="number" placeholder="Ex: 6" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
@@ -840,7 +1019,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                             <FormItem>
                                             <FormLabel>Situação (Vencedor/Empate)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" placeholder="Ex: 5" {...field} />
+                                                <Input type="number" placeholder="Ex: 3" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                             </FormItem>
@@ -853,7 +1032,7 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                             <CardHeader className="flex flex-row items-center justify-between p-4">
                                 <div>
                                     <h3 className="text-md font-medium">Sistema de Pontuação Combo</h3>
-                                    <p className="text-sm text-muted-foreground">Pontos bônus por acertar gols ou o placar exato.</p>
+                                    <p className="text-sm text-muted-foreground">Aposta extra no total de gols da partida.</p>
                                 </div>
                                 <FormField
                                     control={form.control}
@@ -871,35 +1050,113 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                 />
                             </CardHeader>
                              <CardContent className="p-4 pt-0">
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border p-4" style={{ opacity: isComboActive ? 1 : 0.5 }}>
-                                    <FormField
-                                        control={form.control}
-                                        name="pontuacao.combo.gols"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Acerto de Gols</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" placeholder="Ex: 3" {...field} disabled={!isComboActive} />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="pontuacao.combo.placar"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Combo (Gols + Placar)</FormLabel>
-                                            <FormControl>
-                                                <Input type="number" placeholder="Ex: 7" {...field} disabled={!isComboActive} />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                 <div className="space-y-4 rounded-lg border p-4" style={{ opacity: isComboActive ? 1 : 0.5 }}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="pontuacao.combo.pontosGols"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel>Bônus de Gols (Sozinho)</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="Ex: 1" {...field} disabled={!isComboActive} value={field.value ?? ''} />
+                                                </FormControl>
+                                                <FormDescription className="text-xs">Pontos se acertar apenas o total de gols.</FormDescription>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="pontuacao.combo.bonusPlacarExatoGols"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel>Bônus (Bucha + Gols)</FormLabel>
+                                                <FormControl>
+                                                    <Input type="number" placeholder="Ex: 5" {...field} disabled={!isComboActive} value={field.value ?? ''} />
+                                                </FormControl>
+                                                <FormDescription className="text-xs">Pontos SOMADOS à bucha se acertar ambos.</FormDescription>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <Separator />
+                                     <div>
+                                        <h4 className="font-medium text-sm mb-2">Fichas de Combo por Fase/Rodada</h4>
+                                        <p className="text-xs text-muted-foreground mb-4">Defina quantas "Fichas de Combo" cada usuário terá disponível para usar em cada etapa.</p>
+                                        <div className="space-y-2">
+                                            {availablePhasesForCombo.map(phaseName => (
+                                                <FormField
+                                                    key={phaseName}
+                                                    control={form.control}
+                                                    name={`pontuacao.combo.cotasPorFase`}
+                                                    render={({ field }) => {
+                                                        const cota = field.value?.find(c => c.fase === phaseName);
+                                                        const cotaIndex = field.value?.findIndex(c => c.fase === phaseName);
+                                                        
+                                                        return (
+                                                            <FormItem className="flex items-center justify-between gap-4">
+                                                                <FormLabel className="min-w-fit">{phaseName}</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="number"
+                                                                        className="w-24 h-8"
+                                                                        placeholder="0"
+                                                                        disabled={!isComboActive}
+                                                                        value={cota?.quantidade ?? ''}
+                                                                        onChange={(e) => {
+                                                                            const newValue = e.target.value;
+                                                                            const currentCotas = field.value || [];
+                                                                            const newCotas = [...currentCotas];
+                                                                            const newQuantity = newValue === '' ? 0 : parseInt(newValue, 10);
+                                                                            
+                                                                            if (cotaIndex !== -1 && cotaIndex !== undefined) {
+                                                                                newCotas[cotaIndex] = { ...newCotas[cotaIndex], quantidade: newQuantity };
+                                                                            } else {
+                                                                                newCotas.push({ fase: phaseName, quantidade: newQuantity });
+                                                                            }
+                                                                            
+                                                                            field.onChange(newCotas);
+                                                                        }}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                     </div>
                                 </div>
                             </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="p-4">
+                                <FormField
+                                    control={form.control}
+                                    name="predictionAssist.active"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base flex items-center gap-2">
+                                                    <BrainCircuit className="w-4 h-4 text-primary" />
+                                                    Assistência de IA nos Palpites
+                                                </FormLabel>
+                                                <FormDescription>
+                                                    Permite que usuários consultem a IA para obter sugestões de palpites neste campeonato.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </CardHeader>
                         </Card>
                     </TabsContent>
                     <TabsContent value="banner" className="space-y-6">
@@ -966,29 +1223,64 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                                         control={form.control}
                                         name="banner.displayMode"
                                         render={({ field }) => (
-                                            <FormItem className="space-y-2">
+                                            <FormItem>
                                                 <FormLabel>Modo de Exibição do Banner</FormLabel>
-                                                <FormControl>
-                                                    <RadioGroup 
-                                                        onValueChange={field.onChange} 
-                                                        defaultValue={field.value}
-                                                        className="flex flex-col space-y-1"
-                                                        disabled={!isBannerActive}
-                                                    >
-                                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                                            <FormControl><RadioGroupItem value="photo_and_names" /></FormControl>
-                                                            <FormLabel className="font-normal">Foto e Nomes</FormLabel>
-                                                        </FormItem>
-                                                        <FormItem className="flex items-center space-x-3 space-y-0">
-                                                            <FormControl><RadioGroupItem value="names_only" /></FormControl>
-                                                            <FormLabel className="font-normal">Apenas Nomes</FormLabel>
-                                                        </FormItem>
-                                                    </RadioGroup>
-                                                </FormControl>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!isBannerActive}>
+                                                    <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Selecione o modo de exibição" />
+                                                    </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="photo_and_names">Foto e Nomes</SelectItem>
+                                                        <SelectItem value="names_only">Apenas Nomes</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="banner.titleColor"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Cor do Título</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="color" {...field} value={field.value || '#FFFFFF'} disabled={!isBannerActive} className="p-1 h-10"/>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="banner.subtitleColor"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Cor do Subtítulo</FormLabel>
+                                                    <FormControl>
+                                                         <Input type="color" {...field} value={field.value || '#FBBF24'} disabled={!isBannerActive} className="p-1 h-10"/>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="banner.namesColor"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Cor dos Nomes</FormLabel>
+                                                    <FormControl>
+                                                         <Input type="color" {...field} value={field.value || '#FFFFFF'} disabled={!isBannerActive} className="p-1 h-10"/>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                     <Button type="button" variant="outline" onClick={() => setIsPreviewOpen(true)} disabled={!isBannerActive}>
                                         <Eye className="mr-2 h-4 w-4"/>
                                         Pré-visualizar Banner
@@ -1102,11 +1394,9 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
                 <DialogTitle className="sr-only">Pré-visualização do Banner</DialogTitle>
                 </DialogHeader>
                 <div 
-                    className="relative" 
+                    className="relative bg-cover bg-center"
                     style={{ 
-                        backgroundImage: `url(${watchAllFields.banner?.backgroundUrl || 'https://picsum.photos/857/828'})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
+                        backgroundImage: `url(${watchAllFields.banner?.backgroundUrl || 'https://images.unsplash.com/photo-1517433670267-382b363a7de4?q=80&w=2070&auto=format&fit=crop'})`,
                     }}
                 >
                     <ChampionBanner {...bannerPreviewProps} />
@@ -1116,3 +1406,4 @@ export function ChampionshipForm({ isOpen, setIsOpen, onSubmit, championship, ch
   </>
   );
 }
+

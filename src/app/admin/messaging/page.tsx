@@ -1,33 +1,55 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Send, Eye, Users, User, Bell, AlertTriangle, Search } from 'lucide-react';
+import { Send, Eye, Users, User, Bell, AlertTriangle, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { mockEmergencyMessage, mockUsers, mockNotifications, mockLogs, mockUser } from '@/lib/data';
 import { EmergencyMessageModal } from '@/components/shared/emergency-message-modal';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import type { UserType, EmergencyMessage, Notification } from '@/lib/types';
+import { getUsers, updateUrgentMessage, addNotification } from '@/lib/firebase/firestore';
+import { cn } from '@/lib/utils';
 
-
-type EmergencyMessage = typeof mockEmergencyMessage;
+const MAX_NORMAL_MESSAGE_LENGTH = 200;
 
 export default function AdminMessagingPage() {
     const { toast } = useToast();
-    const [messageData, setMessageData] = useState<EmergencyMessage>({ ...mockEmergencyMessage, targetUserIds: ['all'] });
+    const [allUsers, setAllUsers] = useState<UserType[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [messageData, setMessageData] = useState<Partial<Omit<EmergencyMessage, 'active' | 'id'>>>({
+        title: '',
+        message: '',
+        targetUserIds: ['all'],
+        type: 'normal',
+    });
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
     const [userSearch, setUserSearch] = useState("");
+
+    useEffect(() => {
+        async function fetchUsers() {
+            try {
+                const users = await getUsers();
+                setAllUsers(users);
+            } catch (error) {
+                toast({ title: "Erro ao carregar usuários", variant: "destructive" });
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchUsers();
+    }, [toast]);
 
     const handleUserSelect = (userId: string) => {
         setSelectedUsers(prev => {
@@ -42,78 +64,89 @@ export default function AdminMessagingPage() {
     };
 
     const availableUsers = useMemo(() => {
-        return mockUsers
+        return allUsers
         .filter(user => user.status === 'ativo' && user.funcao !== 'admin')
         .filter(user => user.apelido.toLowerCase().includes(userSearch.toLowerCase()) || user.nome.toLowerCase().includes(userSearch.toLowerCase()))
         .sort((a, b) => a.apelido.localeCompare(b.apelido));
-    }, [userSearch]);
+    }, [userSearch, allUsers]);
 
-    const handleSave = () => {
-        let finalTargets: string[] = [];
-        let targetDescription = 'todos os usuários';
+    const handleSave = async () => {
+        setIsSubmitting(true);
 
-        if (targetType === 'all') {
-            finalTargets = ['all'];
-        } else if (selectedUsers.size > 0) {
-            finalTargets = Array.from(selectedUsers);
-            targetDescription = `${selectedUsers.size} usuário(s) específico(s)`;
-        } else {
+        if (!messageData.title || !messageData.message) {
             toast({
+                title: "Campos Incompletos",
+                description: "Por favor, preencha o título e o conteúdo da mensagem.",
+                variant: "destructive",
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
+        let targetDescription = 'todos os usuários ativos';
+        const targetUserIds = targetType === 'all'
+            ? allUsers.filter(u => u.status === 'ativo' && u.funcao !== 'admin').map(u => u.id)
+            : Array.from(selectedUsers);
+
+        if (targetType === 'specific' && selectedUsers.size === 0) {
+             toast({
                 title: "Nenhum Destinatário Selecionado",
                 description: "Por favor, selecione ao menos um usuário específico para enviar a mensagem.",
                 variant: "destructive",
             });
+            setIsSubmitting(false);
             return;
         }
-
-        const finalMessageData: EmergencyMessage = {
-            ...messageData,
-            targetUserIds: finalTargets,
-        };
         
-        if (finalMessageData.type === 'urgent') {
-            Object.assign(mockEmergencyMessage, finalMessageData);
-             toast({
-                title: "Mensagem Urgente Ativada",
-                description: `A mensagem "${finalMessageData.title}" aparecerá como um pop-up para ${targetDescription}.`,
-            });
-        } else {
-             // Simula o envio de notificação para múltiplos usuários
-            finalTargets.forEach(userId => {
-                const targetUser = mockUsers.find(u => u.id === userId);
-                const notificationTitle = finalMessageData.title;
-                const notificationMessage = `Mensagem do Admin: ${finalMessageData.message.substring(0, 50)}...`;
+        const finalTargets = targetType === 'all' ? ['all'] : targetUserIds;
+        targetDescription = targetType === 'all' ? 'todos os usuários ativos' : `${selectedUsers.size} usuário(s) específico(s)`;
+        
+        try {
+            if (messageData.type === 'urgent') {
+                const urgentMessageContent: EmergencyMessage = {
+                    id: `urgent_${Date.now()}`,
+                    active: true,
+                    title: messageData.title!,
+                    message: messageData.message!,
+                    targetUserIds: finalTargets,
+                    type: 'urgent',
+                };
+                await updateUrgentMessage(urgentMessageContent);
 
-                 mockNotifications.unshift({
-                    id: `notif_${new Date().getTime()}_${userId}`,
-                    title: notificationTitle,
-                    message: notificationMessage,
-                    read: false,
-                    createdAt: new Date(),
-                    href: '/dashboard/notifications',
+                for (const userId of targetUserIds) {
+                    await addNotification(userId, `Aviso Urgente: ${messageData.title!}`, messageData.message!, '#', 'urgent', urgentMessageContent);
+                }
+                toast({
+                    title: "Mensagem Urgente Enviada",
+                    description: `O pop-up "${messageData.title}" aparecerá para ${targetDescription} e foi salvo no histórico.`,
                 });
-            });
 
-             toast({
-                title: "Aviso Enviado como Notificação",
-                description: `O aviso "${finalMessageData.title}" foi enviado para ${targetDescription}.`,
-            });
-        }
-
-        mockLogs.unshift({
-            id: `log_${new Date().getTime()}`,
-            actor: { id: 'user_11', apelido: 'Admin', type: 'admin' },
-            action: 'emergency_message',
-            details: { 
-                title: finalMessageData.title, 
-                message: finalMessageData.message, 
-                target: targetDescription,
-                type: finalMessageData.type
+            } else { // Tipo 'normal'
+                for (const userId of targetUserIds) {
+                    await addNotification(userId, messageData.title!, messageData.message!, '/dashboard/notifications', 'normal');
+                }
+                 toast({
+                    title: "Aviso Enviado como Notificação",
+                    description: `O aviso "${messageData.title}" foi enviado para ${targetDescription}.`,
+                });
             }
-        });
-
-        console.log("Saving message:", finalMessageData);
+            
+            setMessageData(prev => ({ ...prev, title: '', message: ''}));
+            setSelectedUsers(new Set());
+            
+        } catch (error) {
+             toast({
+                title: "Erro ao Enviar",
+                description: "Não foi possível salvar ou enviar a mensagem.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
+
+    const messageLength = messageData.message?.length || 0;
+    const isNormalMessageType = messageData.type === 'normal';
 
     return (
         <>
@@ -136,22 +169,6 @@ export default function AdminMessagingPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                             <div className="space-y-0.5">
-                                <Label htmlFor="active-message" className="text-base">
-                                    Ativar Mensagem
-                                </Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Ative para exibir a mensagem para os usuários selecionados.
-                                </p>
-                            </div>
-                            <Switch
-                                id="active-message"
-                                checked={messageData.active}
-                                onCheckedChange={(checked) => setMessageData(prev => ({...prev, active: checked }))}
-                                aria-label="Ativar mensagem"
-                            />
-                        </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <div className="space-y-2">
@@ -187,7 +204,7 @@ export default function AdminMessagingPage() {
                                         <SelectItem value="all">
                                             <div className="flex items-center gap-2">
                                                 <Users className="h-4 w-4" />
-                                                <span>Todos os Usuários</span>
+                                                <span>Todos os Usuários Ativos</span>
                                             </div>
                                         </SelectItem>
                                         <SelectItem value="specific">
@@ -223,30 +240,37 @@ export default function AdminMessagingPage() {
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <ScrollArea className="h-48 w-full rounded-md border">
-                                        <div className="p-4 space-y-2">
-                                            {availableUsers.map((user) => (
-                                                <div
-                                                    key={user.id}
-                                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-muted"
-                                                >
-                                                    <Checkbox
-                                                        id={`user-${user.id}`}
-                                                        checked={selectedUsers.has(user.id)}
-                                                        onCheckedChange={() => handleUserSelect(user.id)}
-                                                    />
-                                                    <Label htmlFor={`user-${user.id}`} className="font-normal w-full flex items-center gap-3 cursor-pointer">
-                                                        <Avatar className="w-8 h-8">
-                                                            <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                            <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold">{user.apelido}</span>
-                                                            <span className="text-xs text-muted-foreground">{user.nome}</span>
-                                                        </div>
-                                                    </Label>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        {loading ? (
+                                            <div className="flex items-center justify-center h-full text-muted-foreground">
+                                                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                                Carregando usuários...
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 space-y-2">
+                                                {availableUsers.map((user) => (
+                                                    <div
+                                                        key={user.id}
+                                                        className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-muted"
+                                                    >
+                                                        <Checkbox
+                                                            id={`user-${user.id}`}
+                                                            checked={selectedUsers.has(user.id)}
+                                                            onCheckedChange={() => handleUserSelect(user.id)}
+                                                        />
+                                                        <Label htmlFor={`user-${user.id}`} className="font-normal w-full flex items-center gap-3 cursor-pointer">
+                                                            <Avatar className="w-8 h-8">
+                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-semibold">{user.apelido}</span>
+                                                                <span className="text-xs text-muted-foreground">{user.nome}</span>
+                                                            </div>
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </ScrollArea>
                                 </CardContent>
                             </Card>
@@ -261,7 +285,7 @@ export default function AdminMessagingPage() {
                                 onChange={(e) => setMessageData(prev => ({ ...prev, title: e.target.value }))}
                             />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                             <Label htmlFor="message-content">Conteúdo da Mensagem</Label>
                             <Textarea
                                 id="message-content"
@@ -269,7 +293,16 @@ export default function AdminMessagingPage() {
                                 className="min-h-[120px]"
                                 value={messageData.message}
                                 onChange={(e) => setMessageData(prev => ({ ...prev, message: e.target.value }))}
+                                maxLength={isNormalMessageType ? MAX_NORMAL_MESSAGE_LENGTH : undefined}
                             />
+                             {isNormalMessageType && (
+                                <div className={cn(
+                                    "text-xs text-right",
+                                    messageLength > MAX_NORMAL_MESSAGE_LENGTH ? "text-destructive" : "text-muted-foreground"
+                                )}>
+                                    {messageLength} / {MAX_NORMAL_MESSAGE_LENGTH}
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-end gap-2">
@@ -277,9 +310,9 @@ export default function AdminMessagingPage() {
                             <Eye className="mr-2 h-4 w-4" />
                             Pré-visualizar Pop-up
                         </Button>
-                        <Button onClick={handleSave}>
-                            <Send className="mr-2 h-4 w-4" />
-                            Salvar e Enviar
+                        <Button onClick={handleSave} disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                            Enviar Mensagem
                         </Button>
                     </CardFooter>
                 </Card>
@@ -294,3 +327,5 @@ export default function AdminMessagingPage() {
         </>
     );
 }
+
+    

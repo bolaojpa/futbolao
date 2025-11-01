@@ -1,13 +1,13 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockUsers, UserType } from '@/lib/data';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail } from 'lucide-react';
+import { Users, Search, MoreHorizontal, UserCheck, UserX, ShieldCheck, ShieldX, CheckCircle, ShieldQuestion, CircleSlash, ChevronLeft, ChevronRight, Trash2, Mail, RefreshCcw, AlertTriangle, Bot, KeyRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,10 @@ import { StatusIndicator } from '@/components/shared/status-indicator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
+import type { UserType } from '@/lib/types';
+import { getUsers, updateUserStatus, updateUserRole, deleteUsers, resetUserStats, updateUserField } from '@/lib/firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
+import { GoogleIcon } from '@/components/shared/icons';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -36,15 +39,28 @@ const roleConfig = {
     admin: { label: 'Admin', icon: ShieldX },
 }
 
-const FormattedDate = ({ dateString }: { dateString: string }) => {
+const FormattedDate = ({ dateValue }: { dateValue: string | Date | Timestamp }) => {
     const [formattedDate, setFormattedDate] = useState('');
   
     useEffect(() => {
-      setFormattedDate(format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR }));
-    }, [dateString]);
+        let date: Date;
+        if (dateValue instanceof Timestamp) {
+            date = dateValue.toDate();
+        } else if (typeof dateValue === 'string') {
+            date = new Date(dateValue);
+        } else {
+            date = dateValue;
+        }
+
+        if (date && !isNaN(date.getTime())) {
+            setFormattedDate(format(date, "dd/MM/yyyy", { locale: ptBR }));
+        } else {
+            setFormattedDate("Data inválida");
+        }
+    }, [dateValue]);
   
     if (!formattedDate) {
-      return null; 
+      return <>Carregando...</>; 
     }
   
     return <>{formattedDate}</>;
@@ -52,28 +68,105 @@ const FormattedDate = ({ dateString }: { dateString: string }) => {
 
 export default function AdminUsersPage() {
     const { toast } = useToast();
-    const [users, setUsers] = useState<UserType[]>(mockUsers);
+    const [users, setUsers] = useState<UserType[]>([]);
+    const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('all');
     const [filterRole, setFilterRole] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
-    const handleStatusChange = (userId: string, newStatus: UserType['status']) => {
-        setUsers(prev => prev.map(user => user.id === userId ? { ...user, status: newStatus } : user));
-        toast({
-            title: "Status do Usuário Alterado",
-            description: `O status do usuário foi alterado para ${statusConfig[newStatus].label}.`,
-        });
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            const fetchedUsers = await getUsers();
+            setUsers(fetchedUsers);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            toast({
+                title: "Erro ao buscar usuários",
+                description: "Não foi possível carregar a lista de usuários do banco de dados.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleRoleChange = (userId: string, newRole: UserType['funcao']) => {
-        setUsers(prev => prev.map(user => user.id === userId ? { ...user, funcao: newRole } : user));
-        toast({
-            title: "Função do Usuário Alterada",
-            description: `O usuário agora tem a função de ${roleConfig[newRole].label}.`,
-        });
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const handleStatusChange = async (userId: string, newStatus: UserType['status']) => {
+        try {
+            await updateUserStatus(userId, newStatus);
+            await fetchUsers(); // Re-fetch para atualizar a UI
+            toast({
+                title: "Status do Usuário Alterado",
+                description: `O status do usuário foi alterado para ${statusConfig[newStatus].label}.`,
+            });
+        } catch (error) {
+             toast({
+                title: "Erro ao alterar status",
+                description: "Não foi possível atualizar o status do usuário.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleRoleChange = async (userId: string, newRole: UserType['funcao']) => {
+        const result = await updateUserRole(userId, newRole);
+        if (result.success) {
+            await fetchUsers();
+            toast({
+                title: "Função do Usuário Alterada",
+                description: `O usuário agora tem a função de ${roleConfig[newRole].label}.`,
+            });
+        } else {
+            toast({
+                title: "Erro ao Alterar Função",
+                description: result.error,
+                variant: "destructive",
+                duration: 9000,
+            });
+        }
     }
+    
+     const handleGhostModeToggle = async (userId: string, currentStatus: boolean | undefined) => {
+        const newGhostStatus = !currentStatus;
+        try {
+            await updateUserField(userId, { isGhost: newGhostStatus });
+            await fetchUsers();
+            toast({
+                title: "Modo Fantasma Alterado",
+                description: `O usuário foi ${newGhostStatus ? 'definido como um jogador IA' : 'revertido para um jogador normal'}.`,
+            });
+        } catch (error) {
+            toast({
+                title: "Erro ao alterar Modo Fantasma",
+                variant: "destructive",
+            });
+        }
+    };
+
+
+    const handleResetStats = async (userId: string, userName: string) => {
+        try {
+            await resetUserStats(userId);
+            await fetchUsers();
+            toast({
+                title: "Estatísticas Resetadas",
+                description: `As estatísticas de ${userName} foram zeradas.`,
+            });
+        } catch (error) {
+            toast({
+                title: "Erro ao Resetar",
+                description: `Não foi possível resetar as estatísticas de ${userName}.`,
+                variant: "destructive",
+            });
+        }
+    };
+
 
     const filteredUsers = useMemo(() => {
         return users.filter(user => {
@@ -81,9 +174,14 @@ export default function AdminUsersPage() {
             const roleMatch = filterRole === 'all' || user.funcao === filterRole;
             const searchMatch = searchTerm === '' || 
                                 user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                user.apelido.toLowerCase().includes(searchTerm.toLowerCase());
+                                user.apelido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                user.email.toLowerCase().includes(searchTerm.toLowerCase());
             return statusMatch && roleMatch && searchMatch;
-        }).sort((a, b) => new Date(b.dataCadastro).getTime() - new Date(a.dataCadastro).getTime());
+        }).sort((a, b) => {
+             const dateA = a.dataCadastro instanceof Timestamp ? a.dataCadastro.toMillis() : new Date(a.dataCadastro as string).getTime();
+             const dateB = b.dataCadastro instanceof Timestamp ? b.dataCadastro.toMillis() : new Date(b.dataCadastro as string).getTime();
+             return dateB - dateA;
+        });
     }, [filterStatus, filterRole, searchTerm, users]);
 
     const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
@@ -116,13 +214,23 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleDeleteSelected = () => {
-        setUsers(prev => prev.filter(user => !selectedUsers.has(user.id)));
-        toast({
-            title: "Usuários Removidos",
-            description: `${selectedUsers.size} usuário(s) foram removidos permanentemente.`,
-        });
-        setSelectedUsers(new Set());
+    const handleDeleteSelected = async (userIdsToDelete: string[]) => {
+        if (userIdsToDelete.length === 0) return;
+        try {
+            await deleteUsers(userIdsToDelete);
+            await fetchUsers(); // Re-fetch
+            toast({
+                title: "Usuário(s) Removido(s)",
+                description: `${userIdsToDelete.length} usuário(s) foram removidos permanentemente.`,
+            });
+            setSelectedUsers(new Set());
+        } catch (error) {
+             toast({
+                title: "Erro ao remover usuários",
+                description: "Não foi possível remover os usuários selecionados.",
+                variant: "destructive",
+            });
+        }
     };
 
     return (
@@ -157,12 +265,12 @@ export default function AdminUsersPage() {
                                         <AlertDialogHeader>
                                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            Esta ação removerá permanentemente os {selectedUsers.size} usuário(s) selecionado(s). Esta ação não pode ser desfeita.
+                                            Esta ação removerá permanentemente os {selectedUsers.size} usuário(s) selecionado(s) do banco de dados. Esta ação não pode ser desfeita.
                                         </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleDeleteSelected}>Sim, excluir usuários</AlertDialogAction>
+                                        <AlertDialogAction onClick={() => handleDeleteSelected(Array.from(selectedUsers))}>Sim, excluir usuários</AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
@@ -173,7 +281,7 @@ export default function AdminUsersPage() {
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="search"
-                                    placeholder="Buscar por nome ou apelido..."
+                                    placeholder="Buscar por nome, apelido ou e-mail..."
                                     className="pl-8 w-full"
                                     value={searchTerm}
                                     onChange={(e) => {
@@ -225,7 +333,15 @@ export default function AdminUsersPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {paginatedUsers.length > 0 ? (
+                                {loading ? (
+                                     Array.from({ length: 5 }).map((_, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell colSpan={6}>
+                                                <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : paginatedUsers.length > 0 ? (
                                     paginatedUsers.map(user => {
                                         const RoleIcon = roleConfig[user.funcao].icon;
                                         return (
@@ -239,27 +355,40 @@ export default function AdminUsersPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <div className="relative">
-                                                                    <Avatar className="w-9 h-9">
-                                                                        <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
-                                                                        <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
-                                                                    </Avatar>
-                                                                    <StatusIndicator status={user.presenceStatus} />
-                                                                </div>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p>{user.email}</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
+                                                        <div className="relative">
+                                                            <Avatar className="w-9 h-9">
+                                                                <AvatarImage src={user.fotoPerfil} alt={user.apelido} />
+                                                                <AvatarFallback>{user.apelido.substring(0, 2)}</AvatarFallback>
+                                                            </Avatar>
+                                                            <StatusIndicator status={user.presenceStatus} />
+                                                        </div>
                                                         <div>
-                                                            <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido}</Link>
-                                                            <p className="text-xs text-muted-foreground hidden md:block">{user.nome}</p>
-                                                            <div className="text-xs text-muted-foreground hidden md:flex items-center gap-1">
-                                                                <Mail className="w-3 h-3" />
-                                                                <span>{user.email}</span>
+                                                            <div className='flex items-center gap-2'>
+                                                                <Link href={`/dashboard/profile?userId=${user.id}`} className="font-medium hover:underline">{user.apelido || user.nome}</Link>
+                                                                {user.isGhost && <Bot className="w-4 h-4 text-primary" />}
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <div className="cursor-help">
+                                                                            {user.providerId === 'google.com' ? <GoogleIcon className="w-3.5 h-3.5" /> : <KeyRound className="w-3.5 h-3.5 text-muted-foreground" />}
+                                                                        </div>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        <p>Login via {user.providerId === 'google.com' ? 'Google' : 'Email/Senha'}</p>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
                                                             </div>
+                                                            <p className="text-xs text-muted-foreground hidden sm:block">{user.nome}</p>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <div className="text-xs text-muted-foreground flex items-center gap-1 cursor-pointer">
+                                                                        <Mail className="w-3 h-3" />
+                                                                        <span className="hidden md:inline">Ver e-mail</span>
+                                                                    </div>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p>{user.email}</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
                                                         </div>
                                                     </div>
                                                 </TableCell>
@@ -270,7 +399,7 @@ export default function AdminUsersPage() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="hidden md:table-cell">
-                                                    <FormattedDate dateString={user.dataCadastro} />
+                                                    <FormattedDate dateValue={user.dataCadastro} />
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <Badge variant="secondary" className="font-normal">
@@ -287,13 +416,35 @@ export default function AdminUsersPage() {
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                            <DropdownMenuLabel>Ações de Moderação</DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
                                                             {user.status === 'pendente' && (
-                                                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
-                                                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-                                                                    <span>Aprovar Cadastro</span>
-                                                                </DropdownMenuItem>
+                                                                <>
+                                                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'ativo')}>
+                                                                        <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                                                        <span>Aprovar Cadastro</span>
+                                                                    </DropdownMenuItem>
+                                                                    <AlertDialog>
+                                                                        <AlertDialogTrigger asChild>
+                                                                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onSelect={(e) => e.preventDefault()}>
+                                                                                <UserX className="mr-2 h-4 w-4" />
+                                                                                Recusar Cadastro
+                                                                            </DropdownMenuItem>
+                                                                        </AlertDialogTrigger>
+                                                                        <AlertDialogContent>
+                                                                            <AlertDialogHeader>
+                                                                                <AlertDialogTitle>Recusar e excluir usuário?</AlertDialogTitle>
+                                                                                <AlertDialogDescription>
+                                                                                    Esta ação removerá permanentemente o registro de "{user.apelido || user.nome}". O usuário não será notificado. Esta ação não pode ser desfeita.
+                                                                                </AlertDialogDescription>
+                                                                            </AlertDialogHeader>
+                                                                            <AlertDialogFooter>
+                                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                                <AlertDialogAction onClick={() => handleDeleteSelected([user.id])}>Sim, recusar</AlertDialogAction>
+                                                                            </AlertDialogFooter>
+                                                                        </AlertDialogContent>
+                                                                    </AlertDialog>
+                                                                </>
                                                             )}
                                                             {user.status === 'ativo' && user.funcao !== 'admin' && (
                                                                 <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'bloqueado')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
@@ -308,18 +459,45 @@ export default function AdminUsersPage() {
                                                                 </DropdownMenuItem>
                                                             )}
                                                             <DropdownMenuSeparator />
-                                                            {user.funcao === 'usuario' && (
-                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'moderador')}>
-                                                                    <ShieldCheck className="mr-2 h-4 w-4 text-blue-500"/>
-                                                                    <span>Promover a Moderador</span>
-                                                                </DropdownMenuItem>
-                                                            )}
-                                                            {user.funcao === 'moderador' && (
-                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'usuario')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                                                    <ShieldX className="mr-2 h-4 w-4" />
-                                                                    <span>Rebaixar a Usuário</span>
-                                                                </DropdownMenuItem>
-                                                            )}
+                                                             <DropdownMenuLabel>Funções</DropdownMenuLabel>
+                                                             <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'usuario')} disabled={user.funcao === 'usuario'}>
+                                                                <Users className="mr-2 h-4 w-4" />
+                                                                <span>Definir como Usuário</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'moderador')} disabled={user.funcao === 'moderador'}>
+                                                                <ShieldCheck className="mr-2 h-4 w-4 text-blue-500"/>
+                                                                <span>Promover a Moderador</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'admin')} disabled={user.funcao === 'admin'}>
+                                                                <ShieldX className="mr-2 h-4 w-4 text-destructive"/>
+                                                                <span>Promover a Admin</span>
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleGhostModeToggle(user.id, user.isGhost); }}>
+                                                                <Bot className="mr-2 h-4 w-4" />
+                                                                {user.isGhost ? 'Desativar Modo Fantasma' : 'Ativar Modo Fantasma'}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                             <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <DropdownMenuItem className="text-amber-600 focus:bg-amber-500/10 focus:text-amber-700" onSelect={(e) => e.preventDefault()}>
+                                                                        <RefreshCcw className="mr-2 h-4 w-4" />
+                                                                        Resetar Estatísticas
+                                                                    </DropdownMenuItem>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-amber-500" />Resetar estatísticas de {user.apelido || user.nome}?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            Esta ação é irreversível. Todas as estatísticas de campeonatos, pontos e títulos do usuário serão zerados. Isso é útil para limpar dados de teste.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => handleResetStats(user.id, user.apelido || user.nome)} className="bg-amber-600 hover:bg-amber-600/90">Sim, resetar</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
@@ -329,7 +507,8 @@ export default function AdminUsersPage() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-24 text-center">
-                                            Nenhum usuário encontrado para os filtros selecionados.
+                                            <p className="font-semibold">Nenhum usuário encontrado.</p>
+                                            <p className="text-sm text-muted-foreground">Tente ajustar os filtros de busca.</p>
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -365,3 +544,4 @@ export default function AdminUsersPage() {
         </TooltipProvider>
     );
 }
+

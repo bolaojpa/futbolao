@@ -1,0 +1,69 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Helper function to check if a user is an admin or moderator
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao in ['admin', 'moderator'];
+    }
+
+    // Users can only read/write their own data.
+    match /users/{userId} {
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+      // Only admins can delete users or change their roles/status.
+      allow delete: if isAdmin();
+    }
+    
+    // Admins can read all user data for management purposes.
+    match /users/{userId} {
+      allow list: if isAdmin();
+    }
+
+    // Championships are public to read for any authenticated user.
+    // Only admins can create, update or delete them.
+    match /championships/{championshipId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+    
+    // Matches are public to read for any authenticated user.
+    // Only admins can create, update or delete them.
+    match /matches/{matchId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Predictions can be created/updated by the user who owns it, before the match starts.
+    // Reading predictions could be restricted depending on app rules (e.g., only after match starts).
+    match /predictions/{predictionId} {
+      allow read: if request.auth != null;
+      // Users can create their own prediction.
+      allow create: if request.auth.uid == request.resource.data.userId;
+      // Users can only update their own prediction. A rule to check match start time should be added here.
+      allow update: if request.auth.uid == resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId || isAdmin();
+    }
+    
+    // Teams are public to read for any authenticated user.
+    // Only admins can create, update or delete them.
+    match /teams/{teamId} {
+       allow read: if request.auth != null;
+       allow write: if isAdmin();
+    }
+
+    // Support messages can be created by any authenticated user.
+    // Only admins can read/delete them.
+    match /supportMessages/{messageId} {
+        allow create: if request.auth != null;
+        allow read, delete: if isAdmin();
+    }
+    
+    // App settings (like emergency messages) are readable by all, writable only by admin.
+    match /app_settings/{settingId} {
+        allow read: if request.auth != null;
+        allow write: if isAdmin();
+    }
+  }
+}

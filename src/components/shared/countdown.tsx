@@ -6,9 +6,10 @@ import { parseISO, differenceInSeconds } from 'date-fns';
 
 interface CountdownProps {
     targetDate: string;
+    prefix?: string;
 }
 
-export function Countdown({ targetDate }: CountdownProps) {
+export function Countdown({ targetDate, prefix = "Fecha em: " }: CountdownProps) {
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
@@ -41,7 +42,7 @@ export function Countdown({ targetDate }: CountdownProps) {
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [isClient, timeLeft]);
+    }, [isClient, timeLeft, targetDate]);
 
     if (!isClient) {
         return <span>Carregando...</span>
@@ -51,7 +52,7 @@ export function Countdown({ targetDate }: CountdownProps) {
 
     return (
         <span>
-            Fecha em: {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
+            {prefix}{formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
         </span>
     );
 }

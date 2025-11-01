@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -11,32 +12,84 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Bell, Check, ArrowRight } from 'lucide-react';
+import { Bell, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { mockNotifications } from '@/lib/data';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
+import { onSnapshot, collection, query, where, orderBy, doc, writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Notification } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 export function NotificationsNav() {
-    const [notifications, setNotifications] = useState(mockNotifications);
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
+        const q = query(
+            collection(db, "notifications"),
+            where("userId", "==", user.id)
+        );
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const fetchedNotifications = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate() // Converte Timestamp para Date
+            } as Notification));
+            
+            // Ordena as notificações no lado do cliente, com segurança
+            fetchedNotifications.sort((a, b) => {
+                const timeA = a.createdAt ? (a.createdAt as Date).getTime() : 0;
+                const timeB = b.createdAt ? (b.createdAt as Date).getTime() : 0;
+                return timeB - timeA;
+            });
+
+            setNotifications(fetchedNotifications);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
     
     // Mostra apenas as 5 notificações mais recentes no dropdown
     const recentNotifications = notifications.slice(0, 5);
     const unreadCount = notifications.filter(n => !n.read).length;
 
-    const handleMarkAsRead = (notificationId: string) => {
-        setNotifications(prev => 
-            prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-        );
+    const handleMarkAsRead = async (notificationId: string) => {
+        const docRef = doc(db, "notifications", notificationId);
+        await writeBatch(db).update(docRef, { read: true }).commit();
     };
     
-    const handleMarkAllAsRead = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleMarkAllAsRead = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
-        setNotifications(prev => prev.map(n => ({...n, read: true })));
+        if (unreadCount === 0) return;
+
+        const batch = writeBatch(db);
+        notifications.forEach(notification => {
+            if (!notification.read) {
+                const docRef = doc(db, "notifications", notification.id);
+                batch.update(docRef, { read: true });
+            }
+        });
+        
+        try {
+            await batch.commit();
+        } catch (error) {
+             toast({ title: "Erro", description: "Não foi possível marcar todas como lidas.", variant: "destructive" });
+        }
     }
     
     const handleItemClick = (notificationId: string) => {
@@ -66,7 +119,13 @@ export function NotificationsNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-        {recentNotifications.length === 0 ? (
+        {loading ? (
+             <DropdownMenuItem disabled>
+                <div className="py-4 text-center text-sm text-muted-foreground">
+                    Carregando...
+                </div>
+            </DropdownMenuItem>
+        ) : recentNotifications.length === 0 ? (
             <DropdownMenuItem disabled>
                 <div className="py-4 text-center text-sm text-muted-foreground">
                     Nenhuma notificação por aqui.
@@ -77,12 +136,10 @@ export function NotificationsNav() {
                 <DropdownMenuItem 
                     key={notification.id} 
                     className="p-0 data-[highlighted]:bg-transparent"
-                    onSelect={(e) => {
-                        e.preventDefault(); 
-                    }}
+                    onSelect={(e) => e.preventDefault()}
                 >
                     <Link 
-                        href={notification.href} 
+                        href={notification.href || '#'}
                         className={cn(
                             "block w-full p-2.5 rounded-md transition-colors",
                             !notification.read && "bg-blue-50/50 dark:bg-blue-900/20",
@@ -99,7 +156,9 @@ export function NotificationsNav() {
                                <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-2 shrink-0" title="Não lida"></div>
                             )}
                         </div>
-                        <p className="text-xs text-blue-500 mt-1">{formatDistanceToNow(notification.createdAt, { locale: ptBR, addSuffix: true })}</p>
+                         {notification.createdAt && (
+                             <p className="text-xs text-blue-500 mt-1">{formatDistanceToNow(new Date(notification.createdAt as any), { locale: ptBR, addSuffix: true })}</p>
+                         )}
                     </Link>
                 </DropdownMenuItem>
             ))

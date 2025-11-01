@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,18 +18,46 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, Settings, LifeBuoy, Circle } from 'lucide-react';
-import { mockUser, type UserType } from '@/lib/data';
 import Link from 'next/link';
 import { StatusIndicator } from './status-indicator';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '../ui/skeleton';
+import type { UserType } from '@/lib/types';
+import { updateUserPresenceStatus } from '@/lib/firebase/firestore';
+import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
-  const { nome, email, apelido, fotoPerfil } = mockUser;
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  if (loading) {
+    return <Skeleton className="h-9 w-9 rounded-full" />;
+  }
+
+  if (!user) {
+    return null; // Ou um botão de Login
+  }
+
+  const { apelido, email, fotoPerfil, presenceStatus } = user;
   const fallbackInitials = apelido.substring(0, 2).toUpperCase();
 
-  // Em um app real, isso seria gerenciado por um estado global (Context/Zustand)
-  const [currentStatus, setCurrentStatus] = useState<UserType['presenceStatus']>(mockUser.presenceStatus);
+  const handleStatusChange = async (newStatus: UserType['presenceStatus']) => {
+    if (user) {
+      // O hook useAuth já reflete a mudança do DB,
+      // então a atualização otimista local não é estritamente necessária,
+      // mas pode deixar a UI um pouco mais rápida.
+      await updateUserPresenceStatus(user.id, newStatus);
+    }
+  };
+
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/');
+  };
+
 
   const statuses: UserType['presenceStatus'][] = ["Disponível", "Ausente", "Ocupado", "Não perturbe", "Offline"];
   
@@ -47,7 +76,7 @@ export function UserNav() {
           <Avatar className="h-9 w-9">
             <AvatarImage src={fotoPerfil} alt={`@${apelido}`} />
             <AvatarFallback>{fallbackInitials}</AvatarFallback>
-            <StatusIndicator status={currentStatus} className="w-3 h-3 top-0 right-0" />
+            <StatusIndicator status={presenceStatus} className="w-3 h-3 top-0 right-0" />
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -72,13 +101,13 @@ export function UserNav() {
           </Link>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-               <Circle className={cn("mr-2 h-4 w-4 fill-current", statusConfig[currentStatus]?.color)} />
+               <Circle className={cn("mr-2 h-4 w-4 fill-current", statusConfig[presenceStatus]?.color)} />
               <span>Status</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
                  {statuses.map(status => (
-                    <DropdownMenuItem key={status} onSelect={() => setCurrentStatus(status)}>
+                    <DropdownMenuItem key={status} onSelect={() => handleStatusChange(status)}>
                         <Circle className={cn("mr-2 h-4 w-4 fill-current", statusConfig[status]?.color)} />
                         <span>{status}</span>
                     </DropdownMenuItem>
@@ -107,14 +136,10 @@ export function UserNav() {
             </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <Link href="/" passHref>
-          <DropdownMenuItem asChild>
-              <div>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sair</span>
-              </div>
-          </DropdownMenuItem>
-        </Link>
+        <DropdownMenuItem onSelect={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sair</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

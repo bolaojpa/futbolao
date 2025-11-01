@@ -1,486 +1,759 @@
 
-// Mock Data for FutBolão Pro
+import { addDays, subDays } from 'date-fns';
 
-export const mockUser = {
-  id: 'user_1',
-  nome: 'Carlos Silva',
-  apelido: 'Carlinhos',
-  email: 'carlos@exemplo.com',
-  fotoPerfil: 'https://picsum.photos/100/100', // Simula foto do Google/Social
-  urlImagemPersonalizada: '', // Campo para foto personalizada do usuário
-  timeCoracao: 'Flamengo',
-  ultimaAtividade: '2024-07-26T10:00:00Z',
-  ultimoLogin: '2024-07-26T08:30:00Z',
-  ultimoPalpite: {
-      matchId: 'match_11',
-      palpite: '1x0'
-  },
-  status: 'ativo' as 'pendente' | 'ativo' | 'bloqueado', // pendente/ativo/bloqueado
-  presenceStatus: 'Disponível' as const, // "Disponível", "Ausente", "Ocupado", "Não perturbe", "Offline"
-  funcao: 'usuario' as 'usuario' | 'moderador' | 'admin',
-  dataCadastro: '2023-01-15T09:30:00Z',
-  titulos: 3,
-  totalJogos: 92,
-  championshipStats: [
-    {
-      championshipId: 'champ_1',
-      pontos: 85,
-      acertosExatos: 7,
-      acertosSituacao: 12,
-      maiorSequencia: 3,
-    },
-    {
-      championshipId: 'champ_2',
-      pontos: 40,
-      acertosExatos: 3,
-      acertosSituacao: 4,
-      maiorSequencia: 2,
-    }
-  ]
-};
-
-export type UserType = Omit<typeof mockUser, 'email'> & { 
-  email?: string,
-  pontos?: number, 
-  exatos?: number, 
-  situacoes?: number, 
-  tempoMedio?: number, 
-  posicaoVariacao?: 'up' | 'down' | 'stable', 
-  isNewLeader?: boolean 
-};
-
-
-export const mockUsers: Array<UserType> = [
-  { id: 'user_1', nome: 'Carlos Silva', apelido: 'Carlinhos', email: 'carlos@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Flamengo', ultimaAtividade: '2024-07-26T10:00:00Z', ultimoLogin: '2024-07-26T08:30:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '1x1' }, championshipStats: [{ championshipId: 'champ_1', pontos: 85, acertosExatos: 7, acertosSituacao: 12, maiorSequencia: 3 }, { championshipId: 'champ_2', pontos: 40, acertosExatos: 3, acertosSituacao: 4, maiorSequencia: 2 }], totalJogos: 88, titulos: 3, dataCadastro: '2023-01-15', pontos: 125, exatos: 10, situacoes: 5, tempoMedio: 1800, isNewLeader: false, posicaoVariacao: 'stable', status: 'ativo', presenceStatus: 'Disponível', funcao: 'usuario' },
-  { id: 'user_2', nome: 'Fernanda Souza', apelido: 'Fernanda', email: 'fernanda@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Palmeiras', ultimaAtividade: '2024-07-26T11:00:00Z', ultimoLogin: '2024-07-26T09:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '2x1' }, championshipStats: [{ championshipId: 'champ_1', pontos: 82, acertosExatos: 6, acertosSituacao: 14, maiorSequencia: 2 }, { championshipId: 'champ_2', pontos: 36, acertosExatos: 2, acertosSituacao: 5, maiorSequencia: 1 }], totalJogos: 95, titulos: 11, dataCadastro: '2023-02-20', pontos: 118, exatos: 8, situacoes: 8, tempoMedio: 2200, posicaoVariacao: 'up', status: 'ativo', presenceStatus: 'Ausente', funcao: 'moderador' },
-  { id: 'user_3', nome: 'Lucas Martins', apelido: 'Lucas', email: 'lucas@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Corinthians', ultimaAtividade: '2024-07-25T18:00:00Z', ultimoLogin: '2024-07-25T17:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '0x0' }, championshipStats: [{ championshipId: 'champ_1', pontos: 85, acertosExatos: 5, acertosSituacao: 10, maiorSequencia: 3 }], totalJogos: 102, titulos: 8, dataCadastro: '2023-01-10', pontos: 115, exatos: 9, situacoes: 4, tempoMedio: 1500, posicaoVariacao: 'down', status: 'ativo', presenceStatus: 'Ocupado', funcao: 'usuario' },
-  { id: 'user_4', nome: 'Juliana Lima', apelido: 'Juliana', email: 'juliana@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'São Paulo', ultimaAtividade: '2024-07-26T09:00:00Z', ultimoLogin: '2024-07-26T08:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '1x2' }, championshipStats: [{ championshipId: 'champ_1', pontos: 70, acertosExatos: 7, acertosSituacao: 7, maiorSequencia: 2 }], totalJogos: 70, titulos: 5, dataCadastro: '2023-03-01', pontos: 102, exatos: 7, situacoes: 7, tempoMedio: 3600, posicaoVariacao: 'up', status: 'ativo', presenceStatus: 'Disponível', funcao: 'usuario' },
-  { id: 'user_5', nome: 'Rafael Costa', apelido: 'Rafa', email: 'rafa@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Santos', ultimaAtividade: '2024-07-24T22:00:00Z', ultimoLogin: '2024-07-24T21:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '3x1' }, championshipStats: [{ championshipId: 'champ_1', pontos: 65, acertosExatos: 6, acertosSituacao: 9, maiorSequencia: 1 }], totalJogos: 80, titulos: 1, dataCadastro: '2023-04-05', pontos: 99, exatos: 6, situacoes: 9, tempoMedio: 1200, posicaoVariacao: 'stable', status: 'ativo', presenceStatus: 'Não perturbe', funcao: 'usuario' },
-  { id: 'user_6', nome: 'Roberto Alves', apelido: 'Beto', email: 'beto@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Cruzeiro', ultimaAtividade: '2024-07-25T14:00:00Z', ultimoLogin: '2024-07-25T13:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '2x2' }, championshipStats: [{ championshipId: 'champ_1', pontos: 60, acertosExatos: 5, acertosSituacao: 10, maiorSequencia: 2 }], totalJogos: 65, titulos: 0, dataCadastro: '2023-02-11', pontos: 95, exatos: 5, situacoes: 10, tempoMedio: 4800, posicaoVariacao: 'down', status: 'ativo', presenceStatus: 'Offline', funcao: 'usuario' },
-  { id: 'user_7', nome: 'Gabriela Pereira', apelido: 'Gabi', email: 'gabi@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Grêmio', ultimaAtividade: '2024-07-26T12:00:00Z', ultimoLogin: '2024-07-26T11:30:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '1x0' }, championshipStats: [{ championshipId: 'champ_1', pontos: 82, acertosExatos: 8, acertosSituacao: 6, maiorSequencia: 4 }], totalJogos: 78, titulos: 2, dataCadastro: '2023-5-10', pontos: 118, exatos: 8, situacoes: 6, tempoMedio: 2100, posicaoVariacao: 'up', status: 'ativo', presenceStatus: 'Disponível', funcao: 'usuario' },
-  { id: 'user_8', nome: 'Thiago Oliveira', apelido: 'Lanterna', email: 'thiago@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Botafogo', ultimaAtividade: '2024-07-26T08:00:00Z', ultimoLogin: '2024-07-26T07:00:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '0x1' }, championshipStats: [{ championshipId: 'champ_1', pontos: 20, acertosExatos: 1, acertosSituacao: 4, maiorSequencia: 1 }], totalJogos: 50, titulos: 0, dataCadastro: '2023-06-01', pontos: 23, exatos: 1, situacoes: 4, tempoMedio: 9999, posicaoVariacao: 'stable', status: 'ativo', presenceStatus: 'Offline', funcao: 'usuario' },
-  { id: 'user_9', nome: 'Mariana Almeida', apelido: 'Mari', email: 'mariana@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Internacional', ultimaAtividade: '2024-07-28T10:00:00Z', ultimoLogin: '2024-07-28T09:50:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '1x3' }, championshipStats: [], totalJogos: 0, titulos: 0, dataCadastro: new Date().toISOString(), status: 'pendente', presenceStatus: 'Offline', funcao: 'usuario' },
-  { id: 'user_10', nome: 'Beatriz Costa', apelido: 'Bea', email: 'beatriz@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: 'Atlético-MG', ultimaAtividade: '2024-07-27T15:00:00Z', ultimoLogin: '2024-07-27T14:45:00Z', ultimoPalpite: { matchId: 'match_5', palpite: '2x0' }, championshipStats: [], totalJogos: 15, titulos: 0, dataCadastro: '2024-05-15T10:00:00Z', status: 'bloqueado', presenceStatus: 'Offline', funcao: 'usuario' },
-  { id: 'user_11', nome: 'Admin Master', apelido: 'Admin', email: 'admin@exemplo.com', fotoPerfil: 'https://picsum.photos/100/100', urlImagemPersonalizada: '', timeCoracao: '', ultimaAtividade: new Date().toISOString(), ultimoLogin: new Date().toISOString(), ultimoPalpite: { matchId: 'match_5', palpite: '1x0' }, championshipStats: [], totalJogos: 0, titulos: 99, dataCadastro: '2023-01-01T00:00:00Z', status: 'ativo', presenceStatus: 'Não perturbe', funcao: 'admin' },
-].map(user => ({
-  ...user,
-  fotoPerfil: user.fotoPerfil,
-}));
-
-export type Championship = {
-  id: string;
-  nome: string;
-  iconUrl?: string;
-  dataInicio: Date | string;
-  dataFim: Date | string;
-  status: 'ativo' | 'arquivado';
-  tipoCampeonato: 'liga' | 'copa' | 'avulso';
-  modoEquipes: 'times' | 'selecao' | 'mista';
-  participantes: string[]; // Array de user IDs
-  teamIds: string[]; // Array de team IDs
-  formatoFases?: 'fases' | 'rodadas';
-  fases?: Array<{ nome: string; idaEVolta: boolean; rodadas?: number; }>;
-  rodadas?: number;
-  pontuacao: {
-    tradicional: {
-      ativo: boolean;
-      exato: number;
-      situacao: number;
-    };
-    combo?: {
-      ativo: boolean;
-      gols: number;
-      placar: number;
-    };
-  };
-  banner: {
-    ativo: boolean;
-    campeonatoLogoUrl?: string;
-    backgroundUrl?: string;
-    displayMode?: 'photo_and_names' | 'names_only';
-  };
-  championPredictionSettings?: {
-    active: boolean;
-    numberOfPicks: number;
-  };
-  finalRanking?: {
-    pos1?: string;
-    pos2?: string;
-    pos3?: string;
-    pos4?: string;
-    pos5?: string;
-  };
-};
-
-
-export const mockChampionships: Championship[] = [
-  { 
-    id: 'champ_1', 
-    nome: 'Brasileirão Série A 2024', 
-    iconUrl: 'https://logodetimes.com/times/campeonato-brasileiro-a/logo-campeonato-brasileiro-a-64.png',
-    dataInicio: '2024-04-13', 
-    dataFim: '2024-12-08', 
-    status: 'ativo',
-    tipoCampeonato: 'liga',
-    modoEquipes: 'times',
-    participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5', 'user_6', 'user_7', 'user_8'],
-    teamIds: ['5', '57', '64', '66'], // Exemplo com alguns times
-    rodadas: 38,
-    pontuacao: { 
-      tradicional: { ativo: true, exato: 10, situacao: 5 },
-      combo: { ativo: true, gols: 3, placar: 7 },
-    },
-    banner: {
-      ativo: true,
-      campeonatoLogoUrl: 'https://logodetimes.com/times/campeonato-brasileiro-a/logo-campeonato-brasileiro-a-256.png',
-      backgroundUrl: 'https://picsum.photos/857/828',
-      displayMode: 'photo_and_names',
-    },
-    championPredictionSettings: {
-      active: true,
-      numberOfPicks: 3,
-    }
-  },
-  { 
-    id: 'champ_2', 
-    nome: 'Copa Libertadores 2024', 
-    iconUrl: 'https://logodetimes.com/times/copa-libertadores-da-america-conmebol/logo-copa-libertadores-da-america-conmebol-64.png',
-    dataInicio: '2024-02-06', 
-    dataFim: '2024-11-30', 
-    status: 'arquivado',
-    tipoCampeonato: 'copa',
-    modoEquipes: 'times',
-    participantes: ['user_1', 'user_2', 'user_3', 'user_4', 'user_5'],
-    teamIds: ['5', '64'], // Exemplo
-    formatoFases: 'fases',
-    fases: [
-        { nome: 'Fase de Grupos', idaEVolta: true, rodadas: 6 },
-        { nome: 'Oitavas de Final', idaEVolta: true },
-        { nome: 'Quartas de Final', idaEVolta: true },
-        { nome: 'Semifinal', idaEVolta: true },
-        { nome: 'Final', idaEVolta: false },
-    ],
-    pontuacao: {
-      tradicional: { ativo: true, exato: 15, situacao: 7 },
-      combo: { ativo: false, gols: 5, placar: 10 },
-    },
-    banner: {
-      ativo: true,
-      campeonatoLogoUrl: 'https://logodetimes.com/times/copa-libertadores-da-america-conmebol/logo-copa-libertadores-da-america-conmebol-256.png',
-      displayMode: 'photo_and_names',
-    },
-    championPredictionSettings: {
-        active: false,
-        numberOfPicks: 5,
-    }
-  },
-];
-
-export type Match = {
+export interface UserType {
     id: string;
-    fase: string;
-    campeonato: string; // Nome do campeonato
-    campeonatoId: string; // ID do campeonato
+    nome: string;
+    apelido: string;
+    email: string;
+    fotoPerfil: string;
+    urlImagemPersonalizada?: string;
+    status: 'ativo' | 'pendente' | 'bloqueado';
+    funcao: 'usuario' | 'moderador' | 'admin';
+    pontos: number;
+    exatos: number;
+    situacoes: number;
+    tempoMedio: number;
+    posicaoVariacao?: 'up' | 'down' | 'stable';
+    dataCadastro: string;
+    ultimaAtividade: string;
+    ultimoLogin: string;
+    presenceStatus: 'Disponível' | 'Ausente' | 'Ocupado' | 'Não perturbe' | 'Offline';
+    ultimoPalpite: { matchId: string; palpite: string };
+    titulos: number;
+    totalJogos: number;
+    timeCoracao?: string;
+    championPicks?: { championshipId: string, teams: string[] }[];
+    championshipStats: {
+        championshipId: string;
+        pontos: number;
+        acertosExatos: number;
+        acertosSituacao: number;
+        maiorSequencia: number;
+    }[];
+}
+
+export interface Match {
+    id: string;
+    campeonato: string;
+    campeonatoId: string;
     timeA: string;
     timeB: string;
     placarA?: number | null;
     placarB?: number | null;
     data: string;
-    status: 'Agendado' | 'Ao Vivo' | 'Finalizado' | 'Cancelado';
-    pontosObtidos?: number; // Pontos do usuário no histórico
-    maxPontos?: number; // Pontos máximos da partida (do campeonato)
-};
-
-const MOCK_MATCH_RECENT_1 = { id: 'match_1', fase: 'Rodada 38', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Flamengo', timeB: 'Palmeiras', placarA: 2, placarB: 2, data: '2024-07-20T20:00:00Z', status: 'Finalizado' as const, pontosObtidos: 5, maxPontos: 20 };
-const MOCK_MATCH_RECENT_2 = { id: 'match_2', fase: 'Rodada 38', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Corinthians', timeB: 'São Paulo', placarA: 1, placarB: 1, data: '2024-07-21T16:00:00Z', status: 'Finalizado' as const, pontosObtidos: 0, maxPontos: 20 };
-const MOCK_MATCH_RECENT_3 = { id: 'match_3', fase: 'Final', campeonato: 'Copa Libertadores 2024', campeonatoId: 'champ_2', timeA: 'Grêmio', timeB: 'Internacional', placarA: 0, placarB: 1, data: '2024-07-21T18:30:00Z', status: 'Finalizado' as const, pontosObtidos: 15, maxPontos: 15 };
-const MOCK_MATCH_RECENT_8 = { id: 'match_8', fase: 'Rodada 37', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Internacional', timeB: 'Juventude', placarA: 1, placarB: 0, data: '2024-07-19T20:00:00Z', status: 'Finalizado' as const, pontosObtidos: 5, maxPontos: 20 };
-const MOCK_MATCH_RECENT_9 = { id: 'match_9', fase: 'Rodada 37', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Fortaleza', timeB: 'Criciúma', placarA: 1, placarB: 1, data: '2024-07-18T16:00:00Z', status: 'Finalizado' as const, pontosObtidos: 10, maxPontos: 20 };
-const MOCK_MATCH_RECENT_10 = { id: 'match_10', fase: 'Rodada 36', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Bragantino', timeB: 'Atlético-GO', placarA: 0, placarB: 2, data: '2024-07-17T18:30:00Z', status: 'Finalizado' as const, pontosObtidos: 0, maxPontos: 20 };
-const MOCK_MATCH_RECENT_11 = { id: 'match_11', fase: 'Rodada 36', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Cuiabá', timeB: 'Goiás', placarA: 2, placarB: 1, data: '2024-07-16T18:30:00Z', status: 'Finalizado' as const, pontosObtidos: 5, maxPontos: 20 };
-
-
-// Helper para criar uma data futura para os mocks
-const futureDate = (hours: number, date = new Date()) => {
-    date.setHours(date.getHours() + hours);
-    return date.toISOString();
+    status: 'Agendado' | 'Ao Vivo' | 'Finalizado' | 'Cancelado' | 'Hoje';
+    fase: string;
+    maxPontos?: number;
+    iconUrl?: string;
 }
 
-const todayDate = (hours: number, minutes: number) => {
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    return date.toISOString();
+export interface Prediction {
+    matchId: string;
+    userId: string;
+    palpiteUsuario: {
+      placarA: number;
+      placarB: number;
+    };
+    pontos: number;
+    outrosPalpites: { userId: string; apelido: string; palpite: string; pontos: number }[];
 }
 
-
-export const mockAllMatches: Match[] = [
-    // Brasileirão
-    MOCK_MATCH_RECENT_1,
-    MOCK_MATCH_RECENT_2,
-    MOCK_MATCH_RECENT_8,
-    MOCK_MATCH_RECENT_9,
-    MOCK_MATCH_RECENT_10,
-    MOCK_MATCH_RECENT_11,
-    { id: 'match_4', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: todayDate(16, 0), status: 'Agendado' as const, maxPontos: 20 },
-    { id: 'match_5', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3), status: 'Agendado' as const, maxPontos: 20 },
-    { id: 'match_7', fase: 'Rodada 40', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24), status: 'Agendado' as const, maxPontos: 20 },
-
-    // Libertadores
-    MOCK_MATCH_RECENT_3,
-    { id: 'match_6', fase: 'Oitavas de Final', campeonato: 'Copa Libertadores 2024', campeonatoId: 'champ_2', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5), status: 'Ao Vivo' as const, maxPontos: 15 },
-    { id: 'match_12', fase: 'Oitavas de Final', campeonato: 'Copa Libertadores 2024', campeonatoId: 'champ_2', timeA: 'Boca Juniors', timeB: 'River Plate', data: futureDate(48), status: 'Agendado' as const, maxPontos: 15 },
-];
-
-
-export const mockMatches = {
-  recent: [
-    MOCK_MATCH_RECENT_1,
-    MOCK_MATCH_RECENT_2,
-    MOCK_MATCH_RECENT_3,
-    MOCK_MATCH_RECENT_8,
-    MOCK_MATCH_RECENT_9,
-    MOCK_MATCH_RECENT_10,
-    MOCK_MATCH_RECENT_11,
-  ],
-  upcoming: [
-    { id: 'match_6', fase: 'Oitavas de Final', campeonato: 'Copa Libertadores 2024', campeonatoId: 'champ_2', timeA: 'Santos', timeB: 'Fluminense', placarA: 1, placarB: 0, data: futureDate(0.5, new Date()), status: 'Ao Vivo', maxPontos: 15 },
-    { id: 'match_4', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Atlético-MG', timeB: 'Cruzeiro', data: todayDate(21, 30), status: 'Agendado', maxPontos: 20 }, // Partida para hoje
-    { id: 'match_5', fase: 'Rodada 39', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: futureDate(3, new Date()), status: 'Agendado', maxPontos: 20 },
-    { id: 'match_7', fase: 'Rodada 40', campeonato: 'Brasileirão Série A 2024', campeonatoId: 'champ_1', timeA: 'Bahia', timeB: 'Vitória', data: futureDate(24, new Date()), status: 'Agendado', maxPontos: 20 },
-  ],
-};
-
-export const mockPredictions = [
-  {
-    userId: 'user_1',
-    matchId: 'match_1',
-    palpiteUsuario: { placarA: 2, placarB: 1 },
-    pontos: 5,
-    outrosPalpites: [
-      { userId: 'user_2', apelido: 'Fernanda', palpite: '1-1', pontos: 0 },
-      { userId: 'user_3', apelido: 'Lucas', palpite: '2-2', pontos: 10 },
-    ],
-  },
-  {
-    userId: 'user_1',
-    matchId: 'match_2',
-    palpiteUsuario: { placarA: 2, placarB: 0 },
-    pontos: 0,
-    outrosPalpites: [
-      { userId: 'user_2', apelido: 'Fernanda', palpite: '1-1', pontos: 10 },
-      { userId: 'user_3', apelido: 'Lucas', palpite: '0-0', pontos: 5 },
-    ],
-  },
-  {
-    userId: 'user_1',
-    matchId: 'match_3',
-    palpiteUsuario: { placarA: 0, placarB: 1 },
-    pontos: 15,
-    outrosPalpites: [
-      { userId: 'user_2', apelido: 'Fernanda', palpite: '1-2', pontos: 7 },
-      { userId: 'user_3', apelido: 'Lucas', palpite: '1-0', pontos: 0 },
-    ],
-  },
-  // Prediction for live match with simulated points
-  {
-    userId: 'user_1',
-    matchId: 'match_6',
-    palpiteUsuario: { placarA: 2, placarB: 1 },
-    pontos: 7, // Pontos simulados para o usuário principal (acertou o vencedor)
-    outrosPalpites: [
-      { userId: 'user_2', apelido: 'Fernanda', palpite: '1-0', pontos: 15 }, // Acertou o placar exato
-      { userId: 'user_3', apelido: 'Lucas', palpite: '3-0', pontos: 7 },  // Acertou o vencedor
-      { userId: 'user_4', apelido: 'Juliana', palpite: '1-1', pontos: 0 }, // Errou
-    ],
-  },
-  // Prediction for an upcoming match (Vasco vs Botafogo)
-  {
-    userId: 'user_1',
-    matchId: 'match_5',
-    palpiteUsuario: { placarA: 1, placarB: 1 },
-    pontos: 0,
-    outrosPalpites: [],
-  },
-  // Predictions for new recent matches
-  {
-    userId: 'user_1',
-    matchId: 'match_8',
-    palpiteUsuario: { placarA: 2, placarB: 0 },
-    pontos: 5,
-    outrosPalpites: [
-      { userId: 'user_2', apelido: 'Fernanda', palpite: '1-0', pontos: 10 },
-    ],
-  },
-  {
-    userId: 'user_1',
-    matchId: 'match_9',
-    palpiteUsuario: { placarA: 1, placarB: 1 },
-    pontos: 10,
-    outrosPalpites: [
-       { userId: 'user_3', apelido: 'Lucas', palpite: '0-0', pontos: 5 },
-    ],
-  },
-  {
-    userId: 'user_1',
-    matchId: 'match_10',
-    palpiteUsuario: { placarA: 3, placarB: 1 },
-    pontos: 0,
-    outrosPalpites: [
-       { userId: 'user_4', apelido: 'Juliana', palpite: '0-2', pontos: 10 },
-    ],
-  },
-   {
-    userId: 'user_1',
-    matchId: 'match_11',
-    palpiteUsuario: { placarA: 1, placarB: 0 },
-    pontos: 5,
-    outrosPalpites: [
-       { userId: 'user_5', apelido: 'Rafa', palpite: '2-1', pontos: 10 },
-    ],
-  },
-];
-
-export const mockNotifications = [
-    { id: 'notif_1', title: 'Partida prestes a começar!', message: 'Atlético-MG x Cruzeiro começa em 2 horas. Dê seu palpite!', read: false, createdAt: new Date(new Date().getTime() - (1000 * 60 * 5)), href: '/dashboard/predictions#match_4' },
-    { id: 'notif_2', title: 'Você subiu no ranking!', message: 'Parabéns! Você agora está na 3ª posição.', read: false, createdAt: new Date(new Date().getTime() - (1000 * 60 * 60 * 2)), href: '/dashboard/leaderboard' },
-    { id: 'notif_3', title: 'Pontos atualizados', message: 'Você ganhou 15 pontos no jogo Grêmio x Internacional.', read: true, createdAt: new Date(new Date().getTime() - (1000 * 60 * 60 * 24)), href: `/dashboard/history?championshipId=champ_2&matchId=match_3` },
-];
-
-
-export const mockEmergencyMessage = {
-    id: 'msg_001',
-    title: 'Aviso Urgente do Administrador',
-    message: 'Estamos passando por uma instabilidade temporária no sistema de pontuação. Os pontos da última rodada serão recalculados em breve. Agradecemos a compreensão.',
-    active: true, // Mude para 'false' para desativar o modal
-    type: 'urgent' as 'normal' | 'urgent',
-    targetUserIds: ['all'], // 'all' para todos, ou um array de user_ids ['user_1', 'user_3']
-};
-
-export const mockHallOfFame = [
-    {
-        id: 'hof_1',
-        campeonatoLogoUrl: 'https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png',
-        campeonatoNome: 'Brasileirão Série A 2023',
-        campeaoGeralNome: 'Fernanda',
-        campeaoGeralAvatarUrl: 'https://picsum.photos/128/128',
-        modoEquipes: 'times' as const,
-        palpiteiroNome: 'Juliana',
-        palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
-        displayMode: 'photo_and_names' as const,
-    },
-    {
-        id: 'hof_2',
-        campeonatoLogoUrl: 'https://logodetimes.com/times/copa-libertadores-da-america-conmebol/logo-copa-libertadores-da-america-conmebol-256.png',
-        campeonatoNome: 'Copa do Mundo 2022',
-        campeaoGeralNome: 'Carlinhos',
-        campeaoGeralAvatarUrl: 'https://picsum.photos/128/128',
-        modoEquipes: 'selecao' as const,
-        palpiteiroNome: 'Lucas',
-        palpiteiroAvatarUrl: 'https://picsum.photos/128/128',
-        displayMode: 'names_only' as const,
-    }
-];
-
-export type Log = {
-  id: string;
-  timestamp: string;
-  actor: {
+export interface Championship {
     id: string;
-    apelido: string;
-    type: 'user' | 'admin' | 'moderator';
-  };
-  action: string;
-  details: string | Record<string, any>;
-};
+    nome: string;
+    iconUrl?: string;
+    dataInicio: string | Date;
+    dataFim: string | Date;
+    tipoCampeonato: 'liga' | 'copa' | 'avulso';
+    modoEquipes: 'times' | 'selecao' | 'mista';
+    teamIds: string[];
+    participantes: string[];
+    status: 'ativo' | 'arquivado';
+    formatoFases?: 'fases' | 'rodadas';
+    fases?: { nome: string; idaEVolta: boolean; rodadas?: number }[];
+    rodadas?: number;
+    pontuacao: {
+        tradicional: { ativo: boolean; exato: number; situacao: number; };
+        combo?: { ativo: boolean; gols: number; placar: number; };
+    };
+    banner: {
+        ativo: boolean;
+        campeonatoLogoUrl?: string;
+        backgroundUrl?: string;
+        displayMode?: 'photo_and_names' | 'names_only';
+    };
+    championPredictionSettings?: {
+        active: boolean;
+        numberOfPicks: number;
+    };
+    finalRanking?: {
+        pos1?: string;
+        pos2?: string;
+        pos3?: string;
+        pos4?: string;
+        pos5?: string;
+    };
+}
 
-export const mockLogs: Log[] = [
-  {
-    id: 'log_1',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 2)).toISOString(),
-    actor: { id: 'user_3', apelido: 'Lucas', type: 'user' as const },
-    action: 'login',
-    details: 'Usuário fez login com sucesso.',
-  },
-  {
-    id: 'log_2',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 5)).toISOString(),
-    actor: { id: 'user_1', apelido: 'Carlinhos', type: 'user' as const },
-    action: 'prediction_update',
-    details: 'Alterou palpite para o jogo Flamengo vs Palmeiras (ID: match_1) para 2x1.',
-  },
-   {
-    id: 'log_8',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 10)).toISOString(),
-    actor: { id: 'user_2', apelido: 'Fernanda', type: 'moderator' as const },
-    action: 'user_management',
-    details: 'Silenciou o usuário "Lanterna" (ID: user_8) por 24 horas por comportamento inadequado no chat.',
-  },
-  {
-    id: 'log_9',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 12)).toISOString(),
-    actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' as const },
-    action: 'ai_notification',
-    details: {
-        title: 'Você subiu no ranking!',
-        message: 'Parabéns! Você agora está na 3ª posição.',
-        target: 'Carlinhos (user_1)'
-    },
-  },
-  {
-    id: 'log_3',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 15)).toISOString(),
-    actor: { id: 'user_11', apelido: 'Admin', type: 'admin' as const },
-    action: 'user_management',
-    details: 'Aprovou o cadastro do usuário "Gabi" (ID: user_7).',
-  },
-  {
-    id: 'log_4',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 60 * 24 * 35)).toISOString(),
-    actor: { id: 'user_11', apelido: 'Admin', type: 'admin' as const },
-    action: 'championship_create',
-    details: 'Criou o novo campeonato "Copa América 2025" (ID: champ_3).',
-  },
-  {
-    id: 'log_5',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 60 * 24 * 40)).toISOString(),
-    actor: { id: 'user_4', apelido: 'Juliana', type: 'user' as const },
-    action: 'profile_update',
-    details: 'Atualizou o time do coração para "São Paulo FC".',
-  },
-  {
-    id: 'log_6',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 60 * 24 * 50)).toISOString(),
-    actor: { id: 'user_8', apelido: 'Lanterna', type: 'user' as const },
-    action: 'login_fail',
-    details: 'Tentativa de login falhou (senha incorreta).',
-  },
-  {
-    id: 'log_7',
-    timestamp: new Date(new Date().getTime() - (1000 * 60 * 90)).toISOString(),
-    actor: { id: 'user_11', apelido: 'Admin', type: 'admin' as const },
-    action: 'emergency_message',
-    details: {
-        title: mockEmergencyMessage.title,
-        message: mockEmergencyMessage.message,
-        target: 'todos os usuários',
-        type: 'urgent',
-    },
-  }
-].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-
-export type Team = {
+export interface Team {
     id: string;
     name: string;
     crestUrl: string;
     type: 'club' | 'national';
+}
+
+export interface Log {
+    id: string;
+    timestamp: string;
+    actor: {
+        id: string;
+        apelido: string;
+        type: 'admin' | 'moderator' | 'user';
+    };
+    action: 'login' | 'login_fail' | 'prediction_update' | 'profile_update' | 'user_management' | 'championship_create' | 'emergency_message' | 'ai_notification';
+    details: string | object;
+}
+
+export interface Notification {
+    id: string;
+    title: string;
+    message: string;
+    read: boolean;
+    createdAt: Date;
+    href: string;
+}
+
+export interface HallOfFameBanner {
+    id: string;
+    campeonatoLogoUrl: string;
+    campeonatoNome: string;
+    campeaoGeralNome: string;
+    campeaoGeralAvatarUrl: string;
+    modoEquipes: "selecao" | "times" | "mista";
+    palpiteiroNome: string;
+    palpiteiroAvatarUrl: string;
+    displayMode?: 'photo_and_names' | 'names_only';
+}
+
+const now = new Date();
+
+export const mockUsers: UserType[] = [
+    {
+        id: 'user_1',
+        nome: 'Carlos "O Profeta" Silva',
+        apelido: 'O Profeta',
+        email: 'carlos.silva@example.com',
+        fotoPerfil: 'https://picsum.photos/id/1005/100/100',
+        urlImagemPersonalizada: '',
+        status: 'ativo',
+        funcao: 'usuario',
+        pontos: 150,
+        exatos: 10,
+        situacoes: 10,
+        tempoMedio: 120,
+        posicaoVariacao: 'up',
+        dataCadastro: subDays(now, 150).toISOString(),
+        ultimaAtividade: subDays(now, 1).toISOString(),
+        ultimoLogin: subDays(now, 1).toISOString(),
+        ultimoPalpite: { matchId: 'match_1', palpite: '2-1' },
+        presenceStatus: 'Disponível',
+        titulos: 11,
+        totalJogos: 123,
+        timeCoracao: 'Flamengo',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Flamengo', 'Palmeiras', 'Fluminense'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 150, acertosExatos: 10, acertosSituacao: 10, maiorSequencia: 3 },
+            { championshipId: 'champ_2', pontos: 120, acertosExatos: 8, acertosSituacao: 12, maiorSequencia: 2 },
+        ]
+    },
+    {
+        id: 'user_2',
+        nome: 'Ana "A Estrategista" Souza',
+        apelido: 'A Estrategista',
+        email: 'ana.souza@example.com',
+        fotoPerfil: 'https://picsum.photos/id/1011/100/100',
+        status: 'ativo',
+        funcao: 'usuario',
+        pontos: 145,
+        exatos: 8,
+        situacoes: 15,
+        tempoMedio: 110,
+        posicaoVariacao: 'stable',
+        dataCadastro: subDays(now, 200).toISOString(),
+        ultimaAtividade: subDays(now, 2).toISOString(),
+        ultimoLogin: subDays(now, 2).toISOString(),
+        ultimoPalpite: { matchId: 'match_2', palpite: '1-1' },
+        presenceStatus: 'Disponível',
+        titulos: 8,
+        totalJogos: 110,
+        timeCoracao: 'Corinthians',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Corinthians', 'São Paulo', 'Santos'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 145, acertosExatos: 8, acertosSituacao: 15, maiorSequencia: 4 },
+            { championshipId: 'champ_2', pontos: 90, acertosExatos: 5, acertosSituacao: 10, maiorSequencia: 2 },
+        ]
+    },
+    {
+        id: 'user_3',
+        nome: 'Bruno "Pé Quente" Costa',
+        apelido: 'Pé Quente',
+        email: 'bruno.costa@example.com',
+        fotoPerfil: 'https://picsum.photos/id/1025/100/100',
+        status: 'ativo',
+        funcao: 'usuario',
+        pontos: 142,
+        exatos: 12,
+        situacoes: 5,
+        tempoMedio: 150,
+        posicaoVariacao: 'down',
+        dataCadastro: subDays(now, 100).toISOString(),
+        ultimaAtividade: new Date().toISOString(),
+        ultimoLogin: new Date().toISOString(),
+        ultimoPalpite: { matchId: 'match_3', palpite: '3-0' },
+        presenceStatus: 'Ausente',
+        titulos: 5,
+        totalJogos: 98,
+        timeCoracao: 'Palmeiras',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Palmeiras', 'Atlético-MG', 'Internacional'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 142, acertosExatos: 12, acertosSituacao: 5, maiorSequencia: 2 },
+        ]
+    },
+    {
+        id: 'user_4',
+        nome: 'Mariana "A Vidente" Lima',
+        apelido: 'A Vidente',
+        email: 'mariana.lima@example.com',
+        fotoPerfil: 'https://picsum.photos/id/1027/100/100',
+        status: 'pendente',
+        funcao: 'usuario',
+        pontos: 130,
+        exatos: 7,
+        situacoes: 13,
+        tempoMedio: 90,
+        posicaoVariacao: 'up',
+        dataCadastro: subDays(now, 50).toISOString(),
+        ultimaAtividade: subDays(now, 5).toISOString(),
+        ultimoLogin: subDays(now, 5).toISOString(),
+        ultimoPalpite: { matchId: 'match_4', palpite: '0-0' },
+        presenceStatus: 'Offline',
+        titulos: 3,
+        totalJogos: 80,
+        timeCoracao: 'Vasco da Gama',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Vasco da Gama', 'Botafogo', 'Grêmio'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 130, acertosExatos: 7, acertosSituacao: 13, maiorSequencia: 3 },
+        ]
+    },
+    {
+        id: 'user_5',
+        nome: 'Jorge "O Corneta" Dias',
+        apelido: 'O Corneta',
+        email: 'jorge.dias@example.com',
+        fotoPerfil: 'https://picsum.photos/id/1040/100/100',
+        status: 'bloqueado',
+        funcao: 'usuario',
+        pontos: 120,
+        exatos: 5,
+        situacoes: 10,
+        tempoMedio: 180,
+        dataCadastro: subDays(now, 300).toISOString(),
+        ultimaAtividade: subDays(now, 10).toISOString(),
+        ultimoLogin: subDays(now, 10).toISOString(),
+        ultimoPalpite: { matchId: 'match_5', palpite: '1-2' },
+        presenceStatus: 'Ocupado',
+        titulos: 1,
+        totalJogos: 150,
+        timeCoracao: 'Santos',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Santos', 'Cruzeiro', 'Bahia'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 120, acertosExatos: 5, acertosSituacao: 10, maiorSequencia: 1 },
+        ]
+    },
+    {
+        id: 'user_6',
+        nome: 'Patrícia "A Analista" Martins',
+        apelido: 'A Analista',
+        email: 'patricia.martins@example.com',
+        fotoPerfil: 'https://picsum.photos/id/1062/100/100',
+        status: 'ativo',
+        funcao: 'moderador',
+        pontos: 160,
+        exatos: 15,
+        situacoes: 5,
+        tempoMedio: 80,
+        posicaoVariacao: 'up',
+        dataCadastro: subDays(now, 400).toISOString(),
+        ultimaAtividade: new Date().toISOString(),
+        ultimoLogin: new Date().toISOString(),
+        ultimoPalpite: { matchId: 'match_1', palpite: '2-0' },
+        presenceStatus: 'Disponível',
+        titulos: 15,
+        totalJogos: 200,
+        timeCoracao: 'Grêmio',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Grêmio', 'Internacional', 'Athletico-PR'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 160, acertosExatos: 15, acertosSituacao: 5, maiorSequencia: 5 },
+        ]
+    },
+    {
+        id: 'user_7',
+        nome: 'Roberto "O Moderador" Almeida',
+        apelido: 'Beto Mod',
+        email: 'roberto.almeida@example.com',
+        fotoPerfil: 'https://picsum.photos/id/1074/100/100',
+        status: 'ativo',
+        funcao: 'moderador',
+        pontos: 135,
+        exatos: 9,
+        situacoes: 9,
+        tempoMedio: 100,
+        posicaoVariacao: 'stable',
+        dataCadastro: subDays(now, 500).toISOString(),
+        ultimaAtividade: subDays(now, 1).toISOString(),
+        ultimoLogin: subDays(now, 1).toISOString(),
+        ultimoPalpite: { matchId: 'match_2', palpite: '1-0' },
+        presenceStatus: 'Não perturbe',
+        titulos: 7,
+        totalJogos: 180,
+        timeCoracao: 'Fluminense',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Fluminense', 'Vasco da Gama', 'Botafogo'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 135, acertosExatos: 9, acertosSituacao: 9, maiorSequencia: 3 },
+        ]
+    },
+    {
+        id: 'user_8',
+        nome: 'Zeca "O Lanterna" Pereira',
+        apelido: 'Zeca Lanterna',
+        email: 'zeca.pereira@example.com',
+        fotoPerfil: 'https://picsum.photos/id/200/100/100',
+        status: 'ativo',
+        funcao: 'usuario',
+        pontos: 50,
+        exatos: 1,
+        situacoes: 8,
+        tempoMedio: 250,
+        posicaoVariacao: 'down',
+        dataCadastro: subDays(now, 80).toISOString(),
+        ultimaAtividade: subDays(now, 3).toISOString(),
+        ultimoLogin: subDays(now, 3).toISOString(),
+        ultimoPalpite: { matchId: 'match_5', palpite: '0-3' },
+        presenceStatus: 'Offline',
+        titulos: 0,
+        totalJogos: 50,
+        timeCoracao: 'Botafogo',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Botafogo', 'Flamengo', 'Palmeiras'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 50, acertosExatos: 1, acertosSituacao: 8, maiorSequencia: 1 },
+        ]
+    },
+     {
+        id: 'user_9',
+        nome: 'Leo "O Sumido" Santos',
+        apelido: 'Leo Sumido',
+        email: 'leo.santos@example.com',
+        fotoPerfil: 'https://picsum.photos/id/300/100/100',
+        status: 'ativo',
+        funcao: 'usuario',
+        pontos: 110,
+        exatos: 6,
+        situacoes: 8,
+        tempoMedio: 190,
+        posicaoVariacao: 'down',
+        dataCadastro: subDays(now, 180).toISOString(),
+        ultimaAtividade: subDays(now, 30).toISOString(),
+        ultimoLogin: subDays(now, 30).toISOString(),
+        ultimoPalpite: { matchId: 'match_5', palpite: '1-1' },
+        presenceStatus: 'Offline',
+        titulos: 0,
+        totalJogos: 60,
+        timeCoracao: 'São Paulo',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['São Paulo', 'Corinthians', 'Santos'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 110, acertosExatos: 6, acertosSituacao: 8, maiorSequencia: 2 },
+        ]
+    },
+    {
+        id: 'user_10',
+        nome: 'Fernanda "Fê" Rocha',
+        apelido: 'Fê Rocha',
+        email: 'fernanda.rocha@example.com',
+        fotoPerfil: 'https://picsum.photos/id/400/100/100',
+        status: 'ativo',
+        funcao: 'usuario',
+        pontos: 138,
+        exatos: 9,
+        situacoes: 10,
+        tempoMedio: 115,
+        posicaoVariacao: 'up',
+        dataCadastro: subDays(now, 120).toISOString(),
+        ultimaAtividade: subDays(now, 1).toISOString(),
+        ultimoLogin: subDays(now, 1).toISOString(),
+        ultimoPalpite: { matchId: 'match_1', palpite: '2-1' },
+        presenceStatus: 'Disponível',
+        titulos: 2,
+        totalJogos: 95,
+        timeCoracao: 'Atlético-MG',
+        championPicks: [
+            { championshipId: 'champ_1', teams: ['Atlético-MG', 'Cruzeiro', 'Flamengo'] },
+        ],
+        championshipStats: [
+            { championshipId: 'champ_1', pontos: 138, acertosExatos: 9, acertosSituacao: 10, maiorSequencia: 3 },
+        ]
+    },
+    {
+        id: 'user_11',
+        nome: 'Admin Geral',
+        apelido: 'Admin',
+        email: 'admin@futbolao.pro',
+        fotoPerfil: 'https://picsum.photos/id/500/100/100',
+        status: 'ativo',
+        funcao: 'admin',
+        pontos: 0,
+        exatos: 0,
+        situacoes: 0,
+        tempoMedio: 0,
+        dataCadastro: subDays(now, 1000).toISOString(),
+        ultimaAtividade: new Date().toISOString(),
+        ultimoLogin: new Date().toISOString(),
+        ultimoPalpite: { matchId: '', palpite: '' },
+        presenceStatus: 'Ocupado',
+        titulos: 0,
+        totalJogos: 0,
+        championshipStats: [],
+    },
+];
+
+export const mockUser = mockUsers[0];
+
+export const mockMatches: { upcoming: Match[], recent: Match[] } = {
+    upcoming: [
+        { id: 'match_1', campeonato: 'Brasileirão 2024', campeonatoId: 'champ_1', timeA: 'Flamengo', timeB: 'Palmeiras', data: addDays(now, 1).toISOString(), status: 'Agendado', fase: 'Rodada 15' },
+        { id: 'match_2', campeonato: 'Brasileirão 2024', campeonatoId: 'champ_1', timeA: 'Corinthians', timeB: 'São Paulo', data: addDays(now, 2).toISOString(), status: 'Agendado', fase: 'Rodada 15' },
+        { id: 'match_3', campeonato: 'Brasileirão 2024', campeonatoId: 'champ_1', timeA: 'Vasco da Gama', timeB: 'Botafogo', data: addDays(now, 2).toISOString(), status: 'Agendado', fase: 'Rodada 15' },
+        { id: 'match_4', campeonato: 'Copa do Brasil 2024', campeonatoId: 'champ_2', timeA: 'Grêmio', timeB: 'Internacional', data: addDays(now, 0).toISOString(), status: 'Ao Vivo', placarA: 1, placarB: 1, fase: 'Oitavas de Final' },
+        { id: 'match_5', campeonato: 'Copa do Brasil 2024', campeonatoId: 'champ_2', timeA: 'Santos', timeB: 'Fluminense', data: addDays(now, 3).toISOString(), status: 'Agendado', fase: 'Oitavas de Final' },
+    ],
+    recent: [
+        { id: 'match_6', campeonato: 'Brasileirão 2024', campeonatoId: 'champ_1', timeA: 'Flamengo', timeB: 'Vasco da Gama', placarA: 2, placarB: 0, data: subDays(now, 1).toISOString(), status: 'Finalizado', fase: 'Rodada 14', maxPontos: 10 },
+        { id: 'match_7', campeonato: 'Brasileirão 2024', campeonatoId: 'champ_1', timeA: 'Palmeiras', timeB: 'São Paulo', placarA: 1, placarB: 1, data: subDays(now, 2).toISOString(), status: 'Finalizado', fase: 'Rodada 14', maxPontos: 10 },
+        { id: 'match_8', campeonato: 'Copa do Brasil 2024', campeonatoId: 'champ_2', timeA: 'Corinthians', timeB: 'Botafogo', placarA: 0, placarB: 1, data: subDays(now, 5).toISOString(), status: 'Finalizado', fase: 'Oitavas de Final (Ida)', maxPontos: 12 },
+    ]
 };
 
-export const mockTeams: Team[] = [
-    { id: '5', name: 'FC Bayern München', crestUrl: 'https://crests.football-data.org/5.svg', type: 'club' },
-    { id: '57', name: 'Arsenal FC', crestUrl: 'https://crests.football-data.org/57.svg', type: 'club' },
-    { id: '64', name: 'Liverpool FC', crestUrl: 'https://crests.football-data.org/64.svg', type: 'club' },
-    { id: '66', name: 'Manchester United FC', crestUrl: 'https://crests.football-data.org/66.svg', type: 'club' },
-    { id: '770', name: 'England', crestUrl: 'https://crests.football-data.org/770.svg', type: 'national' },
-    { id: '760', name: 'Brazil', crestUrl: 'https://crests.football-data.org/760.svg', type: 'national' },
+export const mockAllMatches = [...mockMatches.upcoming, ...mockMatches.recent];
+
+export const mockPredictions: Prediction[] = [
+    { 
+        matchId: 'match_1', 
+        userId: 'user_1', 
+        palpiteUsuario: { placarA: 2, placarB: 1 }, 
+        pontos: 0, 
+        outrosPalpites: [] 
+    },
+    { 
+        matchId: 'match_6', 
+        userId: 'user_1',
+        palpiteUsuario: { placarA: 2, placarB: 0 },
+        pontos: 10,
+        outrosPalpites: [
+            { userId: 'user_2', apelido: 'A Estrategista', palpite: '1-0', pontos: 5 },
+            { userId: 'user_3', apelido: 'Pé Quente', palpite: '3-1', pontos: 5 },
+            { userId: 'user_4', apelido: 'A Vidente', palpite: '1-1', pontos: 0 },
+        ]
+    },
+    { 
+        matchId: 'match_7', 
+        userId: 'user_1',
+        palpiteUsuario: { placarA: 2, placarB: 1 },
+        pontos: 0,
+        outrosPalpites: [
+             { userId: 'user_2', apelido: 'A Estrategista', palpite: '1-1', pontos: 10 },
+             { userId: 'user_3', apelido: 'Pé Quente', palpite: '0-0', pontos: 5 },
+        ]
+    },
+    { 
+        matchId: 'match_8', 
+        userId: 'user_1',
+        palpiteUsuario: { placarA: 1, placarB: 1 },
+        pontos: 0,
+        outrosPalpites: [
+             { userId: 'user_2', apelido: 'A Estrategista', palpite: '0-1', pontos: 12 },
+             { userId: 'user_3', apelido: 'Pé Quente', palpite: '1-2', pontos: 6 },
+        ]
+    }
 ];
+
+// Função para gerar um hash simples de uma string
+const simpleHash = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0; // Converte para 32bit integer
+    }
+    return Math.abs(hash);
+};
+
+
+// Adiciona palpites para outros usuários para ter mais dados
+mockAllMatches.forEach(match => {
+    mockUsers.forEach(user => {
+        // Se o usuário for o mockUser principal e já tiver palpite, pula
+        if (user.id === mockUser.id && mockPredictions.some(p => p.userId === user.id && p.matchId === match.id)) {
+            return;
+        }
+        // Se já existir palpite para este user/match, pula
+        if (mockPredictions.some(p => p.userId === user.id && p.matchId === match.id)) {
+             return;
+        }
+
+        // Gera placares determinísticos baseados nos IDs
+        const palpiteA = (simpleHash(user.id) + simpleHash(match.id)) % 5; // Gera placar de 0 a 4
+        const palpiteB = (simpleHash(user.id) + simpleHash(match.id) + 1) % 4; // Gera placar de 0 a 3
+
+        let pontos = 0;
+        
+        if (match.status === 'Finalizado' && match.placarA !== null && match.placarB !== null && typeof match.placarA !== 'undefined' && typeof match.placarB !== 'undefined') {
+            if (palpiteA === match.placarA && palpiteB === match.placarB) {
+                pontos = match.maxPontos || 10;
+            } else {
+                const vencedorReal = match.placarA > match.placarB ? 'A' : match.placarA < match.placarB ? 'B' : 'E';
+                const vencedorPalpite = palpiteA > palpiteB ? 'A' : palpiteA < palpiteB ? 'B' : 'E';
+                if (vencedorReal === vencedorPalpite) {
+                    pontos = (match.maxPontos || 10) / 2;
+                }
+            }
+        }
+        
+        const outrosPalpites = mockUsers
+            .filter(u => u.id !== user.id && u.funcao === 'usuario')
+            .slice(0, 5)
+            .map(u => {
+                const outroPalpiteA = (simpleHash(u.id) + simpleHash(match.id)) % 5;
+                const outroPalpiteB = (simpleHash(u.id) + simpleHash(match.id) + 1) % 4;
+                let outrosPontos = 0;
+                if (match.status === 'Finalizado' && match.placarA !== null && match.placarB !== null && typeof match.placarA !== 'undefined' && typeof match.placarB !== 'undefined') {
+                    if (outroPalpiteA === match.placarA && outroPalpiteB === match.placarB) {
+                        outrosPontos = match.maxPontos || 10;
+                    } else {
+                        const vencedorReal = match.placarA > match.placarB ? 'A' : match.placarA < match.placarB ? 'B' : 'E';
+                        const vencedorPalpite = outroPalpiteA > outroPalpiteB ? 'A' : outroPalpiteA < outroPalpiteB ? 'B' : 'E';
+                        if (vencedorReal === vencedorPalpite) {
+                            outrosPontos = (match.maxPontos || 10) / 2;
+                        }
+                    }
+                }
+                return {
+                    userId: u.id,
+                    apelido: u.apelido,
+                    palpite: `${outroPalpiteA} - ${outroPalpiteB}`,
+                    pontos: outrosPontos
+                }
+            });
+
+        mockPredictions.push({
+            matchId: match.id,
+            userId: user.id,
+            palpiteUsuario: { placarA: palpiteA, placarB: palpiteB },
+            pontos: pontos,
+            outrosPalpites: outrosPalpites
+        });
+    });
+});
+
+
+export const mockTeams: Team[] = [
+  { id: '17', name: 'Grêmio', crestUrl: 'https://crests.football-data.org/17.svg', type: 'club' },
+  { id: '18', name: 'Internacional', crestUrl: 'https://crests.football-data.org/18.svg', type: 'club' },
+  { id: '38', name: 'Santos FC', crestUrl: 'https://crests.football-data.org/38.svg', type: 'club' },
+  { id: '64', name: 'Fluminense FC', crestUrl: 'https://crests.football-data.org/64.svg', type: 'club' },
+  { id: '65', name: 'Corinthians', crestUrl: 'https://crests.football-data.org/65.svg', type: 'club' },
+  { id: '66', name: 'São Paulo FC', crestUrl: 'https://crests.football-data.org/66.svg', type: 'club' },
+  { id: '67', name: 'Palmeiras', crestUrl: 'https://crests.football-data.org/67.svg', type: 'club' },
+  { id: '108', name: 'CR Vasco da Gama', crestUrl: 'https://crests.football-data.org/108.svg', type: 'club' },
+  { id: '110', name: 'Botafogo FR', crestUrl: 'https://crests.football-data.org/110.svg', type: 'club' },
+  { id: '111', name: 'CR Flamengo', crestUrl: 'https://crests.football-data.org/111.svg', type: 'club' },
+  { id: '131', name: 'Atlético Mineiro', crestUrl: 'https://crests.football-data.org/131.svg', type: 'club' },
+  { id: '764', name: 'Brazil', crestUrl: 'https://crests.football-data.org/764.svg', type: 'national' },
+  { id: '773', name: 'Argentina', crestUrl: 'https://crests.football-data.org/773.svg', type: 'national' },
+  { id: '784', name: 'Uruguay', crestUrl: 'https://crests.football-data.org/784.svg', type: 'national' },
+  { id: '760', name: 'England', crestUrl: 'https://crests.football-data.org/760.svg', type: 'national' },
+  { id: '782', name: 'Spain', crestUrl: 'https://crests.football-data.org/782.svg', type: 'national' },
+  { id: '788', name: 'Germany', crestUrl: 'https://crests.football-data.org/788.svg', type: 'national' },
+  { id: '792', name: 'France', crestUrl: 'https://crests.football-data.org/792.svg', type: 'national' },
+  { id: '805', name: 'Italy', crestUrl: 'https://crests.football-data.org/805.svg', type: 'national' },
+  { id: '770', name: 'Portugal', crestUrl: 'https://crests.football-data.org/770.svg', type: 'national' },
+  { id: '794', name: 'Netherlands', crestUrl: 'https://crests.football-data.org/794.svg', type: 'national' },
+];
+
+export const mockChampionships: Championship[] = [
+    {
+        id: 'champ_1',
+        nome: 'Brasileirão 2024',
+        iconUrl: 'https://logodetimes.com/times/campeonato-brasileiro-serie-a/logo-campeonato-brasileiro-serie-a-2048.png',
+        dataInicio: subDays(now, 30),
+        dataFim: addDays(now, 60),
+        tipoCampeonato: 'liga',
+        modoEquipes: 'times',
+        teamIds: ['17', '18', '38', '64', '65', '66', '67', '108', '110', '111', '131'],
+        participantes: mockUsers.map(u => u.id),
+        status: 'ativo',
+        rodadas: 38,
+        pontuacao: {
+            tradicional: { ativo: true, exato: 10, situacao: 5 },
+        },
+        banner: { ativo: true, campeonatoLogoUrl: 'https://upload.wikimedia.org/wikipedia/pt/4/42/Campeonato_Brasileiro_S%C3%A9rie_A_logo.png' },
+        championPredictionSettings: {
+            active: true,
+            numberOfPicks: 3,
+        }
+    },
+    {
+        id: 'champ_2',
+        nome: 'Copa do Brasil 2024',
+        iconUrl: 'https://www.ogol.com.br/img/logos/edicoes/180181_imgbank_.png',
+        dataInicio: subDays(now, 10),
+        dataFim: addDays(now, 45),
+        tipoCampeonato: 'copa',
+        modoEquipes: 'times',
+        teamIds: ['17', '18', '38', '64', '65', '66', '67', '108', '110', '111', '131'],
+        participantes: mockUsers.map(u => u.id),
+        status: 'ativo',
+        formatoFases: 'fases',
+        fases: [
+            { nome: 'Oitavas de Final', idaEVolta: true },
+            { nome: 'Quartas de Final', idaEVolta: true },
+            { nome: 'Semifinal', idaEVolta: true },
+            { nome: 'Final', idaEVolta: false },
+        ],
+        pontuacao: {
+            tradicional: { ativo: true, exato: 12, situacao: 6 },
+        },
+        banner: { ativo: false },
+        championPredictionSettings: {
+            active: false,
+            numberOfPicks: 1,
+        }
+    },
+    {
+        id: 'champ_3',
+        nome: 'Copa América 2024',
+        iconUrl: 'https://upload.wikimedia.org/wikipedia/pt/thumb/9/95/Copa_Am%C3%A9rica_2024_Logo.svg/1200px-Copa_Am%C3%A9rica_2024_Logo.svg.png',
+        dataInicio: addDays(now, 10),
+        dataFim: addDays(now, 40),
+        tipoCampeonato: 'copa',
+        modoEquipes: 'selecao',
+        teamIds: ['764', '773', '784'],
+        participantes: mockUsers.map(u => u.id),
+        status: 'ativo',
+        formatoFases: 'fases',
+        fases: [
+            { nome: 'Fase de Grupos', idaEVolta: false, rodadas: 3 },
+            { nome: 'Quartas de Final', idaEVolta: false },
+            { nome: 'Semifinal', idaEVolta: false },
+            { nome: 'Final', idaEVolta: false },
+        ],
+        pontuacao: {
+            tradicional: { ativo: true, exato: 15, situacao: 7 },
+        },
+        banner: { ativo: true },
+        championPredictionSettings: {
+            active: true,
+            numberOfPicks: 2,
+        },
+        finalRanking: {
+          pos1: 'Brazil',
+          pos2: 'Argentina',
+        }
+    },
+    {
+        id: 'champ_4',
+        nome: 'Campeonato Arquivado',
+        dataInicio: subDays(now, 100),
+        dataFim: subDays(now, 50),
+        tipoCampeonato: 'liga',
+        modoEquipes: 'times',
+        teamIds: ['17', '18', '38'],
+        participantes: mockUsers.map(u => u.id),
+        status: 'arquivado',
+        rodadas: 10,
+        pontuacao: {
+            tradicional: { ativo: true, exato: 10, situacao: 5 },
+        },
+        banner: { ativo: false },
+    }
+];
+
+export const mockLogs: Log[] = [
+    { id: 'log_1', timestamp: new Date(Date.now() - 3600000).toISOString(), actor: { id: 'user_1', apelido: 'O Profeta', type: 'user' }, action: 'login', details: 'Login bem-sucedido via e-mail.' },
+    { id: 'log_2', timestamp: new Date(Date.now() - 7200000).toISOString(), actor: { id: 'user_11', apelido: 'Admin', type: 'admin' }, action: 'user_management', details: 'Bloqueou o usuário O Corneta (user_5).' },
+    { id: 'log_3', timestamp: new Date(Date.now() - 10800000).toISOString(), actor: { id: 'user_2', apelido: 'A Estrategista', type: 'user' }, action: 'prediction_update', details: 'Alterou o palpite para Flamengo vs Palmeiras.' },
+    { id: 'log_4', timestamp: new Date(Date.now() - 86400000).toISOString(), actor: { id: 'user_6', apelido: 'A Analista', type: 'moderator' }, action: 'championship_create', details: 'Criou o campeonato "Copa do Brasil 2024".' },
+    { id: 'log_5', timestamp: new Date(Date.now() - 172800000).toISOString(), actor: { id: 'user_3', apelido: 'Pé Quente', type: 'user' }, action: 'profile_update', details: 'Atualizou a foto de perfil.' },
+     { id: 'log_6', timestamp: new Date(Date.now() - 182800000).toISOString(), actor: { id: 'user_11', apelido: 'Admin', type: 'admin' }, action: 'emergency_message', details: { title: 'Manutenção Programada', message: 'O sistema ficará offline por 30 minutos hoje à noite.', target: 'Todos os Usuários' } },
+     { id: 'log_7', timestamp: new Date(Date.now() - 192800000).toISOString(), actor: { id: 'user_11', apelido: 'Sistema (IA)', type: 'admin' }, action: 'ai_notification', details: { title: 'Parabéns, craque!', message: 'Você mandou bem no jogo do Flamengo vs Vasco da Gama e ganhou 10 pontos!', target: 'O Profeta' } },
+];
+
+
+export const mockNotifications: Notification[] = [
+    { id: 'notif_1', title: 'Seu palpite foi salvo!', message: 'Seu palpite para Flamengo vs Palmeiras foi registrado com sucesso. Boa sorte!', read: false, createdAt: new Date(Date.now() - 60000), href: '/dashboard/predictions' },
+    { id: 'notif_2', title: 'Você subiu no ranking!', message: 'Parabéns! Você ganhou 10 pontos na última rodada e agora está em 1º lugar.', read: false, createdAt: new Date(Date.now() - 3600000), href: '/dashboard/leaderboard' },
+    { id: 'notif_3', title: 'Alerta de Início', message: 'A partida Corinthians vs São Paulo começa em 2 horas! Não se esqueça de palpitar.', read: true, createdAt: new Date(Date.now() - 86400000), href: '/dashboard/predictions' },
+    { id: 'notif_4', title: 'Novo Campeonato Disponível', message: 'A Copa América 2024 foi aberta para palpites. Participe agora!', read: true, createdAt: new Date(Date.now() - 172800000), href: '/dashboard/predictions' },
+    { id: 'notif_5', title: 'Você caiu no ranking', message: 'Ih, deu ruim. Você zerou na rodada e caiu para a 3ª posição.', read: true, createdAt: new Date(Date.now() - 259200000), href: '/dashboard/leaderboard' },
+];
+
+export const mockEmergencyMessage = {
+    id: 'msg_1',
+    active: false,
+    title: 'Manutenção Programada',
+    message: 'O FutBolão Pro ficará offline para uma manutenção programada hoje, das 23:00 às 23:30. Agradecemos a compreensão.',
+    targetUserIds: ['all'],
+    type: 'urgent' as 'urgent' | 'normal',
+};
+
+export const mockHallOfFame: HallOfFameBanner[] = [
+     {
+        id: 'hof_champ_1',
+        campeonatoLogoUrl: 'https://www.ogol.com.br/img/logos/edicoes/129979_imgbank_.png',
+        campeonatoNome: 'Brasileirão 2023',
+        campeaoGeralNome: 'O Profeta',
+        campeaoGeralAvatarUrl: 'https://picsum.photos/id/1005/128/128',
+        modoEquipes: 'times',
+        palpiteiroNome: 'A Estrategista',
+        palpiteiroAvatarUrl: 'https://picsum.photos/id/1011/128/128',
+        displayMode: 'photo_and_names',
+    },
+    {
+        id: 'hof_champ_2',
+        campeonatoLogoUrl: 'https://upload.wikimedia.org/wikipedia/pt/f/f3/Copa_do_Mundo_FIFA_2022.png',
+        campeonatoNome: 'Copa do Mundo 2022',
+        campeaoGeralNome: 'A Analista, Beto Mod',
+        campeaoGeralAvatarUrl: 'https://picsum.photos/id/1062/128/128',
+        modoEquipes: 'selecao',
+        palpiteiroNome: 'O Profeta, A Vidente, Pé Quente',
+        palpiteiroAvatarUrl: 'https://picsum.photos/id/1005/128/128',
+        displayMode: 'names_only'
+    }
+]

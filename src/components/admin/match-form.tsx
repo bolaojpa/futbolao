@@ -28,14 +28,17 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Save } from 'lucide-react';
+import { CalendarIcon, Save, Loader2, Lock, LockOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, parseISO, setHours, setMinutes } from 'date-fns';
-import type { Match, Team } from '@/lib/data';
-import { useEffect, useMemo } from 'react';
-import { mockChampionships, mockTeams } from '@/lib/data';
+import { format, parseISO, setHours, setMinutes, isPast } from 'date-fns';
+import type { Match, Team, Championship } from '@/lib/types';
+import { useEffect, useMemo, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Combobox } from '../ui/combobox';
+import { useToast } from '@/hooks/use-toast';
+import { addMatch, updateMatch, addLog } from '@/lib/firebase/firestore';
+import { useAuth } from '@/hooks/use-auth';
+import { Switch } from '../ui/switch';
 
 
 const matchFormSchema = z.object({
@@ -44,6 +47,7 @@ const matchFormSchema = z.object({
   fase: z.string({ required_error: "É obrigatório selecionar uma fase ou rodada."}).min(1, { message: "É obrigatório selecionar uma fase ou rodada." }),
   data: z.date({ required_error: "A data da partida é obrigatória." }),
   horario: z.string({ required_error: "O horário da partida é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato de hora inválido."),
+  predictionsLocked: z.boolean().default(false),
 }).refine(data => data.timeA !== data.timeB, {
     message: "Os times A e B não podem ser iguais.",
     path: ["timeB"],
@@ -54,13 +58,19 @@ type MatchFormValues = z.infer<typeof matchFormSchema>;
 interface MatchFormProps {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
-    onSubmit: (data: Match) => void;
+    onSubmitSuccess: () => void;
     match: Match | null;
     championshipId: string;
+    championships: Championship[];
+    teams: Team[];
 }
 
 
-export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }: MatchFormProps) {
+export function MatchForm({ isOpen, setIsOpen, onSubmitSuccess, match, championshipId, championships, teams }: MatchFormProps) {
+    const { toast } = useToast();
+    const { user: adminUser } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
+
     const form = useForm<MatchFormValues>({
         resolver: zodResolver(matchFormSchema),
         defaultValues: {
@@ -68,12 +78,13 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
             timeB: '',
             fase: '',
             horario: '16:00',
+            predictionsLocked: false,
         },
     });
 
     const selectedChampionship = useMemo(() => {
-        return mockChampionships.find(c => c.id === championshipId);
-    }, [championshipId]);
+        return championships.find(c => c.id === championshipId);
+    }, [championshipId, championships]);
 
     const availablePhases = useMemo(() => {
         if (!selectedChampionship) return [];
@@ -93,11 +104,11 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
         if (!selectedChampionship || !selectedChampionship.teamIds) return [];
         
         const participatingTeams: Team[] = selectedChampionship.teamIds
-            .map(id => mockTeams.find(team => team.id === id))
+            .map(id => teams.find(team => team.id === id))
             .filter((team): team is Team => !!team);
 
         return participatingTeams.map(team => ({ label: team.name, value: team.name }));
-    }, [selectedChampionship]);
+    }, [selectedChampionship, teams]);
 
 
     useEffect(() => {
@@ -110,6 +121,7 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
                     fase: match.fase,
                     data: matchDate,
                     horario: format(matchDate, 'HH:mm'),
+                    predictionsLocked: match.predictionsLocked || isPast(matchDate),
                 });
             } else {
                 form.reset({
@@ -118,12 +130,14 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
                     fase: '',
                     data: undefined,
                     horario: '16:00',
+                    predictionsLocked: false,
                 });
             }
         }
     }, [isOpen, match, form]);
 
-    const handleFormSubmit = (data: MatchFormValues) => {
+    const handleFormSubmit = async (data: MatchFormValues) => {
+        setIsLoading(true);
         const [hours, minutes] = data.horario.split(':').map(Number);
         const combinedDate = setMinutes(setHours(data.data, hours), minutes);
 
@@ -134,22 +148,57 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
             maxScore += selectedChampionship.pontuacao.tradicional.exato;
         }
         if (selectedChampionship.pontuacao.combo?.ativo) {
-            maxScore += (selectedChampionship.pontuacao.combo.gols ?? 0) + (selectedChampionship.pontuacao.combo.placar ?? 0);
+            maxScore += (selectedChampionship.pontuacao.combo.bonusPlacarExatoGols ?? 0) + (selectedChampionship.pontuacao.combo.pontosGols ?? 0);
         }
-
-        const finalData: Match = {
-          id: match?.id || `match_${new Date().getTime()}`,
-          timeA: data.timeA,
-          timeB: data.timeB,
-          fase: data.fase,
-          data: combinedDate.toISOString(),
-          status: 'Agendado',
-          campeonato: selectedChampionship.nome,
-          campeonatoId: selectedChampionship.id,
-          maxPontos: maxScore,
+        
+        const matchData: Partial<Omit<Match, 'id'>> = {
+            timeA: data.timeA,
+            timeB: data.timeB,
+            fase: data.fase,
+            data: combinedDate.toISOString(),
+            status: 'Agendado',
+            campeonato: selectedChampionship.nome,
+            campeonatoId: selectedChampionship.id,
+            maxPontos: maxScore,
+            predictionsLocked: data.predictionsLocked,
         };
-        onSubmit(finalData);
-        setIsOpen(false);
+
+        try {
+            let logDetails = '';
+            if (match) { // Se está editando
+                const changes = [];
+                if (data.timeA !== match.timeA || data.timeB !== match.timeB) changes.push('times');
+                if (data.fase !== match.fase) changes.push('fase');
+                if (combinedDate.toISOString() !== match.data) changes.push('data/hora');
+                if (data.predictionsLocked !== match.predictionsLocked) changes.push('bloqueio de palpites');
+
+                if (changes.length > 0) {
+                     logDetails = `O admin alterou ${changes.join(', ')} da partida ${data.timeA} vs ${data.timeB}.`;
+                } else {
+                    logDetails = `O admin salvou a partida ${data.timeA} vs ${data.timeB} sem fazer alterações.`;
+                }
+
+                await updateMatch(match.id, matchData);
+                toast({ title: "Partida Atualizada!", description: `A partida ${data.timeA} vs ${data.timeB} foi atualizada.` });
+            } else { // Se está criando
+                logDetails = `O admin criou a partida: ${data.timeA} vs ${data.timeB} para a fase "${data.fase}" do campeonato "${selectedChampionship.nome}".`;
+                await addMatch(matchData as Omit<Match, 'id'>);
+                toast({ title: "Partida Criada!", description: `A partida ${data.timeA} vs ${data.timeB} foi adicionada.` });
+            }
+
+            if (adminUser) {
+                await addLog({
+                    action: 'match_update',
+                    actor: { id: adminUser.id, apelido: adminUser.apelido, funcao: adminUser.funcao },
+                    details: logDetails,
+                });
+            }
+            onSubmitSuccess();
+        } catch (error) {
+            toast({ title: "Erro ao salvar partida", variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const title = match ? "Editar Partida" : "Adicionar Nova Partida";
@@ -279,10 +328,35 @@ export function MatchForm({ isOpen, setIsOpen, onSubmit, match, championshipId }
                                 )}
                             />
                         </div>
+                        {match && (
+                            <FormField
+                                control={form.control}
+                                name="predictionsLocked"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base flex items-center gap-2">
+                                                {field.value ? <Lock /> : <LockOpen />}
+                                                Palpites Bloqueados
+                                            </FormLabel>
+                                            <p className="text-[0.8rem] text-muted-foreground">
+                                                Se ativado, impede que usuários façam ou alterem palpites para esta partida.
+                                            </p>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                            <Button type="submit">
-                                <Save className="mr-2 h-4 w-4" />
+                            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>Cancelar</Button>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 {buttonText}
                             </Button>
                         </DialogFooter>
